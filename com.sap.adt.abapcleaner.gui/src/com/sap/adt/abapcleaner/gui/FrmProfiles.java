@@ -1,0 +1,1712 @@
+package com.sap.adt.abapcleaner.gui;
+
+import org.eclipse.swt.layout.GridData;
+import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.layout.FillLayout;
+
+import org.eclipse.swt.SWT;
+
+import org.eclipse.swt.widgets.Button;
+import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.DirectoryDialog;
+import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.FileDialog;
+import org.eclipse.swt.widgets.Label;
+import org.eclipse.swt.widgets.List;
+import org.eclipse.swt.widgets.Shell;
+import org.eclipse.swt.widgets.Table;
+import org.eclipse.swt.widgets.TableItem;
+import org.eclipse.swt.widgets.Text;
+
+import org.eclipse.swt.events.KeyAdapter;
+import org.eclipse.swt.events.KeyEvent;
+import org.eclipse.swt.events.MouseAdapter;
+import org.eclipse.swt.events.MouseEvent;
+import org.eclipse.swt.events.SelectionAdapter;
+import org.eclipse.swt.events.SelectionEvent;
+
+import org.eclipse.swt.graphics.Color;
+import org.eclipse.swt.graphics.Font;
+import org.eclipse.swt.graphics.FontData;
+import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.graphics.Rectangle;
+
+import org.eclipse.jface.viewers.CheckboxTableViewer;
+import org.eclipse.wb.swt.SWTResourceManager;
+
+import java.io.IOException;
+import java.util.*;
+
+import com.sap.adt.abapcleaner.base.*;
+import com.sap.adt.abapcleaner.comparer.*;
+import com.sap.adt.abapcleaner.programbase.*;
+import com.sap.adt.abapcleaner.rulebase.*;
+import org.eclipse.swt.widgets.Combo;
+import org.eclipse.swt.events.ModifyListener;
+import org.eclipse.swt.events.ModifyEvent;
+
+public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
+   private final static boolean sortByGroup = true;
+
+   private CodeDisplayColors codeDisplayColors;
+   
+   private ArrayList<String> initialProfileNames;
+   private ArrayList<Profile> profiles = new ArrayList<Profile>();
+   private Profile curProfile;
+   private Rule curRule;
+   private ProfileHighlightItems shownHighlightItems;
+   private String curExampleCode;
+   private RuleID defaultRuleID;
+   
+   private MainSettings settings;
+   private boolean resultSave; // is set to false by Cancel button
+   private String resultProfileName; 
+
+   private int suspendItemCheck = 0;
+
+   private Font ruleChaptersFontLink;
+   private Font ruleChaptersFontNormal;
+   private Color ruleChaptersForeColorNormal;
+   private Color ruleChaptersForeColorLink;
+   
+   private Color normalRuleListBackground;
+   private Color normalRuleNameBackground;
+   private Color newRuleBackground;
+   private Color enhancedRuleBackground;
+   private Color ruleActivatedBackground;
+   private Color ruleDeactivatedBackground;
+   private Color changedConfigBackground;
+   private Color newConfigBackground;
+   private Color normalAutoActivateBackground;
+   private Color normalHighlightBackground;
+   private Color normalPasteExampleBackground;
+   private Color normalImportExportBackground;
+   private Color normalLblFilterBackground;
+   private Color normalActivateBackground;
+   private Color normalHighlightDeclarationsBackground;
+   private Color normalHighlightWritePositionsBackground;   
+   
+   private Label[] lblRuleSources;
+   private Label[] lblRuleChapters;
+   private String[] ruleChapterLink;
+   private final ArrayList<ConfigControl> configControls = new ArrayList<ConfigControl>();
+   private Object[] itemsInChkRules;
+
+   private Shell shell;
+	private Table chkRules;
+	private Text txtRuleDescription;
+	private List lstProfiles;
+   private Button btnImportProfile;
+   private Button btnExportProfile;
+   private Button btnExportAllProfiles;
+   private Button chkAutoActivateNewFeatures;
+	private Label lblRules;
+	private Composite pnlRule;
+	private Label lblRuleName;
+	private Composite pnlRuleReferences;
+	private Label lblRuleSource0;
+	private Label lblRuleSource1;
+	private Label lblRuleSource2;
+	private Label lblRuleSource3;
+	private Label lblRuleChapter0;
+	private Label lblRuleChapter1;
+	private Label lblRuleChapter2;
+	private Label lblRuleChapter3;
+	private Button btnDefaultOptions;
+	private Composite pnlRuleOptions;
+	private CodeDisplay codeDisplay;
+   private Button chkHighlightChanges;
+   private Button btnPasteExample;
+   private Composite pnlExamplesInfo;
+   private Label lblExamples;
+   private Label lblHighlight;
+   private Combo cboHighlight;
+   private Label lblFilter;
+   private Text txtFilter;
+   private Button btnGenerateUnitTest;
+   private Button btnGenerateExample;
+   private Composite pngProfileImportExport;
+   private Button btnOK;
+   private Label lblActivate;
+   private Button btnActivateAllRules; 
+   private Button btnActivateDefaultRules;
+   private Button btnActivateEssentialRules;
+   private Button btnDeactivateAllRules;
+   private Composite composite_1;
+   private Button chkHighlightDeclarationKeywords;
+   private Button chkHighlightWritePositions;
+   private Button btnChangeProfilesFolder;
+   
+	/**
+	 * Open the window.
+	 * @wbp.parser.entryPoint
+	 */
+	public EditProfilesResult open(String curProfileName, MainSettings settings, boolean showVerticalLine, int verticalLinePos, CodeDisplayColors codeDisplayColors) {
+		this.settings = settings;
+		this.codeDisplayColors = codeDisplayColors;
+		this.defaultRuleID = settings.profilesLastRuleID;
+		
+      // load profiles 
+      ArrayList<Profile> profiles = Profile.loadProfiles(settings.profilesDirectory);
+      this.profiles = profiles;
+
+      // remember the profile names when opening FrmProfiles
+		initialProfileNames = new ArrayList<>();
+		for (Profile profile : profiles) {
+      	initialProfileNames.add(profile.name);
+      }
+
+		Display display = Display.getDefault();
+		createContents();
+
+      ruleChaptersForeColorNormal = lblRuleChapter0.getForeground();
+      ruleChaptersForeColorLink = new Color(0, 0, 139); // dark blue
+      ruleChaptersFontNormal = lblRuleChapter0.getFont();
+      FontData modelFont = ruleChaptersFontNormal.getFontData()[0]; 
+      ruleChaptersFontLink = new Font(display, modelFont.getName(), modelFont.getHeight(), SWT.NORMAL);
+
+      // determine 'normal' colors for features that could be highlighted as "added" or "changed"
+      normalRuleListBackground = chkRules.getBackground();
+      normalRuleNameBackground = lblRuleName.getBackground();
+      normalAutoActivateBackground = chkAutoActivateNewFeatures.getBackground();
+      normalHighlightBackground = lblHighlight.getBackground();
+      normalPasteExampleBackground = btnPasteExample.getBackground();
+      normalImportExportBackground = btnImportProfile.getBackground();
+      normalLblFilterBackground = lblFilter.getBackground();
+      normalActivateBackground = btnActivateDefaultRules.getBackground();
+      normalHighlightDeclarationsBackground = chkHighlightDeclarationKeywords.getBackground();
+      normalHighlightWritePositionsBackground = chkHighlightWritePositions.getBackground();
+
+      // determine colors for highlighting new features (using color for "added" or "changed") 
+      boolean useDark = CodeDisplayColors.getUseDarkTheme(normalRuleListBackground);
+      newRuleBackground      = CodeDisplayColors.createColor(  6,  74,   6, useDark, 217, 255, 217, null); // cp. CodeDisplayColors.lineAdded;
+      enhancedRuleBackground = CodeDisplayColors.createColor( 98,  98,   0, useDark, 231, 231, 152, null); // cp. CodeDisplayColors.lineChanged;
+      newConfigBackground = newRuleBackground;
+      
+      ruleActivatedBackground = newRuleBackground;
+      ruleDeactivatedBackground = CodeDisplayColors.createColor( 98,   5,   5, useDark, 255, 215, 215, null); // cp. CodeDisplayColors.lineDeleted;
+      changedConfigBackground = enhancedRuleBackground;
+
+      lblRuleSources = new Label[] { lblRuleSource0, lblRuleSource1, lblRuleSource2, lblRuleSource3 };
+      lblRuleChapters = new Label[] { lblRuleChapter0, lblRuleChapter1, lblRuleChapter2, lblRuleChapter3 };
+      ruleChapterLink = new String[lblRuleChapters.length];
+      
+		btnDefaultOptions.setVisible(false);
+
+      codeDisplay.setVerticalLine(showVerticalLine, verticalLinePos);
+		codeDisplay.setFallbackKeyListener(this);
+      codeDisplay.setHighlightDeclarationKeywords(settings.profilesHighlightDeclarationKeywords);
+      codeDisplay.setHighlightWritePositions(settings.profilesHighlightWritePositions);
+
+      refreshProfileList(curProfileName);
+      
+      btnGenerateUnitTest.setVisible(Program.showDevFeatures());
+      btnGenerateExample.setVisible(Program.showDevFeatures());
+      
+		shell.open();
+		shell.layout();
+
+		while (!shell.isDisposed()) {
+			if (!display.readAndDispatch()) {
+				display.sleep();
+			}
+		}
+		
+		ruleChaptersFontLink.dispose();
+
+      if (resultSave) { 
+	      // delete files of deleted or renamed profiles
+      	Persistency persistency = Persistency.get();
+	      for (String profileName : initialProfileNames) {
+	         if (findProfile(profileName) == null) {
+	         	String deletePath = Profile.getSavePath(settings.profilesDirectory, profileName);
+	         	if (persistency.fileExists(deletePath)) {
+	         		persistency.deleteFile(deletePath);
+	         	}
+	         }
+	      }
+	      // save profiles in case they were changed
+	      for (Profile profile : profiles) {
+	      	profile.save(settings.profilesDirectory);
+	      }
+      }
+      return new EditProfilesResult(resultSave, resultProfileName);
+	}
+
+	/**
+	 * Create contents of the window.
+	 */
+	protected void createContents() {
+		shell = new Shell(SWT.APPLICATION_MODAL | SWT.BORDER | SWT.TITLE | SWT.RESIZE | SWT.MAX);
+		shell.setMinimumSize(new Point(880, 520));
+		shell.addKeyListener(new KeyAdapter() {
+			@Override
+			public void keyPressed(KeyEvent e) {
+				keyPressedInCodeDisplay(e);
+			}
+		});
+
+		shell.setImage(SWTResourceManager.getImage(FrmProfiles.class, "/ShellImage.png"));
+		shell.setSize(1024, 768);
+		shell.setMaximized(true);
+		shell.setText("Profiles and Rules");
+		shell.setLayout(new GridLayout(2, false));
+		
+		Composite composite = new Composite(shell, SWT.NONE);
+		composite.setLayout(new GridLayout(1, false));
+		composite.setLayoutData(new GridData(SWT.LEFT, SWT.FILL, false, true, 1, 1));
+		
+		Label lblProfiles = new Label(composite, SWT.NONE);
+		lblProfiles.setFont(SWTResourceManager.getFont("Segoe UI", 11, SWT.BOLD));
+		lblProfiles.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
+		lblProfiles.setText("Profiles");
+		
+		lstProfiles = new List(composite, SWT.BORDER);
+		lstProfiles.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+	      	setCurrentProfile();
+			}
+		});
+		GridData gd_lstProfiles = new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1);
+		gd_lstProfiles.heightHint = 145;
+		lstProfiles.setLayoutData(gd_lstProfiles);
+		
+		Composite pnlProfileButtons = new Composite(composite, SWT.NONE);
+		pnlProfileButtons.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
+		pnlProfileButtons.setLayout(new FillLayout(SWT.HORIZONTAL));
+		
+		Button btnCreateProfile = new Button(pnlProfileButtons, SWT.NONE);
+		btnCreateProfile.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				createProfile();
+			}
+		});
+		btnCreateProfile.setText("Create");
+		
+		Button btnCopyProfile = new Button(pnlProfileButtons, SWT.NONE);
+		btnCopyProfile.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				copyProfile();
+			}
+		});
+		btnCopyProfile.setText("Copy");
+		
+		Button btnDeleteProfile = new Button(pnlProfileButtons, SWT.NONE);
+		btnDeleteProfile.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				deleteProfile();
+			}
+		});
+		btnDeleteProfile.setText("Delete");
+		
+		Button btnRenameProfile = new Button(pnlProfileButtons, SWT.NONE);
+		btnRenameProfile.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				renameProfile();
+			}
+		});
+		btnRenameProfile.setText("Rename");
+		
+		pngProfileImportExport = new Composite(composite, SWT.NONE);
+		pngProfileImportExport.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
+		pngProfileImportExport.setLayout(new FillLayout(SWT.HORIZONTAL));
+		
+		btnImportProfile = new Button(pngProfileImportExport, SWT.NONE);
+		btnImportProfile.setToolTipText("import profile(s) from a different folder");
+		btnImportProfile.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				importProfiles();
+			}
+		});
+		btnImportProfile.setText("Import...");
+		
+		btnExportProfile = new Button(pngProfileImportExport, SWT.NONE);
+		btnExportProfile.setToolTipText("export selected profile to a different folder");
+		btnExportProfile.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+		   	if (curProfile != null)
+		   		exportProfiles(new Profile[] { curProfile } );
+			}
+		});
+		btnExportProfile.setText("Export...");
+		
+		btnExportAllProfiles = new Button(pngProfileImportExport, SWT.NONE);
+		btnExportAllProfiles.setToolTipText("export all profiles to a different folder");
+		btnExportAllProfiles.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+		   	if (profiles.size() > 0) {
+		   		Profile[] profileArray = new Profile[profiles.size()];
+		   		exportProfiles(profiles.toArray(profileArray));
+		   	}
+			}
+		});
+		btnExportAllProfiles.setText("Export All...");
+		
+		btnChangeProfilesFolder = new Button(pngProfileImportExport, SWT.NONE);
+		btnChangeProfilesFolder.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				changeProfilesFolder();	
+			}
+		});
+		btnChangeProfilesFolder.setToolTipText("change the folder in which profiles are stored");
+		btnChangeProfilesFolder.setText("Folder...");
+		
+		lblRules = new Label(composite, SWT.NONE);
+		GridData gd_lblRules = new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1);
+		gd_lblRules.verticalIndent = 18;
+		lblRules.setLayoutData(gd_lblRules);
+		lblRules.setFont(SWTResourceManager.getFont("Segoe UI", 11, SWT.BOLD));
+		lblRules.setText("Rules in Current Profile");
+		 
+		chkAutoActivateNewFeatures = new Button(composite, SWT.CHECK);
+		chkAutoActivateNewFeatures.setText("Automatically activate new features after updates");
+		chkAutoActivateNewFeatures.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+		      boolean autoActivate = chkAutoActivateNewFeatures.getSelection();
+		      if (curProfile != null)
+		      	curProfile.autoActivateNewFeatures = autoActivate;
+			}
+		});
+
+		Composite cpsHighlight = new Composite(composite, SWT.NONE);
+		cpsHighlight.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
+		GridLayout gl_cpsHighlight = new GridLayout(2, false);
+		gl_cpsHighlight.marginWidth = 0;
+		cpsHighlight.setLayout(gl_cpsHighlight);
+		
+		lblHighlight = new Label(cpsHighlight, SWT.NONE);
+		lblHighlight.setText("Highlight:");
+		
+		cboHighlight = new Combo(cpsHighlight, SWT.READ_ONLY);
+		cboHighlight.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));
+		cboHighlight.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				setCurrentProfile();
+		      ProfileHighlightItem highlightItem = getHighlightItem();
+		      if (highlightItem != null) {
+		      	settings.profilesHighlightItem = highlightItem.toPersistentString();
+		      }
+			}
+		});
+		
+		lblFilter = new Label(cpsHighlight, SWT.NONE);
+		lblFilter.setText("Filter:");
+
+		Composite cpsFilterText = new Composite(cpsHighlight, SWT.NONE);
+		cpsFilterText.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
+		GridLayout gl_cpsFilterText = new GridLayout(2, false);
+		gl_cpsFilterText.marginHeight = 0;
+		gl_cpsFilterText.marginWidth = 0;
+		cpsFilterText.setLayout(gl_cpsFilterText);
+		
+		txtFilter = new Text(cpsFilterText, SWT.BORDER);
+		txtFilter.addModifyListener(new ModifyListener() {
+			public void modifyText(ModifyEvent e) {
+				setCurrentProfile();
+			}
+		});
+		txtFilter.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));
+		txtFilter.setToolTipText("filter list by rule name");
+		
+		Button btnClearFilter = new Button(cpsFilterText, SWT.NONE);
+		btnClearFilter.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				txtFilter.setText("");
+			}
+		});
+		btnClearFilter.setText("X");
+		btnClearFilter.setToolTipText("clear rule name filter");
+		
+		CheckboxTableViewer checkboxTableViewer = CheckboxTableViewer.newCheckList(composite, SWT.BORDER | SWT.FULL_SELECTION);
+		chkRules = checkboxTableViewer.getTable();
+		chkRules.addSelectionListener(new SelectionAdapter() {
+			private int lastIndex;
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				// this event handles both moving the selection and (independent from it) checking a rule
+				int index = chkRules.getSelectionIndex();
+				boolean indexChanged = (index != lastIndex);
+				lastIndex = index;
+		      if (index >= 0) {
+		      	if (itemsInChkRules[index] instanceof Rule) {
+			      	Rule selectedRule = (Rule)itemsInChkRules[index];
+			      	if (selectedRule != curRule) {
+			      		setRule(selectedRule);
+			      		return;
+			      	}
+		      	} else if (indexChanged) {
+		      		// do not activate/deactivate the whole RuleGroup if moving on it with cursor keys   
+		      		return;
+		      	}
+		      } 
+		      for (int i = 0; i < chkRules.getItemCount(); ++i) {
+		      	if (chkRules.getItem(i) == e.item) {
+				      chkRulesItemCheck(i);
+		      		break;
+		      	}
+		      }
+			}
+		});
+		GridData gd_chkRules = new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1);
+		gd_chkRules.minimumWidth = 290;
+		chkRules.setLayoutData(gd_chkRules);
+		
+		Composite pnlRuleListButtons = new Composite(composite, SWT.NONE);
+		pnlRuleListButtons.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
+		pnlRuleListButtons.setLayout(new FillLayout(SWT.HORIZONTAL));
+		
+		composite_1 = new Composite(pnlRuleListButtons, SWT.NONE);
+		GridLayout gl_composite_1 = new GridLayout(1, false);
+		gl_composite_1.marginWidth = 0;
+		composite_1.setLayout(gl_composite_1);
+		
+		lblActivate = new Label(composite_1, SWT.NONE);
+		lblActivate.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
+		lblActivate.setText("Activate:");
+		
+		btnActivateAllRules = new Button(pnlRuleListButtons, SWT.NONE);
+		btnActivateAllRules.setToolTipText("Activate all rules in this profile");
+		btnActivateAllRules.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				if (curProfile != null) {
+			      curProfile.activateAllRules();
+			      refreshRuleActivation();
+				}
+			}
+		});
+		btnActivateAllRules.setText("All");
+		
+		btnActivateDefaultRules = new Button(pnlRuleListButtons, SWT.NONE);
+		btnActivateDefaultRules.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				if (curProfile != null) {
+			      curProfile.activateDefaultRulesOnly();
+			      refreshRuleActivation();
+				}
+			}
+		});
+		btnActivateDefaultRules.setToolTipText("Activate rules that are active by " + Program.PRODUCT_NAME + " default");
+		btnActivateDefaultRules.setText("Default");
+		
+		btnActivateEssentialRules = new Button(pnlRuleListButtons, SWT.NONE);
+		btnActivateEssentialRules.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				if (curProfile != null) {
+			      curProfile.activateEssentialRulesOnly();
+			      refreshRuleActivation();
+				}
+			}
+		});
+		btnActivateEssentialRules.setToolTipText("Only activate rules that are explicitly demanded by the Clean ABAP styleguide");
+		btnActivateEssentialRules.setText("Essential");
+		
+		btnDeactivateAllRules = new Button(pnlRuleListButtons, SWT.NONE);
+		btnDeactivateAllRules.setToolTipText("Deactivate all rules in this profile");
+		btnDeactivateAllRules.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				if (curProfile != null) {
+			      curProfile.deactivateAllRules();
+			      refreshRuleActivation();
+				}
+			}
+		});
+		btnDeactivateAllRules.setText("None");
+		
+		pnlRule = new Composite(shell, SWT.NONE);
+		pnlRule.setLayout(new GridLayout(2, false));
+		GridData gd_composite_1 = new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1);
+		gd_composite_1.widthHint = 65;
+		pnlRule.setLayoutData(gd_composite_1);
+		
+		Label lblRule = new Label(pnlRule, SWT.NONE);
+		lblRule.setLayoutData(new GridData(SWT.LEFT, SWT.TOP, false, false, 1, 1));
+		lblRule.setBounds(0, 0, 55, 15);
+
+		lblRuleName = new Label(pnlRule, SWT.NONE);
+		lblRuleName.setFont(SWTResourceManager.getFont("Segoe UI", 12, SWT.BOLD));
+		lblRuleName.setLayoutData(new GridData(SWT.LEFT, SWT.TOP, false, false, 1, 1));
+		lblRuleName.setText("_");
+		
+		Label lblRuleDescription = new Label(pnlRule, SWT.NONE);
+		lblRuleDescription.setFont(SWTResourceManager.getFont("Segoe UI", 9, SWT.BOLD));
+		lblRuleDescription.setLayoutData(new GridData(SWT.RIGHT, SWT.TOP, false, false, 1, 1));
+		lblRuleDescription.setText("Description:");
+		
+		txtRuleDescription = new Text(pnlRule, SWT.READ_ONLY | SWT.MULTI);
+		GridData gd_txtRuleDescription = new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1);
+		gd_txtRuleDescription.heightHint = 28;
+		gd_txtRuleDescription.minimumHeight = 28;
+		txtRuleDescription.setLayoutData(gd_txtRuleDescription);
+		
+		Label lblRuleReferences = new Label(pnlRule, SWT.NONE);
+		lblRuleReferences.setFont(SWTResourceManager.getFont("Segoe UI", 9, SWT.BOLD));
+		lblRuleReferences.setLayoutData(new GridData(SWT.LEFT, SWT.TOP, false, false, 1, 1));
+		lblRuleReferences.setText("References:");
+		
+		pnlRuleReferences = new Composite(pnlRule, SWT.NONE);
+		pnlRuleReferences.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
+		pnlRuleReferences.setBounds(0, 0, 64, 64);
+		GridLayout gl_pnlRuleReferences = new GridLayout(2, false);
+		gl_pnlRuleReferences.marginHeight = 0;
+		gl_pnlRuleReferences.verticalSpacing = 2;
+		gl_pnlRuleReferences.marginWidth = 0;
+		pnlRuleReferences.setLayout(gl_pnlRuleReferences);
+		
+		lblRuleSource0 = new Label(pnlRuleReferences, SWT.NONE);
+		GridData gd_lblRuleSource0 = new GridData(SWT.LEFT, SWT.CENTER, false, false, 1, 1);
+		gd_lblRuleSource0.minimumWidth = 120;
+		lblRuleSource0.setLayoutData(gd_lblRuleSource0);
+		lblRuleSource0.setBounds(0, 0, 160, 15);
+		lblRuleSource0.setText("#");
+		
+		lblRuleChapter0 = new Label(pnlRuleReferences, SWT.NONE);
+		lblRuleChapter0.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseDown(MouseEvent e) {
+				ruleChapterClicked(0);
+			}
+		});
+		lblRuleChapter0.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, true, false, 1, 1));
+		lblRuleChapter0.setText("#");
+
+		lblRuleSource1 = new Label(pnlRuleReferences, SWT.NONE);
+		lblRuleSource1.setBounds(0, 0, 160, 15);
+		lblRuleSource1.setText("#");
+		
+		lblRuleChapter1 = new Label(pnlRuleReferences, SWT.NONE);
+		lblRuleChapter1.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseDown(MouseEvent e) {
+				ruleChapterClicked(1);
+			}
+		});
+		lblRuleChapter1.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, true, false, 1, 1));
+		lblRuleChapter1.setText("#");
+
+		lblRuleSource2 = new Label(pnlRuleReferences, SWT.NONE);
+		lblRuleSource2.setBounds(0, 0, 160, 15);
+		lblRuleSource2.setText("#");
+		
+		lblRuleChapter2 = new Label(pnlRuleReferences, SWT.NONE);
+		lblRuleChapter2.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseDown(MouseEvent e) {
+				ruleChapterClicked(2);
+			}
+		});
+		lblRuleChapter2.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, true, false, 1, 1));
+		lblRuleChapter2.setText("#");
+
+		lblRuleSource3 = new Label(pnlRuleReferences, SWT.NONE);
+		lblRuleSource3.setBounds(0, 0, 160, 15);
+		lblRuleSource3.setText("#");
+		
+		lblRuleChapter3 = new Label(pnlRuleReferences, SWT.NONE);
+		lblRuleChapter3.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseDown(MouseEvent e) {
+				ruleChapterClicked(3);
+			}
+		});
+		lblRuleChapter3.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, true, false, 1, 1));
+		lblRuleChapter3.setText("#");
+
+		Composite pnlOptionsInfo = new Composite(pnlRule, SWT.NONE);
+		GridData gd_pnlOptionsInfo = new GridData(SWT.FILL, SWT.TOP, false, false, 1, 1);
+		gd_pnlOptionsInfo.verticalIndent = 4;
+		pnlOptionsInfo.setLayoutData(gd_pnlOptionsInfo);
+		GridLayout gl_pnlOptionsInfo = new GridLayout(1, false);
+		gl_pnlOptionsInfo.marginHeight = 0;
+		gl_pnlOptionsInfo.marginWidth = 0;
+		pnlOptionsInfo.setLayout(gl_pnlOptionsInfo);
+		
+		Label lblRuleOptions = new Label(pnlOptionsInfo, SWT.NONE);
+		lblRuleOptions.setFont(SWTResourceManager.getFont("Segoe UI", 9, SWT.BOLD));
+		lblRuleOptions.setLayoutData(new GridData(SWT.LEFT, SWT.TOP, false, false, 1, 1));
+		lblRuleOptions.setBounds(0, 0, 55, 15);
+		lblRuleOptions.setText("Options:");
+		
+		btnDefaultOptions = new Button(pnlOptionsInfo, SWT.NONE);
+		btnDefaultOptions.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
+		btnDefaultOptions.setToolTipText("Reset rule options to default settings");
+		btnDefaultOptions.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+		      if (configControls != null) {
+		         for (ConfigControl configControl : configControls)
+		            configControl.setDefault();
+		      }
+			}
+		});
+		btnDefaultOptions.setText("Default");
+
+		new Label(pnlOptionsInfo, SWT.NONE);
+		new Label(pnlOptionsInfo, SWT.NONE);
+		new Label(pnlOptionsInfo, SWT.NONE);
+		new Label(pnlOptionsInfo, SWT.NONE);
+		new Label(pnlOptionsInfo, SWT.NONE);
+		
+		pnlRuleOptions = new Composite(pnlRule, SWT.NONE);
+		GridLayout gl_pnlRuleOptions = new GridLayout(3, false);
+		gl_pnlRuleOptions.marginWidth = 0;
+		gl_pnlRuleOptions.verticalSpacing = 3;
+		pnlRuleOptions.setLayout(gl_pnlRuleOptions);
+		pnlRuleOptions.setLayoutData(new GridData(SWT.FILL, SWT.FILL, false, false, 1, 1));
+		
+		pnlExamplesInfo = new Composite(pnlRule, SWT.NONE);
+		pnlExamplesInfo.setLayout(new GridLayout(1, false));
+		pnlExamplesInfo.setLayoutData(new GridData(SWT.FILL, SWT.TOP, false, false, 1, 1));
+		
+		lblExamples = new Label(pnlExamplesInfo, SWT.NONE);
+		lblExamples.setFont(SWTResourceManager.getFont("Segoe UI", 9, SWT.BOLD));
+		lblExamples.setText("Examples:");
+		
+	   btnPasteExample = new Button(pnlExamplesInfo, SWT.NONE);
+	   btnPasteExample.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
+		btnPasteExample.setToolTipText("Test current rule on example code from clipboard (default example is not changed)");
+		btnPasteExample.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				exampleCodeFromClipboard();
+			}
+		});
+		btnPasteExample.setText("&Paste ->");
+
+		Button btnDefaultExample = new Button(pnlExamplesInfo, SWT.NONE);
+		btnDefaultExample.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
+		btnDefaultExample.setToolTipText("Test current rule on default example code");
+		btnDefaultExample.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				if (curRule != null)
+					refreshExample(curRule, curRule.getExample());
+			}
+		});
+		btnDefaultExample.setText("Default");
+
+		codeDisplay = new CodeDisplay(pnlRule, SWT.NONE);
+		codeDisplay.setColors(codeDisplayColors);
+		codeDisplay.setLayoutData(new GridData(SWT.FILL, SWT.FILL, false, true, 1, 1));
+		codeDisplay.setCodeFontSize(CodeDisplay.DEFAULT_FONT_SIZE);
+		new Label(pnlRule, SWT.NONE);
+		
+		Composite cpsHighlightCancelOk = new Composite(pnlRule, SWT.NONE);
+		cpsHighlightCancelOk.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
+		GridLayout gl_cpsHighlightCancelOk = new GridLayout(8, false);
+		gl_cpsHighlightCancelOk.marginWidth = 0;
+		cpsHighlightCancelOk.setLayout(gl_cpsHighlightCancelOk);
+		
+		Label lblHighlight = new Label(cpsHighlightCancelOk, SWT.NONE);
+		lblHighlight.setFont(SWTResourceManager.getFont("Segoe UI", 9, SWT.NORMAL));
+		lblHighlight.setText("Highlight:");
+		
+		chkHighlightChanges = new Button(cpsHighlightCancelOk, SWT.CHECK);
+		GridData gd_chkHighlightChanges = new GridData(SWT.LEFT, SWT.CENTER, false, false, 1, 1);
+		gd_chkHighlightChanges.horizontalIndent = 5;
+		chkHighlightChanges.setLayoutData(gd_chkHighlightChanges);
+		chkHighlightChanges.setToolTipText("deactivate this option to appreciate the final look of the code before and after the rule is applied");
+		chkHighlightChanges.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+		      boolean highlight = chkHighlightChanges.getSelection();
+		      codeDisplay.setHighlight(highlight ? IndentChangeType.INDENT_CHANGED : IndentChangeType.CONTENT_CHANGED, 
+		      		highlight ? InnerSpaceChangeType.INNER_SPACE_CHANGED : InnerSpaceChangeType.CONTENT_CHANGED, 
+		      		highlight ? CaseChangeType.CASE_CHANGED : CaseChangeType.CONTENT_CHANGED, 
+		      		highlight ? ContentChangeType.CONTENT_CHANGED : ContentChangeType.NEVER);
+			}
+		});
+		chkHighlightChanges.setSelection(true);
+		chkHighlightChanges.setText("C&hanges");
+		
+		chkHighlightDeclarationKeywords = new Button(cpsHighlightCancelOk, SWT.CHECK);
+		chkHighlightDeclarationKeywords.setToolTipText("activate this option to highlight declarations");
+		if (settings != null)
+			chkHighlightDeclarationKeywords.setSelection(settings.profilesHighlightDeclarationKeywords);
+		chkHighlightDeclarationKeywords.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				boolean highlight = chkHighlightDeclarationKeywords.getSelection();
+				if (settings != null)
+					settings.profilesHighlightDeclarationKeywords = highlight; 
+				if (codeDisplay != null && !codeDisplay.isDisposed())
+					codeDisplay.setHighlightDeclarationKeywords(highlight);
+			}
+		});
+		chkHighlightDeclarationKeywords.setText("&Declarations");
+		
+		chkHighlightWritePositions = new Button(cpsHighlightCancelOk, SWT.CHECK);
+		chkHighlightWritePositions.setToolTipText("activate this option to highlight variables and field-symbols in write positions");
+		chkHighlightWritePositions.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, true, false, 1, 1));
+		if (settings != null)
+			chkHighlightWritePositions.setSelection(settings.profilesHighlightWritePositions);
+		chkHighlightWritePositions.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				boolean highlight = chkHighlightWritePositions.getSelection();
+				if (settings != null)
+					settings.profilesHighlightWritePositions = highlight; 
+				if (codeDisplay != null && !codeDisplay.isDisposed())
+					codeDisplay.setHighlightWritePositions(highlight);
+			}
+		});
+		chkHighlightWritePositions.setText("&Write positions");
+		
+		btnGenerateUnitTest = new Button(cpsHighlightCancelOk, SWT.NONE);
+		btnGenerateUnitTest.setToolTipText("Generate Java code for Unit Test from code selection (left and right display)");
+		btnGenerateUnitTest.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				boolean showMessage = ((e.stateMask & SWT.SHIFT) == 0);
+				codeDisplay.generateUnitTest(true, showMessage);
+			}
+		});
+		btnGenerateUnitTest.setText("Generate &Unit Test");
+
+		btnGenerateExample = new Button(cpsHighlightCancelOk, SWT.NONE);
+		btnGenerateExample.setToolTipText("Generate Java code for rule example from code selection (left display)");
+		btnGenerateExample.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				boolean showMessage = ((e.stateMask & SWT.SHIFT) == 0);
+				codeDisplay.generateExample(true, showMessage);
+			}
+		});
+		btnGenerateExample.setText("Generate &Example");
+
+		Button btnCancel = new Button(cpsHighlightCancelOk, SWT.NONE);
+		btnCancel.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				hideForm(false);
+			}
+		});
+		btnCancel.setText("&Cancel");
+		
+		btnOK = new Button(cpsHighlightCancelOk, SWT.NONE);
+		btnOK.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				hideForm(true);
+			}
+		});
+		btnOK.setText("&Save Profiles and Exit");
+	}
+	
+   private int getRuleReferenceCount() {
+      return lblRuleSources.length;
+   }
+
+   private void setCurrentProfile() {
+		int index = lstProfiles.getSelectionIndex(); 
+      if (index >= 0 && profiles != null && profiles.size() > index) {
+         setProfile(profiles.get(index));
+      }
+   }
+   
+   private ProfileHighlightItem getHighlightItem() {
+   	if (shownHighlightItems == null) {
+   		return null;
+   	} else {
+   		return shownHighlightItems.getAt(cboHighlight.getSelectionIndex());
+   	}
+   }
+   
+   private void setProfile(Profile profile) {
+      RuleID lastSelectedRuleID = (curRule == null) ? defaultRuleID : curRule.getID();
+      setRule(null);
+
+      curProfile = null; // prevent write-back when controls change
+      if (profile == null) 
+         return;
+
+      chkAutoActivateNewFeatures.setSelection(profile.autoActivateNewFeatures);
+      
+      ProfileHighlightItem highlightItem = getHighlightItem();
+
+      chkAutoActivateNewFeatures.setBackground(highlightItem.highlightFeatureOf(2022, 6, 5) ? newConfigBackground : normalAutoActivateBackground);
+      lblHighlight.setBackground(highlightItem.highlightFeatureOf(2022, 10, 31) ? newConfigBackground : normalHighlightBackground); // first highlight on (2022, 9, 8)
+      btnPasteExample.setBackground(highlightItem.highlightFeatureOf(2022, 5, 25) ? newConfigBackground : normalPasteExampleBackground);
+      
+      Color importExportBackground = highlightItem.highlightFeatureOf(2022, 10, 14) ? newConfigBackground : normalImportExportBackground;
+      btnImportProfile.setBackground(importExportBackground);
+      btnExportProfile.setBackground(importExportBackground);
+      btnExportAllProfiles.setBackground(importExportBackground);
+      btnChangeProfilesFolder.setBackground(highlightItem.highlightFeatureOf(2023, 3, 9) ? newConfigBackground : normalImportExportBackground);
+
+      lblFilter.setBackground(highlightItem.highlightFeatureOf(2023, 3, 9) ? newConfigBackground : normalLblFilterBackground);
+      
+      Color activateBackground = highlightItem.highlightFeatureOf(2023, 3, 7) ? newConfigBackground : normalActivateBackground;
+      btnActivateAllRules.setBackground(normalActivateBackground);
+      btnActivateDefaultRules.setBackground(activateBackground);
+      btnActivateEssentialRules.setBackground(activateBackground);
+      btnDeactivateAllRules.setBackground(normalActivateBackground);
+
+      chkHighlightDeclarationKeywords.setBackground(highlightItem.highlightFeatureOf(2023, 3, 28) ? newConfigBackground : normalHighlightDeclarationsBackground);
+      chkHighlightWritePositions.setBackground(highlightItem.highlightFeatureOf(2023, 3, 9) ? newConfigBackground : normalHighlightWritePositionsBackground);
+
+      // determine item count
+      Rule[] rules = sortByGroup ? profile.getRulesSortedByGroup() : profile.getRulesSortedByName();
+      String filterTextUpper = txtFilter.getText().toUpperCase();
+      if (!StringUtil.isNullOrEmpty(filterTextUpper)) {
+      	ArrayList<Rule> filteredRules = new ArrayList<>();
+      	for (Rule rule : rules) {
+      		if (rule.getDisplayName().toUpperCase().indexOf(filterTextUpper) >= 0) {
+      			filteredRules.add(rule);
+      		}
+      	}
+      	rules = new Rule[filteredRules.size()];
+      	filteredRules.toArray(rules);
+      }
+      int ruleCount = rules.length;
+      int ruleGroupCount = 0;
+   	RuleGroup lastRuleGroup = null;
+      if (sortByGroup) { 
+         for (Rule rule : rules) {
+            if (lastRuleGroup == null || rule.getGroupID() != lastRuleGroup.iD) {
+               lastRuleGroup = profile.getRuleGroup(rule.getGroupID());
+               ++ruleGroupCount;
+            }
+         }
+      }
+		chkRules.setRedraw(false);
+      chkRules.removeAll();
+      chkRules.setItemCount(ruleCount + ruleGroupCount);
+      itemsInChkRules = new Object[ruleCount + ruleGroupCount];
+      
+      // build chkRules and itemsInChkRules
+      int itemIndex = 0;
+      TableItem curItem = null;
+      lastRuleGroup = null;
+      for (Rule rule : rules) {
+         if (sortByGroup && (lastRuleGroup == null || rule.getGroupID() != lastRuleGroup.iD)) {
+            lastRuleGroup = profile.getRuleGroup(rule.getGroupID());
+            curItem = chkRules.getItem(itemIndex);
+            curItem.setText(lastRuleGroup.toString());
+            curItem.setChecked(lastRuleGroup.isAnyRuleActive());
+            itemsInChkRules[itemIndex] = lastRuleGroup;
+            ++itemIndex;
+         }
+         curItem = chkRules.getItem(itemIndex);
+         curItem.setText(rule.getDisplayName());
+         curItem.setChecked(rule.isActive);
+        	curItem.setBackground(getRuleBackground(rule, highlightItem, normalRuleListBackground));
+         itemsInChkRules[itemIndex] = rule;
+         ++itemIndex;
+      }
+
+      curProfile = profile;
+		resultProfileName = profile.name;
+      refreshActiveRuleCount();
+
+      if (chkRules.getItemCount() > 0) {
+         int index = findRuleIndex(lastSelectedRuleID);
+         int setIndex = (index >= 0) ? index : (sortByGroup ? 1 : 0); // index 0 contains a RuleGroup, therefore use index 1 
+         chkRules.select(setIndex);
+         if (setIndex >= 0 && itemsInChkRules[setIndex] instanceof Rule)
+         	setRule((Rule)itemsInChkRules[setIndex]);
+      } else {
+      	codeDisplay.clear();
+      }
+		chkRules.setRedraw(true);
+   }
+
+   private Color getRuleBackground(Rule rule, ProfileHighlightItem highlightItem, Color normalBackground) {
+   	if (rule == null || highlightItem == null)
+      	return normalBackground;
+
+		Release release = highlightItem.getRelease();
+		Profile compareToProfile = highlightItem.getCompareToProfile();
+   	if (release != null) {
+	   	if (rule.wasAddedSince(release)) { 
+	      	return newRuleBackground;
+	   	} else if(rule.wasEnhancedSince(release)) { 
+	      	return enhancedRuleBackground;
+	   	}
+	   	
+   	} else if (compareToProfile != null) {
+   		Rule compareToRule = compareToProfile.getRule(rule.getID());
+   		if (compareToRule == null)  {
+   	   	return normalBackground;
+   		} else if (rule.isActive && !compareToRule.isActive) {
+	      	return ruleActivatedBackground;
+   		} else if (!rule.isActive && compareToRule.isActive) {
+	      	return ruleDeactivatedBackground;
+   		} else if (!rule.hasSameConfigurationAs(compareToRule)) {
+   			return changedConfigBackground;
+   		}
+   	}
+
+   	return normalBackground;
+   }
+   
+   private int findRuleIndex(RuleID ruleID) {
+   	if (ruleID == null)
+   		return -1;
+      for (int i = 0; i < itemsInChkRules.length; ++i) {
+         if (itemsInChkRules[i] instanceof Rule) {
+	         Rule rule = (Rule)itemsInChkRules[i];
+	         if (rule.getID() == ruleID)
+	            return i;
+         }
+      }
+      return -1;
+   }
+
+   private int findRuleGroupIndex(RuleGroupID ruleGroupID) {
+      for (int i = 0; i < itemsInChkRules.length; ++i) {
+         if (itemsInChkRules[i] instanceof RuleGroup) {
+	         RuleGroup ruleGroup = (RuleGroup)itemsInChkRules[i];
+	         if (ruleGroup.iD == ruleGroupID)
+	            return i;
+			}
+      }
+      return -1;
+   }
+
+   private void setRule(Rule rule) {
+      final int xGap = 8;
+
+      curRule = null; // prevent write-back when controls change
+
+      disposeConfigControls();
+
+      lblRuleName.setText((rule != null && rule.getDisplayName() != null) ? rule.getDisplayName() : "");
+      setRuleNameHighlight(rule);
+      
+      txtRuleDescription.setText((rule != null && rule.getDescription() != null) ? rule.getDescription() : "");
+
+      // show references
+      pnlRuleReferences.setRedraw(false);
+      int maxRight = 0;
+      RuleReference[] references = (rule == null) ? null : rule.getReferences();
+      for (int i = 0; i < getRuleReferenceCount(); ++i) {
+         RuleReference reference = (references == null || i >= references.length) ? null : references[i];
+         String source = "";
+         if (reference != null && !StringUtil.isNullOrEmpty(reference.getSourceText())) { 
+         	source = reference.getSourceText();
+         	if (!StringUtil.isNullOrEmpty(reference.chapterTitle))
+         		source += ":";
+         }
+         lblRuleSources[i].setText(source);
+         Rectangle bounds = lblRuleSources[i].getBounds();
+         maxRight = Math.max(maxRight, bounds.x + bounds.width);
+      }
+      int chapterLeft = maxRight + xGap;
+      for (int i = 0; i < getRuleReferenceCount(); ++i) {
+         RuleReference reference = (references == null || i >= references.length) ? null : references[i];
+         lblRuleSources[i].setVisible((reference != null));
+
+         lblRuleChapters[i].setText((reference != null && reference.chapterTitle != null) ? reference.chapterTitle : "");
+         ruleChapterLink[i] = (reference != null ? reference.getLink() : null);
+         lblRuleChapters[i].setLocation(chapterLeft, lblRuleChapters[i].getLocation().y);
+         if (reference != null) {
+            lblRuleChapters[i].setFont(reference.hasLink() ? ruleChaptersFontLink : ruleChaptersFontNormal);
+            lblRuleChapters[i].setForeground(reference.hasLink() ? ruleChaptersForeColorLink : ruleChaptersForeColorNormal);
+            // TODO: set mouse cursor when hovering over lblRuleChapters[i] - this may only be possible with StyledText, which apparently does this automatically for SWT.UNDERLINE_LINK
+         }
+         lblRuleChapters[i].setVisible((reference != null));
+      }
+      pnlRuleReferences.layout();      
+      pnlRuleReferences.setRedraw(true);
+
+      String exampleCode = (rule == null) ? null : rule.getExample(); 
+      refreshExample(rule, exampleCode);
+
+      createConfigControls(rule);
+
+      curRule = rule;
+      if (rule != null) {
+      	settings.profilesLastRuleID = rule.getID();
+      }
+   }
+
+   private void disposeConfigControls() {
+      // dispose of the configControls of the previous rule
+      if (!configControls.isEmpty()) {
+         for (ConfigControl configControl : configControls)
+            configControl.detachAndDispose();
+         configControls.clear();
+      }
+   }
+
+   private void createConfigControls(Rule rule) {
+      ConfigValue[] configValues = (rule == null) ? null : rule.getConfigValues();
+      btnDefaultOptions.setVisible(configValues != null);
+      if (configValues == null) {
+      	return;
+      }
+
+      pnlRuleOptions.setRedraw(false);
+
+      GridLayout gl_pnlRuleOptions = new GridLayout(3, false);
+		gl_pnlRuleOptions.marginWidth = 0;
+		gl_pnlRuleOptions.verticalSpacing = 3;
+		pnlRuleOptions.setLayout(gl_pnlRuleOptions);
+
+      for (ConfigValue configValue : configValues) {
+         ConfigControl configControl;
+         if (configValue instanceof ConfigBoolValue) {
+         	ConfigBoolValue configBoolValue = (ConfigBoolValue)configValue;
+            configControl = new ConfigCheckBox(configBoolValue, (IConfigDisplay)this, pnlRuleOptions);
+         } else if (configValue instanceof ConfigIntValue) {
+            ConfigIntValue configIntValue = (ConfigIntValue)configValue;
+            configControl = new ConfigIntBox(configIntValue, (IConfigDisplay)this, pnlRuleOptions);
+         } else if (configValue instanceof ConfigTextValue) {
+            ConfigTextValue configTextValue = (ConfigTextValue)configValue;
+            configControl = new ConfigTextBox(configTextValue, (IConfigDisplay)this, pnlRuleOptions);
+      	} else if (configValue instanceof ConfigSelectionValue) {
+            ConfigSelectionValue configSelectionValue = (ConfigSelectionValue)configValue;
+            configControl = new ConfigComboBox(configSelectionValue, (IConfigDisplay)this, pnlRuleOptions);
+         } else if (configValue instanceof ConfigInfoValue) {
+            ConfigInfoValue configInfoValue = (ConfigInfoValue)configValue;
+            configControl = new ConfigLabel(configInfoValue, (IConfigDisplay)this, pnlRuleOptions);
+         } else {
+           throw new IndexOutOfBoundsException("unknown ConfigControl");
+         }
+      	configControl.setEnabled(rule.isConfigValueEnabled(configValue));
+         configControls.add(configControl);
+         Control[] controls = configControl.getControls();
+         for (int column = 0; column < controls.length; ++column) 
+            controls[column].setVisible(true);
+      }
+      
+      pnlRuleOptions.layout();
+      pnlRuleOptions.setRedraw(true);
+      
+      // set the highlight only after .setRedraw(true), otherwise, if dark theme is used in ADT, 
+      // .getBackground() will still return light theme colors (see ConfigControl.setHighlighted())! 
+      for (ConfigControl configControl : configControls) {
+      	setConfigHighlight(rule, configControl);
+      }
+
+      pnlRule.layout();
+   }
+
+	private boolean refreshExample(Rule rule, String newExampleCode) {
+   	// refresh the example code if it is provided
+   	int setPosition = -1; // keep current position
+   	if (!StringUtil.isNullOrEmpty(newExampleCode)) {
+   		curExampleCode = newExampleCode;
+   		setPosition = 0; // reset to start position
+   	}
+   	
+      if (rule == null || StringUtil.isNullOrEmpty(curExampleCode))
+         return false;
+
+      Job job = Job.createForRuleExample(rule.getDisplayName(), curExampleCode, rule);
+      Task result = job.run();
+      if (result.getSuccess()) {
+         codeDisplay.setInfo(rule.getDisplayName() + " - example", "", curExampleCode, ABAP.NEWEST_RELEASE, rule);
+         codeDisplay.refreshCode(result.getResultingCode(), result.getResultingDiffDoc(), setPosition, setPosition, setPosition, null);
+         return true;
+      } else {
+         Message.show(result.getErrorMessage());
+         return false;
+      }
+   }
+
+   private void refreshRuleActivation() {
+	   ++suspendItemCheck;
+	   for (int i = 0; i < chkRules.getItemCount(); ++i) {
+         if (itemsInChkRules[i] instanceof Rule) {
+         	boolean isActive = ((Rule)itemsInChkRules[i]).isActive;
+         	chkRules.getItem(i).setChecked(isActive);
+         } else if (itemsInChkRules[i] instanceof RuleGroup) {
+		      boolean isActive = ((RuleGroup)itemsInChkRules[i]).isAnyRuleActive();
+		      chkRules.getItem(i).setChecked(isActive);
+         }
+	   }
+	   --suspendItemCheck;
+	   refreshActiveRuleCount();
+   }
+
+   private void refreshActiveRuleCount() {
+   	if (curProfile != null) {
+	      int ruleCount = curProfile.getRuleCount();
+	      int activeRuleCount = curProfile.getActiveRuleCount();
+	      lblRules.setText("Rules in Current Profile: " + Cult.format(activeRuleCount) + " / " + Cult.format(ruleCount) + " Active");
+   	}
+   }
+
+   private Profile findProfile(String name) {
+      for (Profile profile : profiles) {
+         if (profile.name.equalsIgnoreCase(name))
+            return profile;
+      }
+      return null;
+   }
+
+   private void refreshProfileList(String setToProfileName) {
+      Collections.sort(profiles, new Profile.Comparer());
+
+		// suspend redraw
+      lstProfiles.setRedraw(false);
+      cboHighlight.setRedraw(false);
+
+      // build cboHighlight, which includes a list of all profiles (with which the current profile can be compared)
+		ProfileHighlightItems highlightItems = new ProfileHighlightItems(profiles, Program.getReleases());
+		cboHighlight.removeAll();
+		for (ProfileHighlightItem highlightItem : highlightItems.getItems()) {
+			cboHighlight.add(highlightItem.toString());
+		}
+		if (cboHighlight.getItemCount() > 0) {
+			int highlightIndex = highlightItems.findIndex(settings.profilesHighlightItem);
+			if (highlightIndex < 0 || highlightIndex >= cboHighlight.getItemCount()) {
+				// pre-select "Features added after <previous release>"
+				int indexOfPrevRelease = ProfileHighlightItems.indexOfPreviousRelease();
+				highlightIndex = (indexOfPrevRelease < cboHighlight.getItemCount()) ? indexOfPrevRelease : 0;
+			}
+			cboHighlight.select(highlightIndex); 
+		}
+		shownHighlightItems = highlightItems;
+
+      // build lstProfiles - setProfile() must happen after building cboHighlight
+      int setToIndex = 0; // default to first entry if setToProfileName is not found
+      lstProfiles.removeAll();
+      for (Profile profile : profiles) {
+      	if (profile.name.equals(setToProfileName))
+      		setToIndex = lstProfiles.getItemCount();
+      	lstProfiles.add(profile.name);
+      }
+      if (profiles.size() > 0) {
+      	lstProfiles.select(setToIndex);
+         setProfile(profiles.get(setToIndex));
+      }
+      
+		// resume redraw
+      lstProfiles.setRedraw(true);
+      cboHighlight.setRedraw(true);
+   }
+
+   public final void remove(Control[] controls) {
+   	// nothing to do here, this will automatically be done when the Controls are disposed of
+   }
+
+   public final void configurationChanged() {
+   	// refresh the example without changing the example code (which may have been changed from the clipboard)
+      refreshExample(curRule, null);
+      
+      if (curRule != null && configControls != null) {
+	      for (ConfigControl configControl : configControls) {
+	      	configControl.setEnabled(curRule.isConfigValueEnabled(configControl.getConfigValue()));
+	      	setConfigHighlight(curRule, configControl);
+	      }
+      }
+      if (curRule != null) {
+	      for (int i = 0; i < chkRules.getItemCount(); ++i) {
+	         if (itemsInChkRules[i] == curRule) {
+	         	setRuleHighlight(curRule, i);
+	         	break;
+	         }
+         }
+	      setRuleNameHighlight(curRule);
+      }
+   }
+
+	private void createProfile() {
+      FrmInputBox inputBox = new FrmInputBox();
+      String name = inputBox.open("", "Profile name:", true);
+      if (StringUtil.isNullOrEmpty(name))
+         return;
+      if (findProfile(name) != null) {
+         Message.show("There already is a profile by the name of '" + name + "'!");
+         return;
+      }
+      profiles.add(Profile.create(name));
+      refreshProfileList(name);
+   }
+
+   private void copyProfile() {
+      FrmInputBox inputBox = new FrmInputBox();
+      String name = inputBox.open((curProfile != null && curProfile.name != null) ? curProfile.name : "", "Profile name:", true);
+      if (StringUtil.isNullOrEmpty(name))
+         return;
+      if (findProfile(name) != null) {
+         Message.show("There already is a profile by the name of '" + name + "'!");
+         return;
+      }
+      profiles.add(Profile.createFromModel(name, curProfile));
+      refreshProfileList(name);
+   }
+
+   private void deleteProfile() {
+      if (curProfile == null || profiles.size() <= 1)
+         return;
+      if (Message.show("Are you sure you want to delete the profile '" + curProfile.name + "'?", "Delete profile?", SWT.YES | SWT.NO | SWT.CANCEL | SWT.ICON_QUESTION) != SWT.YES)
+         return;
+      profiles.remove(curProfile);
+      int index = lstProfiles.getSelectionIndex();
+      Profile selectProfile = null;
+      if (index < profiles.size())
+         selectProfile = profiles.get(index);
+      else if (index > 0)
+         selectProfile = profiles.get(index - 1);
+      refreshProfileList((selectProfile == null) ? null : selectProfile.name);
+   }
+
+   private void renameProfile() {
+      FrmInputBox inputBox = new FrmInputBox();
+      String newName = inputBox.open(curProfile.name, "Profile name:", true);
+      if (StringUtil.isNullOrEmpty(newName))
+         return;
+      if (findProfile(newName) != null) {
+         Message.show("There already is a profile by the name of '" + newName + "'!");
+         return;
+      }
+      if (settings.profilesHighlightItem.equals(ProfileHighlightItem.getPersistentStringOfProfile(curProfile.name))) {
+      	settings.profilesHighlightItem = ProfileHighlightItem.getPersistentStringOfProfile(newName);
+      }
+      curProfile.name = newName;
+      refreshProfileList(newName);
+   }
+
+   private void importProfiles() {
+		Persistency persistency = Persistency.get();
+		String extension = persistency.getExtension(FileType.PROFILE_TEXT);
+
+		// prepare the dialog
+		FileDialog dialog = new FileDialog(shell, SWT.OPEN | SWT.MULTI);
+		dialog.setText("Select Profile(s) to Import");
+		String filterPath;
+		if (StringUtil.isNullOrEmpty(settings.profilesLastImportDir)) {
+			filterPath = System.getProperty("user.home");
+		} else {
+			filterPath = settings.profilesLastImportDir;
+		}
+		dialog.setFilterPath(filterPath);
+		dialog.setFilterExtensions(new String[] { "*" + extension, "*.*" });
+		dialog.setFilterNames(new String[] { "Profiles", "All Files" });
+		dialog.setFilterIndex(0);
+		
+		// display file dialog for selection of one of multiple profiles
+		String firstPath = dialog.open();
+		if (StringUtil.isNullOrEmpty(firstPath))
+			return;
+		String[] files = dialog.getFileNames();
+		if (files == null || files.length == 0)
+			return;
+
+		String dir = persistency.getDirectoryName(firstPath);
+		settings.profilesLastImportDir = dir;
+
+		// create list of to-be-imported profile names
+		HashSet<String> importNames = new HashSet<>();
+		for (String file : files) {
+			String name = StringUtil.removeSuffix(file, extension, true);
+			importNames.add(name.toUpperCase());
+		}
+
+		// determine profiles that would be overwritten
+		String curProfileName = (curProfile == null) ? null : curProfile.name;
+		StringBuilder sbExisting = new StringBuilder();
+		int existingCount = 0;
+		for (Profile profile : profiles) {
+			if (importNames.contains(profile.name.toUpperCase())) {
+				if (sbExisting.length() > 0) {
+					sbExisting.append(", ");
+				}
+				sbExisting.append(profile.name);
+				++existingCount;
+			}
+		}
+		
+		// ask whether profiles shall be overwritten
+		if (existingCount > 0) {
+			String title = (existingCount == 1) ? "Overwrite profile?" : "Overwrite " + Cult.format(existingCount) + " profiles?";
+			String msg = (existingCount == 1) ? "Overwrite existing profile" : "Overwrite " + Cult.format(existingCount) + " existing profiles";
+			if (existingCount == 1) {
+				title = "Overwrite profile?";
+				msg = "Overwrite existing profile '" + sbExisting.toString() + "'?";
+			} else {
+				title = "Overwrite " + Cult.format(existingCount) + " profiles?";
+				msg = "Overwrite " + Cult.format(existingCount) + " existing profiles '" + sbExisting.toString() + "'?";
+			}
+			if (Message.show(msg, title, SWT.YES | SWT.NO | SWT.CANCEL | SWT.ICON_QUESTION) != SWT.YES) {
+				return;
+			}
+		}
+
+		// import profile(s)
+		int importCount = 0;
+		String firstImportedProfileName = null;
+		boolean wasCurrentProfileReplaced = false;
+		for (String importFile : files) {
+			String importPath = persistency.combinePaths(dir, importFile);
+			String importName = StringUtil.removeSuffix(importFile, extension, true);
+			
+			Profile importedProfile = null;
+			try (ISettingsReader reader = TextSettingsReader.createFromFile(persistency, importPath, Program.TECHNICAL_VERSION)) {
+				importedProfile = Profile.createFromSettings(reader);
+			} catch (IOException ex) {
+	   		Message.show(ex.getMessage());
+				continue;
+			}
+
+			// remove existing profile of the same name (if any), adding the imported profile in its place
+			boolean found = false;
+			for (int index = 0; index < profiles.size(); ++ index) {
+				if (profiles.get(index).name.equalsIgnoreCase(importName)) {
+					found = true;
+					profiles.remove(index);
+					profiles.add(index, importedProfile);
+					break;
+				}
+			}
+			if (!found) {
+				profiles.add(importedProfile);
+			}
+			
+			if (firstImportedProfileName == null) {
+				firstImportedProfileName = importedProfile.name;
+			}
+			if (curProfileName != null && importedProfile.name.equalsIgnoreCase(curProfileName))
+				wasCurrentProfileReplaced = true;
+			++importCount;
+		}
+
+		// refresh profile list
+		String selectName = firstImportedProfileName; // may be null
+		if (wasCurrentProfileReplaced || (selectName == null && curProfileName != null)) 
+			selectName = curProfileName;
+		refreshProfileList(selectName);
+
+		// show success message (error messages were already displayed above)
+		if (importCount > 0) {
+			String title;
+			String result; 
+			if (importCount == 1) {
+				title = "Import Profile";
+				result = "Profile '" + firstImportedProfileName + "' was imported.";
+			} else {
+				title = "Import Profiles";
+				result = Cult.format(importCount) + " profiles were imported.";
+			}
+			result += System.lineSeparator() + System.lineSeparator() + "In order to persist the changes, close the window with button '" + btnOK.getText().replace("&", "") + "' when done.";
+			Message.show(result, title);
+		}
+   }
+
+   private void exportProfiles(Profile[] profiles) {
+   	// prepare dialog
+		DirectoryDialog dirDialog = new DirectoryDialog(shell);
+		String filterPath;
+		if (StringUtil.isNullOrEmpty(settings.profilesLastExportDir)) {
+			filterPath = System.getProperty("user.home");
+		} else {
+			filterPath = settings.profilesLastExportDir;
+		}
+		dirDialog.setFilterPath(filterPath);
+		String text;
+		if (profiles.length == 1)
+			text = "Select Destination Folder for Profile '" + profiles[0].name + "'";
+		else
+			text = "Select Destination Folder for " + Cult.format(profiles.length) + " Profiles";
+		dirDialog.setText(text);
+
+   	// display dialog for selection of destination folder
+		String dir = dirDialog.open();
+		if (dir == null || dir.length() == 0)
+			return;
+
+		settings.profilesLastExportDir = dir;
+		
+		// determine destination path
+		Persistency persistency = Persistency.get();
+		dir = persistency.addDirSep(dir);
+		String extension = persistency.getExtension(FileType.PROFILE_TEXT);
+
+		// determine files that would be overwritten
+		StringBuilder sbExisting = new StringBuilder();
+		int existingCount = 0;
+		for (Profile profile : profiles) {
+			String path = persistency.combinePaths(dir, profile.name + extension);
+			if (persistency.fileExists(path)) {
+				if (sbExisting.length() > 0)
+					sbExisting.append(", ");
+				sbExisting.append(profile.name);
+				++existingCount;
+			}
+		}
+
+		// ask whether files shall be overwritten
+		if (existingCount > 0) {
+			String msg;
+			String title;
+			if (existingCount == 1) {
+				title = "Overwrite file?";
+				msg = "Overwrite existing file '" + sbExisting.toString() + "'?";
+			} else {
+				title = "Overwrite " + Cult.format(existingCount) + " files?";
+				msg = "Overwrite " + Cult.format(existingCount) + " existing files '" + sbExisting.toString() + "'?";
+			}
+			if (Message.show(msg, title, SWT.YES | SWT.NO | SWT.CANCEL | SWT.ICON_QUESTION) != SWT.YES) {
+				return;
+			}
+		}
+		
+
+		// export profile(s)
+		String firstSuccessProfileName = null;
+		int exportCount = 0;
+		for (Profile profile : profiles) {
+			String path = persistency.combinePaths(dir, profile.name + extension);
+			try (ISettingsWriter writer = TextSettingsWriter.createForFile(persistency, path, Program.TECHNICAL_VERSION, Profile.REQUIRED_VERSION)) {
+	   		profile.save(writer);
+	   		++exportCount;
+	   		if (exportCount == 1)
+	   			firstSuccessProfileName = profile.name;
+	   	} catch (IOException ex) {
+	   		Message.show(ex.getMessage());
+	   	}
+		} 
+
+		// show success message (error messages were already displayed above)
+		if (exportCount > 0) {
+			String title;
+			String result; 
+			if (exportCount == 1) {
+				title = "Export Profile";
+				result = "Profile '" + firstSuccessProfileName + "' was exported.";
+			} else {
+				title = "Export Profiles";
+				result = Cult.format(exportCount) + " profiles were exported.";
+			}
+			Message.show(result, title);
+		}
+   }
+
+   private void ruleChapterClicked(int index) {
+   	if (index >= 0 && index < ruleChapterLink.length) {
+	      String link = ruleChapterLink[index];
+	      if (!StringUtil.isNullOrEmpty(link))
+	         ProgramLauncher.startProcess(link);
+   	}
+   }
+
+   private void chkRulesItemCheck(int index) {
+      if (suspendItemCheck > 0)
+         return;
+
+      ++suspendItemCheck;
+      try {
+         boolean activate = chkRules.getItem(index).getChecked(); 
+         if (itemsInChkRules[index] instanceof Rule) {
+         	Rule rule = (Rule)itemsInChkRules[index];
+            rule.isActive = activate;
+         	setRuleHighlight(rule, index);
+
+            int groupIndex = findRuleGroupIndex(rule.getGroupID());
+            if (groupIndex >= 0 && groupIndex < itemsInChkRules.length) {
+            	// determine whether any of the visible(!) rules of this group is active
+	            RuleGroup group = (RuleGroup)itemsInChkRules[groupIndex];
+	            boolean isAnyRuleInGroupActive = false; // group.isAnyRuleActive() may include filtered-out rules
+	            for (int i = 0; i < chkRules.getItemCount(); ++i) {
+	               if (itemsInChkRules[i] instanceof Rule) {
+	               	Rule ruleInGroup = (Rule)itemsInChkRules[i];
+	                  if (ruleInGroup.getGroupID() == group.iD && ruleInGroup.isActive) {
+	                  	isAnyRuleInGroupActive = true;
+	                  	break;
+	                  }
+	               }
+	            }
+	            // check the group item accordingly
+	            TableItem groupItem = chkRules.getItem(groupIndex);
+	            if (groupItem.getChecked() != isAnyRuleInGroupActive)
+	            	groupItem.setChecked(isAnyRuleInGroupActive);
+            }
+         } else {
+         	// check or uncheck all visible(!) rules in this group 
+            RuleGroup group = (RuleGroup)itemsInChkRules[index];
+            for (int i = 0; i < chkRules.getItemCount(); ++i) {
+               if (itemsInChkRules[i] instanceof Rule) {
+               	Rule rule = (Rule)itemsInChkRules[i];
+                  if (rule.getGroupID() == group.iD && rule.isActive != activate) {
+                     rule.isActive = activate;
+                  	setRuleHighlight(rule, i);
+                     chkRules.getItem(i).setChecked(activate);
+                  }
+               }
+            }
+         }
+      } catch (java.lang.Exception ex) {
+      }
+      --suspendItemCheck;
+      refreshActiveRuleCount();
+   }
+
+   private void hideForm(boolean resultSave) {
+   	this.resultSave = resultSave;
+		
+		setRule(null); // dispose of configControls
+      setProfile(null);
+
+      shell.dispose();
+   }
+
+	@Override
+	public void keyPressedInCodeDisplay(KeyEvent e) {
+		if (e.keyCode == SWT.F1) {
+			ProgramLauncher.showHelp(HelpTopic.PROFILES);
+			e.doit = false;
+		} else if (((e.stateMask & SWT.CTRL) != 0) && e.keyCode == 'v') {
+			exampleCodeFromClipboard();
+			e.doit = false;	
+		}
+	}
+
+	private boolean exampleCodeFromClipboard() {
+		if (!SystemClipboard.containsText()) {
+			Message.show("The clipboard is empty!");
+			return false;
+		} else if (curRule == null) {
+			Message.show("Please select a rule first!");
+			return false;
+		}
+
+		String code = SystemClipboard.getText();
+		if (Program.showDevFeatures()) {
+			// simplify pasting code from unit tests
+			if ((code.contains("\t\tbuildSrc(\"") || code.contains("\t\tbuildExp(\"")) && code.contains("\");")) {
+				code = code.replace("\t\tbuildSrc(\"", "").replace("\t\tbuildExp(\"", "").replace("\");", "");
+				code = StringUtil.getUnescapedText(code);
+			}
+		}
+
+		boolean parseSuccess = refreshExample(curRule, code);
+      if (!parseSuccess)
+      	refreshExample(curRule, curRule.getExample());
+		return true;
+	}
+
+   private void setRuleHighlight(Rule rule, int index) {
+      ProfileHighlightItem highlightItem = getHighlightItem();
+      Color ruleBackground = getRuleBackground(rule, highlightItem, normalRuleListBackground);
+   	TableItem tableItem = chkRules.getItem(index);
+      if (!tableItem.getBackground().equals(ruleBackground))
+      	tableItem.setBackground(ruleBackground);
+      if (rule == curRule)
+      	setRuleNameHighlight(rule);
+   }
+   
+   private void setRuleNameHighlight(Rule rule) {
+   	Color color = getRuleBackground(rule, getHighlightItem(), normalRuleNameBackground);
+   	if (!lblRuleName.getBackground().equals(color))
+   		lblRuleName.setBackground(color);
+	}
+
+   private void setConfigHighlight(Rule rule, ConfigControl configControl) {
+   	ConfigValue configValue = configControl.getConfigValue();
+      ProfileHighlightItem highlightItem = getHighlightItem();
+   	if (highlightItem != null && highlightItem.isNewConfig(configValue)) {
+      	configControl.setHighlighted(true, newConfigBackground);
+   	} else if (highlightItem != null && highlightItem.isChangedConfig(rule, configValue)) {
+      	configControl.setHighlighted(true, changedConfigBackground);
+   	} else {
+      	configControl.setHighlighted(false, null);
+   	}
+	}
+
+   private void changeProfilesFolder() {
+   	final String title = "Change Profiles Folder";
+   	final String twoLineSeps = System.lineSeparator() + System.lineSeparator();
+   	
+   	// prepare dialog
+   	Persistency persistency = Persistency.get();
+		DirectoryDialog dirDialog = new DirectoryDialog(shell);
+		String oldDir;
+		if (StringUtil.isNullOrEmpty(settings.profilesDirectory)) {
+			oldDir = persistency.getDirectoryName(persistency.getSavePath(FileType.PROFILE_TEXT, Profile.DEFAULT_NAME));
+		} else {
+			oldDir = settings.profilesDirectory;
+		}
+		dirDialog.setFilterPath(oldDir);
+		dirDialog.setText(title);
+
+   	// display dialog for selection of new profiles folder
+		String newDir = dirDialog.open();
+		if (newDir == null || newDir.length() == 0) {
+			return;
+		} else if (persistency.addDirSep(oldDir).equals(persistency.addDirSep(newDir))) {
+			// same folder was selected
+			return;
+		}
+
+		// determine destination path
+		newDir = persistency.addDirSep(newDir);
+
+		// determine files that would be overwritten when moving profiles to the new folder
+		String[] oldPaths = Profile.getLoadPaths(oldDir);
+		StringBuilder sbExisting = new StringBuilder();
+		int existingCount = 0;
+		for (String oldPath : oldPaths) {
+			String file = persistency.getFileName(oldPath);
+			String newPath = persistency.combinePaths(newDir, file);
+			if (persistency.fileExists(newPath)) {
+				if (sbExisting.length() > 0)
+					sbExisting.append(", ");
+				sbExisting.append(persistency.getFileNameWithoutExtension(newPath));
+				++existingCount;
+			}
+		}
+
+		// ask whether existing files in the new folder shall be overwritten
+		if (existingCount > 0) {
+			String overwriteTitle = (existingCount == 1) ? "Overwrite file?" : "Overwrite " + Cult.format(existingCount) + " files?";  
+			String existingInfo = (existingCount == 1) ? "the existing file" : Cult.format(existingCount) + " existing files";
+			String msg = "Moving profiles to the new folder would overwrite " + existingInfo + " '" + sbExisting.toString() + "'." + twoLineSeps + "Continue?";
+			if (Message.show(msg, overwriteTitle, SWT.YES | SWT.NO | SWT.CANCEL | SWT.ICON_QUESTION) != SWT.YES) {
+				Message.show("Action cancelled; keeping current profiles folder '" + oldDir + "'.", title);
+				return;
+			}
+		}
+		
+		// move profiles
+		int moveCount = 0;
+		int notMovedCount = 0;
+		for (String oldPath : oldPaths) {
+			String file = persistency.getFileName(oldPath);
+			String newPath = persistency.combinePaths(newDir, file);
+			if (persistency.moveFile(oldPath, newPath, true)) {
+				++moveCount;
+			} else {
+				++notMovedCount;
+			}
+		} 
+
+		// if no profile could be moved, do not change the directory
+		if (moveCount == 0 && oldPaths.length > 0) {
+			Message.show("Existing profile(s) could not be moved to the new folder; keeping current folder '" + oldDir + "'.", title);
+			return;	
+		}
+
+		// change the profiles directory in the settings and save, so this change is persisted even if FrmProfiles is closed with the Cancel button
+		settings.profilesDirectory = newDir;
+		settings.save();
+		
+		// show result message
+		String result; 
+		result = "Profiles Folder was changed from '" + oldDir + "' to '" + newDir + "'." + twoLineSeps;
+		result += (moveCount == 1) ? "1 profile was moved to the new folder." : Cult.format(moveCount) + " profiles were moved to the new folder.";
+		if (notMovedCount > 0) {
+			result += twoLineSeps + Cult.format(notMovedCount) + " profile(s) kept in the old folder, as they could not be moved.";
+		}
+		Message.show(result, title);
+   }
+}

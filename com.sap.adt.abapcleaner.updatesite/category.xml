@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<site>
+   <feature id="com.sap.adt.abapcleaner.feature" version="0.0.0">
+      <category name="com.sap.adt.abapcleaner"/>
+   </feature>
+   <category-def name="com.sap.adt.abapcleaner" label="ABAP Cleaner for ABAP Development Tools (ADT)">
+      <description>
+         ABAP Cleaner for ABAP Development Tools (ADT)
+      </description>
+   </category-def>
+</site>

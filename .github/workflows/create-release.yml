@@ -1,0 +1,48 @@
+name: Create release from tag
+
+on:
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  # Single deploy job since we're just deploying
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+      - name: Build with Maven
+        run: mvn --batch-mode clean package -DskipTests
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: |
+            com.sap.adt.abapcleaner.app/target/products/com.sap.adt.abapcleaner.app-linux.gtk.x86_64.tar.gz
+            com.sap.adt.abapcleaner.app/target/products/com.sap.adt.abapcleaner.app-macosx.cocoa.aarch64.tar.gz
+            com.sap.adt.abapcleaner.app/target/products/com.sap.adt.abapcleaner.app-macosx.cocoa.x86_64.tar.gz
+            com.sap.adt.abapcleaner.app/target/products/com.sap.adt.abapcleaner.app-win32.win32.x86_64.zip
+            com.sap.adt.abapcleaner.updatesite/target/com.sap.adt.abapcleaner.updatesite.zip
+          body: | 
+            We recommend using the ABAP cleaner **plug-in for ADT** (see [installation instructions](../../blob/main/README.md)), which cleans up your code directly from within ADT, and checks for updates automatically. If you nevertheless prefer to use the **stand-alone version** of ABAP cleaner (e.g. in order to use it with SAP GUI or from the command line), please 
+
+            * make sure Java 17 or 11 (e.g. [SapMachine](https://sap.github.io/SapMachine/) or [Adoptium Temurin](https://adoptium.net/)) is installed on your system
+            * expand "Assets" below and download the archive for your operating system
+            * extract the archive
+            * on macOS:
+              * Move abapcleaner.app to a different directory (e.g. /Applications/abapcleaner.app), do not start it directly from ~/Downloads.
+              * Remove quarantine attribute from abapcleaner.app, otherwise the app won't start (because it is not code-signed):
+                `xattr -dr com.apple.quarantine /Applications/abapcleaner.app`
+            * start ABAP cleaner
+
+            Please check this site for updates since there is currently no automatic update mechanism for the stand-alone version. [Release notes](../../blob/main/docs/release-notes.md) are the same for both the ADT plug-in and the stand-alone version.

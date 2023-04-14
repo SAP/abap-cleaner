@@ -1,0 +1,723 @@
+abstact	abstract
+accessable	accessible
+accomodate	accommodate
+accouting	accounting
+acitivity	activity
+acocunt	account
+acording	according
+acount	account
+activ	
+adaption	
+additinal	additional
+additionaly	additionally
+additonal	additional
+addres	address
+addtional	additional
+adhoc	
+aditional	additional
+adjustement	adjustment
+adress	address
+adresses	addresses
+aggregat	
+aggregrated	aggregated
+agianst	against
+aktivity	activity
+aleady	already
+allready	already
+allways	always
+alowed	allowed
+alreay	already
+alreday	already
+alredy	already
+ammended	
+ammount	amount
+analoguous	analogous
+analyses	
+anual	annual
+anyways	
+aplication	application
+appliaction	application
+applicaiton	application
+applicaton	application
+approriate	appropriate
+appstor	
+archiveable	archivable
+artifical	artificial
+assesment	assessment
+assiged	assigned
+assigend	assigned
+assigment	assignment
+assigments	assignments
+assignement	assignment
+assignements	assignments
+assignemnt	assignment
+assignmnet	assignment
+assing	assign
+assinged	assigned
+assistent	assistant
+assocation	association
+assocations	associations
+asterics	asterisk
+asteriks	asterisk
+asynchronic	
+asynchronus	asynchronous
+atleast	at least
+atribute	attribute
+atributes	attributes
+atrributes	attributes
+attachement	attachment
+attachements	attachments
+attachemnts	attachments
+attchment	attachment
+attibutes	attributes
+attributs	
+atttributes	attributes
+automatical	
+automaticly	automatically
+autority	authority
+autorization	authorization
+auxilary	auxiliary
+auxillary	auxiliary
+avaialable	available
+avaialble	available
+availabe	available
+availablity	availability
+availble	available
+availible	available
+avaliable	available
+avialable	available
+bacause	because
+bacth	batch
+beacuse	because
+becasue	because
+becuase	because
+beeing	being
+befor	before
+begining	beginning
+bodyparts	
+bufferd	buffered
+busines	business
+bussiness	business
+caculate	calculate
+calcualte	calculate
+calcualtion	calculation
+calcuate	calculate
+calcuation	calculation
+calculcation	calculation
+caled	called
+calender	calendar
+cancelation	cancellation
+canceld	cancelled
+cancle	cancel
+cant	
+cashflows	
+cataloge	catalogue
+catched	
+categorie	category
+catlogue	catalogue
+chagned	changed
+changable	changeable
+charachters	characters
+charakter	character
+charakterlike	character-like
+charakters	characters
+chcek	check
+checkin	
+childs	
+chinese	Chinese
+chnage	change
+chnages	changes
+choosed	chosen
+choosen	chosen
+chunck	chunk
+ckeck	check
+classfifier	classifier
+classifcation	classification
+classname	
+cleard	cleared
+Clenup	
+cluase	
+cnsume	
+collumn	column
+colour	color
+colums	columns
+comapny	company
+commited	committed
+commmand	command
+compability	compatibility
+comparision	comparison
+comparism	
+comparsion	comparison
+compatability	compatibility
+compatibilty	compatibility
+compatiblity	compatibility
+completly	completely
+componen	component
+componenets	components
+componets	components
+compostion	composition
+conatiner	container
+conditon	condition
+condtion	condition
+configuartion	configuration
+consigment	consignment
+consistensy	consistency
+consisteny	consistency
+constats	
+constructur	constructor
+containes	contains
+contants	contents
+continous	continuous
+contols	controls
+controled	controlled
+controler	controller
+controll	control
+contructor	constructor
+converion	conversion
+converstion	
+convertable	convertible
+convertion	conversion
+convienience	convenience
+coresponding	corresponding
+corresonding	corresponding
+correspoding	corresponding
+correspondig	corresponding
+corresponing	corresponding
+corrosponding	corresponding
+corrsponding	corresponding
+couldnt	couldn't
+creater	
+creats	
+crete	
+criteira	criteria
+critera	criteria
+criterias	criteria
+curent	current
+curently	currently
+curreny	currency
+cusotmer	customer
+customzing	customizing
+custumer	customer
+cutomizing	customizing
+databse	database
+datas	
+dcoument	document
+debugg	debug
+debuging	debugging
+decalaration	declaration
+decription	description
+defination	definition
+definded	defined
+definitons	definitions
+defintion	definition
+defintions	definitions
+defition	definition
+defualt	default
+deleteing	deleting
+delimeter	delimiter
+deliverd	delivered
+delted	deleted
+depature	departure
+dependant	dependent
+dependants	dependents
+dependend	dependent
+depenedent	dependent
+depricated	deprecated
+dervied	derived
+desciption	description
+describtion	description
+detailes	details
+detailled	detailed
+determin	
+detials	details
+developement	development
+developped	developed
+devide	
+devided	divided
+didnt	didn't
+differnt	different
+diffrent	different
+dimesion	dimension
+diplay	display
+diposition	disposition
+direcly	directly
+directry	
+dispostion	disposition
+docment	document
+docuemnt	document
+docuemt	document
+docuent	document
+documenation	documentation
+documnet	document
+doen't	doesn't
+doesnot	does not
+doesnt	doesn't
+does'nt	doesn't
+dont't	don't
+doubleklick	double-click
+doublicate	duplicate
+doucment	document
+droped	dropped
+dublicates	duplicates
+ehancement	enhancement
+eleminate	eliminate
+emtpy	empty
+english	
+enity	entity
+enries	entries
+enry	
+entension	
+enteries	entries
+enties	
+entitites	entities
+entitiy	entity
+entrys	entries
+enviroment	environment
+environemnt	environment
+erronous	erroneous
+errorneous	erroneous
+escapping	escaping
+evaulation	evaluation
+everthing	everything
+exaclty	exactly
+excecute	execute
+excecution	execution
+exceede	
+excemption	
+excemptions	
+excute	
+excuted	executed
+exeception	exception
+execption	exception
+exection	execution
+exeption	exception
+exisiting	existing
+exisitng	existing
+exisits	exists
+existance	existence
+existant	existent
+existency	
+exlude	exclude
+exluded	excluded
+expection	
+explicite	explicit
+explicitely	explicitly
+exsists	exists
+exsits	exists
+extenstion	extension
+extention	extension
+extentions	extensions
+exteranl	external
+fatory	factory
+fault	
+favorits	favorites
+february	February
+feild	field
+fiels	fields
+fileds	fields
+finaly	finally
+finshed	finished
+folowing	following
+formate	
+formated	formatted
+formating	formatting
+framwork	framework
+french	French
+friday	Friday
+fromat	format
+fucntion	function
+fuction	function
+fuctionality	functionality
+fullfilled	fulfilled
+funcitonal	functional
+functinality	functionality
+functionallity	functionality
+funtion	function
+funtions	functions
+furture	future
+futher	further
+generateable	generatable
+genereate	generate
+generel	
+german	
+germany	Germany
+goto	
+gurantee	guarantee
+haeder	header
+handeled	handled
+happend	happened
+havn't	haven't
+hebrew	Hebrew
+heder	header
+hierachy	hierarchy
+highlightning	highlighting
+hight	height
+hirachy	hierarchy
+hirarchy	hierarchy
+hungarian	Hungarian
+hungary	Hungary
+identifed	identified
+identificator	
+imformation	information
+immediatly	immediately
+implementaion	implementation
+implemention	implementation
+implemetation	implementation
+implicitely	implicitly
+implmentation	implementation
+inactiv	inactive
+incomming	incoming
+incosistency	inconsistency
+independant	independent
+independend	independent
+indian	
+informations	
+infromation	information
+ingore	ignore
+inheritence	inheritance
+inital	initial
+initalization	initialization
+initalize	initialize
+initalized	initialized
+initalze	initialize
+initialze	initialize
+initilization	initialization
+initilize	initialize
+inlcude	include
+inlcudes	includes
+inlude	include
+instace	instance
+installement	
+instanciate	instantiate
+instanciated	instantiated
+instanciation	instantiation
+instnace	instance
+intance	instance
+inteface	interface
+intenal	internal
+interal	interval
+interessting	interesting
+interprete	
+interuption	interruption
+intervalls	
+intial	initial
+intialization	initialization
+intialize	initialize
+intitial	initial
+invoce	invoice
+invokation	
+islamic	Islamic
+jan	
+japanese	Japanese
+jursidiction	jurisdiction
+keyblock	
+keydate	
+keyfigure	
+keyfigures	
+komma	
+lading	
+langauge	language
+languge	language
+lanuage	language
+leder	
+lenght	length
+mainpulation	manipulation
+maintainance	maintenance
+maintenace	maintenance
+managment	management
+mangement	management
+manualy	manually
+mapper	
+maxium	maximum
+measurment	measurement
+mehtod	method
+merker	
+mesage	message
+mesages	messages
+messge	message
+messges	messages
+messsage	message
+messsages	messages
+methodes	methods
+missimg	
+modifyable	modifiable
+monday	Monday
+muliple	multiple
+mutliple	multiple
+naviagtion	navigation
+necassary	necessary
+neccesary	necessary
+neccessary	necessary
+necesary	necessary
+nessesary	necessary
+nonexistant	nonexistent
+non-existant	non-existent
+normaly	normally
+notifcation	notification
+november	November
+objets	objects
+obselete	obsolete
+occurance	occurrence
+occure	
+occured	occurred
+occurence	occurrence
+occurences	occurrences
+occuring	occurring
+occurr	occur
+ocurred	occurred
+oposite	opposite
+orginal	original
+orignal	original
+orignial	original
+otherwhise	otherwise
+ouput	output
+overal	overall
+overrided	overridden
+overriden	overridden
+overwirte	overwrite
+overwriten	overwritten
+paar	
+paralell	parallel
+paramater	parameter
+parametername	
+parametes	parameters
+parametrs	parameters
+paramter	parameter
+paramters	parameters
+paremeters	parameters
+parmeters	parameters
+parnter	partner
+parter	partner
+partion	
+pathes	paths
+payed	paid
+perfomance	performance
+perfomed	performed
+performace	performance
+perfrom	perform
+permantently	permanently
+persistant	persistent
+persitent	persistent
+perticular	particular
+plandata	
+posibility	possibility
+possiblity	possibility
+postion	position
+postive	positive
+prameter	parameter
+preapare	prepare
+preapre	prepare
+preceeding	preceding
+prefered	preferred
+preperation	preparation
+preprocesing	preprocessing
+prerequiste	prerequisite
+previos	previous
+primitve	primitive
+privilage	privilege
+proccess	process
+procesed	processed
+produts	
+profil	
+progam	program
+programatically	programmatically
+programms	
+propably	probably
+propery	property
+propper	proper
+protcol	protocol
+protocoll	protocol
+protokol	
+provocate	provoke
+quanitity	quantity
+quantites	quantities
+quatity	quantity
+qunatity	quantity
+realy	really
+reathentication	reauthentication
+receipents	recipients
+recieve	receive
+recieved	received
+reciever	receiver
+recieves	receives
+recieving	receiving
+reciver	receiver
+reconcilation	reconciliation
+reconsile	reconcile
+recored	
+redefination	redefinition
+referece	reference
+refered	referred
+referierte	
+refering	referring
+refernce	reference
+refernces	references
+refrence	reference
+refrences	references
+registerd	registered
+registred	registered
+releated	related
+relevent	relevant
+relvant	relevant
+remeber	remember
+reponsible	responsible
+reqest	request
+reqeust	request
+requeted	requested
+requistion	requisition
+requried	required
+rerquired	required
+resouce	resource
+respectivly	respectively
+respone	
+resposible	responsible
+ressource	resource
+ressources	resources
+retreive	retrieve
+retreiving	retrieving
+retrival	retrieval
+retrive	retrieve
+retrived	retrieved
+retrun	return
+retuns	returns
+returing	
+reuirements	requirements
+runing	running
+satifies	satisfies
+saturday	Saturday
+sceanrio	scenario
+sceduling	scheduling
+scenrio	scenario
+schedlin	
+schould	should
+seach	search
+selct	select
+selction	selection
+seleciton	selection
+selecton	selection
+seletion	selection
+selfmonitoring	self-monitoring
+senario	scenario
+sence	
+seocndary	secondary
+separatly	separately
+seperate	separate
+seperated	separated
+seperately	separately
+seperator	separator
+serach	search
+shoud	should
+shoudl	should
+shouldnt	shouldn't
+shure	sure
+sihpping	shipping
+similiar	similar
+simultanously	simultaneously
+singelton	singleton
+sinlge	single
+somthing	something
+souce	source
+spain	Spain
+speciality	
+specifc	specific
+splited	
+spliting	splitting
+splitted	
+statictics	statistics
+statment	statement
+statments	statements
+statusbar	
+stauts	status
+stil	
+strategie	
+strcture	structure
+strcuture	structure
+strcutures	structures
+structrue	structure
+structur	structure
+strucure	structure
+strucutre	structure
+strukture	structure
+struture	structure
+stucture	structure
+sturcture	structure
+submited	submitted
+substitue	substitute
+substracting	subtracting
+subtyp	
+succesful	successful
+succesfull	successful
+succesfully	successfully
+successfull	successful
+sucess	success
+sucessful	successful
+sucessfull	successful
+sucessfully	successfully
+sunday	Sunday
+suplier	supplier
+supress	suppress
+supressed	suppressed
+surpress	suppress
+swtich	switch
+szenario	
+tabel	
+tablenames	
+tablle	table
+talbe	table
+tasktypes	
+taxrate	
+teh	
+tempory	temporary
+teritory	territory
+testmode	
+thats	
+therefor	therefore
+therfore	therefore
+thier	their
+timeslice	
+timestmap	timestamp
+tranaction	transaction
+tranfered	transferred
+transation	
+transcation	transaction
+transfered	transferred
+transfering	transferring
+transhipment	
+transtraction	
+triggerd	triggered
+typs	
+udpate	update
+uncommited	uncommitted
+uniqe	unique
+unittest	
+unneccessary	unnecessary
+upto	
+useage	usage
+usefull	useful
+usertypes	
+vaild	valid
+valiated	validated
+valididty	validity
+varable	variable
+varaint	variant
+verfifcation	verification
+verfiy	verify
+verifcation	verification
+verion	version
+verison	version
+viewfelder	
+virual	virtual
+visibile	visible
+vlaues	values
+wether	whether
+wheather	
+wheter	whether
+whithout	without
+whther	whether
+wich	which
+wiht	with
+withou	without
+witout	without
+wont	
+workcenters	
+writting	writing

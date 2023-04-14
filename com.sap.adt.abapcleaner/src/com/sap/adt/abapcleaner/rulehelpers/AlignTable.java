@@ -1,0 +1,265 @@
+package com.sap.adt.abapcleaner.rulehelpers;
+
+import com.sap.adt.abapcleaner.parser.*;
+import java.util.*;
+
+public class AlignTable {
+	final int maxColumnCount;
+
+	private AlignColumn[] columns;
+
+	private ArrayList<AlignLine> lines = new ArrayList<AlignLine>();
+	private HashMap<String, AlignLine> lineDictionary;
+
+	public Token parentToken; // optional, must be set by the using code
+	public Token endToken; // optional, must be set by the using code
+
+	boolean canAlignToMonoLine = true;
+
+	public final boolean isEmpty() { return (lines.isEmpty()); }
+
+	public final int getLineCount() { return lines.size(); }
+
+	public final Token getFirstToken() { return isEmpty() ? null : lines.get(0).getFirstToken(); }
+
+	public final AlignColumn getColumn(int index) {
+		return (index >= 0 && index < columns.length) ? columns[index] : null;
+	}
+
+	public final AlignLine getLine(int index) {
+		return lines.get(index);
+	}
+
+	public final AlignLine getLastLine() {
+		return lines.isEmpty() ? null : lines.get(lines.size() - 1);
+	}
+
+	public final java.lang.Iterable<AlignLine> getLines() { return lines; }
+
+	public AlignTable(int maxColumnCount) {
+		this.maxColumnCount = maxColumnCount;
+		columns = new AlignColumn[maxColumnCount];
+		for (int i = 0; i < maxColumnCount; ++i)
+			columns[i] = new AlignColumn(this, i);
+	}
+
+	public final AlignLine addLine() {
+		AlignLine newLine = new AlignLine(this);
+		lines.add(newLine);
+		return newLine;
+	}
+
+	public final void removeLastLine() {
+		if (getLineCount() > 0) {
+			AlignLine line = lines.get(lines.size() - 1);
+			for (AlignColumn column : columns) {
+				if (line.getCell(column) != null)
+					column.invalidate();
+			}
+			lines.remove(lines.size() - 1);
+		}
+	}
+
+	public final int getTotalMonoLineWidth() {
+		if (!canAlignToMonoLine)
+			return getTotalMultiLineWidth();
+
+		int totalResult = 0;
+		int result = 0;
+		for (AlignColumn column : columns) {
+			result += column.getMaxMonoLineWidthWithSpaceLeft(); // returns 0 if the column is empty
+			if (column.getForceLineBreakAfter()) {
+				totalResult = Math.max(totalResult, result);
+				result = 0;
+			}
+		}
+		totalResult = Math.max(totalResult, result);
+		return Math.max(totalResult - 1, 0);
+	}
+
+	public final int getTotalMultiLineWidth() {
+		int totalResult = 0;
+		int result = 0;
+		for (AlignColumn column : columns) {
+			result += column.getMaxMultiLineWidthWithSpaceLeft(); // returns 0 if the column is empty
+			if (column.getForceLineBreakAfter()) {
+				totalResult = Math.max(totalResult, result);
+				result = 0;
+			}
+		}
+		totalResult = Math.max(totalResult, result);
+		return Math.max(totalResult - 1, 0);
+	}
+
+	public final void overrideWidthOfColumnsFollowedByLineBreaks() {
+		// determine columns which are always followed by line breaks and override the cell width in these columns with 1
+		for (AlignColumn column : columns) {
+			overrideWidthIfColumnIsFollowedByLineBreaks(column);
+		}
+	}
+	
+	public final void overrideWidthIfColumnIsFollowedByLineBreaks(AlignColumn column) {
+		// determine whether in current code, the column is always followed by line breaks (or is forced to do so); 
+		// if so, override the cell width in this columns with 1
+		int colIndex = column.getIndex();
+		boolean isFollowedByLineBreaks = true;
+		if (!column.getForceLineBreakAfter()) {
+			for (AlignLine line : lines) {
+				if (line.getCell(colIndex) == null) 
+					continue;
+				// since an AlignCell does not always contain all Tokens (e.g. line-end comments), 
+				// search for the next non-empty cell after this cell to check whether it starts with a line break
+				AlignCell nextNonEmptyCell = line.getNextNonEmptyCellAfter(colIndex);
+				if (nextNonEmptyCell != null && nextNonEmptyCell.getFirstToken().lineBreaks == 0) {
+					isFollowedByLineBreaks = false;
+					break;
+				}
+			}
+		}
+		if (isFollowedByLineBreaks) {
+			for (AlignLine line : lines) {
+				if (line.getCell(colIndex) != null) 
+					line.getCell(colIndex).setOverrideTextWidth(1);
+			}				
+			// trigger lazy recalculation of maximum width in column
+			column.invalidate();
+		}
+	}
+	
+	/**
+	 * aligns all cells of the table
+	 * 
+	 * @param basicIndent
+	 * @param firstLineBreaks
+	 * @param keepMultiline   true = a Term may cover multiple lines; false = put all terms on the same line with 1 space between Tokens (only possible if no Term contains line-end
+	 *                        comments)
+	 * @return
+	 */
+	public final Command[] align(int basicIndent, int firstLineBreaks, boolean keepMultiline) {
+		if (!canAlignToMonoLine)
+			keepMultiline = true;
+
+		ArrayList<Command> changedCommands = new ArrayList<Command>();
+		Command lastChangedCommand = null;
+
+		// determine whether the table starts with the very first Token in the Code, 
+		// as this Token may not have line breaks above it and must get the basicIndent as spacesLeft 
+		boolean startsWithFirstTokenInCode = false;
+		if (lines.size() > 0) {
+			for (AlignColumn column : columns) {
+				if (column.isEmpty())
+					continue;
+				AlignCell cell = lines.get(0).getCell(column);
+				if (cell == null) 
+					continue;
+				startsWithFirstTokenInCode = cell.getFirstToken().isFirstTokenInCode();
+				break;
+			}
+		}
+		
+		boolean isFirstLine = true;
+		for (AlignLine line : lines) {
+			int lineBreaks = isFirstLine ? firstLineBreaks : 1;
+			int spacesLeft = (isFirstLine && (firstLineBreaks == 0) && !startsWithFirstTokenInCode) ? 1 : basicIndent;
+			boolean lineChanged = false;
+
+			int columnIndent = basicIndent;
+			for (AlignColumn column : columns) {
+				if (column.getForceIndent() >= 0) {
+					columnIndent = basicIndent + column.getForceIndent();
+					spacesLeft = columnIndent;
+				}
+				column.setEffectiveIndent(columnIndent);
+				if (column.isEmpty())
+					continue;
+
+				AlignCell cell = line.getCell(column);
+				int columnWidth = keepMultiline ? column.getMaxMultiLineWidthWithSpaceLeft() : column.getMaxMonoLineWidthWithSpaceLeft();
+				if (cell == null) {
+					spacesLeft += columnWidth;
+					columnIndent += columnWidth;
+					continue;
+				} 
+			
+				if (lineBreaks == 0) {
+					Token prev = cell.getFirstToken().getPrev();
+					if (prev != null && prev.isComment()) {
+						// prevent code from being appended to a comment
+						lineBreaks = 1;
+						spacesLeft = columnIndent;
+					} else if (!cell.getFirstToken().isFirstTokenInCode()) {
+						// ensure there is always at least one space
+						spacesLeft = Math.max(spacesLeft, 1);
+					}
+				} else if (cell.getFirstToken().lineBreaks > lineBreaks) {
+					// if there should be a line break, then also keep multiple existing line breaks
+					lineBreaks = cell.getFirstToken().lineBreaks;
+				}
+				int usedWidth;
+				if (column.rightAlign) {
+					int cellWidth = keepMultiline ? cell.getMultiLineWidth() : cell.getMonoLineWidth();
+					spacesLeft += (columnWidth - 1 - cellWidth); // columnWidth includes 1 space separating it from the next column
+					if (cell.setWhitespace(lineBreaks, spacesLeft, keepMultiline))
+						lineChanged = true;
+					usedWidth = columnWidth - 1;
+				} else {
+					if (cell.setWhitespace(lineBreaks, spacesLeft, keepMultiline))
+						lineChanged = true;
+					usedWidth = keepMultiline ? cell.getActualMultiLineWidth() : cell.getMonoLineWidth(); 
+				}
+				
+				if (column.getForceLineBreakAfter()) {
+					lineBreaks = 1;
+					spacesLeft = cell.getStartIndexInFirstLine() + columnWidth; 
+				} else {
+					lineBreaks = 0;
+					spacesLeft = columnWidth - usedWidth;
+				}
+				columnIndent += columnWidth;
+			}
+			if (lineChanged) {
+				Command command = line.getFirstToken().getParentCommand();
+				if (command != lastChangedCommand) {
+					changedCommands.add(command);
+					lastChangedCommand = command;
+				}
+			}
+
+			isFirstLine = false;
+		}
+		return changedCommands.toArray(new Command[0]);
+	}
+
+	public final HashMap<String, AlignLine> getLineDictionary() {
+		if (lineDictionary == null) {
+			lineDictionary = new HashMap<String, AlignLine>();
+			for (AlignLine line : lines)
+				lineDictionary.put(line.getSimplifiedText(), line);
+		}
+		return lineDictionary;
+	}
+
+	public final AlignLine getLineBySimplifiedText(String simplifiedText) {
+      if (getLineDictionary().containsKey(simplifiedText))
+         return getLineDictionary().get(simplifiedText);
+      else
+         return null;
+   }
+
+	
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		for (AlignLine line : lines) {
+			for (int column = 0; column < maxColumnCount; ++ column) {
+				if (column > 0)
+					sb.append("|");
+				AlignCell cell = line.getCell(column);
+				if (cell != null)
+				sb.append(cell.getSimplifiedText(" "));
+			}
+			sb.append(System.lineSeparator());
+		}
+		return sb.toString();
+	}
+}
