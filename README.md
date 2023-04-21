@@ -1,4 +1,6 @@
 # ABAP Cleaner
+[![REUSE status](https://api.reuse.software/badge/github.com/SAP/abap-cleaner)](https://api.reuse.software/info/github.com/SAP/abap-cleaner)
+
 
 | <img src="docs/images/abap-cleaner.png" width="100"> | *ABAP cleaner* is a configurable tool with the ambition to *automate <br /> whatever can be automated* with respect to ABAP code style. |
 | --- | :--- |
