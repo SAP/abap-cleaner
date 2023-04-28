@@ -218,8 +218,11 @@ public abstract class RuleForLocalVariables extends Rule {
 				Token next = token.getNextCodeSibling();
 				if (next != null && next.isKeyword("LIKE") && next.getNextCodeSibling() != null) {
 					token = next.getNextCodeSibling();
-					if (token.matchesOnSiblings(true, "LINE", "OF"))
-						token = token.getNextCodeSibling().getNextCodeSibling();
+					// skip any keywords before the identifier of the data object, e.g. LINE OF, RANGE OF, REF TO, 
+					// { STANDARD | SORTED | HASHED } TABLE OF 
+					while (token.isKeyword() && token.getNextCodeSibling() != null) {
+						token = token.getNextCodeSibling();
+					}
 					localVariables.addUsageInLikeClause(token, token.getText(), methodStart);
 				}
 	
