@@ -1668,4 +1668,33 @@ class UnusedVariablesTest extends RuleTestBase {
 
 		testRule();
 	}
+
+
+	@Test
+	void testLikeTableOfLineOfRefToUnchanged() {
+		// ensure that variables are not removed if they are used as models for LIKE TABLE OF, LIKE LINE OF, LIKE REF TO etc.   
+		
+		buildSrc("  DATA lv_x100        TYPE x LENGTH 100.");
+		buildSrc("  DATA lt_x100        LIKE TABLE OF lv_x100.");
+		buildSrc("");
+		buildSrc("  DATA lv_c100        TYPE c LENGTH 100.");
+		buildSrc("  DATA lt_c100        LIKE SORTED TABLE OF lv_c100 WITH UNIQUE KEY table_line.");
+		buildSrc("");
+		buildSrc("  DATA lt_any_table   TYPE ty_tt_table.");
+		buildSrc("  DATA ls_any_struc   LIKE LINE OF lt_any_table.");
+		buildSrc("");
+		buildSrc("  DATA lt_other_table TYPE ty_tt_table.");
+		buildSrc("  DATA lr_other_table LIKE REF TO lt_other_table.");
+		buildSrc("");
+		buildSrc("  et_x100  = lt_x100.");
+		buildSrc("  et_c100  = lt_c100.");
+		buildSrc("  es_struc = ls_any_struc.");
+		buildSrc("  er_table = lr_other_table.");
+
+		copyExpFromSrc();
+		
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }
