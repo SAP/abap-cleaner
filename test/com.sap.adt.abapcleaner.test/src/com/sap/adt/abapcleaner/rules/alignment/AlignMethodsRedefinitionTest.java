@@ -418,4 +418,17 @@ class AlignMethodsRedefinitionTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testNoSpaceAfterLineBreak() {
+		// ensure that a space is added before "REDEFINITION" when it is moved up
+		buildSrc("METHODS any_method");
+		buildSrc("REDEFINITION.");
+		buildSrc("METHODS other_method.");
+
+		buildExp("METHODS any_method REDEFINITION.");
+		buildExp("METHODS other_method.");
+
+		testRule();
+	}
 }
