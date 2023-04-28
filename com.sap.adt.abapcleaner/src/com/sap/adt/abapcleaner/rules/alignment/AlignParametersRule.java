@@ -310,10 +310,15 @@ public class AlignParametersRule extends RuleForCommands {
 			return token.getStartIndexInLine();
 		} else { 
 			// parameters in a functional call or a constructor expression:
-			// if the result of the method call, table expression etc. is assigned, the parameters must remain right of the assignment operator
+			// move to the beginning of the call chain, while that is on the same line; for example,    
+			// move to the "lo_factory..." Token in "lv_result = lo_factory=>get( )->get_utility( )->any_method( iv_param = ..."
 			Token testToken = token;
-			while (testToken.getPrevSibling() != null && !testToken.getPrevSibling().isAssignmentOperator() && !testToken.getPrevSibling().isAnyKeyword("VALUE", "NEW")) {
-				testToken = testToken.getPrevSibling();
+			while (!testToken.isFirstTokenInLine() && testToken.closesLevel() && testToken.getPrev() != null && testToken.getPrev().getOpensLevel()) {
+				testToken = testToken.getPrev();
+			}
+			// move to the beginning of CALL METHOD 
+			while (!testToken.isFirstTokenInLine() && testToken.getPrev() != null && testToken.getPrev().isAnyKeyword("CALL", "METHOD")) {
+				testToken = testToken.getPrev();
 			}
 			return testToken.getStartIndexInLine();
 		}
