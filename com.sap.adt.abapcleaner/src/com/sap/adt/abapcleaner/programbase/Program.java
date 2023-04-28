@@ -55,7 +55,7 @@ public final class Program {
 	
 	public static Release[] getReleases() {
 		return new Release[] { 
-				Release.create("1.0.0", 2023, 4, 14) 
+				Release.create("1.0.0", 2023, 4, 21) 
 		};
 	}
 
