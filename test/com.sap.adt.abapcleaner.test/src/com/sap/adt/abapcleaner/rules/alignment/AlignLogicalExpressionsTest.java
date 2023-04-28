@@ -866,4 +866,143 @@ class AlignLogicalExpressionsTest extends RuleTestBase {
 		
 		testRule();
 	}
+
+	@Test
+	void testOrInOwnLine() {
+		buildSrc("    IF a = 1");
+		buildSrc("    AND b = 2");
+		buildSrc("    OR");
+		buildSrc("    a = 2");
+		buildSrc("    AND b = 1.");
+		buildSrc("    ENDIF.");
+
+		buildExp("    IF        a = 1");
+		buildExp("          AND b = 2");
+		buildExp("       OR");
+		buildExp("              a = 2");
+		buildExp("          AND b = 1.");
+		buildExp("    ENDIF.");
+
+		putAnyMethodAroundSrcAndExp();
+		
+		testRule();
+	}
+
+	@Test
+	void testOrInOwnLineWithComment() {
+		buildSrc("  IF \" comment 1");
+		buildSrc("  a = 1");
+		buildSrc("  AND b = 2");
+		buildSrc("  OR");
+		buildSrc("  a = 2");
+		buildSrc("  AND b = 1.");
+		buildSrc("  ENDIF.");
+
+		buildExp("  IF \" comment 1");
+		buildExp("            a = 1");
+		buildExp("        AND b = 2");
+		buildExp("     OR");
+		buildExp("            a = 2");
+		buildExp("        AND b = 1.");
+		buildExp("  ENDIF.");
+
+		putAnyMethodAroundSrcAndExp();
+		
+		testRule();
+	}
+
+	@Test
+	void testAndInOwnLineWithComment() {
+		buildSrc("  IF \" comment 1");
+		buildSrc("  a = 1");
+		buildSrc("  AND");
+		buildSrc("  b = 2.");
+		buildSrc("  ENDIF.");
+
+		buildExp("  IF \" comment 1");
+		buildExp("         a = 1");
+		buildExp("     AND");
+		buildExp("         b = 2.");
+		buildExp("  ENDIF.");
+
+		putAnyMethodAroundSrcAndExp();
+		
+		testRule();
+	}
+
+	@Test
+	void testOrInOwnLineWithCommentsInOwnLine() {
+		buildSrc("  IF");
+		buildSrc("  \" comment 1");
+		buildSrc("  a = 1");
+		buildSrc("  AND b = 2");
+		buildSrc("  OR");
+		buildSrc("  \" comment 2");
+		buildSrc("  a = 2");
+		buildSrc("  AND b = 1.");
+		buildSrc("  ENDIF.");
+
+		buildExp("  IF");
+		buildExp("  \" comment 1");
+		buildExp("            a = 1");
+		buildExp("        AND b = 2");
+		buildExp("     OR");
+		buildExp("  \" comment 2");
+		buildExp("            a = 2");
+		buildExp("        AND b = 1.");
+		buildExp("  ENDIF.");
+
+		putAnyMethodAroundSrcAndExp();
+		
+		testRule();
+	}
+
+	@Test
+	void testTestAndOrOpeningBracketInOwnLine() {
+		rule.configAlignIfWithBoolOps.setEnumValue(AlignStyle.LEFT_ALIGN);
+
+		buildSrc("    IF");
+		buildSrc("    a = 1");
+		buildSrc("    AND");
+		buildSrc("    (");
+		buildSrc("    b = 2");
+		buildSrc("    OR");
+		buildSrc("    b = 3");
+		buildSrc("    )");
+		buildSrc("    OR");
+		buildSrc("    a = 2");
+		buildSrc("    AND");
+		buildSrc("    b = 1");
+		buildSrc("    AND");
+		buildSrc("    (");
+		buildSrc("    c = 1");
+		buildSrc("    OR");
+		buildSrc("    c = 2");
+		buildSrc("    ).");
+		buildSrc("    ENDIF.");
+
+		buildExp("    IF");
+		buildExp("           a = 1");
+		buildExp("       AND");
+		buildExp("           (");
+		buildExp("                b = 2");
+		buildExp("             OR");
+		buildExp("                b = 3");
+		buildExp("           )");
+		buildExp("    OR");
+		buildExp("           a = 2");
+		buildExp("       AND");
+		buildExp("           b = 1");
+		buildExp("       AND");
+		buildExp("           (");
+		buildExp("                c = 1");
+		buildExp("             OR");
+		buildExp("                c = 2");
+		buildExp("           ).");
+		buildExp("    ENDIF.");
+
+		putAnyMethodAroundSrcAndExp();
+		
+		testRule();
+	}
 }
