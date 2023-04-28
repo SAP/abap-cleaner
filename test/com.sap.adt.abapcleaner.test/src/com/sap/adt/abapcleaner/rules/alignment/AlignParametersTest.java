@@ -2084,4 +2084,19 @@ class AlignParametersTest extends RuleTestBase {
 		testRule();
 	}
 
+
+	@Test
+	void testStartRightOfCallChain() {
+		// ensure that the parameters are not moved left of LO_FACTORY (i.e. the beginning of the call chain) 
+		buildSrc("        INSERT LINES OF lo_factory=>get( )->get_any_utility( )->get_any_table( iv_long_parameter_name = lv_long_variable_name");
+		buildSrc("                                                                               iv_extra_long_parameter_name = lv_extra_long_variable_name )");
+		buildSrc("               INTO TABLE lts_any_table.");
+
+		buildExp("        INSERT LINES OF lo_factory=>get( )->get_any_utility( )->get_any_table(");
+		buildExp("                            iv_long_parameter_name       = lv_long_variable_name");
+		buildExp("                            iv_extra_long_parameter_name = lv_extra_long_variable_name )");
+		buildExp("               INTO TABLE lts_any_table.");
+
+		testRule();
+	}
 }
