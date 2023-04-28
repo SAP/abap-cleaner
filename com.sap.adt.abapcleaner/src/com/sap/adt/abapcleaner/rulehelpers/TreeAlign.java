@@ -35,10 +35,20 @@ public class TreeAlign {
 	}
 
 	private void add(TreeAlignColumnType columnType, AlignCell cell) {
-		if (cell == null || cell.getFirstToken().lineBreaks == 0 || cell.getFirstToken() == logicalExpression.getFirstToken()) {
-			if (curCol != null && curCol.getNext() != null && curCol.getNext().columnType == columnType)
+		// if the first token of the cell is in a new line, however, the previous Token is a stand-alone AND / OR / EQUIV / ( 
+		// on its own line, then continue right of that previous Token
+		boolean continuesLine = (cell != null && cell.getFirstToken().lineBreaks == 0);
+		if (cell != null && !continuesLine) {
+			Token prev = cell.getFirstToken().getPrevNonCommentToken();
+			if (prev.isFirstTokenInLine() && (prev.isAnyKeyword("AND", "OR", "EQUIV") || prev.textEquals("("))) {
+				continuesLine = true;
+			} 
+		}
+		
+		if (cell == null || continuesLine || cell.getFirstToken() == logicalExpression.getFirstToken()) {
+			if (curCol != null && curCol.getNext() != null && curCol.getNext().columnType == columnType) {
 				curCol = curCol.getNext();
-			else {
+			} else {
 				curCol = new TreeAlignColumn(columnType, curCol);
 				allColumns.add(curCol);
 			}
@@ -57,24 +67,27 @@ public class TreeAlign {
 				}
 				// do not go beyond the Boolean operator's opening bracket (unless it is nested deeper or another Boolean operator is to be added)
 				if (curCol.columnType == TreeAlignColumnType.OPEN_BRACKET_FOR_BOOL_OP) {
-					if (curCol.brackLevel < brackLevel)
+					if (curCol.brackLevel < brackLevel) {
 						break;
-					else if (curCol.brackLevel == brackLevel && columnType != TreeAlignColumnType.BOOL_OPERATOR && columnType != TreeAlignColumnType.OPEN_BRACKET_FOR_BOOL_OP)
+					} else if (curCol.brackLevel == brackLevel && columnType != TreeAlignColumnType.BOOL_OPERATOR && columnType != TreeAlignColumnType.OPEN_BRACKET_FOR_BOOL_OP) {
 						break;
+					}
 				}
 				curCol = curCol.prev;
 			}
-			if (match != null)
+			if (match != null) {
 				curCol = match;
-			else {
-				if (partialMatch != null && partialMatch.prev != null)
+			} else {
+				if (partialMatch != null && partialMatch.prev != null) {
 					curCol = partialMatch.prev;
+				}
 				curCol = new TreeAlignColumn(columnType, curCol);
 				allColumns.add(curCol);
 			}
 		}
-		if (cell != null)
+		if (cell != null) {
 			curCol.add(cell);
+		}
 	}
 
 	public final boolean align(Token keyword, AlignStyle keywordAlignStyle, boolean rightAlignComparisonOps, boolean keepMultiline, boolean onlyAlignSameObjects,
