@@ -65,8 +65,11 @@ public class AlignCellTerm extends AlignCell {
 			Token token = term.firstToken;
 			while (token != term.lastToken) {
 				token = token.getNext();
-				if (token.setWhitespace(0, Math.min(token.spacesLeft, 1))) // if the Token has no .spacesLeft, keep it that way as in "DATA lv_textdat1(20) TYPE c."
+				// if the Token is attached to the previous Token, keep it that way as in "DATA lv_textdat1(20) TYPE c."
+				int newSpacesLeft = token.isAttached() ? 0 : 1;
+				if (token.setWhitespace(0, newSpacesLeft)) { 
 					changed = true;
+				}
 			}
 		}
 		return changed;

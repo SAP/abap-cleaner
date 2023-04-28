@@ -567,4 +567,17 @@ class AlignMethodsForTestingTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testNoSpaceAfterLineBreak() {
+		// ensure that a space is added before "RAISING" when it is moved up
+		buildSrc("METHODS any_method FOR TESTING");
+		buildSrc("RAISING cx_any.");
+		buildSrc("METHODS other_method.");
+
+		buildExp("METHODS any_method FOR TESTING RAISING cx_any.");
+		buildExp("METHODS other_method.");
+
+		testRule();
+	}
 }
