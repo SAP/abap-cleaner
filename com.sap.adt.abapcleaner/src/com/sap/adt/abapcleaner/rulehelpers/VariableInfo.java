@@ -38,7 +38,11 @@ public class VariableInfo {
    
    /** true if at any point, a data reference is pointed to the memory area of this variable */
    private boolean isReferencedByDataRef;
-   
+
+   /** true if the declaration cannot be moved to a different position, because it has a LIKE clause which refers to another 
+    * variable which is declared inline */
+   public boolean declarationCannotBeMoved;
+
    public boolean isUsed() { return usedCount > 0; }
    public boolean isUsedInComment() { return usedCountInComment > 0; }
 

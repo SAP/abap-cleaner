@@ -244,9 +244,10 @@ public class LocalDeclarationOrderRule extends RuleForLocalVariables {
 	}
 
 	/** returns true if the supplied variable shall be processed under the supplied declaration type; 
-	 * always returns false for inline declarations */
+	 * always returns false for inline declarations and for declarations that cannot be moved 
+	 * because their LIKE clause refers to a variable that is declared inline */
 	private boolean variableMatchesFilter(VariableInfo varInfo, DeclarationType declarationType) {
-		if (varInfo.isDeclaredInline)
+		if (varInfo.isDeclaredInline || varInfo.declarationCannotBeMoved)
 			return false;
 		
 		Token keyword = varInfo.declarationToken.getParentCommand().getFirstCodeToken();
