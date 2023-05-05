@@ -218,7 +218,7 @@ public abstract class RuleForLocalVariables extends Rule {
 				
 				// add declaration
 				String varName = token.getText();
-				localVariables.addDeclaration(token, false, isConstantsDeclaration, isBoundStructuredData);
+				VariableInfo varInfo = localVariables.addDeclaration(token, false, isConstantsDeclaration, isBoundStructuredData);
 	
 				// if the declaration uses "LIKE ...", count that as a usage of that variable
 				Token next = token.getNextCodeSibling();
@@ -229,7 +229,9 @@ public abstract class RuleForLocalVariables extends Rule {
 					while (token.isKeyword() && token.getNextCodeSibling() != null) {
 						token = token.getNextCodeSibling();
 					}
-					localVariables.addUsageInLikeClause(token, token.getText(), methodStart);
+					// the Token may contain more than the object name, e.g. 'DATA ls_struc LIKE LINE OF lr_ref->lt_table.'
+					String usedObjectName = LocalVariables.getObjectName(token.getText());
+					localVariables.addUsageInLikeClause(token, usedObjectName, methodStart, varInfo);
 				}
 	
 				// if the pragma ##NEEDED or the pseudo comment "#EC NEEDED is defined for this variable, add a "usage" 

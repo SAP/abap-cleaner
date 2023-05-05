@@ -1175,4 +1175,19 @@ public class LocalDeclarationOrderTest extends RuleTestBase {
 		testRule();
 	}
 
+	@Test
+	void testLikeLineOfRefAttribute() {
+		// except 'LIKE LINE OF lr_ref->any_table' to be correctly identified as a usage of lr_ref, and thus expect that
+		// 'DATA ls_struc' is NOT moved up to the method start
+
+		buildSrc("    io_util->any_method( IMPORTING er_ref = DATA(lr_ref) ).");
+		buildSrc("    DATA ls_struc LIKE LINE OF lr_ref->any_table.");
+		buildSrc("    rs_result = ls_struc.");
+
+		copyExpFromSrc();
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }

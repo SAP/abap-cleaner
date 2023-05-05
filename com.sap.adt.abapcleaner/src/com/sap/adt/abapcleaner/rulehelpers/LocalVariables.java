@@ -72,7 +72,7 @@ public class LocalVariables {
 		return localsInNonCommentUsageOrder;
 	}
 	
-	public void addDeclaration(Token identifier, boolean isDeclaredInline, boolean isConstant, boolean isBoundStructuredData) throws UnexpectedSyntaxBeforeChanges {
+	public VariableInfo addDeclaration(Token identifier, boolean isDeclaredInline, boolean isConstant, boolean isBoundStructuredData) throws UnexpectedSyntaxBeforeChanges {
 		if (!identifier.isIdentifier())
 			throw new UnexpectedSyntaxBeforeChanges(rule, identifier, "Expected an identifier, but found " + identifier.getTypeAndTextForErrorMessage() + "!");
 
@@ -92,6 +92,7 @@ public class LocalVariables {
 		
 		locals.put(key, varInfo);
 		localsInDeclarationOrder.add(varInfo);
+		return varInfo;
 	}
 
 	public VariableInfo getVariableInfo(Token identifier) {
@@ -112,14 +113,21 @@ public class LocalVariables {
 	public void addInlineDeclaration(Token identifier, String name) {
 		addUsage(identifier, name, true, false, false, false);
 	}
-	public void addUsageInLikeClause(Token identifier, String name, Command methodStart) {
+	public void addUsageInLikeClause(Token identifier, String name, Command methodStart, VariableInfo enclosingDeclaration) {
 		VariableInfo varInfo = addUsage(identifier, name, false, false, false, false);
-		if (varInfo != null) {
-			// variables that are used in LIKE clauses of other declarations must be declared at method start to prevent 
-			// that the LocalDeclarationOrderRule moves their declaration behind the other declaration (note that addUsage() 
-			// above does NOT prevent that, because the other declaration may itself moved from an inner block to method start)
-			varInfo.setEnclosingCommand(methodStart);  
-		}
+		if (varInfo == null) 
+			return;
+
+		// variables that are used in LIKE clauses of other declarations must be declared at method start to prevent 
+		// that the LocalDeclarationOrderRule moves their declaration behind the other declaration (note that addUsage() 
+		// above does NOT prevent that, because the other declaration may itself be moved from an inner block to method start)
+		if (!varInfo.isDeclaredInline)
+			varInfo.setEnclosingCommand(methodStart);
+
+		// if varInfo is declared inline, the enclosing declaration (that uses varInfo in its LIKE clause) must NOT be moved
+		// to a different position by the LocalDeclarationOrderRule
+		if (varInfo.isDeclaredInline && enclosingDeclaration != null) 
+			enclosingDeclaration.declarationCannotBeMoved = true;
 	}
 	public void addUsage(Token identifier, String name) {
 		addUsage(identifier, name, false, false, false, false);
