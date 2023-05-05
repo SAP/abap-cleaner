@@ -6,8 +6,8 @@ Ensures that there is at least one space before and after the " comment sign.
 
 ## Options
 
-* \[X\] Separate code and \\" comment with a space
-* \[X\] Start \\" comment with space
+* \[X\] Separate code and " comment with a space
+* \[X\] Start " comment with space
 
 ## Examples
 

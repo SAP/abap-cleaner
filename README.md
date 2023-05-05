@@ -56,7 +56,7 @@ allowing you stay in SAP GUI and do the cleanup with *Ctrl + C*, *Ctrl + V*.
 
 ### Scope of the Tool
 
-ABAP cleaner can be used to clean up both existing and new code, both productive code and test code, 
+ABAP cleaner can be used to clean up both existing and new code, both product code and test code, 
 both with a "broadband" approach (simultaneously applying 55+ different rules) 
 and a focused approach (cleaning with a limited selection of rules). 
 
