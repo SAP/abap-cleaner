@@ -99,6 +99,12 @@ public abstract class RuleForLocalVariables extends Rule {
 				skipMethod = false;
 				localVariables = new LocalVariables(this, curMethod);
 			}
+			
+			// skip macro definitions (i.e. DEFINE ... END-OF-DEFINITION sections) 
+			if (command.firstCodeTokenIsKeyword("DEFINE")) {
+				command = command.getNextSibling();
+				continue;
+			}
 
 			commandForErrorMsg = command;
 			

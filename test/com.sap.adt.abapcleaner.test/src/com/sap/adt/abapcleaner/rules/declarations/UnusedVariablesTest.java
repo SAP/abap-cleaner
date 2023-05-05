@@ -1697,4 +1697,24 @@ class UnusedVariablesTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testDefineSectionSkipped() {
+		// expect macro definitions (i.e. DEFINE ... END-OF-DEFINITION sections) to be skipped when building the list of 
+		// local variables - otherwise, 'DATA: lt_&1 ...' would be regarded as the declaration of an unused variable 
+		buildSrc("    METHOD any_method.");
+		buildSrc("      DEFINE def_table_and_structure.");
+		buildSrc("        DATA: lt_&1 TYPE STANDARD TABLE OF ts_&1 WITH DEFAULT KEY.");
+		buildSrc("      END-OF-DEFINITION.");
+		buildSrc("");
+		buildSrc("      def_table_and_structure any.");
+		buildSrc("      def_table_and_structure other.");
+		buildSrc("");
+		buildSrc("      rv_result = lines( lt_any ) + lines( lt_other ).");
+		buildSrc("    ENDMETHOD.");
+
+		copyExpFromSrc();
+		
+		testRule();
+	}
 }
