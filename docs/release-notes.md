@@ -6,6 +6,10 @@ as well as bugfixes of reported issues, i.e. anything that enhances or changes t
 For a complete list of changes (including documentation, tests, refactoring etc.), please refer to 
 the list of [commits](../../../commits/main).
 
+## 2023-05-07 (version 1.1.0)
+
+* Added new rule '**Align CLEAR:, FREE: and SORT**'
+
 ## 2023-05-05 (version 1.0.2)
 
 * Fixed rule '**Rearrange local declarations**' for LIKE referring to a variable that is declared inline
