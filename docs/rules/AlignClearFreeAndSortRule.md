@@ -1,0 +1,81 @@
+[<-- previous rule](AlignWithSecondWordRule.md) | [overview](../rules.md) | [next rule -->](AlignParametersRule.md)
+
+# Align CLEAR:, FREE: and SORT
+
+Aligns lists of variables after CLEAR: and FREE: and lists of components after SORT ... BY.
+
+## Options
+
+* Maximum line length \[120\] 
+* CLEAR: Use one line per variable: \[always\]
+* FREE: Use one line per variable: \[always\]
+* SORT: Use one line per variable: \[always\]
+
+## Examples
+
+
+```ABAP
+
+  METHOD align_clear_free_and_sort.
+    CLEAR: mv_any_value,
+      mv_other_value,
+         ls_any_structure-any_component,
+        ls_any_structure-other_component,
+        mt_any_table, mt_other_table, mt_third_table.
+
+    CLEAR:   mv_any_value,
+      mv_other_value WITH lv_initial_value IN CHARACTER MODE,
+      mv_third_value WITH NULL,
+         mv_fourth_value WITH lv_initial_value IN BYTE MODE.
+
+    FREE: mt_any_table, mts_other_table,
+         mth_third_table.
+
+    SORT mt_any_table STABLE BY comp1 comp2
+     comp3
+     comp4.
+
+    SORT mt_other_table BY   comp1 comp2 DESCENDING
+     comp3 comp4 AS TEXT.
+  ENDMETHOD.
+```
+
+Resulting code:
+
+```ABAP
+
+  METHOD align_clear_free_and_sort.
+    CLEAR: mv_any_value,
+           mv_other_value,
+           ls_any_structure-any_component,
+           ls_any_structure-other_component,
+           mt_any_table,
+           mt_other_table,
+           mt_third_table.
+
+    CLEAR: mv_any_value,
+           mv_other_value WITH lv_initial_value IN CHARACTER MODE,
+           mv_third_value WITH NULL,
+           mv_fourth_value WITH lv_initial_value IN BYTE MODE.
+
+    FREE: mt_any_table,
+          mts_other_table,
+          mth_third_table.
+
+    SORT mt_any_table STABLE BY comp1
+                                comp2
+                                comp3
+                                comp4.
+
+    SORT mt_other_table BY comp1
+                           comp2 DESCENDING
+                           comp3
+                           comp4 AS TEXT.
+  ENDMETHOD.
+```
+
+## Related code
+
+* [Rule implementation](../../com.sap.adt.abapcleaner/src/com/sap/adt/abapcleaner/rules/alignment/AlignClearFreeAndSortRule.java)
+* [Tests](../../test/com.sap.adt.abapcleaner.test/src/com/sap/adt/abapcleaner/rules/alignment/AlignClearFreeAndSortTest.java)
+
