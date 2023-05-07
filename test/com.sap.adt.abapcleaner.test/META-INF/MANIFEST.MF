@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Unit Tests for com.sap.adt.abapcleaner
 Bundle-SymbolicName: com.sap.adt.abapcleaner.test;singleton:=true
-Bundle-Version: 1.0.2
+Bundle-Version: 1.1.0
 Bundle-Vendor: abap-dev
 Fragment-Host: com.sap.adt.abapcleaner
 Bundle-RequiredExecutionEnvironment: JavaSE-11
