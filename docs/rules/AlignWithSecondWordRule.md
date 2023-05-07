@@ -1,4 +1,4 @@
-[<-- previous rule](AlignAssignmentsRule.md) | [overview](../rules.md) | [next rule -->](AlignParametersRule.md)
+[<-- previous rule](AlignAssignmentsRule.md) | [overview](../rules.md) | [next rule -->](AlignClearFreeAndSortRule.md)
 
 # Align keywords with second word of first line
 

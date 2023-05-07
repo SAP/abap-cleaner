@@ -1235,6 +1235,18 @@ public class Token {
 		return result;
 	}
 
+	public final int getMaxIndexInLine(Token endToken) {
+		int maxIndex = 0;
+		Token token = this;
+		while (token != endToken) {
+			Token nextToken = token.next;
+			if (nextToken == null || nextToken == endToken || nextToken.lineBreaks > 0)
+				maxIndex = Math.max(maxIndex, token.getEndIndexInLine());
+			token = token.next;
+		}
+		return maxIndex;
+	}
+
 	/**
 	 * if the Token is an identifier of type "structure-component" or "&lt;field-symbol&gt;-component",
 	 * the structure or field-symbol variable is returned
