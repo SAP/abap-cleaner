@@ -821,4 +821,23 @@ class AlignDeclarationsTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testTableWithShortKeyDefiniton() {
+		buildSrc("  METHOD any_method.");
+		buildSrc("    DATA lv_any_num TYPE i.");
+		buildSrc("    DATA lt_any_table TYPE STANDARD TABLE OF any_data_element WITH NON-UNIQUE DEFAULT KEY.");
+		buildSrc("    DATA lt_other_table TYPE STANDARD TABLE OF any_data_element WITH EMPTY KEY.");
+		buildSrc("    DATA lv_other_value TYPE string.");
+		buildSrc("  ENDMETHOD.");
+
+		buildExp("  METHOD any_method.");
+		buildExp("    DATA lv_any_num     TYPE i.");
+		buildExp("    DATA lt_any_table   TYPE STANDARD TABLE OF any_data_element WITH NON-UNIQUE DEFAULT KEY.");
+		buildExp("    DATA lt_other_table TYPE STANDARD TABLE OF any_data_element WITH EMPTY KEY.");
+		buildExp("    DATA lv_other_value TYPE string.");
+		buildExp("  ENDMETHOD.");
+
+		testRule();
+	}
 }
