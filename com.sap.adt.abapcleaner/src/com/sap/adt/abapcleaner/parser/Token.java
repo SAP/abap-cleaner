@@ -1809,7 +1809,7 @@ public class Token {
 			// COLLECT wa INTO itab [result].
 			return MemoryAccessType.WRITE;
 		} else if (firstToken.matchesOnSiblings(true, "DELETE", "TABLE") && prevToken.isKeyword("TABLE")) {
-			// DELETE TABLE itab ...
+			// DELETE TABLE itab ... (but NOT 'DELETE dtab FROM TABLE @itab'!)
 			return MemoryAccessType.WRITE;
 		} else if (firstToken.isKeyword("DELETE") && prevToken == firstToken) {
 			// DELETE itab ...
@@ -1817,14 +1817,14 @@ public class Token {
 		} else if (firstToken.matchesOnSiblings(true, "DELETE", "ADJACENT", "DUPLICATES", "FROM") && prevToken.isKeyword("FROM")) {
 			// DELETE ADJACENT DUPLICATES FROM itab ...
 			return MemoryAccessType.WRITE;
-		} else if (firstToken.isKeyword("INSERT") && prevToken.isAnyKeyword("INTO", "TABLE")) {
-			// INSERT line_spec INTO {{TABLE itab} | {itab INDEX idx} | {itab}} 
+		} else if (firstToken.isKeyword("INSERT") && (prevToken.isKeyword("INTO") || prevPrevToken != null && prevPrevToken.matchesOnSiblings(true, "INTO", "TABLE"))) {
+			// INSERT line_spec INTO {{TABLE itab} | {itab INDEX idx} | {itab}} (but NOT 'INSERT dtab FROM TABLE @itab'!) 
 			return MemoryAccessType.WRITE;
 		} else if (firstToken.matchesOnSiblings(true, "LOOP", "AT") && prevToken.isKeyword("INTO")) {
 			// LOOP AT ...  { {INTO wa } | { ASSIGNING <fs> [CASTING] [ELSE UNASSIGN] } | { REFERENCE INTO dref }
 			return MemoryAccessType.WRITE;
 		} else if (firstToken.matchesOnSiblings(true, "MODIFY", "TABLE") && prevToken.isAnyKeyword("TABLE", "INTO")) {
-			// MODIFY TABLE itab ...
+			// MODIFY TABLE itab ... (but NOT 'MODIFY dtab FROM TABLE @itab'!)
 			return MemoryAccessType.WRITE;
 		} else if (firstToken.isKeyword("MODIFY") && prevToken == firstToken) {
 			// MODIFY itab ...

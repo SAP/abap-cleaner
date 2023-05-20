@@ -942,15 +942,18 @@ public class TokenTest {
 		assertAccessType("DELETE TABLE !itab FROM ?wa.");
 		assertAccessType("DELETE !itab USING KEY ?keyname FROM ?idx1 TO ?idx2 STEP ?n.");
 		assertAccessType("DELETE ADJACENT DUPLICATES FROM !itab COMPARING (?name1) (?name2).");
+		assertAccessType("DELETE dtab FROM TABLE ?itab.");
 		assertAccessType("INSERT LINES OF ?jtab FROM ?idx1 TO ?idx2 STEP ?n INTO TABLE !itab.");
 		assertAccessType("INSERT LINES OF ?jtab FROM ?idx1 TO ?idx2 STEP ?n INTO !itab INDEX ?idx.");
 		assertAccessType("INSERT INITIAL LINE INTO TABLE !itab REFERENCE INTO %dref.");
 		assertAccessType("INSERT ?wa INTO !itab INDEX ?idx ASSIGNING %<fs> CASTING ELSE UNASSIGN.");
+		assertAccessType("INSERT dtab FROM TABLE ?itab.");
 		assertAccessType("LOOP AT ?itab INTO !wa.");
 		assertAccessType("LOOP AT ?itab ASSIGNING %<fs> CASTING.");
 		assertAccessType("LOOP AT ?itab REFERENCE INTO %dref.");
 		assertAccessType("MODIFY TABLE !itab FROM ?wa REFERENCE INTO %dref.");
 		assertAccessType("MODIFY !itab FROM ?wa TRANSPORTING ?comp1 ?comp2 WHERE fld IS NOT INITIAL.");
+		assertAccessType("MODIFY dtab FROM TABLE ?itab.");
 		assertAccessType("READ TABLE ?itab INTO !wa.");
 		assertAccessType("READ TABLE ?itab ASSIGNING %<fs>.");
 		assertAccessType("READ TABLE ?itab ASSIGNING FIELD-SYMBOL(%<fs>).");
