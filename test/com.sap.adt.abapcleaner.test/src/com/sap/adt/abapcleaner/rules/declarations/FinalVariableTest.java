@@ -462,4 +462,21 @@ class FinalVariableTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testDataUnchangedForPerformUsing() {
+		// the syntax check does not prevent changes on any of the parameters in a PERFORM call, therefore even variables 
+		// passed as USING must NOT be declared with FINAL
+		
+		buildSrc("    DATA(lt_table) = get_table( ).");
+		buildSrc("    DATA(lv_any) = 0.");
+		buildSrc("    DATA(lv_other) = 0.");
+		buildSrc("    PERFORM any_form IN PROGRAM any_program TABLES lt_table USING lv_any CHANGING lv_other.");
+
+		copyExpFromSrc();
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }

@@ -1133,10 +1133,7 @@ public class Token {
 
 			case IDENTIFIER:
 				MemoryAccessType accessType = getMemoryAccessType(); 
-				if (accessType == MemoryAccessType.WRITE || accessType == MemoryAccessType.READ_WRITE || accessType == MemoryAccessType.ASSIGN_TO_FS_OR_DREF) 
-					return ColorType.IDENTIFIER_WRITE_POS;
-				else 
-					return ColorType.IDENTIFIER;
+				return accessType.displayAsWritePos ? ColorType.IDENTIFIER_WRITE_POS : ColorType.IDENTIFIER;
 
 			case NON_ABAP:
 				return ColorType.NON_ABAP;
@@ -2060,9 +2057,10 @@ public class Token {
 			}
 			// if no access keyword is found, we use the default result .READ below
 			if (accessKeyword != null) {
-				if (accessKeyword.isAnyKeyword("TABLES", "USING"))
-					return MemoryAccessType.READ;
-				else if (accessKeyword.isAnyKeyword("CHANGING")) 
+				// variables after USING are in a read position, but the syntax check does not prevent them to be changed inside the FORM 
+				if (accessKeyword.isKeyword("USING"))
+					return MemoryAccessType.READ_WRITE_POSSIBLE;
+				else if (accessKeyword.isAnyKeyword("TABLES", "CHANGING")) 
 					return MemoryAccessType.READ_WRITE;
 			}
 		}

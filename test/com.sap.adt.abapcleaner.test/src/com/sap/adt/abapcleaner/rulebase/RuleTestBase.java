@@ -214,12 +214,12 @@ public abstract class RuleTestBase {
 				if (actBufferedAccessType != MemoryAccessType.NONE) {
 					token.invalidateMemoryAccessType();
 					MemoryAccessType expAccessType = token.getMemoryAccessType(); 
-					if (expAccessType == MemoryAccessType.WRITE || expAccessType == MemoryAccessType.READ_WRITE) {
-						// expected WRITE or READ_WRITE requires an exact match
+					if (expAccessType == MemoryAccessType.WRITE || expAccessType == MemoryAccessType.READ_WRITE || expAccessType == MemoryAccessType.READ_WRITE_POSSIBLE) {
+						// expected WRITE or READ_WRITE or READ_WRITE_POSSIBLE requires an exact match
 						assertEquals(expAccessType, actBufferedAccessType);
 					} else {
 						// otherwise, any combination of .NONE, .READ or .READ_OR_NONE is okay 
-						assertTrue(actBufferedAccessType != MemoryAccessType.WRITE && actBufferedAccessType != MemoryAccessType.READ_WRITE);
+						assertTrue(actBufferedAccessType != MemoryAccessType.WRITE && actBufferedAccessType != MemoryAccessType.READ_WRITE && actBufferedAccessType != MemoryAccessType.READ_WRITE_POSSIBLE);
 					}
 				}
 				token = token.getNext();

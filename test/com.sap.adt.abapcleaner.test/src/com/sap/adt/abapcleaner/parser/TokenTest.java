@@ -766,7 +766,11 @@ public class TokenTest {
 				if (expAccessType == MemoryAccessType.READ) {
 					// allow for both READ and READ_OR_NONE
 					assertTrue(actAccessType == MemoryAccessType.READ || actAccessType == MemoryAccessType.READ_OR_NONE, "unexpected MemoryAccessType for " + tokenText);
+				} else if (expAccessType == MemoryAccessType.READ_WRITE) {
+					// allow for both READ_WRITE and READ_WRITE_POSSIBLE
+					assertTrue(actAccessType == MemoryAccessType.READ_WRITE || actAccessType == MemoryAccessType.READ_WRITE_POSSIBLE, "unexpected MemoryAccessType for " + tokenText);
 				} else {
+
 					assertEquals(expAccessType, actAccessType, "unexpected MemoryAccessType for " + tokenText);
 				}
 			}
@@ -1083,7 +1087,8 @@ public class TokenTest {
 	void testAccessTypeReceiveAndPerform() {
 		assertAccessType("RECEIVE RESULTS FROM FUNCTION func KEEPING TASK IMPORTING i1 = !pi1 i2 = !pi2 TABLES t1 = ?itab1 t2 = itab2 CHANGING c1 = #pc1 c2 = #pc2 EXCEPTIONS exc1 = ?px1 exc2 = ?px2.");
 		
-		assertAccessType("PERFORM subr IN PROGRAM prog IF FOUND TABLES ?itab1 ?itab2 USING ?u1 ?u2 CHANGING #c1 #c2.");
+		// ensure that all actual parameters are treated as READ_WRITE or READ_WRITE_POSSIBLE, because the syntax check does not prevent changing a USING parameter 
+		assertAccessType("PERFORM subr IN PROGRAM prog IF FOUND TABLES #itab1 #itab2 USING #u1 #u2 CHANGING #c1 #c2.");
 	}
 
 	@Test
