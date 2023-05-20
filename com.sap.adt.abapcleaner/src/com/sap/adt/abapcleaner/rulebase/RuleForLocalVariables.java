@@ -384,8 +384,10 @@ public abstract class RuleForLocalVariables extends Rule {
 					isAssignment = (accessType == MemoryAccessType.ASSIGN_TO_FS_OR_DREF);
 					if (isAssignment) {
 						addAssignedFieldSymbolOrDataRef(token, localVariables);
+						writesToReferencedMemory = false;
+					} else {
+						writesToReferencedMemory = accessType.mayWrite;
 					}
-					writesToReferencedMemory = (accessType == MemoryAccessType.WRITE || accessType == MemoryAccessType.READ_WRITE);
 					
 				} else if (isAccessToVarMemory(tokenText, readPos)) {
 					MemoryAccessType accessType = token.getMemoryAccessType();
@@ -394,8 +396,9 @@ public abstract class RuleForLocalVariables extends Rule {
 						addAssignedFieldSymbolOrDataRef(token, localVariables);
 					} else if (accessType == MemoryAccessType.WRITE) {
 						isAssignment = true;
-					} else if (accessType == MemoryAccessType.READ_WRITE) {
-						// if the variable is used as an actual CHANGING parameter, add both a usage and an assignment (below)
+					} else if (accessType == MemoryAccessType.READ_WRITE || accessType == MemoryAccessType.READ_WRITE_POSSIBLE) {
+						// if the variable is used as an actual CHANGING parameter, add both a usage and an assignment (below); 
+						// same in case of PERFORM ... USING ..., where a write is not prevented by the syntax check (READ_WRITE_POSSIBLE) 
 						localVariables.addUsage(token, objectName);
 						isAssignment = true;
 					}
