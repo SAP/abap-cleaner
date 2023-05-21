@@ -48,6 +48,16 @@ public class ChainRule extends RuleForCommands {
 	@Override
    public String getExample() {
       return "" 
+ 			+ LINE_SEP + "INTERFACE if_unchaining." 
+ 			+ LINE_SEP + "  CONSTANTS: any_constant TYPE i VALUE 1,"
+ 			+ LINE_SEP + "             other_constant TYPE i VALUE 2."
+ 			+ LINE_SEP 
+ 			+ LINE_SEP + "  METHODS:" 
+ 			+ LINE_SEP + "    any_method," 
+ 			+ LINE_SEP + "    other_method" 
+ 			+ LINE_SEP + "      IMPORTING iv_any_parameter TYPE i." 
+ 			+ LINE_SEP + "ENDINTERFACE." 
+			+ LINE_SEP + "" 
  			+ LINE_SEP + "CLASS cl_unchaining DEFINITION." 
  			+ LINE_SEP + "  PUBLIC SECTION." 
  			+ LINE_SEP + "    CONSTANTS: any_constant TYPE i VALUE 1,"
@@ -106,12 +116,13 @@ public class ChainRule extends RuleForCommands {
 			+ LINE_SEP + "ENDCLASS." ;
    }
 
+   final ConfigBoolValue configExecuteOnInterfaces = new ConfigBoolValue(this, "ExecuteOnInterfaces", "Unchain declarations in interfaces", true, false, LocalDate.of(2023, 5, 21));
    final ConfigBoolValue configExecuteOnClassDefinitionSections = new ConfigBoolValue(this, "ExecuteOnClassDefinitionSections", "Unchain declarations in CLASS ... DEFINITION sections", true, false, LocalDate.of(2022, 4, 9));
    final ConfigBoolValue configExecuteOnLocalDeclarations = new ConfigBoolValue(this, "ExecuteOnLocalDeclarations", "Unchain declarations in methods etc.", true);
    final ConfigBoolValue configExecuteOnSimpleCommands = new ConfigBoolValue(this, "ExecuteOnSimpleCommands", "Unchain simple commands (chain after first keyword, e.g. ASSERT:, CHECK:, CLEAR:, FREE:) except WRITE:", false, false, LocalDate.of(2022, 4, 9));
    final ConfigBoolValue configExecuteOnComplexCommands = new ConfigBoolValue(this, "ExecuteOnComplexCommands", "Unchain complex commands (a += : 1,2,3 etc.)", true, false, LocalDate.of(2022, 4, 9));
 
-   private final ConfigValue[] configValues = new ConfigValue[] { configExecuteOnClassDefinitionSections, configExecuteOnLocalDeclarations, configExecuteOnSimpleCommands, configExecuteOnComplexCommands };
+   private final ConfigValue[] configValues = new ConfigValue[] { configExecuteOnInterfaces, configExecuteOnClassDefinitionSections, configExecuteOnLocalDeclarations, configExecuteOnSimpleCommands, configExecuteOnComplexCommands };
 
 	@Override
 	public ConfigValue[] getConfigValues() { return configValues; }
@@ -134,7 +145,9 @@ public class ChainRule extends RuleForCommands {
 
 		// ensure the rule is configured to be executed on this command
 		boolean execute;
-		if (command.isInClassDefinition()) {
+		if (command.isInInterfaceDefinition()) {
+			execute = command.isDeclaration() || command.isDeclarationInclude() || command.isDeclarationInClassDef() ? configExecuteOnInterfaces.getValue() : false;
+		} else if (command.isInClassDefinition()) {
 			execute = command.isDeclaration() || command.isDeclarationInclude() || command.isDeclarationInClassDef() ? configExecuteOnClassDefinitionSections.getValue() : false;
 		} else if (command.isDeclaration() || command.isDeclarationInclude()) {
 			execute = configExecuteOnLocalDeclarations.getValue();

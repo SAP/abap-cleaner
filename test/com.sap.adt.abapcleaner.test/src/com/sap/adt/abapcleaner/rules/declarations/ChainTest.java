@@ -17,6 +17,7 @@ class ChainTest extends RuleTestBase {
 	@BeforeEach
 	void setUp() {
 		// setup default test configuration (may be modified in the individual test methods)
+		rule.configExecuteOnInterfaces.setValue(true);
 		rule.configExecuteOnClassDefinitionSections.setValue(true);
 		rule.configExecuteOnLocalDeclarations.setValue(true);
 		rule.configExecuteOnSimpleCommands.setValue(false);
@@ -325,6 +326,49 @@ class ChainTest extends RuleTestBase {
 
 		putAnyMethodAroundSrcAndExp();
 		
+		testRule();
+	}
+
+	@Test
+	void testInterface() {
+		buildSrc("INTERFACE if_unchaining.");
+		buildSrc("  CONSTANTS: any_constant TYPE i VALUE 1,");
+		buildSrc("             other_constant TYPE i VALUE 2.");
+		buildSrc("");
+		buildSrc("  METHODS:");
+		buildSrc("    any_method,");
+		buildSrc("    other_method");
+		buildSrc("      IMPORTING iv_any_parameter TYPE i.");
+		buildSrc("ENDINTERFACE.");
+
+		buildExp("INTERFACE if_unchaining.");
+		buildExp("  CONSTANTS any_constant TYPE i VALUE 1.");
+		buildExp("  CONSTANTS other_constant TYPE i VALUE 2.");
+		buildExp("");
+		buildExp("  METHODS any_method.");
+		buildExp("  METHODS other_method");
+		buildExp("            IMPORTING iv_any_parameter TYPE i.");
+		buildExp("ENDINTERFACE.");
+
+		testRule();
+	}
+
+	@Test
+	void testInterfaceUnchanged() {
+		rule.configExecuteOnInterfaces.setValue(false);
+		
+		buildSrc("INTERFACE if_unchaining.");
+		buildSrc("  CONSTANTS: any_constant TYPE i VALUE 1,");
+		buildSrc("             other_constant TYPE i VALUE 2.");
+		buildSrc("");
+		buildSrc("  METHODS:");
+		buildSrc("    any_method,");
+		buildSrc("    other_method");
+		buildSrc("      IMPORTING iv_any_parameter TYPE i.");
+		buildSrc("ENDINTERFACE.");
+
+		copyExpFromSrc();
+
 		testRule();
 	}
 }
