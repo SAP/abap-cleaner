@@ -21,6 +21,7 @@ class AlignDeclarationsTest extends RuleTestBase {
 		rule.configAlignAcrossEmptyLines.setValue(true);
 		rule.configAlignAcrossCommentLines.setValue(true);
 		rule.configFillPercentageToJustifyOwnColumn.setValue(20);
+		rule.configStructureAlignStyle.setEnumValue(StructureAlignStyle.PER_LEVEL);
 	}
 	
 	@Test
@@ -426,8 +427,8 @@ class AlignDeclarationsTest extends RuleTestBase {
 		buildExp("      BEGIN OF ty_s_any_struc,");
 		buildExp("        component_a      TYPE i,");
 		buildExp("        BEGIN OF ty_s_inner,");
-		buildExp("          comp_1_long    TYPE i,");
-		buildExp("          comp_2         TYPE i,");
+		buildExp("          comp_1_long TYPE i,");
+		buildExp("          comp_2      TYPE i,");
 		buildExp("        END OF ty_s_inner,");
 		buildExp("        component_b_long TYPE i,");
 		buildExp("        component_c      TYPE i,");
@@ -465,9 +466,9 @@ class AlignDeclarationsTest extends RuleTestBase {
 		buildExp("        \" comment");
 		buildExp("        component_a      TYPE i,");
 		buildExp("        BEGIN OF ty_s_inner,");
-		buildExp("          comp_1_long    TYPE i,");
+		buildExp("          comp_1_long TYPE i,");
 		buildExp("          \" comment");
-		buildExp("          comp_2         TYPE i,");
+		buildExp("          comp_2      TYPE i,");
 		buildExp("        END OF ty_s_inner,");
 		buildExp("        component_b_long TYPE i,");
 		buildExp("        component_c      TYPE i,");
@@ -498,8 +499,8 @@ class AlignDeclarationsTest extends RuleTestBase {
 		buildExp("    TYPES: BEGIN OF ty_s_any_struc,");
 		buildExp("             component_a      TYPE i,");
 		buildExp("             BEGIN OF ty_s_inner,");
-		buildExp("               comp_1_long    TYPE i,");
-		buildExp("               comp_2         TYPE i,");
+		buildExp("               comp_1_long TYPE i,");
+		buildExp("               comp_2      TYPE i,");
 		buildExp("             END OF ty_s_inner,");
 		buildExp("             component_b_long TYPE i,");
 		buildExp("             component_c      TYPE i,");
@@ -529,8 +530,8 @@ class AlignDeclarationsTest extends RuleTestBase {
 		buildExp("    TYPES: BEGIN OF ty_s_any_struc,");
 		buildExp("             component_a      TYPE i, \" comment A");
 		buildExp("             BEGIN OF ty_s_inner,");
-		buildExp("               comp_1_long    TYPE i,");
-		buildExp("               comp_2         TYPE i, \" comment 2");
+		buildExp("               comp_1_long TYPE i,");
+		buildExp("               comp_2      TYPE i, \" comment 2");
 		buildExp("             END OF ty_s_inner,");
 		buildExp("             component_b_long TYPE i, \" comment B");
 		buildExp("             component_c      TYPE i,");
@@ -565,8 +566,8 @@ class AlignDeclarationsTest extends RuleTestBase {
 		buildExp("      BEGIN OF ty_s_any_struc,");
 		buildExp("        component_a      TYPE i,");
 		buildExp("        BEGIN OF ty_s_inner,");
-		buildExp("          comp_1_long    TYPE i,");
-		buildExp("          comp_2         TYPE i,");
+		buildExp("          comp_1_long TYPE i,");
+		buildExp("          comp_2      TYPE i,");
 		buildExp("        END OF ty_s_inner,");
 		buildExp("        component_b_long TYPE i.");
 		buildExp("        INCLUDE TYPE ty_s_include.");
@@ -612,8 +613,8 @@ class AlignDeclarationsTest extends RuleTestBase {
 		buildExp("          surname TYPE string VALUE `Pea`,");
 		buildExp("        END OF name,");
 		buildExp("        BEGIN OF street,");
-		buildExp("          name    TYPE string VALUE `Vegetable Lane`,");
-		buildExp("          number  TYPE string VALUE `11`,");
+		buildExp("          name   TYPE string VALUE `Vegetable Lane`,");
+		buildExp("          number TYPE string VALUE `11`,");
 		buildExp("        END OF street,");
 		buildExp("        BEGIN OF city,");
 		buildExp("          zipcode TYPE string VALUE `349875`,");
@@ -655,8 +656,8 @@ class AlignDeclarationsTest extends RuleTestBase {
 		buildExp("          surname TYPE string VALUE `Pea`,");
 		buildExp("        END OF name,");
 		buildExp("        BEGIN OF street,");
-		buildExp("          name    TYPE string VALUE `Vegetable Lane`,");
-		buildExp("          number  TYPE string VALUE `11`,");
+		buildExp("          name   TYPE string VALUE `Vegetable Lane`,");
+		buildExp("          number TYPE string VALUE `11`,");
 		buildExp("        END OF street,");
 		buildExp("        BEGIN OF city,");
 		buildExp("          zipcode TYPE string VALUE `349875`,");
@@ -837,6 +838,272 @@ class AlignDeclarationsTest extends RuleTestBase {
 		buildExp("    DATA lt_other_table TYPE STANDARD TABLE OF any_data_element WITH EMPTY KEY.");
 		buildExp("    DATA lv_other_value TYPE string.");
 		buildExp("  ENDMETHOD.");
+
+		testRule();
+	}
+
+	@Test
+	void testTypesColonIncludeTypes() {
+		buildSrc("  TYPES:");
+		buildSrc("    BEGIN OF ty_s_any_struc.");
+		buildSrc("        INCLUDE TYPE ty_s_include.");
+		buildSrc("    TYPES component TYPE i.");
+		buildSrc("    TYPES END OF ty_s_any_struc.");
+
+		buildExp("  TYPES: BEGIN OF ty_s_any_struc.");
+		buildExp("           INCLUDE TYPE ty_s_include.");
+		buildExp("  TYPES    component TYPE i.");
+		buildExp("  TYPES  END OF ty_s_any_struc.");
+
+		testRule();
+	}
+
+	@Test
+	void testCommentAfterTypesMovedUp() {
+		buildSrc("  TYPES:");
+		buildSrc("      \"! documentation");
+		buildSrc("    BEGIN OF ty_s_any_struc,");
+		buildSrc("        component TYPE string.");
+		buildSrc("        INCLUDE TYPE ty_s_include.");
+		buildSrc("    TYPES END OF ty_s_any_struc.");
+
+		buildExp("  TYPES: \"! documentation");
+		buildExp("         BEGIN OF ty_s_any_struc,");
+		buildExp("           component TYPE string.");
+		buildExp("           INCLUDE TYPE ty_s_include.");
+		buildExp("  TYPES  END OF ty_s_any_struc.");
+
+		testRule();
+	}
+
+	@Test
+	void testAsteriskCommentAfterTypesKept() {
+		buildSrc("  TYPES:");
+		buildSrc("* comment");
+		buildSrc("    BEGIN OF ty_s_any_struc,");
+		buildSrc("        component TYPE string.");
+		buildSrc("        INCLUDE TYPE ty_s_include.");
+		buildSrc("    TYPES END OF ty_s_any_struc.");
+
+		buildExp("  TYPES:");
+		buildExp("* comment");
+		buildExp("         BEGIN OF ty_s_any_struc,");
+		buildExp("           component TYPE string.");
+		buildExp("           INCLUDE TYPE ty_s_include.");
+		buildExp("  TYPES  END OF ty_s_any_struc.");
+
+		testRule();
+	}
+
+	@Test
+	void testTypesColonTypesInclude() {
+		buildSrc("  TYPES:");
+		buildSrc("    BEGIN OF ty_s_struc.");
+		buildSrc("    TYPES component TYPE string.");
+		buildSrc("    INCLUDE TYPE ty_s_include.");
+		buildSrc("    TYPES END OF ty_s_struc .");
+
+		buildExp("  TYPES: BEGIN OF ty_s_struc.");
+		buildExp("  TYPES    component TYPE string.");
+		buildExp("           INCLUDE TYPE ty_s_include.");
+		buildExp("  TYPES  END OF ty_s_struc .");
+
+		testRule();
+	}
+
+	@Test
+	void testLongNameAfterEndOfStructure() {
+		// ensure that the alignment of TYPE inside the BEGIN OF ... END OF section 
+		// is NOT influenced by the long identifier after END OF
+		
+		buildSrc("    TYPES:");
+		buildSrc("      BEGIN OF ty_s_struc,");
+		buildSrc("      comp1 TYPE string,");
+		buildSrc("      component2 TYPE string,");
+		buildSrc("      END OF ty_s_struc,");
+		buildSrc("      ty_tt_table_with_long_name TYPE TABLE OF ty_s_struc.");
+		buildSrc("");
+		buildSrc("    DATA mv_any TYPE i.");
+
+		buildExp("    TYPES:");
+		buildExp("      BEGIN OF ty_s_struc,");
+		buildExp("        comp1      TYPE string,");
+		buildExp("        component2 TYPE string,");
+		buildExp("      END OF ty_s_struc,");
+		buildExp("      ty_tt_table_with_long_name TYPE TABLE OF ty_s_struc.");
+		buildExp("");
+		buildExp("    DATA mv_any TYPE i.");
+
+		testRule();
+	}
+
+	@Test
+	void testAlignAllInnerStructures() {
+		rule.configStructureAlignStyle.setEnumValue(StructureAlignStyle.ACROSS_LEVELS);
+
+		// expect everything within one structure to be aligned, including TYPE sections of enclosed structures 
+
+		buildSrc("    TYPES:");
+		buildSrc("      BEGIN OF ty_s_outer,");
+		buildSrc("      one TYPE i,");
+		buildSrc("      two TYPE i,");
+		buildSrc("      BEGIN OF ty_s_inner,");
+		buildSrc("      a1 TYPE i,");
+		buildSrc("      b2 TYPE i,");
+		buildSrc("      c3 TYPE i,");
+		buildSrc("      END OF ty_s_inner,");
+		buildSrc("      three TYPE i,");
+		buildSrc("      four TYPE i,");
+		buildSrc("      BEGIN OF ty_s_another_inner,");
+		buildSrc("      long_component_name TYPE i,");
+		buildSrc("      very_long_component_name TYPE i,");
+		buildSrc("      END OF ty_s_another_inner,");
+		buildSrc("      seventeen TYPE i,");
+		buildSrc("      eighteen TYPE i,");
+		buildSrc("      END OF ty_s_outer,");
+		buildSrc("      ty_tt_outer TYPE STANDARD TABLE OF ty_s_outer WITH DEFAULT KEY,");
+		buildSrc("");
+		buildSrc("      BEGIN OF ty_s_outer_2,");
+		buildSrc("      any_component TYPE i,");
+		buildSrc("      BEGIN OF ty_s_inner,");
+		buildSrc("      alpha TYPE i,");
+		buildSrc("      beta TYPE i,");
+		buildSrc("      END OF ty_s_inner,");
+		buildSrc("      other_component TYPE i,");
+		buildSrc("      END OF ty_s_outer_2.");
+
+		buildExp("    TYPES:");
+		buildExp("      BEGIN OF ty_s_outer,");
+		buildExp("        one                        TYPE i,");
+		buildExp("        two                        TYPE i,");
+		buildExp("        BEGIN OF ty_s_inner,");
+		buildExp("          a1                       TYPE i,");
+		buildExp("          b2                       TYPE i,");
+		buildExp("          c3                       TYPE i,");
+		buildExp("        END OF ty_s_inner,");
+		buildExp("        three                      TYPE i,");
+		buildExp("        four                       TYPE i,");
+		buildExp("        BEGIN OF ty_s_another_inner,");
+		buildExp("          long_component_name      TYPE i,");
+		buildExp("          very_long_component_name TYPE i,");
+		buildExp("        END OF ty_s_another_inner,");
+		buildExp("        seventeen                  TYPE i,");
+		buildExp("        eighteen                   TYPE i,");
+		buildExp("      END OF ty_s_outer,");
+		buildExp("      ty_tt_outer TYPE STANDARD TABLE OF ty_s_outer WITH DEFAULT KEY,");
+		buildExp("");
+		buildExp("      BEGIN OF ty_s_outer_2,");
+		buildExp("        any_component   TYPE i,");
+		buildExp("        BEGIN OF ty_s_inner,");
+		buildExp("          alpha         TYPE i,");
+		buildExp("          beta          TYPE i,");
+		buildExp("        END OF ty_s_inner,");
+		buildExp("        other_component TYPE i,");
+		buildExp("      END OF ty_s_outer_2.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testAlignPerSection() {
+		rule.configStructureAlignStyle.setEnumValue(StructureAlignStyle.PER_SECTION);
+
+		// expect TYPE sections of components 'three' and 'four' to be aligned with each other, 
+		// but NOT with the TYPE sections of 'one' and 'two', or 'seventeen' and 'eighteen'
+		buildSrc("    TYPES:");
+		buildSrc("      BEGIN OF ty_s_outer,");
+		buildSrc("      one TYPE i,");
+		buildSrc("      two TYPE i,");
+		buildSrc("      BEGIN OF ty_s_inner,");
+		buildSrc("      a1 TYPE i,");
+		buildSrc("      b2 TYPE i,");
+		buildSrc("      c3 TYPE i,");
+		buildSrc("      END OF ty_s_inner,");
+		buildSrc("      three TYPE i,");
+		buildSrc("      four TYPE i,");
+		buildSrc("      BEGIN OF ty_s_another_inner,");
+		buildSrc("      long_component_name TYPE i,");
+		buildSrc("      very_long_component_name TYPE i,");
+		buildSrc("      END OF ty_s_another_inner,");
+		buildSrc("      seventeen TYPE i,");
+		buildSrc("      eighteen TYPE i,");
+		buildSrc("      END OF ty_s_outer,");
+		buildSrc("      ty_tt_outer TYPE STANDARD TABLE OF ty_s_outer WITH DEFAULT KEY,");
+		buildSrc("");
+		buildSrc("      BEGIN OF ty_s_outer_2,");
+		buildSrc("      any_component TYPE i,");
+		buildSrc("      BEGIN OF ty_s_inner,");
+		buildSrc("      alpha TYPE i,");
+		buildSrc("      beta TYPE i,");
+		buildSrc("      END OF ty_s_inner,");
+		buildSrc("      other_component TYPE i,");
+		buildSrc("      END OF ty_s_outer_2.");
+
+		buildExp("    TYPES:");
+		buildExp("      BEGIN OF ty_s_outer,");
+		buildExp("        one TYPE i,");
+		buildExp("        two TYPE i,");
+		buildExp("        BEGIN OF ty_s_inner,");
+		buildExp("          a1 TYPE i,");
+		buildExp("          b2 TYPE i,");
+		buildExp("          c3 TYPE i,");
+		buildExp("        END OF ty_s_inner,");
+		buildExp("        three TYPE i,");
+		buildExp("        four  TYPE i,");
+		buildExp("        BEGIN OF ty_s_another_inner,");
+		buildExp("          long_component_name      TYPE i,");
+		buildExp("          very_long_component_name TYPE i,");
+		buildExp("        END OF ty_s_another_inner,");
+		buildExp("        seventeen TYPE i,");
+		buildExp("        eighteen  TYPE i,");
+		buildExp("      END OF ty_s_outer,");
+		buildExp("      ty_tt_outer TYPE STANDARD TABLE OF ty_s_outer WITH DEFAULT KEY,");
+		buildExp("");
+		buildExp("      BEGIN OF ty_s_outer_2,");
+		buildExp("        any_component TYPE i,");
+		buildExp("        BEGIN OF ty_s_inner,");
+		buildExp("          alpha TYPE i,");
+		buildExp("          beta  TYPE i,");
+		buildExp("        END OF ty_s_inner,");
+		buildExp("        other_component TYPE i,");
+		buildExp("      END OF ty_s_outer_2.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testJoinLengthIntoType() {
+		// expect the LENGTH column to follow directly after "TYPE c" and "TYPE p" (so it is partly below "string", not right of it)
+		
+		buildSrc("   TYPES: BEGIN OF ty_s_struc,");
+		buildSrc("          any_comp TYPE string,");
+		buildSrc("          other_comp TYPE string,");
+		buildSrc("           c1 TYPE c     LENGTH 10,");
+		buildSrc("          p1 TYPE p   LENGTH 8 DECIMALS 0,");
+		buildSrc("          third_comp    TYPE i,");
+		buildSrc("             p2 TYPE p LENGTH 6 DECIMALS 0,");
+		buildSrc("          c2 TYPE c LENGTH 9,");
+		buildSrc("        c3 TYPE c LENGTH 1,");
+		buildSrc("           c4 TYPE c LENGTH 4,");
+		buildSrc("           c5 TYPE c LENGTH 40,");
+		buildSrc("            END OF ty_s_struc.");
+
+		buildExp("   TYPES: BEGIN OF ty_s_struc,");
+		buildExp("            any_comp   TYPE string,");
+		buildExp("            other_comp TYPE string,");
+		buildExp("            c1         TYPE c LENGTH 10,");
+		buildExp("            p1         TYPE p LENGTH 8  DECIMALS 0,");
+		buildExp("            third_comp TYPE i,");
+		buildExp("            p2         TYPE p LENGTH 6  DECIMALS 0,");
+		buildExp("            c2         TYPE c LENGTH 9,");
+		buildExp("            c3         TYPE c LENGTH 1,");
+		buildExp("            c4         TYPE c LENGTH 4,");
+		buildExp("            c5         TYPE c LENGTH 40,");
+		buildExp("          END OF ty_s_struc.");
 
 		testRule();
 	}

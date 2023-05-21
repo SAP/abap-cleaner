@@ -1,6 +1,7 @@
 package com.sap.adt.abapcleaner.rules.alignment;
 
 import java.time.LocalDate;
+import java.util.*;
 
 import com.sap.adt.abapcleaner.base.*;
 import com.sap.adt.abapcleaner.parser.*;
@@ -32,16 +33,78 @@ public class AlignDeclarationsRule extends AlignDeclarationSectionRuleBase {
 
    private class TableStart {
    	public final int firstLineBreaks;
-   	public final int basicIndent;
+   	public final int keywordIndent;
+   	public final int basicIdentifierIndent;
    	
-   	private TableStart(int firstLineBreaks, int basicIndent) {
+   	private TableStart(int firstLineBreaks, int keywordIndent, int basicIdentifierIndent) {
    		this.firstLineBreaks = firstLineBreaks;
-   		this.basicIndent = basicIndent;
+   		this.keywordIndent = keywordIndent;
+   		this.basicIdentifierIndent = basicIdentifierIndent;
    	}
    }
-   
-   private class Layout {
+
+   /** Creates a set of {@link AlignTable}s, which are then aligned independently. 
+    * Declarations outside of BEGIN OF ... END OF sections are aligned with the first table. 
+    * For nested BEGIN OF ... END OF sections, a stack is used to fill one or several {@link AlignTable} instances, 
+    * depending on the supplied {@link StructureAlignStyle}. */
+   private class TableSet {
+   	private final StructureAlignStyle structureAlignStyle;
    	public int additionalIndent;
+   	
+   	private Stack<AlignTable> tableStack = new Stack<>();
+   	private ArrayList<AlignTable> allTables = new ArrayList<>();
+   	
+   	public TableSet(StructureAlignStyle structureAlignStyle) {
+   		this.structureAlignStyle = structureAlignStyle;
+   		addTable();
+   	}
+   	
+   	private void addTable() {
+   		AlignTable newTable = new AlignTable(MAX_COLUMN_COUNT);
+   		allTables.add(newTable);
+  			tableStack.push(newTable);
+   	}
+   	
+   	public AlignTable getCurrentTable() {
+   		// in special cases, e.g. if the rule is executed on a "TYPES END OF" line, the table stack may be empty
+   		if (tableStack.isEmpty()) {
+      		addTable();
+   		}
+   		return tableStack.peek(); 
+   	}
+
+   	public void beginOfStructure() {
+   		if (structureAlignStyle == StructureAlignStyle.ACROSS_LEVELS && additionalIndent > 0) {
+   			// continue using the table at the top of the table stack, which was started at the top-level BEGIN OF
+   		} else {
+   			addTable();
+   		}
+  			additionalIndent += 2;
+   	}
+   	
+   	public void endOfStructure() {
+   		if (additionalIndent > 0) {
+   			additionalIndent -= 2;
+   		}
+   		if (!tableStack.isEmpty()) {
+   			if (structureAlignStyle == StructureAlignStyle.ACROSS_LEVELS && additionalIndent > 0) {
+      			// continue using the table at the top of the table stack, which was started at the top-level BEGIN OF
+   			} else {
+   				tableStack.pop();
+   			}
+   		}
+   		
+   		if (structureAlignStyle == StructureAlignStyle.PER_SECTION || additionalIndent == 0) {
+   			// replace the table from the previous level with a new one, which will have independent alignment
+   			if (!tableStack.isEmpty())
+   				tableStack.pop();
+   			addTable();
+   		}
+   	}
+
+   	public Iterable<AlignTable> getAllTables() { 
+   		return allTables; 
+  		}
    }
    
 	@Override
@@ -85,15 +148,32 @@ public class AlignDeclarationsRule extends AlignDeclarationSectionRuleBase {
 				+ LINE_SEP 
 				+ LINE_SEP + "    TYPES:"
 				+ LINE_SEP + "      BEGIN OF ty_s_outer,"
-				+ LINE_SEP + "      alpha TYPE i,"
-				+ LINE_SEP + "      BEGIN OF ty_s_inner,"
 				+ LINE_SEP + "      one TYPE i,"
 				+ LINE_SEP + "      two TYPE i,"
-				+ LINE_SEP + "      three TYPE i,"
+				+ LINE_SEP + "      BEGIN OF ty_s_inner,"
+				+ LINE_SEP + "      a1 TYPE i,"
+				+ LINE_SEP + "      b2 TYPE i,"
+				+ LINE_SEP + "      c3 TYPE i,"
 				+ LINE_SEP + "      END OF ty_s_inner,"
+				+ LINE_SEP + "      three TYPE i,"
+				+ LINE_SEP + "      four TYPE i,"
+				+ LINE_SEP + "      BEGIN OF ty_s_another_inner,"
+				+ LINE_SEP + "      long_component_name TYPE i,"
+				+ LINE_SEP + "      very_long_component_name TYPE i,"
+				+ LINE_SEP + "      END OF ty_s_another_inner,"
+				+ LINE_SEP + "      seventeen TYPE i,"
+				+ LINE_SEP + "      eighteen TYPE i,"
+				+ LINE_SEP + "      END OF ty_s_outer,"
+				+ LINE_SEP + "      ty_tt_outer TYPE STANDARD TABLE OF ty_s_outer WITH DEFAULT KEY,"
+				+ LINE_SEP 
+				+ LINE_SEP + "      BEGIN OF ty_s_outer_2,"
+				+ LINE_SEP + "      any_component TYPE i,"
+				+ LINE_SEP + "      BEGIN OF ty_s_inner,"
+				+ LINE_SEP + "      alpha TYPE i,"
 				+ LINE_SEP + "      beta TYPE i,"
-				+ LINE_SEP + "      gamma TYPE i,"
-				+ LINE_SEP + "      END OF ty_s_outer."
+				+ LINE_SEP + "      END OF ty_s_inner,"
+				+ LINE_SEP + "      other_component TYPE i,"
+				+ LINE_SEP + "      END OF ty_s_outer_2."
 				+ LINE_SEP 
 				+ LINE_SEP + "    \" alignment across comments and empty lines (depending on configuration):" 
 				+ LINE_SEP + "    DATA lv_value TYPE i." 
@@ -106,8 +186,9 @@ public class AlignDeclarationsRule extends AlignDeclarationSectionRuleBase {
 
 	final ConfigBoolValue configExecuteOnClassDefinitionSections = new ConfigBoolValue(this, "ExecuteOnClassDefinitionSections", "Execute on CLASS ... DEFINITION sections", true);
 	final ConfigIntValue configFillPercentageToJustifyOwnColumn = new ConfigIntValue(this, "FillPercentageToJustifyOwnColumn", "Fill Ratio to justify own column", "%", 1, 20, 100);
-	
-	private final ConfigValue[] configValues = new ConfigValue[] { configExecuteOnClassDefinitionSections, configAlignAcrossEmptyLines, configAlignAcrossCommentLines, configFillPercentageToJustifyOwnColumn };
+	final ConfigEnumValue<StructureAlignStyle> configStructureAlignStyle = new ConfigEnumValue<StructureAlignStyle>(this, "StructureAlignStyle", "Alignment of nested structures:", new String[] { "align outer structure with inner", "align outer structure independently (like Pretty Printer)", "align each section independently" }, StructureAlignStyle.PER_LEVEL, StructureAlignStyle.ACROSS_LEVELS, LocalDate.of(2023, 5, 21) ); 
+
+	private final ConfigValue[] configValues = new ConfigValue[] { configExecuteOnClassDefinitionSections, configAlignAcrossEmptyLines, configAlignAcrossCommentLines, configFillPercentageToJustifyOwnColumn, configStructureAlignStyle };
 
 	@Override
 	public ConfigValue[] getConfigValues() { return configValues; }
@@ -140,22 +221,50 @@ public class AlignDeclarationsRule extends AlignDeclarationSectionRuleBase {
 		boolean includeKeywordInTable = includeKeywordInTable(startCommand, endCommand);
 
 		// determine the basic indent of the sequence and whether to start with line breaks
-		TableStart tableStart = determineTableStart(startCommand, includeKeywordInTable);
+		TableStart tableStart = determineTableStart(startCommand, endCommand, includeKeywordInTable);
 
-		// build the table
-		AlignTable table;
+		// build the tables (note that BEGIN OF always starts a new table at the next level, while END OF resumes the table from the previous level) 
+		TableSet tableSet;
 		try {
-			table = buildTable(startCommand, endCommand, includeKeywordInTable);
-			if (table == null)
+			tableSet = buildTable(startCommand, endCommand, includeKeywordInTable);
+			if (tableSet == null)
 				return;
 		} catch (UnexpectedSyntaxException ex) {
 			throw new UnexpectedSyntaxBeforeChanges(this, ex);
 		}
 
-		// align the table
-		if (table.getLineCount() > 0) {
-			Command[] changedCommands = table.align(tableStart.basicIndent, tableStart.firstLineBreaks, false);
+		// align the tables
+		int firstLineBreaks = tableStart.firstLineBreaks;
+		for (AlignTable table : tableSet.getAllTables()) { 
+			if (table.getLineCount() == 0) 
+				continue;
+
+			// determine indents for this table, which may or may not contain a keyword column
+			AlignColumn keywordColumn = table.getColumn(Columns.KEYWORD.getValue());
+			int basicIndent = keywordColumn.isEmpty()? tableStart.basicIdentifierIndent : tableStart.keywordIndent;
+
+			// if the keywords get an own column:
+			if (includeKeywordInTable) {
+				// ensure that all keywords have the required width (esp. 'TYPES' if there is 'TYPES:' in another AlignTable)
+				keywordColumn.setMinimumWidth(tableStart.basicIdentifierIndent - tableStart.keywordIndent - 1);
+				
+				// after a keyword, continue with the next Token (which may be a comment) 
+				for (int line = 0; line < table.getLineCount(); ++line) {
+					AlignCell keywordCell = table.getLine(line).getCell(keywordColumn);
+					if (keywordCell != null) {
+						Token next = keywordCell.getLastToken().getNext();
+						if (!next.isAsteriskCommentLine() && next.lineBreaks > 0) {
+							next.setWhitespace();
+							code.addRuleUse(this, next.getParentCommand());
+						}
+					}
+				}
+			}
+			
+			Command[] changedCommands = table.align(basicIndent, firstLineBreaks, false);
 			code.addRuleUses(this, changedCommands);
+			
+			firstLineBreaks = 1;
 		}
 		
 		alignInnerCommentLines(startCommand, endCommand);
@@ -186,14 +295,30 @@ public class AlignDeclarationsRule extends AlignDeclarationSectionRuleBase {
 		return continuesBehindAnyKeyword || !hasAnyChain;
 	}
 	
-	private TableStart determineTableStart(Command startCommand, boolean includeKeywordInTable) {
+	private TableStart determineTableStart(Command startCommand, Command endCommand, boolean includeKeywordInTable) {
 		Token firstToken = startCommand.getFirstToken();
 		int firstLineBreaks;
-		int basicIndent;
+		int keywordIndent = firstToken.getStartIndexInLine();
+		int basicIdentifierIndent;
+		
 		if (includeKeywordInTable) {
-			// the first keyword of each Command will be considered in the table, too
+			// the first keyword of each Command will be included in the table, too
 			firstLineBreaks = firstToken.lineBreaks;
-		   basicIndent = firstToken.getStartIndexInLine();
+			basicIdentifierIndent = firstToken.getEndIndexInLine() + 1;
+
+			// consider chain colons in the basic indent of the identifiers   
+			Command command = startCommand;
+			String keywordOfFirstCommand = firstToken.getText();
+			while (command != endCommand) {
+				if (command.getFirstToken().isAnyKeyword(keywordOfFirstCommand) && command.isSimpleChain()) {
+					Token colon = command.getFirstToken().getNextNonCommentSibling();
+					if (colon.isChainColon() && colon.lineBreaks == 0) {
+						basicIdentifierIndent = Math.max(basicIdentifierIndent, colon.getEndIndexInLine() + 1);
+					}
+				}
+				command = command.getNext();
+			}
+
 		} else {
 			// the first keyword of each Commands will NOT be considered in the table, i.e. alignment is done for the 
 			// content AFTER the first keyword, possibly keeping a "KEYWORD:<line break>" scenario; 
@@ -203,27 +328,26 @@ public class AlignDeclarationsRule extends AlignDeclarationSectionRuleBase {
 				Token offsetToken = colon.getNextNonCommentToken();
 				firstLineBreaks = offsetToken.lineBreaks;
 				if (firstLineBreaks > 0) {
-					basicIndent = firstToken.getStartIndexInLine() + ABAP.INDENT_STEP;
+					basicIdentifierIndent = firstToken.getStartIndexInLine() + ABAP.INDENT_STEP;
 				} else {
 					// currently impossible to be here, but in case logic is changed later
-					basicIndent = colon.getEndIndexInLine() + 1; // not "offsetToken.getStartIndexInLine()", as this is often weirdly indented
+					basicIdentifierIndent = colon.getEndIndexInLine() + 1; // not "offsetToken.getStartIndexInLine()", as this is often weirdly indented
 				}
 			} else {
 				Token offsetToken = firstToken.getNextNonCommentToken();
 				firstLineBreaks = offsetToken.lineBreaks;
-				basicIndent = offsetToken.getStartIndexInLine();
+				basicIdentifierIndent = offsetToken.getStartIndexInLine();
 			}
 		}
-		return new TableStart(firstLineBreaks, basicIndent);
+		return new TableStart(firstLineBreaks, keywordIndent, basicIdentifierIndent);
 	}
 
-	private AlignTable buildTable(Command startCommand, Command endCommand, boolean includeKeywordInTable) throws UnexpectedSyntaxException {
-		AlignTable table = new AlignTable(MAX_COLUMN_COUNT);
+	private TableSet buildTable(Command startCommand, Command endCommand, boolean includeKeywordInTable) throws UnexpectedSyntaxException {
+		TableSet tableSet = new TableSet(StructureAlignStyle.forValue(configStructureAlignStyle.getValue()));
 
 		// for lines within (possibly nested) BEGIN OF ... END OF blocks, an additionalIndent is used
 		Command command = startCommand;
 		Token token = command.getFirstToken();
-		Layout layout = new Layout();
 		
 		do {
 			// token is now 
@@ -247,7 +371,12 @@ public class AlignDeclarationsRule extends AlignDeclarationSectionRuleBase {
 				token = command.getFirstToken();
 			}
 
-			AlignLine line = table.addLine();
+			// if a section is closed with "END OF", then end the current table now, so the AlignLine that contains "END OF" already belongs to the table from the previous level
+			if (endOfStructureReached(token)) {
+				tableSet.endOfStructure();
+			}
+
+			AlignLine line = tableSet.getCurrentTable().addLine();
 
 			// keyword DATA, FIELD-SYMBOLS or TYPES, possibly with ":"
 			if (token.isAnyKeyword(Command.declarationKeywords)) { 
@@ -256,9 +385,9 @@ public class AlignDeclarationsRule extends AlignDeclarationSectionRuleBase {
 
 			// (structure) declaration line
 			if (token.matchesOnSiblings(true, "BEGIN|END", "OF") || token.matchesOnSiblings(true, "INCLUDE", "TYPE|STRUCTURE")) {
-				token = readStructureDeclaration(line, token, layout);
+				token = readStructureDeclaration(line, token, tableSet);
 			} else {
-				token = readDeclarationLine(line, token, layout.additionalIndent);
+				token = readDeclarationLine(line, token, tableSet.additionalIndent);
 			}
 			if (token == null)
 				return null;
@@ -280,9 +409,24 @@ public class AlignDeclarationsRule extends AlignDeclarationSectionRuleBase {
 			}
 		} while (true);
 		
-		joinSparselyFilledColumns(table);
+		for (AlignTable table : tableSet.getAllTables()) {
+			joinSparselyFilledColumns(table);
+		}
 		
-		return table;
+		return tableSet;
+	}
+
+	private boolean endOfStructureReached(Token token) {
+		Token testToken = token;
+
+		// skip declaration keyword (if any) and chain colon 
+		if (testToken.isAnyKeyword(Command.declarationKeywords)) {
+			testToken = testToken.getNextNonCommentSibling();
+			if (testToken.isChainColon())
+				testToken = testToken.getNextNonCommentSibling();
+		}
+		
+		return testToken.matchesOnSiblings(true, "END", "OF");
 	}
 
 	private Token readDeclarationKeyword(AlignLine line, Token token, boolean includeKeywordInTable) throws UnexpectedSyntaxException {
@@ -306,17 +450,16 @@ public class AlignDeclarationsRule extends AlignDeclarationSectionRuleBase {
 		return token;
 	}
 
-	private Token readStructureDeclaration(AlignLine line, Token token, Layout layout) {
-		if (token.matchesOnSiblings(true, "END", "OF"))
-			layout.additionalIndent -= 2;
-		
+	private Token readStructureDeclaration(AlignLine line, Token token, TableSet tableSet) {
 		// treat the first keyword like an identifier, so it is aligned like the other component names; 
 		// however, override the text width to be just 1 character wide (i.e. don't move the TYPE column in the component lines because of this) 
-		AlignCell newCell = AlignCellToken.createSpecial(token, layout.additionalIndent, true);
+		AlignCell newCell = AlignCellToken.createSpecial(token, tableSet.additionalIndent, true);
 		line.setCell(Columns.IDENTIFIER.getValue(), newCell);
 		
-		if (token.matchesOnSiblings(true, "BEGIN", "OF"))
-			layout.additionalIndent += 2;
+		if (token.matchesOnSiblings(true, "BEGIN", "OF")) {
+			// start a new AlignTable for the next AlignLine
+			tableSet.beginOfStructure();
+		}
 		
 		// skip the rest of the line, including a line-end comment
 		token = token.getLastTokenOnSiblings(true, TokenSearch.ASTERISK, ",|.");
@@ -423,6 +566,12 @@ public class AlignDeclarationsRule extends AlignDeclarationSectionRuleBase {
 				continue;
 			if (testColumn.getCellCount() <= 1 || testColumn.getCellCount() < (int) (table.getLineCount() * fillRatioToJustifyOwnColumn))
 				testColumn.joinIntoPreviousColumns();
+		}
+
+		// if LENGTH is always preceded by TYPE sections with the same length ("TYPE c", "TYPE p" etc.), then join it into the TYPE column 
+		AlignColumn lengthColumn = table.getColumn(Columns.LENGTH.getValue()); 
+		if (lengthColumn.isPreviousColumnFixedWidth()) {
+			lengthColumn.joinIntoPreviousColumns();
 		}
 	}
 

@@ -11,6 +11,7 @@ public class AlignColumn {
 	public boolean rightAlign;
 	private boolean forceLineBreakAfter;
 	private boolean overrideWidthWith1;
+	private int minimumWidth;
 	/** the forced indent of the column, to which the basicIndent is added **/
 	private int forceIndent = -1;
 
@@ -18,7 +19,7 @@ public class AlignColumn {
 	private boolean isValid;
 	private int maxMonoLineWidth;
 	private int maxMultiLineWidth;
-	
+
 	// the effective indent is only determined in AlignTable.align()
 	private int effectiveIndent;
 	
@@ -93,13 +94,13 @@ public class AlignColumn {
 	final int getMaxMonoLineWidthWithSpaceLeft() {
 		if (!isValid)
 			recalculate();
-		return isEmpty() ? 0 : maxMonoLineWidth + 1;
+		return isEmpty() ? 0 : Math.max(minimumWidth, maxMonoLineWidth) + 1;
 	}
 
 	final int getMaxMultiLineWidthWithSpaceLeft() {
 		if (!isValid)
 			recalculate();
-		return isEmpty() ? 0 : maxMultiLineWidth + 1;
+		return isEmpty() ? 0 : Math.max(minimumWidth, maxMultiLineWidth) + 1;
 	}
 
 	/**
@@ -208,5 +209,28 @@ public class AlignColumn {
 				return cell;
 		}
 		return null;
+	}
+	
+	public final void setMinimumWidth(int minimumWidth) {
+		this.minimumWidth = minimumWidth;
+	}
+	
+	public final boolean isPreviousColumnFixedWidth() {
+		if (index == 0)
+			return false;
+		
+		int minWidth = -1;
+		int maxWidth = -1;
+		for (AlignLine line : parentTable.getLines()) {
+			if (line.getCell(index) == null)
+				continue;
+			AlignCell prevCell = line.getCell(index - 1);
+			if (prevCell == null)
+				return false;
+			int width = prevCell.getMultiLineWidth();
+			minWidth = (minWidth < 0) ? width : Math.min(minWidth, width);  
+			maxWidth = (maxWidth < 0) ? width : Math.max(maxWidth, width);  
+		}
+		return (minWidth >= 0 && minWidth == maxWidth);
 	}
 }
