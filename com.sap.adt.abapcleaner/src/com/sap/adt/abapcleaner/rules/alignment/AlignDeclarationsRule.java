@@ -488,9 +488,11 @@ public class AlignDeclarationsRule extends AlignDeclarationSectionRuleBase {
 		Token typeEnd = token;
 		while (typeEnd != null && !typeEnd.isAnyKeyword("LENGTH", "DECIMALS", "VALUE", "READ-ONLY") && !typeEnd.textEqualsAny(".", ",")) {
 			// do not align table declarations with "WITH ... KEY ..." sections, because they usually should not be put on a single line; 
-			// however, do accept the short cases of "WITH EMPTY KEY" and "WITH [UNIQUE | NON-UNIQUE] DEFAULT KEY"
-			if (typeEnd.isKeyword("WITH") && !typeEnd.matchesOnSiblings(true, "WITH", "EMPTY", "KEY") 
-					&& !typeEnd.matchesOnSiblings(true, "WITH", TokenSearch.makeOptional("UNIQUE|NON-UNIQUE"), "DEFAULT", "KEY")) {
+			// however, do accept the short cases of "WITH EMPTY KEY" and "WITH [UNIQUE | NON-UNIQUE] DEFAULT KEY" and "WITH [UNIQUE | NON-UNIQUE] KEY comp1" 
+			if (typeEnd.isKeyword("WITH") 
+					&& !typeEnd.matchesOnSiblings(true, "WITH", "EMPTY", "KEY") 
+					&& !typeEnd.matchesOnSiblings(true, "WITH", TokenSearch.makeOptional("UNIQUE|NON-UNIQUE"), "DEFAULT", "KEY")
+					&& !typeEnd.matchesOnSiblings(true, "WITH", TokenSearch.makeOptional("UNIQUE|NON-UNIQUE"), "KEY", TokenSearch.ANY_IDENTIFIER, ",|.")) {
 				return null;
 			}
 			typeEnd = typeEnd.getNextSibling();

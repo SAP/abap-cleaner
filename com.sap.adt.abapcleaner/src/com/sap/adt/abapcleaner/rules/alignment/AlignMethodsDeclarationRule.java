@@ -422,7 +422,7 @@ public class AlignMethodsDeclarationRule extends AlignDeclarationSectionRuleBase
 			
 		} else if (getAlignConsecutive() == MethodsSequenceAlignment.ALL_TABULAR) {
 			// allow one-liners as well as declarations in 'tabular' layout (or chains of those), i.e. ensure that there are no line breaks...
-			// - after the keywords METHODS / CLASS-METHODS, 
+			// - after the keywords METHODS / CLASS-METHODS (except when they are followed by a chain colon)
 			// - after the method names, or 
 			// - after the access keywords IMPORTING, EXPORTING etc.  
 			final Columns[] columnsToCheck = new Columns[] { Columns.KEYWORD, Columns.METHOD_NAME, Columns.ACCESS };
@@ -434,7 +434,7 @@ public class AlignMethodsDeclarationRule extends AlignDeclarationSectionRuleBase
 					if (cell == null) 
 						continue;
 					Token nextToken = cell.getLastToken().getNextNonCommentSibling();
-					if (nextToken != null && nextToken.lineBreaks > 0) {
+					if (nextToken != null && nextToken.lineBreaks > 0 && !cell.getLastToken().isChainColon()) {
 						// line break found - this is no one-liner or 'tabular' layout
 						// or, as an exception, continue if (lineIndex == methodNameLineIndex && ChangeType.forValue(configContinueAfterKeyword.getValue()) == ChangeType.NEVER)?
 						return false;
@@ -458,8 +458,16 @@ public class AlignMethodsDeclarationRule extends AlignDeclarationSectionRuleBase
 			basicIndent += ABAP.INDENT_STEP;
 		int firstLineBreaks = table.getFirstToken().lineBreaks;
 		
+		// determine whether the table starts or ends in the middle of a declaration chain
+		boolean tableContainsPartialChains = false;
+		if (table.getLine(0).getCell(Columns.KEYWORD.getValue()) == null) {
+			tableContainsPartialChains = true;
+		} else if (table.getLastLine().getLastToken().matchesOnSiblings(true, TokenSearch.ASTERISK, ABAP.COLON_SIGN_STRING)) {
+			tableContainsPartialChains = true;
+		}
+
 		// insert line breaks depending on rule configuration
-		changeLineBreaks(code, table, isTableOfOneLinersOrTabular, basicIndent);
+		changeLineBreaks(code, table, isTableOfOneLinersOrTabular && !tableContainsPartialChains, basicIndent);
 
 		// decide whether the DEFAULT or OPTIONAL column should really be aligned (i.e. whether horizontal space should be reserved for them):
 		// if only one single line (or less than 20% of all lines) have content in this column, then join the content into a previous column
@@ -495,8 +503,8 @@ public class AlignMethodsDeclarationRule extends AlignDeclarationSectionRuleBase
 		}
 	}
 	
-	private void changeLineBreaks(Code code, AlignTable table, boolean isTableOfOneLinersOrTabular, int basicIndent) {
-		boolean isPotentialOneLiner = (table.getLineCount() == 1 && !table.getLine(0).containsComments());
+	private void changeLineBreaks(Code code, AlignTable table, boolean alwaysContinueLine, int basicIndent) {
+ 		boolean isPotentialOneLiner = (table.getLineCount() == 1 && !table.getLine(0).containsComments());
 		boolean isCurrentOneLiner = isPotentialOneLiner && !table.getLine(0).containsInnerLineBreaks(); 
 		MethodsOneLinerMeasure oneLinerMeasure = MethodsOneLinerMeasure.forValue(configHandleOneLiners.getValue());
 		
@@ -508,8 +516,8 @@ public class AlignMethodsDeclarationRule extends AlignDeclarationSectionRuleBase
 
 			// determine the configuration for this column
 			ChangeType continueLine;
-			if (isTableOfOneLinersOrTabular) {
-				continueLine = ChangeType.ALWAYS;
+			if (alwaysContinueLine) {
+				continueLine = (colIndex == Columns.KEYWORD.getValue()) ? ChangeType.KEEP_AS_IS : ChangeType.ALWAYS;
 			} else if (isPotentialOneLiner && oneLinerMeasure == MethodsOneLinerMeasure.CREATE) {
 				continueLine = ChangeType.ALWAYS;
 			} else if (isCurrentOneLiner && oneLinerMeasure == MethodsOneLinerMeasure.KEEP_EXISTING) {

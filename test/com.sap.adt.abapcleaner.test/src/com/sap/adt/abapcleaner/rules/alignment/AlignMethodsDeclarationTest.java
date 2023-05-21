@@ -1038,9 +1038,9 @@ class AlignMethodsDeclarationTest extends RuleTestBase {
 		buildSrc("      method_with_long_name RETURNING VALUE(rv_third) TYPE string.");
 
 		buildExp("    METHODS: \" comment");
-		buildExp("             any_method            RETURNING VALUE(rv_any)   TYPE abap_bool,");
-		buildExp("             other_method          RETURNING VALUE(rv_other) TYPE i,");
-		buildExp("             method_with_long_name RETURNING VALUE(rv_third) TYPE string.");
+		buildExp("      any_method            RETURNING VALUE(rv_any)   TYPE abap_bool,");
+		buildExp("      other_method          RETURNING VALUE(rv_other) TYPE i,");
+		buildExp("      method_with_long_name RETURNING VALUE(rv_third) TYPE string.");
 
 		putAnyClassDefAroundSrcAndExp();
 
@@ -1780,10 +1780,30 @@ class AlignMethodsDeclarationTest extends RuleTestBase {
 		testRule();
 	}
 
-	/*
 	@Test
-	void testBreakAfterKeyword() {
-		rule.configContinueAfterKeyword.setEnumValue(ChangeType.NEVER);
+	void testBreakAfterKeywordAlignOneLiners() {
+		rule.configContinueAfterMethodName.setEnumValue(ChangeType.ALWAYS);
+		rule.configAlignConsecutive.setEnumValue(MethodsSequenceAlignment.ONE_LINERS);
+
+		buildSrc("  METHODS:");
+		buildSrc("    any_method IMPORTING iv_any TYPE i,");
+		buildSrc("    other_method IMPORTING iv_other TYPE i,");
+		buildSrc("    third_method_with_long_name IMPORTING iv_third_param TYPE i.");
+		buildSrc("");
+		buildSrc("  DATA lv_any TYPE i.");
+
+		buildExp("  METHODS:");
+		buildExp("    any_method                  IMPORTING iv_any         TYPE i,");
+		buildExp("    other_method                IMPORTING iv_other       TYPE i,");
+		buildExp("    third_method_with_long_name IMPORTING iv_third_param TYPE i.");
+		buildExp("");
+		buildExp("  DATA lv_any TYPE i.");
+
+		testRule();
+	}
+
+	@Test
+	void testBreakAfterKeywordAlignAllTabular() {
 		rule.configContinueAfterMethodName.setEnumValue(ChangeType.ALWAYS);
 		rule.configAlignConsecutive.setEnumValue(MethodsSequenceAlignment.ALL_TABULAR);
 
@@ -1791,13 +1811,31 @@ class AlignMethodsDeclarationTest extends RuleTestBase {
 		buildSrc("    any_method IMPORTING iv_any TYPE i,");
 		buildSrc("    other_method IMPORTING iv_other TYPE i,");
 		buildSrc("    third_method_with_long_name IMPORTING iv_third_param TYPE i.");
+		buildSrc("");
+		buildSrc("  DATA lv_any TYPE i.");
 
 		buildExp("  METHODS:");
 		buildExp("    any_method                  IMPORTING iv_any         TYPE i,");
 		buildExp("    other_method                IMPORTING iv_other       TYPE i,");
 		buildExp("    third_method_with_long_name IMPORTING iv_third_param TYPE i.");
+		buildExp("");
+		buildExp("  DATA lv_any TYPE i.");
 
 		testRule();
 	}
-	*/
+
+	@Test
+	void testBreakAfterKeywordButKeepOneLiners() {
+		rule.configContinueAfterKeyword.setEnumValue(ChangeType.NEVER);
+
+		buildSrc("    METHODS set_value IMPORTING !iv_new_value TYPE i.");
+		buildSrc("    METHODS get_current_value RETURNING VALUE(rv_result) TYPE i.");
+		buildSrc("    METHODS get_previous_value RETURNING VALUE(rv_result) TYPE i.");
+
+		buildExp("    METHODS set_value          IMPORTING !iv_new_value    TYPE i.");
+		buildExp("    METHODS get_current_value  RETURNING VALUE(rv_result) TYPE i.");
+		buildExp("    METHODS get_previous_value RETURNING VALUE(rv_result) TYPE i.");
+
+		testRule();
+	}
 }
