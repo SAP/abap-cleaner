@@ -166,7 +166,7 @@ public class PseudoCommentRule extends RuleForTokens {
 
 		// create the pragma Token and determine where to insert it
 		Token pragma = Token.createForAbap(0, 1, ABAP.PRAGMA_SIGN + pragmaName, TokenType.PRAGMA, token.sourceLineNum);
-		Token prev = token.isFirstTokenInLine() ? null : token.getPrev();
+		Token prev = (token.isFirstTokenInLine() && !token.isOnlyTokenInLine()) ? null : token.getPrev();
 
 		// if the pseudo comment is a stand-alone comment line, ...
 		Command ruleUseCommand = command;

@@ -296,4 +296,16 @@ public class PseudoCommentTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testTwoPseudoCommentsAfterComma() {
+		buildSrc("      CONSTANTS: lc_any   TYPE syst_subrc VALUE '1', \"#EC STR_NUM");
+		buildSrc("                                                   \"#EC NEEDED");
+		buildSrc("                 lc_other TYPE syst_subrc VALUE '2'. \"#EC STR_NUM");
+
+		buildExp("      CONSTANTS: lc_any   TYPE syst_subrc VALUE '1' ##STR_NUM ##NEEDED,");
+		buildExp("                 lc_other TYPE syst_subrc VALUE '2' ##STR_NUM.");
+
+		testRule();
+	}
 }
