@@ -436,6 +436,7 @@ public class AlignMethodsDeclarationRule extends AlignDeclarationSectionRuleBase
 					Token nextToken = cell.getLastToken().getNextNonCommentSibling();
 					if (nextToken != null && nextToken.lineBreaks > 0) {
 						// line break found - this is no one-liner or 'tabular' layout
+						// or, as an exception, continue if (lineIndex == methodNameLineIndex && ChangeType.forValue(configContinueAfterKeyword.getValue()) == ChangeType.NEVER)?
 						return false;
 					}
 				}

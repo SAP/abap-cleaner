@@ -1779,4 +1779,25 @@ class AlignMethodsDeclarationTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	/*
+	@Test
+	void testBreakAfterKeyword() {
+		rule.configContinueAfterKeyword.setEnumValue(ChangeType.NEVER);
+		rule.configContinueAfterMethodName.setEnumValue(ChangeType.ALWAYS);
+		rule.configAlignConsecutive.setEnumValue(MethodsSequenceAlignment.ALL_TABULAR);
+
+		buildSrc("  METHODS:");
+		buildSrc("    any_method IMPORTING iv_any TYPE i,");
+		buildSrc("    other_method IMPORTING iv_other TYPE i,");
+		buildSrc("    third_method_with_long_name IMPORTING iv_third_param TYPE i.");
+
+		buildExp("  METHODS:");
+		buildExp("    any_method                  IMPORTING iv_any         TYPE i,");
+		buildExp("    other_method                IMPORTING iv_other       TYPE i,");
+		buildExp("    third_method_with_long_name IMPORTING iv_third_param TYPE i.");
+
+		testRule();
+	}
+	*/
 }
