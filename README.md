@@ -19,23 +19,34 @@ While there is no lack of guidelines and rules on what clean ABAP code should lo
 
 The ABAP cleaner tool does a lot of this work *for you* by **automating** as many of these rules as possible, 
 while giving you full control over which rules are used and how. 
-Obviously, automation is only possible for a subset of the clean code rules - but for a significant one, 
-including formatting, alignment, replacing obsolete commands, and even reducing some nesting depth. 
-This saves you tedious work, leaving you more time to focus on more complex requirements. 
 
 With ABAP cleaner, you can clean any amount of code from a single statement to an entire code document 
 with **one keystroke**. ABAP cleaner then applies **55+ different [cleanup rules](docs/rules.md)** to your code section, 
 cleaning approx. 1 MB of code per second.
 
-In addition to the default profile, you can create your own profiles: 
-In each profile, you can **select** which cleanup rules shall be active, 
+> Please don't get us wrong: Of course, an automated tool can NOT replace all other clean code efforts. 
+> Obviously, automation is only possible for a subset of the clean code rules - but for a significant one, 
+> including formatting, alignment, replacing obsolete commands, and even reducing some nesting depth. 
+> This saves you tedious work, leaving you more time to focus on more complex requirements, such as 
+> modularization, testability and good naming. 
+
+ABAP cleaner is installed with two **profiles**: 
+
+- in the '**default**' profile, most available cleanup rules are activated with what we believe are good default settings 
+  in alignment with the [Clean ABAP Styleguide](https://github.com/SAP/styleguides/blob/main/clean-abap/CleanABAP.md) 
+  (and even going beyond its demands);
+- in the '**essential**' profile, only those cleanup rules are active which are explicitly demanded by the 
+  [Clean ABAP Styleguide](https://github.com/SAP/styleguides/blob/main/clean-abap/CleanABAP.md); 
+  this applies to approx. 40-50% of the available cleanup rules. 
+
+Additionally, you can create your own profiles:  In each profile, you can **select** which cleanup rules shall be active, 
 and **configure** options and thresholds for these rules. 
 Your team may align on a common configuration and create a **team profile** from it.
 
 
 ## How ABAP Cleaner is Used
 
-### Automatic or Interactive Cleanup from ADT
+### Automated or Interactive Cleanup from ADT
 
 Using ABAP cleaner from ADT, the cleanup can be done 
 
@@ -52,7 +63,7 @@ Using the stand-alone ABAP cleaner app, you may use the clipboard to copy the co
 (i.e. SAP GUI) into ABAP cleaner, and to copy the cleaned code back to your IDE. 
 
 You can also make the ABAP cleaner app [watch the clipboard](docs/usage.md) and directly replace it with cleaned up code, 
-allowing you stay in SAP GUI and do the cleanup with *Ctrl + C*, *Ctrl + V*.
+allowing you to stay in SAP GUI and do the cleanup with *Ctrl + C*, *Ctrl + V*.
 
 ### Scope of the Tool
 
