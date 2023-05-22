@@ -14,6 +14,7 @@ Aligns both chains and consecutive declaration lines of CONSTANTS, DATA, FIELD-S
 * \[X\] Align across empty lines
 * \[X\] Align across comment lines
 * Fill Ratio to justify own column \[20\] %
+* Alignment of nested structures: \[align outer structure independently \(like Pretty Printer\)\]
 
 ## Examples
 
@@ -41,15 +42,32 @@ Aligns both chains and consecutive declaration lines of CONSTANTS, DATA, FIELD-S
 
     TYPES:
       BEGIN OF ty_s_outer,
-      alpha TYPE i,
-      BEGIN OF ty_s_inner,
       one TYPE i,
       two TYPE i,
-      three TYPE i,
+      BEGIN OF ty_s_inner,
+      a1 TYPE i,
+      b2 TYPE i,
+      c3 TYPE i,
       END OF ty_s_inner,
+      three TYPE i,
+      four TYPE i,
+      BEGIN OF ty_s_another_inner,
+      long_component_name TYPE i,
+      very_long_component_name TYPE i,
+      END OF ty_s_another_inner,
+      seventeen TYPE i,
+      eighteen TYPE i,
+      END OF ty_s_outer,
+      ty_tt_outer TYPE STANDARD TABLE OF ty_s_outer WITH DEFAULT KEY,
+
+      BEGIN OF ty_s_outer_2,
+      any_component TYPE i,
+      BEGIN OF ty_s_inner,
+      alpha TYPE i,
       beta TYPE i,
-      gamma TYPE i,
-      END OF ty_s_outer.
+      END OF ty_s_inner,
+      other_component TYPE i,
+      END OF ty_s_outer_2.
 
     " alignment across comments and empty lines (depending on configuration):
     DATA lv_value TYPE i.
@@ -85,15 +103,32 @@ Resulting code:
 
     TYPES:
       BEGIN OF ty_s_outer,
-        alpha   TYPE i,
+        one       TYPE i,
+        two       TYPE i,
         BEGIN OF ty_s_inner,
-          one   TYPE i,
-          two   TYPE i,
-          three TYPE i,
+          a1 TYPE i,
+          b2 TYPE i,
+          c3 TYPE i,
         END OF ty_s_inner,
-        beta    TYPE i,
-        gamma   TYPE i,
-      END OF ty_s_outer.
+        three     TYPE i,
+        four      TYPE i,
+        BEGIN OF ty_s_another_inner,
+          long_component_name      TYPE i,
+          very_long_component_name TYPE i,
+        END OF ty_s_another_inner,
+        seventeen TYPE i,
+        eighteen  TYPE i,
+      END OF ty_s_outer,
+      ty_tt_outer TYPE STANDARD TABLE OF ty_s_outer WITH DEFAULT KEY,
+
+      BEGIN OF ty_s_outer_2,
+        any_component   TYPE i,
+        BEGIN OF ty_s_inner,
+          alpha TYPE i,
+          beta  TYPE i,
+        END OF ty_s_inner,
+        other_component TYPE i,
+      END OF ty_s_outer_2.
 
     " alignment across comments and empty lines (depending on configuration):
     DATA lv_value              TYPE i.

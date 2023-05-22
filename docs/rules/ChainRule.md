@@ -12,6 +12,7 @@ Resolves a chain \(DATA:, FIELD-SYMBOLS:, ASSERT: etc.\) into multiple standalon
 
 ## Options
 
+* \[X\] Unchain declarations in interfaces
 * \[X\] Unchain declarations in CLASS ... DEFINITION sections
 * \[X\] Unchain declarations in methods etc.
 * \[ \] Unchain simple commands \(chain after first keyword, e.g. ASSERT:, CHECK:, CLEAR:, FREE:\) except WRITE:
@@ -21,6 +22,16 @@ Resolves a chain \(DATA:, FIELD-SYMBOLS:, ASSERT: etc.\) into multiple standalon
 
 
 ```ABAP
+
+INTERFACE if_unchaining.
+  CONSTANTS: any_constant TYPE i VALUE 1,
+             other_constant TYPE i VALUE 2.
+
+  METHODS:
+    any_method,
+    other_method
+      IMPORTING iv_any_parameter TYPE i.
+ENDINTERFACE.
 
 CLASS cl_unchaining DEFINITION.
   PUBLIC SECTION.
@@ -83,6 +94,15 @@ ENDCLASS.
 Resulting code:
 
 ```ABAP
+
+INTERFACE if_unchaining.
+  CONSTANTS any_constant TYPE i VALUE 1.
+  CONSTANTS other_constant TYPE i VALUE 2.
+
+  METHODS any_method.
+  METHODS other_method
+            IMPORTING iv_any_parameter TYPE i.
+ENDINTERFACE.
 
 CLASS cl_unchaining DEFINITION.
   PUBLIC SECTION.

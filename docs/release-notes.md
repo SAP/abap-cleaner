@@ -6,6 +6,15 @@ as well as bugfixes of reported issues, i.e. anything that enhances or changes t
 For a complete list of changes (including documentation, tests, refactoring etc.), please refer to 
 the list of [commits](../../../commits/main).
 
+## 2023-05-22 (version 1.2.0)
+
+* Enhanced rule '**Align declarations**' with option on '**Alignment of nested structures**' ([#9](../../../issues/9), [#14](../../../issues/14))
+* Enhanced rule '**Unchain into multiple statements**' with option to '**Unchain declarations in interfaces**' ([#12](../../../issues/12))
+* Fixed rule '**Align METHODS declarations**' for mixed chains of one-liners and multi-liners ([#13](../../../issues/13))
+* Fixed rule '**Delete unused variables**' for variable usage in INSERT ... FROM TABLE
+* Fixed rule '**Use FINAL for immutable variables**' for changes with PERFORM ... USING
+* Fixed rule '**Replace obsolete pseudo comments with pragmas**' for multiple consecutive pseudo comments
+
 ## 2023-05-07 (version 1.1.0)
 
 * Added new rule '**Align CLEAR:, FREE: and SORT**'
