@@ -79,7 +79,8 @@ SQL statements are NOT the focus of ABAP cleaner (meaning that most cleanup rule
 
 To install and use the **ABAP cleaner plug-in for ABAP Development Tools** (ADT) on Windows or macOS, 
 
-1. Install ABAP Development Tools as described in the [Install ADT Tutorial (Step 1)](https://developers.sap.com/tutorials/abap-install-adt.html).
+1. Install ABAP Development Tools as described in the [Install ADT Tutorial (Step 1)](https://developers.sap.com/tutorials/abap-install-adt.html),
+   using an Eclipse installation that is [compatible with ADT](https://tools.hana.ondemand.com/).
 2. Start ADT, select menu 'Help / Install New Software...', 
    copy the link https://sap.github.io/abap-cleaner/updatesite to the 'Work with' field 
    and follow the installation steps, confirming to install ABAP cleaner. ([Known issues](docs/installation-issues.md))
