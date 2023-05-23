@@ -82,7 +82,7 @@ To install and use the **ABAP cleaner plug-in for ABAP Development Tools** (ADT)
 1. Install ABAP Development Tools as described in the [Install ADT Tutorial (Step 1)](https://developers.sap.com/tutorials/abap-install-adt.html).
 2. Start ADT, select menu 'Help / Install New Software...', 
    copy the link https://sap.github.io/abap-cleaner/updatesite to the 'Work with' field 
-   and follow the installation steps, confirming to install ABAP cleaner.
+   and follow the installation steps, confirming to install ABAP cleaner. ([Known issues](docs/installation-issues.md))
 3. After restarting ADT, open an ABAP code document in an editor, and use the menu 
    'Source Code / Clean Up With Interactive ABAP Cleaner...' 
    (shortcuts *Ctrl + 4* or *Ctrl + Shift + 4*), see [usage](docs/usage.md).
