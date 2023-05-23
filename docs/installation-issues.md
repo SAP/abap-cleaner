@@ -23,4 +23,12 @@ Typically, this is done by injecting a trusted root certificate into the Windows
 However, Eclipse, in its default configuration, does not make use of the Windows OS trust store, but uses the trust store 
 of the Java VM. The above solution makes Eclipse use the Windows OS trust store. 
 
+## Error "An error occurred while collecting items to be installed"
+
+**Symptom**: When installing the ABAP cleaner plug-in into Eclipse, the following error is shown: "Problem occurred: 
+'Installing Software' has encountered a problem. An error occurred while collecting items to be installed".
+Details say "No repository found containing: osgi.bundle,..." (or similar).
+
+**Solution**: Please use a newer Eclipse release that is listed on https://tools.hana.ondemand.com/ as compatible for ABAP Development Tools. 
+
 [**Back to README**](../README.md#requirements-and-installation)
