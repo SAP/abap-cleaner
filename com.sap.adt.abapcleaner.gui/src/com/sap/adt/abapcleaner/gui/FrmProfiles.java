@@ -725,11 +725,8 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 		chkHighlightChanges.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-		      boolean highlight = chkHighlightChanges.getSelection();
-		      codeDisplay.setHighlight(highlight ? IndentChangeType.INDENT_CHANGED : IndentChangeType.CONTENT_CHANGED, 
-		      		highlight ? InnerSpaceChangeType.INNER_SPACE_CHANGED : InnerSpaceChangeType.CONTENT_CHANGED, 
-		      		highlight ? CaseChangeType.CASE_CHANGED : CaseChangeType.CONTENT_CHANGED, 
-		      		highlight ? ContentChangeType.CONTENT_CHANGED : ContentChangeType.NEVER);
+		      ChangeTypes highlight = chkHighlightChanges.getSelection() ? ChangeTypes.createAllChanges() : ChangeTypes.createNoChanges();
+		      codeDisplay.setHighlight(highlight);
 			}
 		});
 		chkHighlightChanges.setSelection(true);

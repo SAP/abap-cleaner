@@ -360,11 +360,11 @@ class CompareLine {
 				// if multiple consecutive words were added or deleted, include the separating space in between these words in the highlighting
 				HighlightBitType type;
 				if (word.isWhitespaceWord())
-					type = (words.get(0).equals(word)) ? HighlightBitType.INDENT_CHANGE : HighlightBitType.WHITESPACE_CHANGE;
+					type = (words.get(0).equals(word)) ? HighlightBitType.INDENT_CHANGE : HighlightBitType.INNER_SPACE_CHANGE;
 				else if (match != null && AbapCult.toUpper(word.text).equals(AbapCult.toUpper(match.text)))
 					type = HighlightBitType.CASE_CHANGE;
 				else
-					type = HighlightBitType.CONTENT_CHANGE;
+					type = HighlightBitType.TEXT_CHANGE;
 				if (!isFirst && match == null && lastMatch == null && word.startIndex == lastWordEndIndex + 1)
 					result.add(new HighlightBit(word.startIndex - 1, word.length + 1, type));
 				else
@@ -378,7 +378,7 @@ class CompareLine {
 				int spaceCountMatch = match.startIndex - lastMatchEndIndex;
 				if (spaceCount > spaceCountMatch) {
 					int diff = spaceCount - spaceCountMatch;
-					result.add(new HighlightBit(word.startIndex - diff, diff, isFirst ? HighlightBitType.INDENT_CHANGE : HighlightBitType.WHITESPACE_CHANGE));
+					result.add(new HighlightBit(word.startIndex - diff, diff, isFirst ? HighlightBitType.INDENT_CHANGE : HighlightBitType.INNER_SPACE_CHANGE));
 				}
 				isFirst = false;
 			}

@@ -16,7 +16,7 @@ import com.sap.adt.abapcleaner.rulebase.*;
  * <li>blocking or unblocking ABAP cleaner {@link Rule}s for the current selection ({@link #setBlockRuleInSelection(RuleID, boolean) setBlockRuleInSelection(...)})
  * <li>re-processing the parsing and cleaning of the current selection of code lines ({@link #reprocessSelection(Profile, int, String) reprocessSelection(...)})
  * </ul>
- * <p>The client may use {@link #setHighlight(IndentChangeType, InnerSpaceChangeType, CaseChangeType, ContentChangeType) setHighlight(...)} 
+ * <p>The client may use {@link #setHighlight(boolean, boolean, boolean, boolean) setHighlight(...)} 
  * to specify which types of changes shall be highlighted ({@link #isLineHighlighted(DiffLine)}); 
  * navigation to the next change (and optionally, text search) is then filtered by these settings.</p>
  */
@@ -30,10 +30,7 @@ public class DiffNavigator {
 	private int curSearchPos;
 	private DisplaySide curSearchSide = DisplaySide.values()[0];
 
-	private IndentChangeType minIndentChange = IndentChangeType.INDENT_CHANGED;
-	private InnerSpaceChangeType minInnerSpaceChange = InnerSpaceChangeType.INNER_SPACE_CHANGED;
-	private CaseChangeType minCaseChange = CaseChangeType.CASE_CHANGED;
-	private ContentChangeType minContentChange = ContentChangeType.CONTENT_CHANGED;
+	private ChangeTypes highlight = ChangeTypes.createAllChanges();
 
 	private boolean isInSearchMode;
 
@@ -247,7 +244,7 @@ public class DiffNavigator {
 	}
 
 	public final boolean moveToNextScreenWithChanges(int lastVisibleLine) {
-		int newLine = diffDoc.getLineOfNextChangedCommand(validLineIndex(lastVisibleLine), true, minIndentChange, minInnerSpaceChange, minCaseChange);
+		int newLine = diffDoc.getLineOfNextChangedCommand(validLineIndex(lastVisibleLine), true, highlight);
 		if (newLine < 0)
 			return false;
 		curLine = newLine;
@@ -256,7 +253,7 @@ public class DiffNavigator {
 	}
 
 	public final boolean moveToPrevScreenWithChanges(int firstVisibleLine) {
-		int newLine = diffDoc.getLineOfNextChangedCommand(validLineIndex(firstVisibleLine), false, minIndentChange, minInnerSpaceChange, minCaseChange);
+		int newLine = diffDoc.getLineOfNextChangedCommand(validLineIndex(firstVisibleLine), false, highlight);
 		if (newLine < 0)
 			return false;
 		curLine = newLine;
@@ -282,7 +279,7 @@ public class DiffNavigator {
 	}
 
 	public final boolean moveToNextChange() {
-		int newLine = diffDoc.getLineOfNextChangedCommand(curLine, true, minIndentChange, minInnerSpaceChange, minCaseChange);
+		int newLine = diffDoc.getLineOfNextChangedCommand(curLine, true, highlight);
 		if (newLine < 0)
 			return false;
 
@@ -292,7 +289,7 @@ public class DiffNavigator {
 	}
 
 	public final boolean moveToPrevChange() {
-		int newLine = diffDoc.getLineOfNextChangedCommand(curLine, false, minIndentChange, minInnerSpaceChange, minCaseChange);
+		int newLine = diffDoc.getLineOfNextChangedCommand(curLine, false, highlight);
 		if (newLine < 0)
 			return false;
 
@@ -369,7 +366,7 @@ public class DiffNavigator {
 				DisplayLine line = diffLine.getDisplayLine(testSide);
 				String text = (line == null) ? null : line.getText();
 				boolean sideMatch = (testSide == DisplaySide.LEFT) ? searchLeft : searchRight;
-				boolean lineStatusMatch = searchChangedLinesOnly ? diffLine.highlight(minIndentChange, minInnerSpaceChange, minCaseChange) : true;
+				boolean lineStatusMatch = searchChangedLinesOnly ? diffLine.matchesChangeTypesFilter(highlight) : true;
 				if (line != null && lineStatusMatch && sideMatch && start < text.length()) {
 					int foundPos = AbapCult.indexOf(text, searchText, (start >= 0) ? start : 0, ignoreCase);
 					if (foundPos >= 0 && (!wholeWord || isStartOfWholeWord(text, foundPos))) {
@@ -394,7 +391,7 @@ public class DiffNavigator {
 				DisplayLine line = diffLine.getDisplayLine(testSide);
 				String text = (line == null) ? null : line.getText();
 				boolean sideMatch = (testSide == DisplaySide.LEFT) ? searchLeft : searchRight;
-				boolean lineStatusMatch = searchChangedLinesOnly ? diffLine.highlight(minIndentChange, minInnerSpaceChange, minCaseChange) : true;
+				boolean lineStatusMatch = searchChangedLinesOnly ? diffLine.matchesChangeTypesFilter(highlight) : true;
 				if (line != null && lineStatusMatch && sideMatch) {
 					int foundPos = AbapCult.lastIndexOf(text, searchText, (start >= 0 ? start : text.length()), ignoreCase);
 					if (foundPos >= 0 && (!wholeWord || isStartOfWholeWord(text, foundPos))) {
@@ -449,30 +446,32 @@ public class DiffNavigator {
 		}
 	}
 
-	public final void setHighlight(IndentChangeType minIndentChangeType, InnerSpaceChangeType minWhitespaceChangeType, CaseChangeType minCaseChangeType,
-			ContentChangeType minContentChangeType) {
-		this.minIndentChange = minIndentChangeType;
-		this.minInnerSpaceChange = minWhitespaceChangeType;
-		this.minCaseChange = minCaseChangeType;
-		this.minContentChange = minContentChangeType;
+	public final void setHighlight(ChangeTypes highlight) {
+		this.highlight = highlight;
 	}
 
-	public final boolean isContentChangeHighlighted() { return (minContentChange.getValue() < ContentChangeType.NEVER.getValue()); }
+	public final boolean showAddedAndDeletedLines() { 
+		return highlight.textOrLineChanges; // or .anyChanges(), but that is lees intuitive 
+	}
+
+	public final boolean showAnyChanges() { 
+		return highlight.anyChanges(); // or .anyChanges(), but that is lees intuitive 
+	}
 
 	public final boolean isLineHighlighted(DiffLine diffLine) {
-		return diffLine.highlight(minIndentChange, minInnerSpaceChange, minCaseChange);
+		return diffLine.matchesChangeTypesFilter(highlight);
 	}
 
 	public final boolean isLineBitHighlighted(HighlightBit bit) {
 		switch (bit.type) {
-			case CONTENT_CHANGE:
-				return (minContentChange.getValue() < ContentChangeType.NEVER.getValue());
+			case TEXT_CHANGE:
+				return highlight.textOrLineChanges;
 			case INDENT_CHANGE:
-				return (minIndentChange.getValue() < IndentChangeType.CONTENT_CHANGED.getValue());
-			case WHITESPACE_CHANGE:
-				return (minInnerSpaceChange.getValue() < InnerSpaceChangeType.CONTENT_CHANGED.getValue());
+				return highlight.indentChanges;
+			case INNER_SPACE_CHANGE:
+				return highlight.innerSpaceChanges;
 			case CASE_CHANGE:
-				return (minCaseChange.getValue() < CaseChangeType.CONTENT_CHANGED.getValue());
+				return highlight.caseChanges;
 			default:
 				throw new IndexOutOfBoundsException("unexpected HighlightBitType!");
 		}

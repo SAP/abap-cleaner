@@ -478,7 +478,7 @@ public class CodeDisplay extends Composite {
 				break;
 			DiffLine diffLine = navigator.getLine(lineIndex);
 			DisplayLine line = isLeft ? diffLine.leftLine : diffLine.rightLine;
-			if (!navigator.isContentChangeHighlighted() && line == null) {
+			if (!navigator.showAddedAndDeletedLines() && line == null) {
 				// skip this line WITHOUT increasing lineIndexFromTop (used for FrmProfile)
 				continue;
 			}
@@ -493,11 +493,11 @@ public class CodeDisplay extends Composite {
 			// visualize line status
 			LineStatus lineStatus = diffLine.status;
 			boolean highlightChange = (lineStatus == LineStatus.CHANGED) && navigator.isLineHighlighted(diffLine);
-			Color lineBackColor = getLineBackground(lineStatus, isLeft, isSelected, highlightChange);
+			Color lineBackColor = getLineBackground(lineStatus, isLeft, isSelected, highlightChange, navigator.showAddedAndDeletedLines());
 			if (line != null && (!line.isAbapCommand() || !line.isCommandInCleanupRange()))
 				lineBackColor = colors.lineOutsideCleanupRange;
 			
-			if (lineBackColor != null && (navigator.isContentChangeHighlighted() || lineBackColor == colors.lineSkip || lineBackColor == colors.selLineSkip)) {
+			if (lineBackColor != null && (navigator.showAnyChanges() || lineBackColor == colors.lineSkip || lineBackColor == colors.selLineSkip || lineBackColor == colors.lineOutsideCleanupRange)) {
 				g.setBackground(lineBackColor);
 				g.fillRectangle(xOffset, yOffset, codeWidth, lineHeight);
 			}
@@ -530,7 +530,7 @@ public class CodeDisplay extends Composite {
 				break;
 			DiffLine diffLine = navigator.getLine(lineIndex);
 			DisplayLine line = isLeft ? diffLine.leftLine : diffLine.rightLine;
-			if (!navigator.isContentChangeHighlighted() && line == null) {
+			if (!navigator.showAddedAndDeletedLines() && line == null) {
 				// skip this line WITHOUT increasing lineIndexFromTop (used for FrmProfile)
 				continue;
 			}
@@ -631,18 +631,33 @@ public class CodeDisplay extends Composite {
 		}
 	}
 
-	private Color getLineBackground(LineStatus lineStatus, boolean left, boolean isSelected, boolean highlightChange) {
+	private Color getLineBackground(LineStatus lineStatus, boolean left, boolean isSelected, boolean highlightChange, boolean highlightLineChange) {
 		switch (lineStatus) {
 			case EQUAL:
 				return (isSelected ? colors.selLine : null);
+
 			case LEFT_DELETED:
-				return left ? (isSelected ? colors.selLineDeleted : colors.lineDeleted) : (isSelected ? colors.selLineSkip : colors.lineSkip);
+				if (!highlightLineChange)
+					return null;
+				return left ? (isSelected ? colors.selLineDeleted : colors.lineDeleted) 
+								: (isSelected ? colors.selLineSkip : colors.lineSkip);
+			
 			case RIGHT_ADDED:
-				return left ? (isSelected ? colors.selLineSkip : colors.lineSkip) : (isSelected ? colors.selLineAdded : colors.lineAdded);
+				if (!highlightLineChange)
+					return null;
+				return left ? (isSelected ? colors.selLineSkip : colors.lineSkip) 
+								: (isSelected ? colors.selLineAdded : colors.lineAdded);
+
 			case LEFT_DELETED_RIGHT_ADDED:
-				return left ? (isSelected ? colors.selLineDeleted : colors.lineDeleted) : (isSelected ? colors.selLineAdded : colors.lineAdded);
+				if (!highlightLineChange)
+					return null;
+				return left ? (isSelected ? colors.selLineDeleted : colors.lineDeleted) 
+								: (isSelected ? colors.selLineAdded : colors.lineAdded);
+
 			case CHANGED:
-				return highlightChange ? (isSelected ? colors.selLineChanged : colors.lineChanged) : (isSelected ? colors.selLine : null);
+				return highlightChange ? (isSelected ? colors.selLineChanged : colors.lineChanged) 
+											  : (isSelected ? colors.selLine : null);
+			
 			default:
 				return null;
 		}
@@ -838,7 +853,7 @@ public class CodeDisplay extends Composite {
 
 				case SWT.ARROW_DOWN: {
 					resetLastLineNumberKey();
-					boolean invalidateAll = navigator.areLinesSelected() || !navigator.isContentChangeHighlighted();
+					boolean invalidateAll = navigator.areLinesSelected() || !navigator.showAddedAndDeletedLines();
 					navigator.moveToNextLine(!shiftPressed);
 					ensureCurLineIsVisible(invalidateAll);
 					if (usedRulesDisplay != null)
@@ -847,7 +862,7 @@ public class CodeDisplay extends Composite {
 				}
 				case SWT.ARROW_UP: {
 					resetLastLineNumberKey();
-					boolean invalidateAll = navigator.areLinesSelected() || !navigator.isContentChangeHighlighted();
+					boolean invalidateAll = navigator.areLinesSelected() || !navigator.showAddedAndDeletedLines();
 					navigator.moveToPrevLine(!shiftPressed);
 					ensureCurLineIsVisible(invalidateAll);
 					if (usedRulesDisplay != null)
@@ -977,7 +992,7 @@ public class CodeDisplay extends Composite {
 	}
 
 	private int getLineIndexOfMousePos(int mouseY, DisplaySide displaySide) {
-		if (navigator.isContentChangeHighlighted()) {
+		if (navigator.showAddedAndDeletedLines()) {
 			return vsbCode.getSelection() + (int) (mouseY / getCodeFontHeight());
 		} else {
 			int lineIndex = vsbCode.getSelection();
@@ -1087,13 +1102,8 @@ public class CodeDisplay extends Composite {
 		navigator.setBlockRuleInSelection(ruleID, blocked);
 	}
 
-	public final void setHighlight(IndentChangeType minIndentChangeType, InnerSpaceChangeType minWhitespaceChangeType, CaseChangeType minCaseChangeType) {
-		setHighlight(minIndentChangeType, minWhitespaceChangeType, minCaseChangeType, ContentChangeType.CONTENT_CHANGED);
-	}
-
-	public final void setHighlight(IndentChangeType minIndentChangeType, InnerSpaceChangeType minWhitespaceChangeType, CaseChangeType minCaseChangeType,
-			ContentChangeType minContentChangeType) {
-		navigator.setHighlight(minIndentChangeType, minWhitespaceChangeType, minCaseChangeType, minContentChangeType);
+	public final void setHighlight(ChangeTypes highlight) {
+		navigator.setHighlight(highlight);
 		invalidateDisplay();
 	}
 

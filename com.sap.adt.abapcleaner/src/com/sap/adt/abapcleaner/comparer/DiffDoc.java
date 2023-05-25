@@ -26,35 +26,22 @@ public class DiffDoc {
       int index = lines.size();
       DisplayLine leftDisplayLine = (leftLine == null) ? null : leftLine.displayLine;
       DisplayLine rightDisplayLine = (rightLine == null) ? null : rightLine.displayLine;
+      ChangeTypes changeType;
       if (status == LineStatus.CHANGED) {
          if (leftLine == null)
             throw new NullPointerException("leftLine");
          if (rightLine == null)
             throw new NullPointerException("rightLine");
-         leftDisplayLine.setHighlightBits(leftLine.getHighlightBits());
-         rightDisplayLine.setHighlightBits(rightLine.getHighlightBits());
+         ArrayList<HighlightBit> leftHighlightBits = leftLine.getHighlightBits();
+         ArrayList<HighlightBit> rightHighlightBits = rightLine.getHighlightBits();
+         leftDisplayLine.setHighlightBits(leftHighlightBits);
+         rightDisplayLine.setHighlightBits(rightHighlightBits);
+         changeType = ChangeTypes.createFrom(leftHighlightBits, rightHighlightBits);
+      } else {
+      	changeType = ChangeTypes.createNoChanges();
       }
 
-      // determine whether the change is limited to whitespace or casing only
-      IndentChangeType indentChangeType = IndentChangeType.NOT_APPLICABLE;
-      InnerSpaceChangeType innerSpaceChangeType = InnerSpaceChangeType.NOT_APPLICABLE;
-      CaseChangeType caseChangeType = CaseChangeType.NOT_APPLICABLE;
-      if (status == LineStatus.EQUAL) {
-         indentChangeType = IndentChangeType.NONE;
-         innerSpaceChangeType = InnerSpaceChangeType.NONE;
-         caseChangeType = CaseChangeType.NONE;
-      } else if (status == LineStatus.CHANGED) {
-         if (leftLine.simplifiedText.equals(rightLine.simplifiedText)) {
-            indentChangeType = (StringUtil.spaceCountAtStartOf(leftLine.getText()) == StringUtil.spaceCountAtStartOf(rightLine.getText())) ? IndentChangeType.NONE : IndentChangeType.INDENT_CHANGED;
-            innerSpaceChangeType = (CompareLine.simplify(leftLine.getText(), true, true, false).equals(CompareLine.simplify(rightLine.getText(), true, true, false))) ? InnerSpaceChangeType.NONE : InnerSpaceChangeType.INNER_SPACE_CHANGED;
-            caseChangeType = (CompareLine.simplify(leftLine.getText(), false, true, true).equals(CompareLine.simplify(rightLine.getText(), false, true, true))) ? CaseChangeType.NONE : CaseChangeType.CASE_CHANGED;
-         } else {
-            indentChangeType = IndentChangeType.CONTENT_CHANGED;
-            innerSpaceChangeType = InnerSpaceChangeType.CONTENT_CHANGED;
-            caseChangeType = CaseChangeType.CONTENT_CHANGED;
-         }
-      }
-      lines.add(new DiffLine(index, leftDisplayLine, rightDisplayLine, status, indentChangeType, innerSpaceChangeType, caseChangeType));
+      lines.add(new DiffLine(index, leftDisplayLine, rightDisplayLine, status, changeType));
    }
 
    /** 
@@ -74,7 +61,7 @@ public class DiffDoc {
          }
          result.append(line.status.toString());
          if (line.status == LineStatus.CHANGED)
-            result.append(" (whitespace change: " + line.innerSpaceChange.toString() + ", case change: " + line.caseChange.toString() + ")");
+            result.append(" (inner space change: " + String.valueOf(line.changeTypes.innerSpaceChanges) + ", case change: " + String.valueOf(line.changeTypes.caseChanges) + ")");
          result.append(System.lineSeparator());
       }
       return result.toString();
@@ -104,7 +91,7 @@ public class DiffDoc {
    }
 
 
-   final int getLineOfNextChangedCommand(int startLine, boolean searchDown, IndentChangeType minIndentChangeType, InnerSpaceChangeType minInnerSpaceChangeType, CaseChangeType minCaseChangeType) {
+   final int getLineOfNextChangedCommand(int startLine, boolean searchDown, ChangeTypes filter) {
       int lineIndex = startLine;
       Command curCommand = getCommandAt(lineIndex);
       do {
@@ -112,7 +99,7 @@ public class DiffDoc {
          lineIndex += searchDown ? 1 : -1;
          if (lineIndex < 0 || lineIndex >= getLineCount())
             return -1;
-         if (!lines.get(lineIndex).highlight(minIndentChangeType, minInnerSpaceChangeType, minCaseChangeType))
+         if (!lines.get(lineIndex).matchesChangeTypesFilter(filter))
             continue;
 
          // continue searching if this line belongs to the same command
@@ -125,7 +112,7 @@ public class DiffDoc {
          if (!searchDown && nextCommand != null) {
             while (testIndex > 0 && getCommandAt(testIndex - 1) == nextCommand) {
                --testIndex;
-               if (lines.get(testIndex).highlight(minIndentChangeType, minInnerSpaceChangeType, minCaseChangeType))
+               if (lines.get(testIndex).matchesChangeTypesFilter(filter))
                   lineIndex = testIndex;
             }
          }
@@ -293,13 +280,13 @@ public class DiffDoc {
       int contentCount = 0;
 
       for (DiffLine line : lines) {
-         if (line.indentChange == IndentChangeType.INDENT_CHANGED)
+         if (line.changeTypes.indentChanges)
             ++indentCount;
-         if (line.innerSpaceChange == InnerSpaceChangeType.INNER_SPACE_CHANGED)
+         if (line.changeTypes.innerSpaceChanges)
             ++innerSpaceCount;
-         if (line.caseChange == CaseChangeType.CASE_CHANGED)
+         if (line.changeTypes.caseChanges)
             ++caseCount;
-         if (line.status == LineStatus.LEFT_DELETED || line.status == LineStatus.RIGHT_ADDED || line.status == LineStatus.LEFT_DELETED_RIGHT_ADDED || (line.status == LineStatus.CHANGED && line.indentChange == IndentChangeType.CONTENT_CHANGED))
+         if (line.status == LineStatus.LEFT_DELETED || line.status == LineStatus.RIGHT_ADDED || line.status == LineStatus.LEFT_DELETED_RIGHT_ADDED || (line.status == LineStatus.CHANGED && line.changeTypes.textOrLineChanges))
             ++contentCount;
       }
       return ChangeStats.create(indentCount, innerSpaceCount, caseCount, contentCount);
