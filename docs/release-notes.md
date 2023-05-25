@@ -6,6 +6,13 @@ as well as bugfixes of reported issues, i.e. anything that enhances or changes t
 For a complete list of changes (including documentation, tests, refactoring etc.), please refer to 
 the list of [commits](../../../commits/main).
 
+## 2023-05-25 (version 1.2.1)
+
+* Enabled (de)activation of option '**Highlight text and line changes**' on main window ([#25](../../../issues/25))
+* Fixed number of lines shown on option '**Highlight inner space changes**' on main window ([#25](../../../issues/25))
+* Fixed rule '**Align keywords with second word of first line**' for CALL TRANSFORMATION ([#22](../../../issues/22))
+* Fixed cleanup for systems with **unknown ABAP release** ([#21](../../../issues/21))
+
 ## 2023-05-22 (version 1.2.0)
 
 * Enhanced rule '**Align declarations**' with option on '**Alignment of nested structures**' ([#9](../../../issues/9), [#14](../../../issues/14))

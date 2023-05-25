@@ -71,8 +71,9 @@ and restricts rules to this release; with the setting on the UI, this can be res
 
 If you want to focus on certain types of changes, activate or deactivate the options 
 'Highlight indent changes', 
-'Highlight inner space changes' and 
-'Highlight upper/lower case changes'. 
+'Highlight inner space changes', 
+'Highlight upper/lower case changes' and 
+'Highlight text and line changes' (where line changes refers added, deleted, or moved lines). 
 Both the highlighting in the display (with yellow / orange background color) 
 and the navigation to the previous / next findings (with the _Left / Right_ keys) 
 will then be restricted to the selected types of changes.
