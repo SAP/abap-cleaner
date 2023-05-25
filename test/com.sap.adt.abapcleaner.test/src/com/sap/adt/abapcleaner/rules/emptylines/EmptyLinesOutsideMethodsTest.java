@@ -191,7 +191,7 @@ class EmptyLinesOutsideMethodsTest extends RuleTestBase {
 
 	@Test
 	void testAdd2LinesBetweenMethods() {
-		buildSrc("CLASS cl_empty_lines DEFINITION.");
+		buildSrc("CLASS cl_empty_lines IMPLEMENTATION.");
 		buildSrc("  METHOD empty_lines_between_methods_1.");
 		buildSrc("    \" code");
 		buildSrc("  ENDMETHOD.");
@@ -200,7 +200,7 @@ class EmptyLinesOutsideMethodsTest extends RuleTestBase {
 		buildSrc("  ENDMETHOD.");
 		buildSrc("ENDCLASS.");
 
-		buildExp("CLASS cl_empty_lines DEFINITION.");
+		buildExp("CLASS cl_empty_lines IMPLEMENTATION.");
 		buildExp("  METHOD empty_lines_between_methods_1.");
 		buildExp("    \" code");
 		buildExp("  ENDMETHOD.");
@@ -218,7 +218,7 @@ class EmptyLinesOutsideMethodsTest extends RuleTestBase {
 	void testAdd1LineBetweenMethods() {
 		rule.configEmptyLinesBetweenMethods.setValue(1);
 
-		buildSrc("CLASS cl_empty_lines DEFINITION.");
+		buildSrc("CLASS cl_empty_lines IMPLEMENTATION.");
 		buildSrc("  METHOD empty_lines_between_methods_1.");
 		buildSrc("    \" code");
 		buildSrc("  ENDMETHOD.");
@@ -227,7 +227,7 @@ class EmptyLinesOutsideMethodsTest extends RuleTestBase {
 		buildSrc("  ENDMETHOD.");
 		buildSrc("ENDCLASS.");
 
-		buildExp("CLASS cl_empty_lines DEFINITION.");
+		buildExp("CLASS cl_empty_lines IMPLEMENTATION.");
 		buildExp("  METHOD empty_lines_between_methods_1.");
 		buildExp("    \" code");
 		buildExp("  ENDMETHOD.");
@@ -242,7 +242,7 @@ class EmptyLinesOutsideMethodsTest extends RuleTestBase {
 
 	@Test
 	void testRemoveLinesBetweenMethods() {
-		buildSrc("CLASS cl_empty_lines DEFINITION.");
+		buildSrc("CLASS cl_empty_lines IMPLEMENTATION.");
 		buildSrc("  METHOD empty_lines_between_methods_2.");
 		buildSrc("  ENDMETHOD.");
 		buildSrc("");
@@ -252,7 +252,7 @@ class EmptyLinesOutsideMethodsTest extends RuleTestBase {
 		buildSrc("  ENDMETHOD.");
 		buildSrc("ENDCLASS.");
 
-		buildExp("CLASS cl_empty_lines DEFINITION.");
+		buildExp("CLASS cl_empty_lines IMPLEMENTATION.");
 		buildExp("  METHOD empty_lines_between_methods_2.");
 		buildExp("  ENDMETHOD.");
 		buildExp("");
@@ -268,7 +268,7 @@ class EmptyLinesOutsideMethodsTest extends RuleTestBase {
 	void testRemoveAllLinesBetweenMethods() {
 		rule.configEmptyLinesBetweenMethods.setValue(1);
 
-		buildSrc("CLASS cl_empty_lines DEFINITION.");
+		buildSrc("CLASS cl_empty_lines IMPLEMENTATION.");
 		buildSrc("  METHOD empty_lines_between_methods_2.");
 		buildSrc("  ENDMETHOD.");
 		buildSrc("");
@@ -278,7 +278,7 @@ class EmptyLinesOutsideMethodsTest extends RuleTestBase {
 		buildSrc("  ENDMETHOD.");
 		buildSrc("ENDCLASS.");
 
-		buildExp("CLASS cl_empty_lines DEFINITION.");
+		buildExp("CLASS cl_empty_lines IMPLEMENTATION.");
 		buildExp("  METHOD empty_lines_between_methods_2.");
 		buildExp("  ENDMETHOD.");
 		buildExp("");
@@ -294,7 +294,7 @@ class EmptyLinesOutsideMethodsTest extends RuleTestBase {
 	void testRemoveLinesBetweenClassAndMethod() {
 	   rule.configEmptyLinesBetweenClassAndMethod.setValue(0);
 
-	   buildSrc("CLASS cl_empty_lines DEFINITION.");
+	   buildSrc("CLASS cl_empty_lines IMPLEMENTATION.");
 		buildSrc("");
 		buildSrc("");
 		buildSrc("  METHOD empty_lines.");
@@ -302,7 +302,7 @@ class EmptyLinesOutsideMethodsTest extends RuleTestBase {
 		buildSrc("");
 		buildSrc("ENDCLASS.");
 
-		buildExp("CLASS cl_empty_lines DEFINITION.");
+		buildExp("CLASS cl_empty_lines IMPLEMENTATION.");
 		buildExp("  METHOD empty_lines.");
 		buildExp("  ENDMETHOD.");
 		buildExp("ENDCLASS.");
@@ -314,12 +314,12 @@ class EmptyLinesOutsideMethodsTest extends RuleTestBase {
 	void testAdd1LineBetweenClassAndMethod() {
 	   rule.configEmptyLinesBetweenClassAndMethod.setValue(1);
 
-	   buildSrc("CLASS cl_empty_lines DEFINITION.");
+	   buildSrc("CLASS cl_empty_lines IMPLEMENTATION.");
 		buildSrc("  METHOD empty_lines.");
 		buildSrc("  ENDMETHOD.");
 		buildSrc("ENDCLASS.");
 
-		buildExp("CLASS cl_empty_lines DEFINITION.");
+		buildExp("CLASS cl_empty_lines IMPLEMENTATION.");
 		buildExp("");
 		buildExp("  METHOD empty_lines.");
 		buildExp("  ENDMETHOD.");
@@ -333,12 +333,12 @@ class EmptyLinesOutsideMethodsTest extends RuleTestBase {
 	void testAdd2LinesBetweenClassAndMethod() {
 	   rule.configEmptyLinesBetweenClassAndMethod.setValue(2);
 
-	   buildSrc("CLASS cl_empty_lines DEFINITION.");
+	   buildSrc("CLASS cl_empty_lines IMPLEMENTATION.");
 		buildSrc("  METHOD empty_lines.");
 		buildSrc("  ENDMETHOD.");
 		buildSrc("ENDCLASS.");
 
-		buildExp("CLASS cl_empty_lines DEFINITION.");
+		buildExp("CLASS cl_empty_lines IMPLEMENTATION.");
 		buildExp("");
 		buildExp("");
 		buildExp("  METHOD empty_lines.");
@@ -354,14 +354,14 @@ class EmptyLinesOutsideMethodsTest extends RuleTestBase {
 	void testAddAndRemoveLineBetweenClassAndMethod() {
 	   rule.configEmptyLinesBetweenClassAndMethod.setValue(1);
 
-	   buildSrc("CLASS cl_empty_lines DEFINITION.");
+	   buildSrc("CLASS cl_empty_lines IMPLEMENTATION.");
 		buildSrc("  METHOD empty_lines.");
 		buildSrc("  ENDMETHOD.");
 		buildSrc("");
 		buildSrc("");
 		buildSrc("ENDCLASS.");
 
-		buildExp("CLASS cl_empty_lines DEFINITION.");
+		buildExp("CLASS cl_empty_lines IMPLEMENTATION.");
 		buildExp("");
 		buildExp("  METHOD empty_lines.");
 		buildExp("  ENDMETHOD.");

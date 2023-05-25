@@ -43,6 +43,8 @@ import com.sap.adt.abapcleaner.programbase.*;
 import com.sap.adt.abapcleaner.rulebase.*;
 import com.sap.adt.abapcleaner.rulehelpers.*;
 import com.sap.adt.abapcleaner.comparer.*;
+import com.sap.adt.abapcleaner.comparer.ChangeTypes;
+
 import org.eclipse.swt.graphics.Point;
 
 public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeControls, IFallbackKeyListener {
@@ -981,8 +983,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 				refreshHighlight();
 			}
 		});
-		chkHighlightContentChanges.setEnabled(false);
-		chkHighlightContentChanges.setText("Highlight text changes (00.000 lines)");
+		chkHighlightContentChanges.setText("Highlight text and line changes (00.000 lines)");
 		chkHighlightContentChanges.setSelection(true);
 
 		Composite cpsReprocess = new Composite(cpsDisplay, SWT.NONE);
@@ -1543,13 +1544,11 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		chkHighlightIndentChanges.setText("Highlight indent changes (" + Cult.format(changeStats.indentCount) + " lines)");
 		chkHighlightInnerSpaceChanges.setText("Highlight inner space changes (" + Cult.format(changeStats.innerSpaceCount) + " lines)");
 		chkHighlightCaseChanges.setText("Highlight upper/lower case changes (" + Cult.format(changeStats.caseCount) + " lines)");
-		chkHighlightContentChanges.setText("Highlight text changes (" + Cult.format(changeStats.contentCount) + " lines)");
+		chkHighlightContentChanges.setText("Highlight text and line changes (" + Cult.format(changeStats.contentCount) + " lines)");
 	}
 
 	private void refreshHighlight() {
-		codeDisplay.setHighlight(chkHighlightIndentChanges.getSelection() ? IndentChangeType.INDENT_CHANGED : IndentChangeType.CONTENT_CHANGED,
-				chkHighlightInnerSpaceChanges.getSelection() ? InnerSpaceChangeType.INNER_SPACE_CHANGED : InnerSpaceChangeType.CONTENT_CHANGED,
-				chkHighlightCaseChanges.getSelection() ? CaseChangeType.CASE_CHANGED : CaseChangeType.CONTENT_CHANGED);
+		codeDisplay.setHighlight(ChangeTypes.create(chkHighlightIndentChanges.getSelection(), chkHighlightInnerSpaceChanges.getSelection(), chkHighlightCaseChanges.getSelection(), chkHighlightContentChanges.getSelection()));
 	}
 
 	private void editProfiles() {

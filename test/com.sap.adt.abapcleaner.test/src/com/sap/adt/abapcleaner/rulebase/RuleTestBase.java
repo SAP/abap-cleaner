@@ -15,15 +15,12 @@ import java.util.HashMap;
 
 import com.sap.adt.abapcleaner.base.ABAP;
 import com.sap.adt.abapcleaner.base.StringUtil;
-import com.sap.adt.abapcleaner.comparer.CaseChangeType;
 import com.sap.adt.abapcleaner.comparer.ChangeStats;
+import com.sap.adt.abapcleaner.comparer.ChangeTypes;
 import com.sap.adt.abapcleaner.comparer.CompareDoc;
-import com.sap.adt.abapcleaner.comparer.ContentChangeType;
 import com.sap.adt.abapcleaner.comparer.DisplayLine;
 import com.sap.adt.abapcleaner.comparer.DisplaySide;
 import com.sap.adt.abapcleaner.comparer.HighlightBit;
-import com.sap.adt.abapcleaner.comparer.InnerSpaceChangeType;
-import com.sap.adt.abapcleaner.comparer.IndentChangeType;
 import com.sap.adt.abapcleaner.comparer.DiffDoc;
 import com.sap.adt.abapcleaner.comparer.DiffLine;
 import com.sap.adt.abapcleaner.comparer.DiffNavigator;
@@ -428,8 +425,9 @@ public abstract class RuleTestBase {
 		}
 
 		// move to change functionality
-		diffNav.setHighlight(IndentChangeType.INDENT_CHANGED, InnerSpaceChangeType.INNER_SPACE_CHANGED, CaseChangeType.CASE_CHANGED, ContentChangeType.CONTENT_CHANGED);
-		assertTrue(diffNav.isContentChangeHighlighted());
+		diffNav.setHighlight(ChangeTypes.createAllChanges());
+		assertTrue(diffNav.showAddedAndDeletedLines());
+		assertTrue(diffNav.showAnyChanges());
 		diffNav.moveToFirstLine(true);
 		int changeCountNext = diffNav.isLineHighlighted(diffNav.getLine(0)) ? 1 : 0;
 		while (diffNav.moveToNextChange())
@@ -497,9 +495,9 @@ public abstract class RuleTestBase {
 		for (int mode = 0; mode < 2; ++mode) {
 			boolean expHighlight = (mode == 0);
 			if (expHighlight)
-				diffNav.setHighlight(IndentChangeType.INDENT_CHANGED, InnerSpaceChangeType.INNER_SPACE_CHANGED, CaseChangeType.CASE_CHANGED, ContentChangeType.CONTENT_CHANGED);
+				diffNav.setHighlight(ChangeTypes.createAllChanges());
 			else
-				diffNav.setHighlight(IndentChangeType.CONTENT_CHANGED, InnerSpaceChangeType.CONTENT_CHANGED, CaseChangeType.CONTENT_CHANGED, ContentChangeType.NEVER);
+				diffNav.setHighlight(ChangeTypes.createNoChanges());
 			for (int line = 0; line < lineCount; ++line) {
 				DiffLine diffLine = diffNav.getLine(line);
 				DisplayLine dispLine = diffLine.rightLine;
