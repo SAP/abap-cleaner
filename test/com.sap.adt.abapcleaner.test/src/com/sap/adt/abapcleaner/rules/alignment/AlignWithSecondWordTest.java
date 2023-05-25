@@ -135,4 +135,18 @@ class AlignWithSecondWordTest extends RuleTestBase {
 		
 		testRule();
 	}
+
+	@Test
+	void testCallTransformation() {
+		// ensure that CALL TRANSFORMATION is NOT excluded from alignment
+		buildSrc("    CALL TRANSFORMATION demo_escaping_xml");
+		buildSrc("     SOURCE text = text");
+		buildSrc("       RESULT XML xml.");
+
+		buildExp("    CALL TRANSFORMATION demo_escaping_xml");
+		buildExp("         SOURCE text = text");
+		buildExp("         RESULT XML xml.");
+
+		testRule();
+	}
 }
