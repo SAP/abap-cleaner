@@ -368,10 +368,19 @@ public abstract class Rule {
 			return false;
 		
 		// check against the ABAP Release of the code document in ADT
-		if (code.abapRelease == ABAP.NEWEST_RELEASE || StringUtil.isNullOrEmpty(code.abapRelease))
+		if (code.abapRelease == ABAP.NEWEST_RELEASE || StringUtil.isNullOrEmpty(code.abapRelease)) {
 			return true;
-		else 
-			return (Integer.parseInt(code.abapRelease) >= requiredAbapRelease);
+		} else {
+			try {
+				return (Integer.parseInt(code.abapRelease) >= requiredAbapRelease);
+				
+			} catch (NumberFormatException ex) {
+				// in older releases, code.abapRelease could have the value "fallback"; in such a case, cleanup is only 
+				// allowed for rules that specify no required ABAP release (but this case was already excluded above) 
+				return false;
+			}
+		}
+			
 	}
 	
 	protected boolean isCommandBlocked(Command command) {

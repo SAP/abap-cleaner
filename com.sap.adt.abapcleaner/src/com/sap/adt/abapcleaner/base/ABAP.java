@@ -101,7 +101,10 @@ public final class ABAP {
    // constant for the ABAP release against which a Code document must compile
    /** expresses that Code is compiled against the newest ABAP Release, i.e. no restrictions to ABAP syntax apply */
    public static final String NEWEST_RELEASE = "";
-   
+
+   /** expresses that the ABAP release of the system that contains the code document is unknown (value "fallback")  */
+   public static final String FALLBACK_RELEASE = "fallback";
+
    // constants for the release requirements of a Rule
    /** expresses that a Rule is NOT restricted to a minimum ABAP Release */
    public static final int NO_REQUIRED_RELEASE = 0;

@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import com.sap.adt.abapcleaner.base.ABAP;
 import com.sap.adt.abapcleaner.rulebase.RuleID;
 import com.sap.adt.abapcleaner.rulebase.RuleTestBase;
 
@@ -1226,6 +1227,26 @@ class UpperAndLowerCaseTest extends RuleTestBase {
 		
 		putAnyClassDefAroundSrcAndExp();
 		
+		testRule();
+	}
+
+	@Test
+	void testUnknownAbapRelease() {
+		// ensure that this rule (which is not limited to a certain ABAP release) even works if the ABAP Release
+		// is unknown ("fallback")
+		 
+		setAbapReleaseOfCode(ABAP.FALLBACK_RELEASE); 
+		
+		buildSrc("    \" HIGH and LOW must be upper case here:");
+		buildSrc("    set run time clock resolution high.");
+		buildSrc("    set run time clock resolution low.");
+
+		buildExp("    \" HIGH and LOW must be upper case here:");
+		buildExp("    SET RUN TIME CLOCK RESOLUTION HIGH.");
+		buildExp("    SET RUN TIME CLOCK RESOLUTION LOW.");
+
+		putAnyMethodAroundSrcAndExp();
+
 		testRule();
 	}
 }

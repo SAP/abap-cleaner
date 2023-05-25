@@ -3,6 +3,7 @@ package com.sap.adt.abapcleaner.rules.commands;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import com.sap.adt.abapcleaner.base.ABAP;
 import com.sap.adt.abapcleaner.rulebase.RuleID;
 import com.sap.adt.abapcleaner.rulebase.RuleTestBase;
 
@@ -26,6 +27,25 @@ class AddToEtcTest extends RuleTestBase {
 		// see https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/index.htm?file=abennews-754-assignments.htm
 		
 		setAbapReleaseOfCode("753");
+		
+		buildSrc("    ADD 1 TO lv_value.");
+		buildSrc("    SUBTRACT 1 FROM cv_date.");
+		buildSrc("    MULTIPLY iv_value BY 2.");
+		buildSrc("    DIVIDE iv_value BY 2.");
+
+		copyExpFromSrc();
+
+		putAnyMethodAroundSrcAndExp();
+		
+		testRule();
+	}
+	
+	@Test
+	void testUnknownAbapRelease() {
+		// ensure that calculation assignment operators are NOT introduced if the code must compile against an unknown ("fallback") ABAP Release, 
+		// which triggers a NumberFormatException in Rule.isCleanupAllowedFor
+		 
+		setAbapReleaseOfCode(ABAP.FALLBACK_RELEASE); 
 		
 		buildSrc("    ADD 1 TO lv_value.");
 		buildSrc("    SUBTRACT 1 FROM cv_date.");
