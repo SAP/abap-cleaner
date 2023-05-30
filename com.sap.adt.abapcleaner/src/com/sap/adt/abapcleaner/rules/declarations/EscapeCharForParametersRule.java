@@ -3,6 +3,7 @@ package com.sap.adt.abapcleaner.rules.declarations;
 import java.time.LocalDate;
 
 import com.sap.adt.abapcleaner.base.ABAP;
+import com.sap.adt.abapcleaner.base.AbapCult;
 import com.sap.adt.abapcleaner.base.StringUtil;
 import com.sap.adt.abapcleaner.parser.Code;
 import com.sap.adt.abapcleaner.parser.Command;
@@ -16,7 +17,6 @@ import com.sap.adt.abapcleaner.rulebase.RuleGroupID;
 import com.sap.adt.abapcleaner.rulebase.RuleID;
 import com.sap.adt.abapcleaner.rulebase.RuleReference;
 import com.sap.adt.abapcleaner.rulebase.RuleSource;
-import com.sap.adt.abapcleaner.rulehelpers.ChangeType;
 
 public class EscapeCharForParametersRule extends RuleForCommands {
 	private final static RuleReference[] references = new RuleReference[] { new RuleReference(RuleSource.ABAP_CLEANER) };
@@ -82,17 +82,22 @@ public class EscapeCharForParametersRule extends RuleForCommands {
 			+ LINE_SEP + "    \" in some rather theoretical cases, ! is strictly necessary to prevent syntax errors:" 
 			+ LINE_SEP + "    METHODS fourth_method" 
 			+ LINE_SEP + "      IMPORTING" 
-			+ LINE_SEP + "        !exporting TYPE i OPTIONAL" 
+			+ LINE_SEP + "        !optional   TYPE i" 
+			+ LINE_SEP + "        !default    TYPE i" 
+			+ LINE_SEP + "        !preferred  TYPE i OPTIONAL" 
+			+ LINE_SEP + "        !exporting  TYPE i OPTIONAL" 
 			+ LINE_SEP + "      EXPORTING" 
-			+ LINE_SEP + "        !changing  TYPE string" 
+			+ LINE_SEP + "        !changing   TYPE string" 
 			+ LINE_SEP + "      CHANGING" 
-			+ LINE_SEP + "        !raising   TYPE i."  
+			+ LINE_SEP + "        !raising    TYPE i"  
+			+ LINE_SEP + "        !exceptions TYPE string."  
 			+ LINE_SEP + "ENDCLASS."; 
    }
 
-	private static final String[] changeTypeSelection = new String[] { "always", "keep as is", "only if parameter name is an ABAP word" };
-
-	final ConfigEnumValue<ChangeType> configUseEscapeCharForParams = new ConfigEnumValue<ChangeType>(this, "UseEscapeCharForParams", "Use ! escape character for parameters", changeTypeSelection, ChangeType.NEVER);
+	private static final String[] changeTypeSelection = new String[] { "always", "keep as is", "only if parameter name is an ABAP word", "only to avoid syntax errors" };
+	private static final String[] criticalParamNames = new String[] { "EXPORTING", "CHANGING", "RAISING", "EXCEPTIONS", "DEFAULT", "OPTIONAL", "PREFERRED" };
+	
+	final ConfigEnumValue<EscapeCharMeasure> configUseEscapeCharForParams = new ConfigEnumValue<EscapeCharMeasure>(this, "UseEscapeCharForParams", "Use ! escape character for parameters", changeTypeSelection, EscapeCharMeasure.ONLY_FOR_ABAP_WORDS, EscapeCharMeasure.ONLY_FOR_ABAP_WORDS, LocalDate.of(2023, 5, 30));
 
 	private final ConfigValue[] configValues = new ConfigValue[] { configUseEscapeCharForParams };
 
@@ -111,8 +116,8 @@ public class EscapeCharForParametersRule extends RuleForCommands {
 		if (!command.firstCodeTokenIsAnyKeyword("METHODS", "CLASS-METHODS"))
 			return false;
 
-		ChangeType useEscapeChar = ChangeType.forValue(configUseEscapeCharForParams.getValue());
-		if (useEscapeChar == ChangeType.KEEP_AS_IS)
+		EscapeCharMeasure useEscapeChar = EscapeCharMeasure.forValue(configUseEscapeCharForParams.getValue());
+		if (useEscapeChar == EscapeCharMeasure.KEEP_AS_IS)
 			return false;
 
 		boolean changedCommand = false;
@@ -148,27 +153,39 @@ public class EscapeCharForParametersRule extends RuleForCommands {
 		return changedCommand;
 	}
 	
-	private boolean executeOnParameterName(Token paramName, ChangeType useEscapeChar) {
+	private boolean executeOnParameterName(Token paramName, EscapeCharMeasure useEscapeChar) {
 		final String ESCAPE_CHAR = ABAP.OPERAND_ESCAPE_CHAR_STRING;
-
+		
 		boolean isValueOrReference = false;
+		boolean isAbapWord = false;
 		boolean requiresEscapeChar = false;
 		if (paramName.closesLevel()) { // VALUE(...), REFERENCE(...)
 			paramName = paramName.getPrevCodeSibling();
 			isValueOrReference = true;
 		} else if (paramName.isIdentifier()) {
-			String paramNameText = StringUtil.removePrefix(paramName.getText(), ESCAPE_CHAR, false); 
-			requiresEscapeChar = ABAP.isAbapUpperCaseKeyword(paramNameText) || ABAP.isAbapLowerCaseKeyword(paramNameText);
+			String paramNameText = StringUtil.removePrefix(paramName.getText(), ESCAPE_CHAR, false);
+			isAbapWord = ABAP.isAbapUpperCaseKeyword(paramNameText) || ABAP.isAbapLowerCaseKeyword(paramNameText);
+			requiresEscapeChar = AbapCult.stringEqualsAny(true, paramNameText, criticalParamNames);
 		}
 
-		// remove escape char if a) configured or b) in case of VALUE(...), REFERENCE(...), where SAP GUI does not use ! either
-		if (paramName.textStartsWith(ESCAPE_CHAR) && !requiresEscapeChar && (useEscapeChar == ChangeType.NEVER || isValueOrReference)) {
-			paramName.setText(paramName.getText().substring(ESCAPE_CHAR.length()), false);
-			return true;
+		if (paramName.textStartsWith(ESCAPE_CHAR) && !requiresEscapeChar) { 
+			// remove escape char if a) configured or b) in case of VALUE(...), REFERENCE(...), where SAP GUI does not use ! either
+			if (	 isValueOrReference 
+				 || useEscapeChar == EscapeCharMeasure.ONLY_FOR_ABAP_WORDS && !isAbapWord 
+				 || useEscapeChar == EscapeCharMeasure.ONLY_AVOID_ERRORS && !requiresEscapeChar) {
+				paramName.setText(paramName.getText().substring(ESCAPE_CHAR.length()), false);
+				return true;
+			}
 
-		} else if (!paramName.textStartsWith(ESCAPE_CHAR) && !isValueOrReference && (useEscapeChar == ChangeType.ALWAYS || requiresEscapeChar)) {
-			paramName.setText(ESCAPE_CHAR + paramName.getText(), false);
-			return true;
+		} else if (!paramName.textStartsWith(ESCAPE_CHAR) && !isValueOrReference) {
+			// add escape char if a) needed to avoid syntax errors or b) configured
+			if (  requiresEscapeChar
+			   || useEscapeChar == EscapeCharMeasure.ALWAYS 
+			   || useEscapeChar == EscapeCharMeasure.ONLY_FOR_ABAP_WORDS && isAbapWord
+			   || useEscapeChar == EscapeCharMeasure.ONLY_AVOID_ERRORS && requiresEscapeChar) {
+				paramName.setText(ESCAPE_CHAR + paramName.getText(), false);
+				return true;
+			}
 		} 
 			
 		return false;

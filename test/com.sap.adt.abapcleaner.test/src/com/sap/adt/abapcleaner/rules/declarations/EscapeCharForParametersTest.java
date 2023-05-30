@@ -5,7 +5,6 @@ import org.junit.jupiter.api.Test;
 
 import com.sap.adt.abapcleaner.rulebase.RuleID;
 import com.sap.adt.abapcleaner.rulebase.RuleTestBase;
-import com.sap.adt.abapcleaner.rulehelpers.ChangeType;
 
 class EscapeCharForParametersTest extends RuleTestBase {
 	private EscapeCharForParametersRule rule;
@@ -18,14 +17,14 @@ class EscapeCharForParametersTest extends RuleTestBase {
 	@BeforeEach
 	void setUp() {
 		// setup default test configuration (may be modified in the individual test methods)
-		rule.configUseEscapeCharForParams.setEnumValue(ChangeType.NEVER);
+		rule.configUseEscapeCharForParams.setEnumValue(EscapeCharMeasure.ONLY_FOR_ABAP_WORDS);
 	}
 	
 	@Test
 	void testAddEscapeChar() {
 		// expect ! to be added everywhere except before VALUE(...)
 		
-		rule.configUseEscapeCharForParams.setEnumValue(ChangeType.ALWAYS);
+		rule.configUseEscapeCharForParams.setEnumValue(EscapeCharMeasure.ALWAYS);
 
 		buildSrc("    DATA mv_any TYPE i.");
 		buildSrc("");
@@ -96,7 +95,7 @@ class EscapeCharForParametersTest extends RuleTestBase {
 	void testAddEscapeCharToMixedCase() {
 		// expect ! to be added everywhere, but to be removed before VALUE(...) and REFERENCE(...)
 		
-		rule.configUseEscapeCharForParams.setEnumValue(ChangeType.ALWAYS);
+		rule.configUseEscapeCharForParams.setEnumValue(EscapeCharMeasure.ALWAYS);
 
 		buildSrc("    METHODS any_method");
 		buildSrc("      IMPORTING");
@@ -140,7 +139,7 @@ class EscapeCharForParametersTest extends RuleTestBase {
 		// expect ! to be removed from all parameter names that are non-ABAP words, 
 		// but to be added where a parameter name is an ABAP word
 
-		rule.configUseEscapeCharForParams.setEnumValue(ChangeType.NEVER);
+		rule.configUseEscapeCharForParams.setEnumValue(EscapeCharMeasure.ONLY_FOR_ABAP_WORDS);
 
 		buildSrc("    METHODS:");
 		buildSrc("      any_chained_method");
@@ -208,11 +207,45 @@ class EscapeCharForParametersTest extends RuleTestBase {
 	}
 
 	@Test
+	void testRemoveAbapWordAddCritical() {
+		// expect ! to be removed from all parameter names that do not create syntax errors
+		// but to be added for the critical parameter name 'changing'
+
+		rule.configUseEscapeCharForParams.setEnumValue(EscapeCharMeasure.ONLY_AVOID_ERRORS);
+
+		buildSrc("    METHODS:");
+		buildSrc("      any_chained_method");
+		buildSrc("        IMPORTING");
+		buildSrc("          !min     TYPE i DEFAULT 0");
+		buildSrc("          !max     TYPE i DEFAULT 100");
+		buildSrc("          !low     TYPE i");
+		buildSrc("          !high    TYPE i");
+		buildSrc("          !sum     TYPE i");
+		buildSrc("        EXPORTING");
+		buildSrc("          changing TYPE string.");
+
+		buildExp("    METHODS:");
+		buildExp("      any_chained_method");
+		buildExp("        IMPORTING");
+		buildExp("          min     TYPE i DEFAULT 0");
+		buildExp("          max     TYPE i DEFAULT 100");
+		buildExp("          low     TYPE i");
+		buildExp("          high    TYPE i");
+		buildExp("          sum     TYPE i");
+		buildExp("        EXPORTING");
+		buildExp("          !changing TYPE string.");
+
+		putAnyClassDefAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
 	void testRemoveEscapeCharFromMixedCase() {
 		// expect ! to be removed from all parameter names that are non-ABAP words, 
 		// but to be added where a parameter name is an ABAP word
 		
-		rule.configUseEscapeCharForParams.setEnumValue(ChangeType.NEVER);
+		rule.configUseEscapeCharForParams.setEnumValue(EscapeCharMeasure.ONLY_FOR_ABAP_WORDS);
 
 		buildSrc("    METHODS any_method");
 		buildSrc("      IMPORTING");
@@ -255,7 +288,7 @@ class EscapeCharForParametersTest extends RuleTestBase {
 	void testEscapeCharKeptInCriticalCase() {
 		// expect ! to NOT be removed, as it is critical for syntactical correctness 
 
-		rule.configUseEscapeCharForParams.setEnumValue(ChangeType.NEVER);
+		rule.configUseEscapeCharForParams.setEnumValue(EscapeCharMeasure.ONLY_AVOID_ERRORS);
 
 		buildSrc("    METHODS fourth_method");
 		buildSrc("      IMPORTING");
@@ -276,7 +309,7 @@ class EscapeCharForParametersTest extends RuleTestBase {
 	void testKeepEscapeChar() {
 		// expect nothing to be changed
 		
-		rule.configUseEscapeCharForParams.setEnumValue(ChangeType.KEEP_AS_IS);
+		rule.configUseEscapeCharForParams.setEnumValue(EscapeCharMeasure.KEEP_AS_IS);
 
 		buildSrc("    METHODS:");
 		buildSrc("      any_chained_method");
@@ -317,7 +350,7 @@ class EscapeCharForParametersTest extends RuleTestBase {
 	void testKeepEscapeCharInMixedCase() {
 		// expect nothing to be changed
 		
-		rule.configUseEscapeCharForParams.setEnumValue(ChangeType.KEEP_AS_IS);
+		rule.configUseEscapeCharForParams.setEnumValue(EscapeCharMeasure.KEEP_AS_IS);
 
 		buildSrc("    METHODS any_method");
 		buildSrc("      IMPORTING");
@@ -346,7 +379,7 @@ class EscapeCharForParametersTest extends RuleTestBase {
 	void testAddEscapeCharToInterfaceMixedCase() {
 		// expect ! to be added everywhere, but to be removed before VALUE(...) and REFERENCE(...)
 		
-		rule.configUseEscapeCharForParams.setEnumValue(ChangeType.ALWAYS);
+		rule.configUseEscapeCharForParams.setEnumValue(EscapeCharMeasure.ALWAYS);
 
 		buildSrc("    METHODS any_method");
 		buildSrc("      IMPORTING");
@@ -389,7 +422,7 @@ class EscapeCharForParametersTest extends RuleTestBase {
 	void testOutsideClassOrInterfaceDef() {
 		// expect nothing to happen
 		
-		rule.configUseEscapeCharForParams.setEnumValue(ChangeType.NEVER);
+		rule.configUseEscapeCharForParams.setEnumValue(EscapeCharMeasure.ONLY_FOR_ABAP_WORDS);
 
 		buildSrc("    DO 5 TIMES.");
 		buildSrc("      \" do something");
