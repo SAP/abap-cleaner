@@ -200,10 +200,21 @@ public class TextSettingsWriter implements ISettingsWriter, ITextSettings {
   			result = stringOut.toString();
   			
    		if (persistency != null && path != null) {
+   			boolean skipWrite = false;
    			String dir = persistency.getDirectoryName(path);
-   			if (!persistency.directoryExists(dir))
+   			if (!persistency.directoryExists(dir)) {
    				persistency.createDirectory(dir);
-   			persistency.writeAllTextToFile(path, result);
+   			} else if (persistency.fileExists(path)) {
+   				String oldText = persistency.readAllTextFromFile(path);
+   				if (oldText != null && oldText.equals(result)) {
+   					// write can be skipped, because the content of the file was not changed
+   					// (this helps to reduce synchronization overhead for profiles)
+   					skipWrite = true;
+   				}
+   			}
+   			if (!skipWrite) {
+   				persistency.writeAllTextToFile(path, result);
+   			}
    		}
       }
       disposed = true;
