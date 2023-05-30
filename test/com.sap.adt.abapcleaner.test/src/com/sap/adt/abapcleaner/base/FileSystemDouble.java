@@ -38,6 +38,7 @@ public class FileSystemDouble implements IFileSystem {
 
 	private HashMap<String, FileInfo> fileInfos = new HashMap<>();
 	private HashMap<String, DirInfo> directories = new HashMap<>();
+	private int writeAllBytesCallCount;
 
 	public static FileSystemDouble create() {
 		return new FileSystemDouble();
@@ -65,6 +66,11 @@ public class FileSystemDouble implements IFileSystem {
 	public void clear() {
 		fileInfos.clear();
 		directories.clear();
+		writeAllBytesCallCount = 0;
+	}
+	
+	public int getWriteAllBytesCallCount() {
+		return writeAllBytesCallCount;
 	}
 	
 	// -------------------------------------------------------------------------
@@ -110,6 +116,7 @@ public class FileSystemDouble implements IFileSystem {
 
 	@Override
 	public boolean writeAllBytesToFile(String path, byte[] data) {
+		++writeAllBytesCallCount;
 		fileInfos.put(getKey(path), new FileInfo(path, data));
 		return true;
 	}

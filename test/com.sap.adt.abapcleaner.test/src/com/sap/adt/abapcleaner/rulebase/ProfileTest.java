@@ -9,6 +9,7 @@ import java.util.Arrays;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import com.sap.adt.abapcleaner.base.FileSystemDouble;
 import com.sap.adt.abapcleaner.base.ISettingsReader;
 import com.sap.adt.abapcleaner.base.ISettingsWriter;
 import com.sap.adt.abapcleaner.base.TextSettingsReader;
@@ -249,6 +250,49 @@ class ProfileTest {
 		
 		// 'then'
 		assertProfileMatches(profile2);
+	}
+
+	@Test
+	void testSaveEqualAndChangedProfile() throws IOException {
+		// 'given' 1
+		PersistencyDouble persistency = PersistencyDouble.create();
+		FileSystemDouble fileSystem = (FileSystemDouble)persistency.getFileSystem(); 
+		Program.initialize(persistency, "");
+		String anyPath = persistency.getAnyNewPath();
+
+		setAnyProfileConfigurationTo(profile);
+
+		// save the profile the first time
+		try (ISettingsWriter writer = TextSettingsWriter.createForFile(persistency, anyPath, Program.TECHNICAL_VERSION, 0)) {
+			profile.save(writer);
+		} catch (IOException e) {
+			fail(e.getMessage());
+		}
+		int writeCallCount = fileSystem.getWriteAllBytesCallCount();
+		
+		// 'when' 1: save the profile again without changing it
+		try (ISettingsWriter writer = TextSettingsWriter.createForFile(persistency, anyPath, Program.TECHNICAL_VERSION, 0)) {
+			profile.save(writer);
+		} catch (IOException e) {
+			fail(e.getMessage());
+		}
+		
+		// 'then' 1: expect the number of calls to IFileSystem.writeAllBytesToFile to be unchanged, because the profile was not changed
+		assertEquals(writeCallCount, fileSystem.getWriteAllBytesCallCount());
+
+		// 'given' 2: change the profile configuration again
+		Rule anyRule = profile.getRule(RuleID.ALIGN_ALIASES_FOR);
+		anyRule.isActive = !anyRule.isActive;
+
+		// 'when' 2
+		try (ISettingsWriter writer = TextSettingsWriter.createForFile(persistency, anyPath, Program.TECHNICAL_VERSION, 0)) {
+			profile.save(writer);
+		} catch (IOException e) {
+			fail(e.getMessage());
+		}
+		
+		// 'then' 2: expect the number of calls to IFileSystem.writeAllBytesToFile to be higher now
+		assertTrue(writeCallCount < fileSystem.getWriteAllBytesCallCount());
 	}
 
 	@Test
