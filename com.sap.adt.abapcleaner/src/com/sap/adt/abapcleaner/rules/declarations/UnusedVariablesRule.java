@@ -64,6 +64,9 @@ public class UnusedVariablesRule extends RuleForLocalVariables {
 			+ LINE_SEP 
 			+ LINE_SEP + "    DATA lv_only_assigned TYPE i." 
 			+ LINE_SEP + "    DATA lv_assigned_but_used_incomment TYPE i." 
+			+ LINE_SEP 
+			+ LINE_SEP + "    \" with the ##NEEDED pragma, an unused variable will be kept and no TODO added;" 
+			+ LINE_SEP + "    \" the pragma also prevents a warning from the Extended Check (SLIN)" 
 			+ LINE_SEP + "    DATA lv_unused_but_needed TYPE string ##NEEDED." 
 			+ LINE_SEP 
 			+ LINE_SEP + "    FIELD-SYMBOLS:" 
