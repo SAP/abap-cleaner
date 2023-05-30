@@ -153,6 +153,10 @@ public class Token {
 
 	final boolean getMayBeIdentifier() { return (type == TokenType.IDENTIFIER) || isKeyword() || isTextualComparisonOp(); }
 
+	public final boolean isCharacterLiteral() {
+		return isLiteral() && !StringUtil.isNullOrEmpty(text) && (text.charAt(0) == ABAP.QUOT_MARK || text.charAt(0) == ABAP.QUOT_MARK2);
+	}
+
 	public final boolean isStringLiteral() {
 		return isLiteral() && !StringUtil.isNullOrEmpty(text)
 				&& (text.charAt(0) == ABAP.QUOT_MARK || text.charAt(0) == ABAP.QUOT_MARK2 || text.charAt(0) == ABAP.PIPE || text.charAt(0) == ABAP.BRACE_CLOSE);
