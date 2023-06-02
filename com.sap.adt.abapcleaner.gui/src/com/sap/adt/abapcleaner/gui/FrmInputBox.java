@@ -2,11 +2,8 @@ package com.sap.adt.abapcleaner.gui;
 
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
-import org.eclipse.swt.layout.FormLayout;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.layout.FormData;
-import org.eclipse.swt.layout.FormAttachment;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
@@ -16,6 +13,11 @@ import com.sap.adt.abapcleaner.programbase.Persistency;
 
 import org.eclipse.swt.events.KeyAdapter;
 import org.eclipse.swt.events.KeyEvent;
+import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.layout.GridData;
+import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Label;
+import org.eclipse.swt.graphics.Point;
 
 public class FrmInputBox{
    private final String invalidChars;
@@ -25,11 +27,6 @@ public class FrmInputBox{
 	protected Shell shell;
 	private Text txtResult;
 
-	/**
-	 * Create the dialog.
-	 * @param parent
-	 * @param style
-	 */
 	public FrmInputBox() {
       invalidChars = new String(Persistency.get().getInvalidFileNameChars());
 	}
@@ -43,6 +40,7 @@ public class FrmInputBox{
 
 		txtResult.setText(defaultText);
 		shell.setText(title);
+		
       this.restrictToValidFileNameChars = restrictToValidFileNameChars;
 		result = null;
 		
@@ -56,47 +54,40 @@ public class FrmInputBox{
       return result;
    }
 
-	/**
-	 * Create contents of the window.
-	 */
 	protected void createContents() {
-		shell = new Shell(SWT.APPLICATION_MODAL | SWT.BORDER | SWT.TITLE | SWT.CLOSE | SWT.TOOL);
+		shell = new Shell(SWT.APPLICATION_MODAL | SWT.BORDER | SWT.TITLE | SWT.CLOSE);
+		shell.setMinimumSize(new Point(450, 130));
+		shell.setSize(450, 130);
 		shell.setImage(SWTResourceManager.getImage(FrmInputBox.class, "/ShellImage.png"));
-		shell.setSize(450, 120);
 		shell.setText("Input Box");
-		FormLayout fl_shell = new FormLayout();
-		fl_shell.marginHeight = 12;
-		fl_shell.marginWidth = 12;
-		shell.setLayout(fl_shell);
+		GridLayout gl_shell = new GridLayout(1, false);
+		gl_shell.marginWidth = 10;
+		gl_shell.marginHeight = 10;
+		shell.setLayout(gl_shell);
 		
 		txtResult = new Text(shell, SWT.BORDER);
+		GridData gd_txtResult = new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1);
+		gd_txtResult.widthHint = 400;
+		txtResult.setLayoutData(gd_txtResult);
 		txtResult.addKeyListener(new KeyAdapter() {
 			@Override
 			public void keyPressed(KeyEvent e) {
 				txtResultKeyPressed(e);
 			}
 		});
-		FormData fd_txtResult = new FormData();
-		fd_txtResult.left = new FormAttachment(0, 10);
-		fd_txtResult.right = new FormAttachment(100, -10);
-		txtResult.setLayoutData(fd_txtResult);
+
+		Composite cpsButtons = new Composite(shell, SWT.NONE);
+		cpsButtons.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
+		GridLayout gl_cpsButtons = new GridLayout(3, false);
+		gl_cpsButtons.marginWidth = 0;
+		gl_cpsButtons.marginHeight = 0;
+		cpsButtons.setLayout(gl_cpsButtons);
 		
-		Button btnOK = new Button(shell, SWT.NONE);
-		btnOK.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-	         setResult(txtResult.getText());
-				shell.dispose();
-			}
-		});
-		fd_txtResult.bottom = new FormAttachment(btnOK, -6);
-		FormData fd_btnOK = new FormData();
-		fd_btnOK.top = new FormAttachment(0, 37);
-		fd_btnOK.right = new FormAttachment(100, -10);
-		btnOK.setLayoutData(fd_btnOK);
-		btnOK.setText("&OK");
+		Label lblExcessWidth = new Label(cpsButtons, SWT.NONE);
+		lblExcessWidth.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, true, false, 1, 1));
 		
-		Button btnCancel = new Button(shell, SWT.NONE);
+		Button btnCancel = new Button(cpsButtons, SWT.NONE);
+		btnCancel.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false, 1, 1));
 		btnCancel.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
@@ -104,12 +95,17 @@ public class FrmInputBox{
 				shell.dispose();
 			}
 		});
-		FormData fd_btnCancel = new FormData();
-		fd_btnCancel.top = new FormAttachment(txtResult, 6);
-		fd_btnCancel.right = new FormAttachment(btnOK, -6);
-		btnCancel.setLayoutData(fd_btnCancel);
 		btnCancel.setText("&Cancel");
-
+		
+		Button btnOK = new Button(cpsButtons, SWT.NONE);
+		btnOK.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+	         setResult(txtResult.getText());
+				shell.dispose();
+			}
+		});
+		btnOK.setText("&OK");
 	}
 
    private void txtResultKeyPressed(KeyEvent e) {
