@@ -14,7 +14,7 @@ public class AbapDocLangRule extends RuleForCommands {
 	public RuleID getID() { return RuleID.ABAP_DOC_LANG; }
 
 	@Override
-	public RuleGroupID getGroupID() { return RuleGroupID.SYNTAX; }
+	public RuleGroupID getGroupID() { return RuleGroupID.DECLARATIONS; }
 
 	@Override
 	public String getDisplayName() { return "Remove lang=\"en\" from ABAP Doc"; }
