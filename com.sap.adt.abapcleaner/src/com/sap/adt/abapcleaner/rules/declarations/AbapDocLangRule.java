@@ -1,4 +1,4 @@
-package com.sap.adt.abapcleaner.rules.syntax;
+package com.sap.adt.abapcleaner.rules.declarations;
 
 import java.time.LocalDate;
 

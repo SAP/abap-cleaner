@@ -1,4 +1,4 @@
-package com.sap.adt.abapcleaner.rules.syntax;
+package com.sap.adt.abapcleaner.rules.declarations;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -105,7 +105,7 @@ class AbapDocLangTest extends RuleTestBase {
 		
 		buildSrc("    \"! <p class=\"shorttext\" lang=\"en\">For non-synchronized shorttexts, lang=\"...\" will NOT be removed,</p>");
 		buildSrc("    \"! <p class=\"shorttext\" lang=\"en\">because texts in non-original languages are allowed here.</p>");
-		buildSrc("    \"! <p class=\"shorttext\" lang=\"DE\">Für nicht-synchronisierte Kurztexte wird lang=\"...\" NICHT entfernt,</p>");
+		buildSrc("    \"! <p class=\"shorttext\" lang=\"DE\">Fï¿½r nicht-synchronisierte Kurztexte wird lang=\"...\" NICHT entfernt,</p>");
 		buildSrc("    \"! <p class=\"shorttext\" lang=\"DE\">weil hier Texte in Nicht-Originalsprachen erlaubt sind.</p>");
 		buildSrc("    CLASS-DATA mv_any_variable TYPE string.");
 
