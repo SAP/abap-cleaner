@@ -21,8 +21,8 @@ public class LogicalOperatorPositionRule extends RuleForLogicalExpressions {
 
 	@Override
 	public String getDescription() {
-		return "Moves boolean operators (AND, OR, EQUIV) from the end of a line to the start of the next line. The expression is then aligned according to the settings of the rule '"
-				+ AlignLogicalExpressionsRule.DEFAULT_NAME + "' (even if the rule is otherwise deactivated).";
+		return "Moves boolean operators (AND, OR, EQUIV) from the end of a line to the start of the next line." + System.lineSeparator() 
+				+ "The expression is then aligned according to the settings of the rule '" + AlignLogicalExpressionsRule.DEFAULT_NAME + "' (even if the rule is otherwise deactivated).";
 	}
 
 	@Override

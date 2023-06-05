@@ -37,7 +37,8 @@ public class UnusedVariablesRule extends RuleForDeclarations {
 
 	@Override
 	public String getDescription() {
-		return "Deletes unused variables, or comments them out if they are 'used' in commented-out code. TODO comments can be added for variables that are assigned but never used.";
+		return "Deletes unused variables, or comments them out if they are 'used' in commented-out code. TODO comments can be added for variables that are assigned but never used." + System.lineSeparator() + 
+				 "Note that this rule will skip methods in which macros are used.";
 	}
 
 	@Override

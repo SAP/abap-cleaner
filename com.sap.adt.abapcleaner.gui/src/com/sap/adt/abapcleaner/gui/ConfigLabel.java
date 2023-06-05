@@ -44,5 +44,7 @@ class ConfigLabel extends ConfigControl {
    @Override
    public void setEnabled(boolean enabled) {
    	lblDescription.setText(enabled ? configValue.description : " ");
+   	if (enabled)
+   		lblDescription.requestLayout();
    }
 }

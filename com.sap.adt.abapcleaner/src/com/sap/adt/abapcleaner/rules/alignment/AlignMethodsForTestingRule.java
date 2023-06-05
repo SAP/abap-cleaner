@@ -32,7 +32,8 @@ public class AlignMethodsForTestingRule extends AlignMethodsWithoutParamsRuleBas
 	public String getDisplayName() { return "Align METHODS ... FOR TESTING"; }
 
 	@Override
-	public String getDescription() { return "Aligns consecutive METHODS ... FOR TESTING declarations. Activate this rule to override the result of 'Align METHODS declarations' with special settings."; }
+	public String getDescription() { return "Aligns consecutive METHODS ... FOR TESTING declarations." + System.lineSeparator() 
+													  + "Activate this rule if you want to override the result of 'Align METHODS declarations' with special settings."; }
 
 	@Override
 	public LocalDate getDateCreated() { return LocalDate.of(2021, 1, 9); }
