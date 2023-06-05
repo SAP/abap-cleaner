@@ -479,4 +479,40 @@ class FinalVariableTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testDataUnchangedDueToMacroUsage() {
+		// expect seemingly unchanged variables to be kept as DATA, because they might be used in the macro
+		
+		buildSrc("    DATA(lv_any) = 1.");
+		buildSrc("    DATA(lv_other) = 2.");
+		buildSrc("");
+		buildSrc("    any_macro.");
+		buildSrc("");
+		buildSrc("    rv_result = lv_any + lv_other.");
+
+		copyExpFromSrc();
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testDataUnchangedDueToChainedMacroUsage() {
+		// expect seemingly unchanged variables to be kept as DATA, because they might be used in the macro
+		
+		buildSrc("    DATA(lv_any) = 1.");
+		buildSrc("    DATA(lv_other) = 2.");
+		buildSrc("");
+		buildSrc("    other_macro: iv_any_param, iv_other_param.");
+		buildSrc("");
+		buildSrc("    rv_result = lv_any + lv_other.");
+
+		copyExpFromSrc();
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }
