@@ -34,7 +34,8 @@ public class CallMethodRule extends RuleForCommands {
 
 	@Override
 	public String getDescription() {
-		return "Replaces obsolete CALL METHOD statements with functional calls, adding parentheses, if missing. Leaves CALL METHOD if dynamic typing is used for the method name.";
+		return "Replaces obsolete CALL METHOD statements with functional calls, adding parentheses, if missing." + System.lineSeparator() 
+			  + "Keeps CALL METHOD if dynamic typing is used for the method name, since no function equivalent is available here.";
 	}
 
 	@Override

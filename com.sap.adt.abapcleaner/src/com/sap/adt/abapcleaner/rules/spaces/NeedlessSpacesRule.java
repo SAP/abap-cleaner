@@ -51,7 +51,8 @@ public class NeedlessSpacesRule extends Rule {
 	public String getDisplayName() { return "Remove needless spaces"; }
 
 	@Override
-	public String getDescription() { return "Removes multiple spaces where no alignment intention can be identified. This rule deliberately skips commands and expressions which are covered by more dedicated rules on alignment and spaces."; }
+	public String getDescription() { return "Removes multiple spaces where no alignment intention can be identified." + System.lineSeparator() + 
+														 "This rule deliberately skips commands and expressions which are covered by more dedicated rules on alignment and spaces."; }
 
 	@Override
 	public LocalDate getDateCreated() { return LocalDate.of(2023, 3, 10); }

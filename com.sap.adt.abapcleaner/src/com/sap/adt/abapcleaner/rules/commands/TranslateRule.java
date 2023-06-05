@@ -38,7 +38,8 @@ public class TranslateRule extends RuleForCommands {
 
 	@Override
 	public String getDescription() {
-		return "Replaces the deprecated TRANSLATE statement with corresponding string processing functions. 'TRANSLATE text USING mask' is only replaced if the mask is a literal.";
+		return "Replaces the deprecated TRANSLATE statement with corresponding string processing functions." + System.lineSeparator() 
+			 + "'TRANSLATE text USING mask' is only replaced if the mask is a literal.";
 	}
 
 	@Override

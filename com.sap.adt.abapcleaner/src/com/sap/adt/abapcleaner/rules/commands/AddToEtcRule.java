@@ -26,7 +26,8 @@ public class AddToEtcRule extends RuleForCommands {
 
 	@Override
 	public String getDescription() {
-		return "Replaces obsolete ADD TO, SUBTRACT FROM, MULTIPLY BY and DIVIDE BY statements with the corresponding calculation assignment operators +=, -=, *=, and /= for NetWeaver versions >= 7.54. For older syntax, the statements can be replaced with a = a + ... etc. (see options)";
+		return "Replaces obsolete ADD TO, SUBTRACT FROM, MULTIPLY BY and DIVIDE BY statements with the corresponding calculation assignment operators +=, -=, *=, and /=." + System.lineSeparator() 
+			  + "This rule requires a NetWeaver version >= 7.54. For older syntax, the statements can be replaced with a = a + ... etc. (see options)";
 	}
 
 	@Override

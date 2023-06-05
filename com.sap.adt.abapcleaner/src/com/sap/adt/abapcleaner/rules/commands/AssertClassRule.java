@@ -31,7 +31,8 @@ public class AssertClassRule extends RuleForCommands {
 	public String getDisplayName() { return "Use assert class instead of ASSERT"; }
 
 	@Override
-	public String getDescription() { return "Replaces ASSERT statements (in productive code) with static calls to an assert class. Note that the Assert class name must be adjusted to the respective application."; }
+	public String getDescription() { return "Replaces ASSERT statements (in productive code) with static calls to an assert class." + System.lineSeparator() 
+													  + "Note that the Assert class name must be adjusted to the respective application (CL_..._ASSERT)."; }
 
 	@Override
 	public LocalDate getDateCreated() { return LocalDate.of(2021, 1, 11); }

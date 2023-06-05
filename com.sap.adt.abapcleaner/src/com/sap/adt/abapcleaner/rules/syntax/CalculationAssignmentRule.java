@@ -25,7 +25,8 @@ public class CalculationAssignmentRule extends RuleForCommands {
 
 	@Override
 	public String getDescription() {
-		return "Transforms assignments like i = i + 1 to use calculation assignment operators (+=, -= etc.). This requires a NetWeaver version >= 7.54.";
+		return "Transforms assignments like i = i + 1 to use calculation assignment operators (+=, -= etc.)." + System.lineSeparator() 
+			  + "This rule requires a NetWeaver version >= 7.54.";
 	}
 
 	@Override

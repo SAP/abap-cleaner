@@ -551,8 +551,8 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 		
 		txtRuleDescription = new Text(pnlRule, SWT.READ_ONLY | SWT.MULTI);
 		GridData gd_txtRuleDescription = new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1);
-		gd_txtRuleDescription.heightHint = 28;
-		gd_txtRuleDescription.minimumHeight = 28;
+		gd_txtRuleDescription.heightHint = 30;
+		gd_txtRuleDescription.minimumHeight = 30;
 		txtRuleDescription.setLayoutData(gd_txtRuleDescription);
 		
 		Label lblRuleReferences = new Label(pnlRule, SWT.NONE);
