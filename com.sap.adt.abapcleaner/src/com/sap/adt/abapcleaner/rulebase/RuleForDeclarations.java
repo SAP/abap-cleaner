@@ -8,11 +8,15 @@ import com.sap.adt.abapcleaner.programbase.*;
 import com.sap.adt.abapcleaner.rulehelpers.*;
 
 /**
- * base class for a Rule that requires information on local variable definitions and usages
+ * base class for a Rule that requires information on method parameter and/or local variable definitions and usages
  */
-public abstract class RuleForLocalVariables extends Rule {
+public abstract class RuleForDeclarations extends Rule {
+	/** true if the Rule is to be executed only on class definitions, not on local contexts (i.e. implementations of METHOD, FORM etc.) */
+	protected boolean skipLocalVariableContexts() { return false; }
+
+	protected abstract void executeOn(Code code, ClassInfo classOrInterfaceInfo, int releaseRestriction) throws UnexpectedSyntaxAfterChanges; 
 	protected abstract void executeOn(Code code, Command methodStart, LocalVariables localVariables, int releaseRestriction) throws UnexpectedSyntaxAfterChanges;
-	
+
    private final static String[] declarationKeywords = new String[] {"CONSTANTS", "DATA", "FIELD-SYMBOLS", "STATICS"}; // "DATA(", "FINAL(" and "FIELD-SYMBOL(" do NOT belong here!
    private final static String[] constantsDeclarationKeywords = new String[] {"CONSTANTS"};
 
@@ -20,7 +24,7 @@ public abstract class RuleForLocalVariables extends Rule {
       return AbapCult.toUpper(name);
    }
 
-	protected RuleForLocalVariables(Profile profile) {
+	protected RuleForDeclarations(Profile profile) {
 		super(profile);
 	}
 
@@ -31,8 +35,8 @@ public abstract class RuleForLocalVariables extends Rule {
 
 		CommentIdentifier commentIdentifier = new CommentIdentifier();
 
-		HashMap<String, ClassInfo> classes = new HashMap<String, ClassInfo>();
-		ClassInfo curClass = null;
+		HashMap<String, ClassInfo> classesAndInterfaces = new HashMap<String, ClassInfo>();
+		ClassInfo curClassOrInterface = null;
 
 		LocalVariables localVariables = new LocalVariables(this, null);
 		
@@ -41,26 +45,33 @@ public abstract class RuleForLocalVariables extends Rule {
 		
 		// do NOT initialize isInMethod  with "= (!code.hasMethodFunctionOrFormStart())", because if an incomplete part 
 		// of the class declaration is processed, this will delete attributes!
-		boolean isInClassDefinition = false;
+		boolean isInDefinition = false;
 		MethodVisibility methodVisibility = MethodVisibility.PUBLIC;
 		boolean isInMethod = false; 
-		boolean skipMethod = false;
+		boolean skipMethod = skipLocalVariableContexts();
 		int blockLevel = 0;
 
 		while (command != null) {
-			// determine the current class to add to its method definitions, or later (in the implementation section) read from them 
-			if (command.isClassDefinitionStart()) {
-				isInClassDefinition = true;
-				curClass = new ClassInfo(command.getDefinedName());
-				classes.put(getNameKey(curClass.name), curClass);
+			// determine the current class or interface to add to its method definitions, 
+			// or later (in a class implementation section) read from them
+			if (command.isClassDefinitionStart() || command.isInInterfaceDefinition()) {
+				isInDefinition = true;
+				curClassOrInterface = new ClassInfo(command.getDefinedName());
+				classesAndInterfaces.put(getNameKey(curClassOrInterface.name), curClassOrInterface);
+				methodVisibility = MethodVisibility.PUBLIC;
+
 			} else if (command.isClassImplementationStart()) {
-				curClass = classes.get(getNameKey(command.getDefinedName()));
-			} else if (command.isClassEnd()) {
-				isInClassDefinition = false;
-				curClass = null;
+				curClassOrInterface = classesAndInterfaces.get(getNameKey(command.getDefinedName()));
+			
+			} else if (command.isClassEnd() || command.isInterfaceEnd()) {
+				if (isInDefinition) {
+					executeOn(code, curClassOrInterface, releaseRestriction);
+				}
+				isInDefinition = false;
+				curClassOrInterface = null;
 			}
 			
-			if (isInClassDefinition) {
+			if (isInDefinition) {
 				// determine method visibility section
 				Token firstCode = command.getFirstCodeToken();
 				if (firstCode == null) {
@@ -73,10 +84,9 @@ public abstract class RuleForLocalVariables extends Rule {
 					methodVisibility = MethodVisibility.PRIVATE;
 				} else if (firstCode.isAnyKeyword("METHODS", "CLASS-METHODS")) {
 					// add one or several method definitions
-					addMethodDefinitions(curClass, methodVisibility, command);
+					addMethodDefinitions(curClassOrInterface, methodVisibility, command);
 				}
 			}
-			
 			
 			if (command.endsLocalVariableContext()) {
 				if (!skipMethod)
@@ -93,8 +103,8 @@ public abstract class RuleForLocalVariables extends Rule {
 				methodStart = command;
 				isInMethod = true;
 				MethodInfo curMethod = null;
-				if (curClass != null) {
-					curMethod = curClass.getMethod(command.getDefinedName()); // may be null
+				if (curClassOrInterface != null) {
+					curMethod = curClassOrInterface.getMethod(command.getDefinedName()); // may be null
 				}
 				skipMethod = false;
 				localVariables = new LocalVariables(this, curMethod);
@@ -135,7 +145,7 @@ public abstract class RuleForLocalVariables extends Rule {
 		}
 	}
 
-	private void addMethodDefinitions(ClassInfo curClass, MethodVisibility methodVisibility, Command command) {
+	private void addMethodDefinitions(ClassInfo curClassOrInterface, MethodVisibility methodVisibility, Command command) {
 		Token token = command.getFirstCodeToken();
 		if (token == null)
 			return;
@@ -148,10 +158,20 @@ public abstract class RuleForLocalVariables extends Rule {
 			if (token == null || !token.isIdentifier())
 				return;
 
-			MethodInfo methodInfo = new MethodInfo(token.getText(), methodVisibility);
-			curClass.addMethod(methodInfo);
+			// determine some of the qualifiers:
+			// - METHODS meth [ABSTRACT|FINAL] | [DEFAULT IGNORE|FAIL] [FOR EVENT evt OF {class|intf}] ...
+			// - METHODS meth [FINAL] REDEFINITION.
+			// - METHODS meth FOR TESTING.
+			Token next = token.getNextCodeSibling();
+			boolean isAbstract = next.isKeyword("ABSTRACT");
+			boolean isFinal = next.isKeyword("FINAL");
+			boolean isRedefinition = next.matchesOnSiblings(true, TokenSearch.makeOptional("FINAL"), "REDEFINITION");
+			boolean isForTesting = next.matchesOnSiblings(true, "FOR", "TESTING");
 			
-			// read the parameters
+			MethodInfo methodInfo = new MethodInfo(token, methodVisibility, isAbstract, isFinal, isRedefinition, isForTesting);
+			curClassOrInterface.addMethod(methodInfo);
+			
+			// read the parameters and (class-based or non-class-based) exceptions
 			ParameterAccessType accessType = ParameterAccessType.IMPORTING;
 			while (!token.isCommaOrPeriod()) {
 				if (token.isKeyword()) {
@@ -165,9 +185,6 @@ public abstract class RuleForLocalVariables extends Rule {
 					else if (token.isKeyword("RETURNING"))
 						accessType = ParameterAccessType.RETURNING;
 
-					if (token.isKeyword("REDEFINITION"))
-						methodInfo.isRedefinition = true;
-
 					// the parameter name is the Token before "TYPE" or "LIKE", possibly inside "VALUE(...)" or "REFERENCE(...)",
 					// and possibly with an escape char ! before it (e.g. "IMPORTING !iv_number TYPE i")
 					if (token.isAnyKeyword("TYPE", "LIKE")) {
@@ -179,6 +196,30 @@ public abstract class RuleForLocalVariables extends Rule {
 						if (parameterNameText.startsWith(ABAP.OPERAND_ESCAPE_CHAR_STRING))
 							parameterNameText = parameterNameText.substring(ABAP.OPERAND_ESCAPE_CHAR_STRING.length());
 						methodInfo.addParameter(new ParameterInfo(parameterNameText, accessType));
+					}
+					
+					if (token.isKeyword("RAISING")) {
+						// read class-based exceptions
+						token = token.getNextCodeSibling();
+						while (!token.isCommaOrPeriod()) {
+							if (token.isKeyword("RESUMABLE(") && token.hasChildren() && token.getFirstChild().isIdentifier()) {
+								methodInfo.addException(ExceptionInfo.createClassBased(token.getFirstChild().getText(), true));
+							} else if (token.isIdentifier()) {
+								methodInfo.addException(ExceptionInfo.createClassBased(token.getText(), false));
+							}
+							token = token.getNextCodeSibling();
+						}
+						break;
+					} else if (token.isKeyword("EXCEPTIONS")) {
+						// read non-class-based exceptions
+						token = token.getNextCodeSibling();
+						while (!token.isCommaOrPeriod()) {
+							if (token.isIdentifier()) {
+								methodInfo.addException(ExceptionInfo.createNonClassBased(token.getText()));
+							}
+							token = token.getNextCodeSibling();
+						}
+						break;
 					}
 				}
 				token = token.getNextCodeSibling();

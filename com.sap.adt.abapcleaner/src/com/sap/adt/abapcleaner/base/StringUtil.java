@@ -451,4 +451,39 @@ public final class StringUtil {
 			return false;
 		return (text.toUpperCase().indexOf(subtext.toUpperCase()) >= 0);
 	}
+	
+	public static String removeTags(String text) {
+		if (text == null)
+			return null;
+		StringBuilder sb = new StringBuilder();
+		int start = 0;
+		while (start < text.length()) {
+			int tagStart = text.indexOf('<', start);
+			if (tagStart < 0) {
+				sb.append(text.substring(start));
+				break;
+			}
+			if (tagStart > start) {
+				sb.append(text.substring(start, tagStart));
+				start = tagStart;
+			}
+
+			// determine whether '<' is really the beginning of a tag
+			if (tagStart + 1 == text.length() || (!Character.isLetter(text.charAt(tagStart+1)) && text.charAt(tagStart + 1) != '/')) {
+				++tagStart;
+				sb.append(text.substring(start, tagStart));
+				start = tagStart;
+				continue;
+			}
+
+			int tagEnd = text.indexOf('>', tagStart);
+			if (tagEnd < 0) {
+				sb.append(text.substring(start));
+				break;
+			}
+			// skip the <tag> from tagStart to tagEnd
+			start = tagEnd + 1;
+		} 
+		return sb.toString();
+	}
 }

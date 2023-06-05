@@ -29,6 +29,7 @@ public enum RuleID  {
    FINAL_VARIABLE,
    ESCAPE_CHAR_FOR_PARAMS,
    EMPTY_SECTIONS,
+   ABAP_DOC_PARAMETERS,
    ABAP_DOC_LANG,
 
    // Syntax [obsolete/outdated]

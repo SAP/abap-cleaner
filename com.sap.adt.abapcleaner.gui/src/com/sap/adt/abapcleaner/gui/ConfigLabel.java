@@ -1,6 +1,7 @@
 package com.sap.adt.abapcleaner.gui;
 
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
@@ -26,6 +27,8 @@ class ConfigLabel extends ConfigControl {
       lblDescription = new Label(parent, SWT.NONE);
       lblDescription.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false, 3, 1));
       lblDescription.setText(configValue.description);
+      if (configValue.isWarning)
+      	lblDescription.setForeground(new Color(255, 0, 0));
    }
 
    @Override
@@ -40,5 +43,6 @@ class ConfigLabel extends ConfigControl {
 
    @Override
    public void setEnabled(boolean enabled) {
+   	lblDescription.setText(enabled ? configValue.description : " ");
    }
 }

@@ -4,12 +4,13 @@ import com.sap.adt.abapcleaner.base.*;
 import com.sap.adt.abapcleaner.parser.*;
 import com.sap.adt.abapcleaner.programbase.*;
 import com.sap.adt.abapcleaner.rulebase.*;
+import com.sap.adt.abapcleaner.rulehelpers.ClassInfo;
 import com.sap.adt.abapcleaner.rulehelpers.LocalVariables;
 import com.sap.adt.abapcleaner.rulehelpers.VariableInfo;
 
 import java.time.LocalDate;
 
-public class UnusedVariablesRule extends RuleForLocalVariables {
+public class UnusedVariablesRule extends RuleForDeclarations {
    private final static RuleReference[] references = new RuleReference[] {new RuleReference(RuleSource.ABAP_CLEANER)};
 
    private static UnusedVariableMeasure convertToMeasure(UnusedVariableMeasureIfAssigned measureIfAssigned) {
@@ -21,7 +22,6 @@ public class UnusedVariablesRule extends RuleForLocalVariables {
          default:
             throw new IndexOutOfBoundsException("unexpected MeasureIfAssigned value");
       }
-
    }
 
    // ----------------------------------------------------------------------
@@ -145,6 +145,12 @@ public class UnusedVariablesRule extends RuleForLocalVariables {
 	public UnusedVariablesRule(Profile profile) {
 		super(profile);
 		initializeConfiguration();
+	}
+
+	@Override
+	protected void executeOn(Code code, ClassInfo classInfo, int releaseRestriction) throws UnexpectedSyntaxAfterChanges {
+		// nothing to do on class definition level
+		return;
 	}
 
 	@Override

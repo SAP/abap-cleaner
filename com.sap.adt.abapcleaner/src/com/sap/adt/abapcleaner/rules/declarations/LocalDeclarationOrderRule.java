@@ -19,15 +19,16 @@ import com.sap.adt.abapcleaner.rulebase.ConfigBoolValue;
 import com.sap.adt.abapcleaner.rulebase.ConfigEnumValue;
 import com.sap.adt.abapcleaner.rulebase.ConfigValue;
 import com.sap.adt.abapcleaner.rulebase.Profile;
-import com.sap.adt.abapcleaner.rulebase.RuleForLocalVariables;
+import com.sap.adt.abapcleaner.rulebase.RuleForDeclarations;
 import com.sap.adt.abapcleaner.rulebase.RuleGroupID;
 import com.sap.adt.abapcleaner.rulebase.RuleID;
 import com.sap.adt.abapcleaner.rulebase.RuleReference;
 import com.sap.adt.abapcleaner.rulebase.RuleSource;
+import com.sap.adt.abapcleaner.rulehelpers.ClassInfo;
 import com.sap.adt.abapcleaner.rulehelpers.LocalVariables;
 import com.sap.adt.abapcleaner.rulehelpers.VariableInfo;
 
-public class LocalDeclarationOrderRule extends RuleForLocalVariables {
+public class LocalDeclarationOrderRule extends RuleForDeclarations {
 	private enum DeclarationType {
 		CONSTANTS,
 		STATICS,
@@ -150,6 +151,12 @@ public class LocalDeclarationOrderRule extends RuleForLocalVariables {
 	public LocalDeclarationOrderRule(Profile profile) {
 		super(profile);
 		initializeConfiguration();
+	}
+
+	@Override
+	protected void executeOn(Code code, ClassInfo classInfo, int releaseRestriction) throws UnexpectedSyntaxAfterChanges {
+		// nothing to do on class definition level
+		return;
 	}
 
 	@Override

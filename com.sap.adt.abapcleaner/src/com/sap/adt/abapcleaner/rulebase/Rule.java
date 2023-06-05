@@ -20,7 +20,7 @@ import java.time.LocalDate;
 import java.util.*;
 
 public abstract class Rule {
-	public static final int RULE_COUNT = 58;
+	public static final int RULE_COUNT = 59;
 	public static final int RULE_GROUP_COUNT = 7;
 
 	protected static final String LINE_SEP = ABAP.LINE_SEPARATOR;
@@ -70,18 +70,19 @@ public abstract class Rule {
          new NeedlessSpacesRule(profile),
          
          // declarations
+         new ChainRule(profile),
+         new LocalDeclarationOrderRule(profile),
          new UnusedVariablesRule(profile),
          new ChainOfOneRule(profile),
-         new ChainRule(profile),
          new ImplicitTypeRule(profile),
-         new LocalDeclarationOrderRule(profile),
          new FinalVariableRule(profile),
-         new EmptySectionsInClassDefRule(profile),
          new EscapeCharForParametersRule(profile),
+         new EmptySectionsInClassDefRule(profile),
+         new AbapDocParametersRule(profile),
+         new AbapDocLangRule(profile),
          
          // syntax
          new CommentTypeRule(profile),
-         new AbapDocLangRule(profile),
          new PseudoCommentRule(profile),
          new PragmaPositionRule(profile),
          new TypoRule(profile),
@@ -176,7 +177,7 @@ public abstract class Rule {
 	
 	public abstract String getExample();
 	
-	public ConfigValue[] getConfigValues() { return new ConfigValue[] { new ConfigInfoValue(this, "(no options available for this rule)") }; }
+	public ConfigValue[] getConfigValues() { return new ConfigValue[] { new ConfigInfoValue(this, "(no options available for this rule)", false) }; }
 
 	protected void prepare(Code code) { }
 
