@@ -585,4 +585,16 @@ public class Code {
 			return 0;
 		return lastLine - firstLine + 1;
 	}
+	
+	/** returns the first Command in this Code that matches the pattern that is hard-coded in {@link Command#matchesPattern()} */
+	public Command getFirstPatternMatch() {
+		Command command = firstCommand;
+		while (command != null) {
+			if (command.matchesPattern()) {
+				return command;
+			}
+			command = command.getNext();
+		}
+		return null;
+	}
 }

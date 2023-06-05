@@ -174,9 +174,9 @@ public class DiffNavigator {
 
 		if (lastCommand == null) 
 			lastCommand = code.lastCommand;
-		startLine = diffDoc.findFirstLineOfCommand(startCommand, DisplaySide.RIGHT);
+		startLine = diffDoc.findFirstLineOfCommand(startCommand, DisplaySide.RIGHT, false);
 		if (startCommand.originalCommand != startCommand) {
-			int originalStartLine = diffDoc.findFirstLineOfCommand(startCommand.originalCommand, DisplaySide.LEFT);
+			int originalStartLine = diffDoc.findFirstLineOfCommand(startCommand.originalCommand, DisplaySide.LEFT, false);
 			if (originalStartLine >= 0 && originalStartLine < startLine)
 				startLine = originalStartLine;
 		}
@@ -296,6 +296,32 @@ public class DiffNavigator {
 		curLine = newLine;
 		selStartLine = curLine;
 		return true;
+	}
+
+	public final boolean moveToNextPatternMatch() {
+		Command command = diffDoc.getCommandAt(curLine);
+		while (command != null) {
+			command = command.getNext();
+			if (command != null && command.matchesPattern()) {
+				curLine = diffDoc.findFirstLineOfCommand(command, DisplaySide.RIGHT, true);
+				selStartLine = curLine;
+				return true;
+			}
+		}
+		return false;
+	}
+
+	public final boolean moveToPrevPatternMatch() {
+		Command command = diffDoc.getCommandAt(curLine);
+		while (command != null) {
+			command = command.getPrev();
+			if (command != null && command.matchesPattern()) {
+				curLine = diffDoc.findFirstLineOfCommand(command, DisplaySide.RIGHT, true);
+				selStartLine = curLine;
+				return true;
+			}
+		}
+		return false;
 	}
 
 	public final void moveToNextPage(int visibleLineCount, boolean clearSelection) {

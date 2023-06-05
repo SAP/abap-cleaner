@@ -764,6 +764,38 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 
 		new MenuItem(menuExtras, SWT.SEPARATOR);
 
+		MenuItem mmuExtrasNextPatternMatch = new MenuItem(menuExtras, SWT.NONE);
+		mmuExtrasNextPatternMatch.setToolTipText("Opens the next code file from the /user/code folder (and subfolders) in which a Command satisfies the hard-coded Command.patternMatch().");
+		mmuExtrasNextPatternMatch.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				openNextPatternMatchFile(true);
+			}
+		});
+		mmuExtrasNextPatternMatch.setText(getMenuItemTextWithAccelerator("Open Next Pattern Match", SWT.CTRL + SWT.F6));
+
+		MenuItem mmuExtrasPrevPatternMatch = new MenuItem(menuExtras, SWT.NONE);
+		mmuExtrasPrevPatternMatch.setToolTipText("Opens the previous code file from the /user/code folder (and subfolders) in which a Command satisfies the hard-coded Command.patternMatch().");
+		mmuExtrasPrevPatternMatch.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				openNextPatternMatchFile(false);
+			}
+		});
+		mmuExtrasPrevPatternMatch.setText(getMenuItemTextWithAccelerator("Open Previous Pattern Match", SWT.CTRL + SWT.F5));
+
+		MenuItem mmuExtrasPatternMatchesToClip = new MenuItem(menuExtras, SWT.NONE);
+		mmuExtrasPatternMatchesToClip.setToolTipText("Fills the clipboard with all commands from the code files in the /user/code folder (and subfolders) that satisfy the hard-coded Command.patternMatch().");
+		mmuExtrasPatternMatchesToClip.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				patternMatchesToClip();
+			}
+		});
+		mmuExtrasPatternMatchesToClip.setText("Copy Pattern Matches from all Files to Clipboard");
+
+		new MenuItem(menuExtras, SWT.SEPARATOR);
+
 		MenuItem mmuExtrasCreateRulesDocumentation = new MenuItem(menuExtras, SWT.NONE);
 		mmuExtrasCreateRulesDocumentation.addSelectionListener(new SelectionAdapter() {
 			@Override
@@ -1618,6 +1650,12 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		} else if (controlPressed && shiftPressed && e.keyCode == SWT.ARROW_LEFT && Program.showDevFeatures()) {
 			openNextMatchingSampleFile(false);
 			e.doit = false;
+		} else if (controlPressed && e.keyCode == SWT.F6 && Program.showDevFeatures()) {
+			openNextPatternMatchFile(true);
+			e.doit = false;
+		} else if (controlPressed && e.keyCode == SWT.F5 && Program.showDevFeatures()) {
+			openNextPatternMatchFile(false);
+			e.doit = false;
 		}
 	}
 	
@@ -1649,6 +1687,80 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		}
 		
 		Message.show("None of the " + String.valueOf(paths.length) + " files is changed with the current profile settings.");
+	}
+
+	private void openNextPatternMatchFile(boolean ascending) {
+		String dir = defaultCodeDirectory;
+
+		String[] paths = getAllPaths(dir, FileType.CODE, true, true);
+		if (paths == null) 
+			return;
+		paths = sortPaths(paths, ascending, codeDisplay.getSourcePath());
+
+		// find the next file in which at least one Command satisfies the hard-coded Command.matchesPattern()
+		Persistency persistency = Persistency.get(); 
+		for (String testPath : paths) {
+			String sourceName = persistency.getFileNameWithoutExtension(testPath);
+			String codeText = persistency.readAllTextFromFile(testPath);
+			BackgroundJob job = new BackgroundJob(ParseParams.createForCleanupRange(sourceName, codeText, ABAP.NEWEST_RELEASE, null), 
+															  CleanupParams.createForProfile(curProfile, false, settings.releaseRestriction));
+			Task result = runJobWithProgressUiIfNeeded(job);
+
+			Command command = result.getResultingCode().getFirstPatternMatch();
+			if (command != null) {
+				refreshCode(sourceName, testPath, codeText, ABAP.NEWEST_RELEASE, true);
+				codeDisplay.moveToFirstPatternMatch();
+				return;
+			}
+		}
+		
+		Message.show("None of the " + String.valueOf(paths.length) + " files contains a Command that satisfies the Command.matchesPattern() condition.");
+	}
+
+	private void patternMatchesToClip() {
+		String dir = defaultCodeDirectory;
+
+		String[] paths = getAllPaths(dir, FileType.CODE, true, true);
+		if (paths == null) 
+			return;
+		paths = sortPaths(paths, true, codeDisplay.getSourcePath());
+
+		int fileCount = 0;
+		int matchCount = 0;
+		StringBuilder sb = new StringBuilder();
+		Persistency persistency = Persistency.get(); 
+		for (String testPath : paths) {
+			String sourceName = persistency.getFileNameWithoutExtension(testPath);
+			String codeText = persistency.readAllTextFromFile(testPath);
+			BackgroundJob job = new BackgroundJob(ParseParams.createForCleanupRange(sourceName, codeText, ABAP.NEWEST_RELEASE, null), 
+															  CleanupParams.createForProfile(curProfile, false, settings.releaseRestriction));
+			Task result = runJobWithProgressUiIfNeeded(job);
+
+			boolean matchInFile = false;
+			Code code = result.getResultingCode();
+			Command command = code.firstCommand;
+			while (command != null) {
+				if (command.matchesPattern()) {
+					++matchCount;
+					if (!matchInFile) {
+						++fileCount;
+						matchInFile = true;
+					}
+					sb.append(System.lineSeparator());
+					sb.append(sourceName + ": line " + Cult.format(command.getSourceLineNumStart()) + System.lineSeparator());
+					sb.append(command.toString());
+					sb.append(System.lineSeparator());
+				}
+				command = command.getNext();
+			}
+		}
+
+		String clipInfo = "";
+		if (sb.length() > 0) {
+			SystemClipboard.setText(sb.toString());
+			clipInfo += " (details see clipboard)";
+		}
+		Message.show("Pattern matches found for " + Cult.format(matchCount) + " commands in " + Cult.format(fileCount) + " files" + clipInfo );
 	}
 
 	private void setBlockRule(int usedRulesIndex, boolean blocked) {
