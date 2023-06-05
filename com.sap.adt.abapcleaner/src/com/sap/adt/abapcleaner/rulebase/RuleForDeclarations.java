@@ -130,6 +130,12 @@ public abstract class RuleForDeclarations extends Rule {
 					else
 						executeOnOtherCommand(command, localVariables);
 
+					// note down if macros are used in this method; in such a case, rules like the UnusedVariablesRule 
+					// must skip this method
+					if (command.usesMacro()) {
+						localVariables.setMethodUsesMacros();
+					}
+					
 				} catch (UnexpectedSyntaxBeforeChanges ex) {
 					ex.addToLog();
 					skipMethod = true;

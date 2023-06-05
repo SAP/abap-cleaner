@@ -33,6 +33,7 @@ public class LocalVariables {
 	
    private Rule rule;
    private MethodInfo methodInfo;
+   private boolean methodUsesMacros;
    
 	public HashMap<String, VariableInfo> locals = new HashMap<String, VariableInfo>();
 
@@ -153,5 +154,13 @@ public class LocalVariables {
 
 		varInfo.addUsage(identifier, isAssignment, isUsageInSelfAssignment, isCommentedOut, writesToReferencedMemory);
 		return varInfo;
+	}
+	
+	public void setMethodUsesMacros() {
+		methodUsesMacros = true;
+	}
+	
+	public boolean getMethodUsesMacros() {
+		return methodUsesMacros;
 	}
 }

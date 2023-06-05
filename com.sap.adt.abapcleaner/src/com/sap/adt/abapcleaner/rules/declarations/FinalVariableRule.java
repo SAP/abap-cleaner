@@ -99,6 +99,11 @@ public class FinalVariableRule extends RuleForDeclarations {
 
 	@Override
 	protected void executeOn(Code code, Command methodStart, LocalVariables localVariables, int releaseRestriction) throws UnexpectedSyntaxAfterChanges {
+		// skip this method if macros are used inside the method to avoid making variables FINAL that are used inside 
+		// the macros (note that macro code may be local or 'out of sight')
+		if (localVariables.getMethodUsesMacros())
+			return;
+		
 		for (VariableInfo varInfo : localVariables.getLocalsInDeclarationOrder()) {
 			if (!varInfo.isDeclaredInline || varInfo.isAssignedAfterDeclaration())
 				continue;

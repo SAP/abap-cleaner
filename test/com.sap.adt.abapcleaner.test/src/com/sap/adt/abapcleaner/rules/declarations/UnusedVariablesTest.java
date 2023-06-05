@@ -1717,4 +1717,42 @@ class UnusedVariablesTest extends RuleTestBase {
 		
 		testRule();
 	}
+
+	@Test
+	void testUnchangedDueToMacroUsage() {
+		// expect seemingly unused variables to be kept, because they might be used in the macro
+
+		buildSrc("    DATA: lv_unused         TYPE string,");
+		buildSrc("          lv_another_unused TYPE i.");
+		buildSrc("");
+		buildSrc("    FIELD-SYMBOLS: <ls_unused> TYPE ty_s_any_struc.");
+		buildSrc("");
+		buildSrc("    any_macro.");
+
+		copyExpFromSrc();
+		
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testUnchangedDueToChainedMacroUsage() {
+		// expect seemingly unused variables to be kept, because they might be used in the macro
+
+		buildSrc("    DATA: lv_unused         TYPE string,");
+		buildSrc("          lv_another_unused TYPE i.");
+		buildSrc("");
+		buildSrc("    FIELD-SYMBOLS: <ls_unused> TYPE ty_s_any_struc.");
+		buildSrc("");
+		buildSrc("    other_macro: 'any_macro_parameter',");
+		buildSrc("                 'other_macro_parameter'.");
+
+		copyExpFromSrc();
+		
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+	
 }
