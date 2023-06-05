@@ -4,6 +4,8 @@ package com.sap.adt.abapcleaner.rulebase;
  * Exposes a configuration information that can be displayed with a Label.
  */
 public class ConfigInfoValue extends ConfigValue {
+	public final boolean isWarning;
+	
 	@Override
 	public boolean isDefault() {
 		return true;
@@ -17,8 +19,9 @@ public class ConfigInfoValue extends ConfigValue {
 	public void setNeutral() {
 	}
 
-	ConfigInfoValue(Rule rule, String description) {
+	public ConfigInfoValue(Rule rule, String description, boolean isWarning) {
 		super(rule, "", description);
+		this.isWarning = isWarning;
 	}
 	
 	@Override

@@ -6,10 +6,11 @@ import com.sap.adt.abapcleaner.base.AbapCult;
 import com.sap.adt.abapcleaner.parser.*;
 import com.sap.adt.abapcleaner.programbase.UnexpectedSyntaxAfterChanges;
 import com.sap.adt.abapcleaner.rulebase.*;
+import com.sap.adt.abapcleaner.rulehelpers.ClassInfo;
 import com.sap.adt.abapcleaner.rulehelpers.LocalVariables;
 import com.sap.adt.abapcleaner.rulehelpers.MethodInfo;
 
-public class SelfReferenceMeRule extends RuleForLocalVariables {
+public class SelfReferenceMeRule extends RuleForDeclarations {
 	private final static RuleReference[] references = new RuleReference[] {
 			new RuleReference(RuleSource.ABAP_STYLE_GUIDE, "Omit the self-reference me when calling an instance attribute or method", "#omit-the-self-reference-me-when-calling-an-instance-attribute-or-method"),
 			new RuleReference(RuleSource.CODE_PAL_FOR_ABAP, "Self-Reference", "self-reference.md") };
@@ -75,6 +76,12 @@ public class SelfReferenceMeRule extends RuleForLocalVariables {
 	public SelfReferenceMeRule(Profile profile) {
 		super(profile);
 		initializeConfiguration();
+	}
+
+	@Override
+	protected void executeOn(Code code, ClassInfo classInfo, int releaseRestriction) throws UnexpectedSyntaxAfterChanges {
+		// nothing to do on class definition level
+		return;
 	}
 
 	@Override

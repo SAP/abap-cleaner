@@ -103,6 +103,14 @@ public class Token {
 
 	public final boolean isQuotMarkCommentLine() { return isCommentLine() && isQuotMarkComment(); }
 
+	public final boolean isAbapDocComment() {
+		// ABAP Doc comments are expected to be comment lines, however, it is syntactically possible to put them as 
+		// line-end comments after METHODS: (only getting a warning, but no error) 
+		return AbapCult.stringStartsWith(text, ABAP.ABAP_DOC_SIGN); 
+	}
+
+	public final boolean isAbapDocCommentLine() { return isCommentLine() && AbapCult.stringStartsWith(text, ABAP.ABAP_DOC_SIGN); }
+
 	public final boolean isAsteriskCommentLine() { return isCommentLine() && AbapCult.stringStartsWith(text, ABAP.LINE_COMMENT_SIGN_STRING); }
 
 	public final boolean isCommentAfterCode() { return isComment() && (prev != null) && (lineBreaks == 0); }

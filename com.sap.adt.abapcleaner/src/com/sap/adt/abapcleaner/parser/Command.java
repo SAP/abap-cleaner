@@ -151,7 +151,7 @@ public class Command {
 
 	public final boolean isQuotMarkCommentLine() { return firstToken.isQuotMarkCommentLine(); }
 
-	public final boolean isAbapDoc() { return firstToken.isQuotMarkCommentLine() && firstToken.getText().startsWith("\"!"); }
+	public final boolean isAbapDoc() { return firstToken.isAbapDocCommentLine(); }
 
 	private boolean isLevelOpener(String openingKeyword) {
 		return (usedLevelOpener != null) && AbapCult.stringEquals(usedLevelOpener.text, openingKeyword, true);

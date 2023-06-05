@@ -68,6 +68,9 @@ public final class ABAP {
    public static final String ABAP_DOC_SIGN = "\"!";
    public static final char ABAP_DOC_SEP = '|';
    public static final String ABAP_DOC_SEP_STRING = "|";
+	public static final String ABAP_DOC_PARAMETER_ANNOTATION = "@parameter";
+	public static final String ABAP_DOC_RAISING_ANNOTATION = "@raising";
+	public static final String ABAP_DOC_EXCEPTION_ANNOTATION = "@exception";
    public static final char NAMESPACE_SIGN = '/';
    public static final char PRAGMA_PARAMETER_BRACKET_OPEN = '[';
    public static final char PRAGMA_PARAMETER_BRACKET_CLOSE = ']';

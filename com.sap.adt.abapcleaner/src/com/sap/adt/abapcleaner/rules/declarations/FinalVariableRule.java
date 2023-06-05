@@ -1,5 +1,5 @@
 package com.sap.adt.abapcleaner.rules.declarations;
-
+ 
 import java.time.LocalDate;
 
 import com.sap.adt.abapcleaner.base.ABAP;
@@ -9,15 +9,16 @@ import com.sap.adt.abapcleaner.parser.Token;
 import com.sap.adt.abapcleaner.parser.TokenSearch;
 import com.sap.adt.abapcleaner.programbase.UnexpectedSyntaxAfterChanges;
 import com.sap.adt.abapcleaner.rulebase.Profile;
-import com.sap.adt.abapcleaner.rulebase.RuleForLocalVariables;
+import com.sap.adt.abapcleaner.rulebase.RuleForDeclarations;
 import com.sap.adt.abapcleaner.rulebase.RuleGroupID;
 import com.sap.adt.abapcleaner.rulebase.RuleID;
 import com.sap.adt.abapcleaner.rulebase.RuleReference;
 import com.sap.adt.abapcleaner.rulebase.RuleSource;
+import com.sap.adt.abapcleaner.rulehelpers.ClassInfo;
 import com.sap.adt.abapcleaner.rulehelpers.LocalVariables;
 import com.sap.adt.abapcleaner.rulehelpers.VariableInfo;
 
-public class FinalVariableRule extends RuleForLocalVariables {
+public class FinalVariableRule extends RuleForDeclarations {
 	private final static RuleReference[] references = new RuleReference[] {
 			new RuleReference(RuleSource.ABAP_KEYWORD_DOCU, "FINAL, Inline Declaration for Immutable Variables", "abenfinal_inline.htm"),
 			new RuleReference(RuleSource.ABAP_CLEANER) };
@@ -88,6 +89,12 @@ public class FinalVariableRule extends RuleForLocalVariables {
 	public FinalVariableRule(Profile profile) {
 		super(profile);
 		initializeConfiguration();
+	}
+
+	@Override
+	protected void executeOn(Code code, ClassInfo classInfo, int releaseRestriction) throws UnexpectedSyntaxAfterChanges {
+		// nothing to do on class definition level
+		return;
 	}
 
 	@Override
