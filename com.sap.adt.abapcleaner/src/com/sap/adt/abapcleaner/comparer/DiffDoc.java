@@ -242,11 +242,11 @@ public class DiffDoc {
       }
    }
 
-   final int findFirstLineOfCommand(Command command, DisplaySide displaySide) {
+   final int findFirstLineOfCommand(Command command, DisplaySide displaySide, boolean skipEmptyLines) {
       for (int i = 0; i < getLineCount(); ++i) {
       	DiffLine line = lines.get(i);
          DisplayLine displayLine = (displaySide == DisplaySide.LEFT) ? line.leftLine : line.rightLine; //  (line.leftLine) != null ? ...
-         if (displayLine != null && displayLine.parentCommand == command)
+         if (displayLine != null && displayLine.parentCommand == command && (!skipEmptyLines || !displayLine.isEmpty()))
             return i;
       }
       return -1;

@@ -2072,4 +2072,22 @@ public class Command {
 		return (token != null) && token.isChainColon();
 	}
 
+	/** returns true if this Command uses a macro */
+	public final boolean usesMacro() {
+		// a macro starts with an identifier which 
+		// - does NOT end with an opening parentheses (as a functional method call does), and  
+		// - is NOT followed by an assignment operator (as an assignment does, including calculation assignments with += etc.) 
+		Token next = firstToken.getNextCodeSibling();
+		return (firstToken.isIdentifier() && !firstToken.getOpensLevel() && next != null && next.type != TokenType.ASSIGNMENT_OP);
+	}
+
+	/** a hard-coded pattern used to find matching Commands in all sample code files */
+	public final boolean matchesPattern() {
+		// find macro usages
+		Token next = firstToken.getNextCodeSibling();
+		return (firstToken.isIdentifier() && next != null && next.type != TokenType.ASSIGNMENT_OP && !firstToken.getOpensLevel());
+
+		// snippet to make the pattern match depend on whether a certain cleanup rule was used:
+		// changeControl.wasRuleUsed(RuleID....);
+}
 }

@@ -834,6 +834,24 @@ public class CodeDisplay extends Composite {
 					return true;
 				}
 
+				case SWT.F5:
+				case SWT.F6: {
+					if (!Program.showDevFeatures())
+						return false;
+					resetLastLineNumberKey();
+					boolean moved;
+					if (e.keyCode == SWT.F6) 
+						moved = navigator.moveToNextPatternMatch();
+					else // (e.keyCode == SWT.F5)
+						moved = navigator.moveToPrevPatternMatch();
+					if (moved) {
+						scrollToLine(navigator.getCurLine() - visibleLineCount / 2);
+						if (usedRulesDisplay != null)
+							usedRulesDisplay.selectionChanged();
+					}
+					return true;
+				}
+
 				case SWT.PAGE_DOWN: {
 					resetLastLineNumberKey();
 					navigator.moveToNextPage(visibleLineCount, !shiftPressed);
@@ -1276,6 +1294,24 @@ public class CodeDisplay extends Composite {
 			return;
 		navigator.moveToFirstLine(true);
 		boolean moved = navigator.moveToNextChange();
+		if (moved) {
+			scrollToLine(navigator.getCurLine() - visibleLineCount / 2);
+			if (usedRulesDisplay != null)
+				usedRulesDisplay.selectionChanged();
+		}
+	}
+	
+	public void moveToFirstPatternMatch() {
+		if (navigator == null)
+			return;
+		navigator.moveToFirstLine(true);
+		Command command = navigator.getCommandAt(navigator.getCurLine());
+		if (command != null && command.matchesPattern()) {
+			if (usedRulesDisplay != null)
+				usedRulesDisplay.selectionChanged();
+			return;
+		}
+		boolean moved = navigator.moveToNextPatternMatch();
 		if (moved) {
 			scrollToLine(navigator.getCurLine() - visibleLineCount / 2);
 			if (usedRulesDisplay != null)
