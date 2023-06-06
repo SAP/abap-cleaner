@@ -156,9 +156,13 @@ public class ChainRule extends RuleForCommands {
 			if (command.firstCodeTokenIsKeyword("WRITE"))
 				execute = false;
 		}
-		if (!execute)
+		if (execute)
+			return executeOn(code, command, true);
+		else 
 			return false;
-		
+	}
+
+	public boolean executeOn(Code code, Command command, boolean addRuleUse) throws UnexpectedSyntaxAfterChanges {
 		// ensure this is a chain with multiple elements, i.e. there is a comma in the command;
 		// we expect the chain sign to be top-level (i.e. not inside parentheses etc.); this is ensured by Token.addNext()
 		Token chainSign = command.getFirstToken().getLastTokenOnSiblings(true, TokenSearch.ASTERISK, ABAP.COLON_SIGN_STRING);
@@ -189,7 +193,9 @@ public class ChainRule extends RuleForCommands {
 			ArrayList<Command> newCommentCommands = command.splitOutCommentLinesAfter(prevNonComment); 
 			if (!newCommentCommands.isEmpty()) {
 				useStartLineBreaks = false; // leading empty lines have now been moved to the extracted comment line
-				code.addRuleUses(this, newCommentCommands);
+				if (addRuleUse) {
+					code.addRuleUses(this, newCommentCommands);
+				}
 			}
 		}
 		int startLineBreaksPartB = 0;
@@ -215,7 +221,9 @@ public class ChainRule extends RuleForCommands {
 				ArrayList<Command> newCommentCommands = command.splitOutCommentLinesAfter(lastTokenOfPartA); 
 				if (!newCommentCommands.isEmpty()) {
 					useStartLineBreaks = false; // leading empty lines have now been moved to the extracted comment line
-					code.addRuleUses(this, newCommentCommands);
+					if (addRuleUse) {
+						code.addRuleUses(this, newCommentCommands);
+					}
 				}
 			}
 			
@@ -263,7 +271,9 @@ public class ChainRule extends RuleForCommands {
 				newCommand.addIndent(newIndent - oldIndent, oldIndent, partB.firstToken);
 
 				command.insertLeftSibling(newCommand);
-				code.addRuleUse(this, newCommand);
+				if (addRuleUse) {
+					code.addRuleUse(this, newCommand);
+				}
 				// continue with loop
 
 			} else {
@@ -277,6 +287,9 @@ public class ChainRule extends RuleForCommands {
 				int newIndent = firstTokenOfPartB.getStartIndexInLine();
 				command.addIndent(newIndent - oldIndent, oldIndent, firstTokenOfPartB);
 				useStartLineBreaks = false; // pro forma
+				if (addRuleUse) {
+					code.addRuleUse(this, command);
+				}
 				return true;
 			}
 		} while (true);
