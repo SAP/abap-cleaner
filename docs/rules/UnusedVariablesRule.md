@@ -3,6 +3,7 @@
 # Delete unused variables
 
 Deletes unused variables, or comments them out if they are 'used' in commented-out code. TODO comments can be added for variables that are assigned but never used.
+Note that this rule will skip methods in which macros are used.
 
 ## Options
 
@@ -30,6 +31,9 @@ Deletes unused variables, or comments them out if they are 'used' in commented-o
 
     DATA lv_only_assigned TYPE i.
     DATA lv_assigned_but_used_incomment TYPE i.
+
+    " with the ##NEEDED pragma, an unused variable will be kept and no TODO added;
+    " the pragma also prevents a warning from the Extended Check (SLIN)
     DATA lv_unused_but_needed TYPE string ##NEEDED.
 
     FIELD-SYMBOLS:
@@ -85,6 +89,9 @@ Resulting code:
     DATA lv_only_assigned TYPE i.
     " TODO: variable is assigned but only used in commented-out code (ABAP cleaner)
     DATA lv_assigned_but_used_incomment TYPE i.
+
+    " with the ##NEEDED pragma, an unused variable will be kept and no TODO added;
+    " the pragma also prevents a warning from the Extended Check (SLIN)
     DATA lv_unused_but_needed TYPE string ##NEEDED.
 
 *    FIELD-SYMBOLS: <ls_commented_out> LIKE LINE OF its_table,

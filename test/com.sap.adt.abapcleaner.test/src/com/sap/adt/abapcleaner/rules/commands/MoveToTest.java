@@ -130,6 +130,20 @@ class MoveToTest extends RuleTestBase {
 	}
 
 	@Test
+	void testOneLinerChainChanged() {
+		buildSrc("    MOVE: 1 TO ev_value, '2023' TO ev_start(4), EXACT iv_data TO ev_data, io_instance ?TO eo_instance.");
+
+		buildExp("    ev_value = 1.");
+		buildExp("    ev_start(4) = '2023'.");
+		buildExp("    ev_data = EXACT #( iv_data ).");
+		buildExp("    eo_instance ?= io_instance.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
 	void testSimpleChainUnchanged() {
 		rule.configProcessChains.setValue(false);
 

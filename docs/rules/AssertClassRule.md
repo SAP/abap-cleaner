@@ -2,7 +2,8 @@
 
 # Use assert class instead of ASSERT
 
-Replaces ASSERT statements \(in productive code\) with static calls to an assert class. Note that the Assert class name must be adjusted to the respective application.
+Replaces ASSERT statements \(in productive code\) with static calls to an assert class.
+Note that the Assert class name must be adjusted to the respective application \(CL\_...\_ASSERT\).
 
 ## Options
 

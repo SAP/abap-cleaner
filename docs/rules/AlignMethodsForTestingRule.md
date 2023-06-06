@@ -2,7 +2,8 @@
 
 # Align METHODS ... FOR TESTING
 
-Aligns consecutive METHODS ... FOR TESTING declarations. Activate this rule to override the result of 'Align METHODS declarations' with special settings.
+Aligns consecutive METHODS ... FOR TESTING declarations.
+Activate this rule if you want to override the result of 'Align METHODS declarations' with special settings.
 
 ## Options
 

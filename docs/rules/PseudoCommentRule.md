@@ -2,7 +2,8 @@
 
 # Replace obsolete pseudo comments with pragmas
 
-Replaces obsolete pseudo comments \("\#EC ...\) for the Extended Program Check \(SLIN\) with corresponding pragmas. This requires a NetWeaver version >= 7.0 EhP2. Note that pseudo comments for Code Inspector \("\#EC CI\_...\) are kept, as they have not been replaced by pragmas yet.
+Replaces obsolete pseudo comments \("\#EC ...\) for the Extended Program Check \(SLIN\) with corresponding pragmas.
+This rule requires a NetWeaver version >= 7.0 EhP2. Note that pseudo comments for Code Inspector \("\#EC CI\_...\) are kept, as they have not been replaced by pragmas yet.
 
 ## References
 

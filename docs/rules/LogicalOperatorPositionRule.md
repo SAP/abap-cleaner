@@ -2,7 +2,8 @@
 
 # Move AND/OR from line end to next line start
 
-Moves boolean operators \(AND, OR, EQUIV\) from the end of a line to the start of the next line. The expression is then aligned according to the settings of the rule 'Align logical expressions' \(even if the rule is otherwise deactivated\).
+Moves boolean operators \(AND, OR, EQUIV\) from the end of a line to the start of the next line.
+The expression is then aligned according to the settings of the rule 'Align logical expressions' \(even if the rule is otherwise deactivated\).
 
 ## Options
 

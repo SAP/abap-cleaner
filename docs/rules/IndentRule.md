@@ -2,7 +2,8 @@
 
 # Indent lines
 
-Moves all commands and comments to the correct indentation. Relative indents within the lines of a command \(or command chain\) are not changed.
+Moves all commands and comments to the correct indentation.
+Relative indents within the lines of a command \(or command chain\) are not changed by this rule.
 
 ## References
 

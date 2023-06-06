@@ -2,7 +2,8 @@
 
 # Remove needless spaces
 
-Removes multiple spaces where no alignment intention can be identified. This rule deliberately skips commands and expressions which are covered by more dedicated rules on alignment and spaces.
+Removes multiple spaces where no alignment intention can be identified.
+This rule deliberately skips commands and expressions which are covered by more dedicated rules on alignment and spaces.
 
 ## References
 
