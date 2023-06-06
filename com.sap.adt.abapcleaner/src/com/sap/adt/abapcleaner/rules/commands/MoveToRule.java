@@ -6,6 +6,8 @@ import com.sap.adt.abapcleaner.parser.*;
 import com.sap.adt.abapcleaner.programbase.*;
 import com.sap.adt.abapcleaner.rulebase.*;
 
+import com.sap.adt.abapcleaner.rules.declarations.ChainRule;
+
 public class MoveToRule extends RuleForCommands {
 	private final static RuleReference[] references = new RuleReference[] {
 			new RuleReference(RuleSource.ABAP_STYLE_GUIDE, "Prefer functional to procedural language constructs", "#prefer-functional-to-procedural-language-constructs"), 
@@ -49,8 +51,24 @@ public class MoveToRule extends RuleForCommands {
 			+ LINE_SEP + "    MOVE lo_source ?TO lo_dest."
 			+ LINE_SEP + ""
 			+ LINE_SEP + "    MOVE EXACT source TO dest."
+			+ LINE_SEP + ""
+			+ LINE_SEP + "    MOVE:"
+			+ LINE_SEP + "      \" some comment"
+			+ LINE_SEP + "      1 TO ev_value,"
+			+ LINE_SEP + "      '2023' TO ev_start(4),"
+			+ LINE_SEP + ""
+			+ LINE_SEP + "      \" another comment"
+			+ LINE_SEP + "      EXACT iv_data TO ev_data,"
+			+ LINE_SEP + "      io_instance ?TO eo_instance."
 			+ LINE_SEP + "  ENDMETHOD.";
    }
+
+	final ConfigBoolValue configProcessChains = new ConfigBoolValue(this, "ProcessChains", "Process MOVE: chains", true, false, LocalDate.of(2023, 6, 5));
+
+	private final ConfigValue[] configValues = new ConfigBoolValue[] { configProcessChains };
+
+	@Override
+	public ConfigValue[] getConfigValues() { return configValues; }
 
 	public MoveToRule(Profile profile) {
 		super(profile);
@@ -59,9 +77,45 @@ public class MoveToRule extends RuleForCommands {
 
 	@Override
 	protected boolean executeOn(Code code, Command command, int releaseRestriction) throws UnexpectedSyntaxBeforeChanges, UnexpectedSyntaxAfterChanges {
-	   if (command.containsChainColon())
-   		return false;
+		if (!command.firstCodeTokenIsKeyword("MOVE"))
+			return false;
 		
+	   if (!command.containsChainColon()) {
+	   	return executeOnNonChain(code, command);
+	   
+	   } else if (configProcessChains.getValue() && command.isSimpleChain()) {
+	   	// check whether all parts of the chain match the expected pattern
+	   	Token checkToken = command.getFirstToken().getNextCodeSibling().getNextCodeSibling();
+	   	while (checkToken != null) {
+	   		Token lastToken = checkToken.getLastTokenOnSiblings(true, TokenSearch.makeOptional("EXACT"), TokenSearch.ANY_TERM, "TO|?TO", TokenSearch.ANY_IDENTIFIER, ".|,");
+	   		if (lastToken == null || !lastToken.isCommaOrPeriod())
+	   			return false;
+	   		checkToken = lastToken.getNextCodeSibling();
+	   	}
+	   	
+	   	// unchain MOVE: into multiple commands
+	   	Command prevCommand = command.getPrev();
+	   	Command endCommand = command.getNext();
+	   	boolean unchained = ((ChainRule)parentProfile.getRule(RuleID.DECLARATION_CHAIN)).executeOn(code, command, false);
+	   	if (!unchained)
+	   		return false;
+
+	   	// process unchained MOVE commands
+	   	Command changeCommand = (prevCommand == null) ? code.firstCommand : prevCommand.getNext();
+	   	while (changeCommand != endCommand) {
+	   		if (changeCommand.isCommentLine() || executeOnNonChain(code, changeCommand)) {
+	   			code.addRuleUse(this, changeCommand);
+	   		}
+	   		changeCommand = changeCommand.getNext();
+	   	} 
+	   	return true;
+
+	   } else {
+	   	return false;
+	   }
+	}
+	
+	private boolean executeOnNonChain(Code code, Command command) throws UnexpectedSyntaxBeforeChanges, UnexpectedSyntaxAfterChanges {
 		// for the syntax of the obsolete MOVE ... TO statement, see https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/index.htm?file=abapmove_obs.htm
 		Token firstToken = command.getFirstToken();
 		if (!firstToken.matchesOnSiblings(true, "MOVE", TokenSearch.makeOptional("EXACT"), TokenSearch.ANY_TERM, "TO|?TO", TokenSearch.ANY_IDENTIFIER, "."))

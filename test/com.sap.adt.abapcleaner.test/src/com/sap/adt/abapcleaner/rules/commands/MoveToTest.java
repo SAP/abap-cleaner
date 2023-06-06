@@ -1,13 +1,23 @@
 package com.sap.adt.abapcleaner.rules.commands;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.sap.adt.abapcleaner.rulebase.RuleID;
 import com.sap.adt.abapcleaner.rulebase.RuleTestBase;
 
 class MoveToTest extends RuleTestBase {
+	private MoveToRule rule;
+	
 	MoveToTest() {
 		super(RuleID.MOVE_TO);
+		rule = (MoveToRule)getRule();
+	}
+	
+	@BeforeEach
+	void setUp() {
+		// setup default test configuration (may be modified in the individual test methods)
+		rule.configProcessChains.setValue(true);
 	}
 	
 	@Test
@@ -86,14 +96,55 @@ class MoveToTest extends RuleTestBase {
 	}
 	
 	@Test
-	void testChainUnchanged() {
+	void testLateChainUnchanged() {
 		buildSrc("    MOVE 1 TO : ev_result_a, ev_result_b.");
-		buildSrc("    MOVE: 'text' TO ev_text, lv_num TO ev_num.");
+		buildSrc("    MOVE 'text' TO: ev_text, ev_other_text.");
 
 		copyExpFromSrc();
 
 		putAnyMethodAroundSrcAndExp();
 		
+		testRule();
+	}
+
+	@Test
+	void testSimpleChainChanged() {
+		buildSrc("    MOVE:");
+		buildSrc("      1 TO ev_value,");
+		buildSrc("      '2023' TO ev_start(4),");
+		buildSrc("");
+		buildSrc("      \" comment");
+		buildSrc("      EXACT iv_data TO ev_data,");
+		buildSrc("      io_instance ?TO eo_instance.");
+
+		buildExp("    ev_value = 1.");
+		buildExp("    ev_start(4) = '2023'.");
+		buildExp("");
+		buildExp("    \" comment");
+		buildExp("    ev_data = EXACT #( iv_data ).");
+		buildExp("    eo_instance ?= io_instance.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testSimpleChainUnchanged() {
+		rule.configProcessChains.setValue(false);
+
+		buildSrc("    MOVE:");
+		buildSrc("      1 TO ev_value,");
+		buildSrc("      '2023' TO ev_start(4),");
+		buildSrc("");
+		buildSrc("      \" comment");
+		buildSrc("      EXACT iv_data TO ev_data,");
+		buildSrc("      io_instance ?TO eo_instance.");
+
+		copyExpFromSrc();
+
+		putAnyMethodAroundSrcAndExp();
+
 		testRule();
 	}
 }
