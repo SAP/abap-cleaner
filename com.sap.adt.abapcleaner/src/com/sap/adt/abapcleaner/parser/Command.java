@@ -2081,11 +2081,10 @@ public class Command {
 		return (firstToken.isIdentifier() && !firstToken.getOpensLevel() && next != null && next.type != TokenType.ASSIGNMENT_OP);
 	}
 
-	/** a hard-coded pattern used to find matching Commands in all sample code files */
+	/** a hard-coded pattern used for development to find matching Commands in all sample code files */
 	public final boolean matchesPattern() {
-		// find macro usages
-		Token next = firstToken.getNextCodeSibling();
-		return (firstToken.isIdentifier() && next != null && next.type != TokenType.ASSIGNMENT_OP && !firstToken.getOpensLevel());
+		// find MOVE: chains in changed code
+		return firstToken.isKeyword("MOVE") && isSimpleChain();
 
 		// snippet to make the pattern match depend on whether a certain cleanup rule was used:
 		// changeControl.wasRuleUsed(RuleID....);

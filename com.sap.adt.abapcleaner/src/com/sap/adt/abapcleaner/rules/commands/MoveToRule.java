@@ -34,6 +34,8 @@ public class MoveToRule extends RuleForCommands {
 	@Override
 	public RuleReference[] getReferences() { return references; }
 
+	public RuleID[] getDependentRules() { return new RuleID[] { RuleID.ALIGN_ASSIGNMENTS }; }
+
 	@Override
 	public boolean isEssential() { return true; }
 
