@@ -50,11 +50,15 @@ CLASS cl_escape_char_for_params DEFINITION.
     " in some rather theoretical cases, ! is strictly necessary to prevent syntax errors:
     METHODS fourth_method
       IMPORTING
-        !exporting TYPE i OPTIONAL
+        !optional   TYPE i
+        !default    TYPE i
+        !preferred  TYPE i OPTIONAL
+        !exporting  TYPE i OPTIONAL
       EXPORTING
-        !changing  TYPE string
+        !changing   TYPE string
       CHANGING
-        !raising   TYPE i.
+        !raising    TYPE i
+        !exceptions TYPE string.
 ENDCLASS.
 ```
 
@@ -99,11 +103,15 @@ CLASS cl_escape_char_for_params DEFINITION.
     " in some rather theoretical cases, ! is strictly necessary to prevent syntax errors:
     METHODS fourth_method
       IMPORTING
-        !exporting TYPE i OPTIONAL
+        !optional   TYPE i
+        !default    TYPE i
+        !preferred  TYPE i OPTIONAL
+        !exporting  TYPE i OPTIONAL
       EXPORTING
-        !changing  TYPE string
+        !changing   TYPE string
       CHANGING
-        !raising   TYPE i.
+        !raising    TYPE i
+        !exceptions TYPE string.
 ENDCLASS.
 ```
 

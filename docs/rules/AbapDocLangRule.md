@@ -1,4 +1,4 @@
-[<-- previous rule](EmptySectionsInClassDefRule.md) | [overview](../rules.md) | [next rule -->](CommentTypeRule.md)
+[<-- previous rule](AbapDocParametersRule.md) | [overview](../rules.md) | [next rule -->](CommentTypeRule.md)
 
 # Remove lang="en" from ABAP Doc
 
@@ -87,6 +87,6 @@ ENDCLASS.
 
 ## Related code
 
-* [Rule implementation](../../com.sap.adt.abapcleaner/src/com/sap/adt/abapcleaner/rules/syntax/AbapDocLangRule.java)
-* [Tests](../../test/com.sap.adt.abapcleaner.test/src/com/sap/adt/abapcleaner/rules/syntax/AbapDocLangTest.java)
+* [Rule implementation](../../com.sap.adt.abapcleaner/src/com/sap/adt/abapcleaner/rules/declarations/AbapDocLangRule.java)
+* [Tests](../../test/com.sap.adt.abapcleaner.test/src/com/sap/adt/abapcleaner/rules/declarations/AbapDocLangTest.java)
 

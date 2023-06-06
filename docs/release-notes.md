@@ -6,7 +6,25 @@ as well as bugfixes of reported issues, i.e. anything that enhances or changes t
 For a complete list of changes (including documentation, tests, refactoring etc.), please refer to 
 the list of [commits](../../../commits/main).
 
+## 2023-06-06 (version 1.3.0)
+
+Many **thanks** to [**jelliottp**](https://github.com/jelliottp), [**ConjuringCoffee**](https://github.com/ConjuringCoffee), [**GPR8**](https://github.com/GPR8), 
+[**JanisBur**](https://github.com/JanisBur) and [**thebestabapdeveloper**](https://github.com/thebestabapdeveloper) for inspiring these improvements and fixes!
+
+* Added new rule '**Add missing parameters to ABAP Doc**' ([#24](../../../issues/24))
+* Enhanced rule '**Standardize spaces next to parentheses**' with option to '**Add space between parentheses and character literals**' ([#20](../../../issues/20))
+* Enhanced rule '**Standardize escaping of !parameters**' with option '**only to avoid syntax errors**' ([#31](../../../issues/31))
+* Enhanced rule '**Replace obsolete MOVE ... TO with =**' with option to '**Process MOVE: chains**' ([#32](../../../issues/32))
+* Enhanced rule '**Delete unused variables**' with example for **##NEEDED** pragma ([#38](../../../issues/38))
+* Profiles editor: In **rule descriptions**, moved of **conditions and restrictions** to second line
+* Profiles editor: Enhanced 'Save Profiles and Exit' to **overwrite changed profiles only** ([#28](../../../issues/28))
+* Profiles editor: Fixed partly hidden buttons in **'Profile name:' input box** ([#40](../../../issues/40))
+* Fixed rule '**Delete unused variables**' and '**Use FINAL for immutable variables**' for macro usage ([#43](../../../issues/43))
+* Documentation: Added solution to **installation issue 'No updates found'** ([#39](../../../issues/39))
+
 ## 2023-05-25 (version 1.2.1)
+
+Many **thanks** to [**ConjuringCoffee**](https://github.com/ConjuringCoffee) and [**SmogulT**](https://github.com/SmogulT) for opening the issues that led to these improvements!
 
 * Enabled (de)activation of option '**Highlight text and line changes**' on main window ([#25](../../../issues/25))
 * Fixed number of lines shown on option '**Highlight inner space changes**' on main window ([#25](../../../issues/25))
@@ -14,6 +32,8 @@ the list of [commits](../../../commits/main).
 * Fixed cleanup for systems with **unknown ABAP release** ([#21](../../../issues/21))
 
 ## 2023-05-22 (version 1.2.0)
+
+Many **thanks** to [**fabianlupa**](https://github.com/fabianlupa) for opening the issues that led to these enhancements and fixes!
 
 * Enhanced rule '**Align declarations**' with option on '**Alignment of nested structures**' ([#9](../../../issues/9), [#14](../../../issues/14))
 * Enhanced rule '**Unchain into multiple statements**' with option to '**Unchain declarations in interfaces**' ([#12](../../../issues/12))

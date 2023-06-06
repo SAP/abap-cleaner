@@ -2,7 +2,8 @@
 
 # Rearrange local declarations
 
-Rearranges up-front declarations of TYPES, CONSTANTS, DATA, and FIELD-SYMBOLS. Chains are kept and only rearranged within, therefore this rule should be used in combination with the 'Unchain into multiple statements' rule. Moving declarations to their innermost block is discouraged, but may help to refactor long methods.
+Rearranges up-front declarations of TYPES, CONSTANTS, DATA, and FIELD-SYMBOLS. Chains are kept and only rearranged within, therefore this rule should be used in combination with the 'Unchain into multiple statements' rule. 
+Moving declarations to their innermost block is discouraged, but may help to refactor long methods.
 
 ## References
 

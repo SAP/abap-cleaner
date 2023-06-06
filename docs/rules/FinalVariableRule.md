@@ -2,7 +2,8 @@
 
 # Use FINAL for immutable variables
 
-Replaces DATA\(\) inline declarations with FINAL\(\) if no other write access to the respective variable is found. This requires a NetWeaver version >= 7.57.
+Replaces DATA\(\) inline declarations with FINAL\(\) if no other write access to the respective variable is found.
+This rule requires a NetWeaver version >= 7.57. Note that this rule will skip methods in which macros are used.
 
 ## References
 

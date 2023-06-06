@@ -12,7 +12,7 @@ Replaces obsolete MOVE ... TO and MOVE ... ?TO statements with the more general 
 
 ## Options
 
-* \(no options available for this rule\)
+* \[X\] Process MOVE: chains
 
 ## Examples
 
@@ -30,6 +30,15 @@ Replaces obsolete MOVE ... TO and MOVE ... ?TO statements with the more general 
     MOVE lo_source ?TO lo_dest.
 
     MOVE EXACT source TO dest.
+
+    MOVE:
+      " some comment
+      1 TO ev_value,
+      '2023' TO ev_start(4),
+
+      " another comment
+      EXACT iv_data TO ev_data,
+      io_instance ?TO eo_instance.
   ENDMETHOD.
 ```
 
@@ -48,6 +57,14 @@ Resulting code:
     lo_dest ?= lo_source.
 
     dest = EXACT #( source ).
+
+    " some comment
+    ev_value = 1.
+    ev_start(4) = '2023'.
+
+    " another comment
+    ev_data = EXACT #( iv_data ).
+    eo_instance ?= io_instance.
   ENDMETHOD.
 ```
 

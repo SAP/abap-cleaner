@@ -2083,7 +2083,7 @@ public class Command {
 
 	/** a hard-coded pattern used for development to find matching Commands in all sample code files */
 	public final boolean matchesPattern() {
-		// find MOVE: chains in changed code
+		// find MOVE: chains
 		return firstToken.isKeyword("MOVE") && isSimpleChain();
 
 		// snippet to make the pattern match depend on whether a certain cleanup rule was used:

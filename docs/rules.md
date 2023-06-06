@@ -1,6 +1,6 @@
 # Available Cleanup Rules
 
-ABAP cleaner offers 58 cleanup rules with a total of 168 configuration options:
+ABAP cleaner offers 59 cleanup rules with a total of 178 configuration options:
 
 ## Empty Lines
 
@@ -10,7 +10,7 @@ ABAP cleaner offers 58 cleanup rules with a total of 168 configuration options:
 
 ## Spaces
 
-* [Remove multiple spaces in empty parentheses](rules/SpacesInEmptyBracketsRule.md)
+* [Standardize spaces next to parentheses](rules/SpacesInEmptyBracketsRule.md)
 * [Close brackets at line end](rules/ClosingBracketsPositionRule.md)
 * [Remove space before commas and period](rules/SpaceBeforePeriodRule.md)
 * [Put spaces around " comment sign](rules/SpaceAroundCommentSignRule.md)
@@ -26,10 +26,11 @@ ABAP cleaner offers 58 cleanup rules with a total of 168 configuration options:
 * [Use FINAL for immutable variables](rules/FinalVariableRule.md)
 * [Standardize escaping of \!parameters](rules/EscapeCharForParametersRule.md)
 * [Remove empty class definition SECTIONs](rules/EmptySectionsInClassDefRule.md)
+* [Add missing parameters to ABAP Doc](rules/AbapDocParametersRule.md)
+* [Remove lang="en" from ABAP Doc](rules/AbapDocLangRule.md)
 
 ## Syntax
 
-* [Remove lang="en" from ABAP Doc](rules/AbapDocLangRule.md)
 * [Comment with ", not with \* \(for text\)](rules/CommentTypeRule.md)
 * [Replace obsolete pseudo comments with pragmas](rules/PseudoCommentRule.md)
 * [Move pragmas to correct position](rules/PragmaPositionRule.md)
