@@ -784,15 +784,25 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		});
 		mmuExtrasPrevPatternMatch.setText(getMenuItemTextWithAccelerator("Open Previous Pattern Match", SWT.CTRL + SWT.F5));
 
-		MenuItem mmuExtrasPatternMatchesToClip = new MenuItem(menuExtras, SWT.NONE);
-		mmuExtrasPatternMatchesToClip.setToolTipText("Fills the clipboard with all commands from the code files in the /user/code folder (and subfolders) that satisfy the hard-coded Command.patternMatch().");
-		mmuExtrasPatternMatchesToClip.addSelectionListener(new SelectionAdapter() {
+		MenuItem mmuExtrasPatternMatchesBeforeCleanupToClip = new MenuItem(menuExtras, SWT.NONE);
+		mmuExtrasPatternMatchesBeforeCleanupToClip.setToolTipText("Fills the clipboard with all commands from the code files in the /user/code folder (and subfolders) that satisfy the hard-coded Command.patternMatch() before cleanup.");
+		mmuExtrasPatternMatchesBeforeCleanupToClip.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				patternMatchesToClip();
+				patternMatchesToClip(false);
 			}
 		});
-		mmuExtrasPatternMatchesToClip.setText("Copy Pattern Matches from all Files to Clipboard");
+		mmuExtrasPatternMatchesBeforeCleanupToClip.setText("Copy Pattern Matches Before Cleanup to Clipboard (all Files)");
+
+		MenuItem mmuExtrasPatternMatchesAfterCleanupToClip = new MenuItem(menuExtras, SWT.NONE);
+		mmuExtrasPatternMatchesAfterCleanupToClip.setToolTipText("Fills the clipboard with all commands from the code files in the /user/code folder (and subfolders) that satisfy the hard-coded Command.patternMatch() after cleanup with the current profile.");
+		mmuExtrasPatternMatchesAfterCleanupToClip.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				patternMatchesToClip(true);
+			}
+		});
+		mmuExtrasPatternMatchesAfterCleanupToClip.setText("Copy Pattern Matches After Cleanup to Clipboard (all Files)");
 
 		new MenuItem(menuExtras, SWT.SEPARATOR);
 
@@ -1717,7 +1727,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		Message.show("None of the " + String.valueOf(paths.length) + " files contains a Command that satisfies the Command.matchesPattern() condition.");
 	}
 
-	private void patternMatchesToClip() {
+	private void patternMatchesToClip(boolean doCleanup) {
 		String dir = defaultCodeDirectory;
 
 		String[] paths = getAllPaths(dir, FileType.CODE, true, true);
@@ -1732,8 +1742,8 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		for (String testPath : paths) {
 			String sourceName = persistency.getFileNameWithoutExtension(testPath);
 			String codeText = persistency.readAllTextFromFile(testPath);
-			BackgroundJob job = new BackgroundJob(ParseParams.createForCleanupRange(sourceName, codeText, ABAP.NEWEST_RELEASE, null), 
-															  CleanupParams.createForProfile(curProfile, false, settings.releaseRestriction));
+			CleanupParams cleanupParams = doCleanup ? CleanupParams.createForProfile(curProfile, false, settings.releaseRestriction) : null; 
+			BackgroundJob job = new BackgroundJob(ParseParams.createForCleanupRange(sourceName, codeText, ABAP.NEWEST_RELEASE, null), cleanupParams);
 			Task result = runJobWithProgressUiIfNeeded(job);
 
 			boolean matchInFile = false;
@@ -1746,8 +1756,10 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 						++fileCount;
 						matchInFile = true;
 					}
+					String folderFile = testPath.substring(dir.length());
+					folderFile = StringUtil.removeSuffix(folderFile, persistency.getExtension(testPath), true);
 					sb.append(System.lineSeparator());
-					sb.append(sourceName + ": line " + Cult.format(command.getSourceLineNumStart()) + System.lineSeparator());
+					sb.append(ABAP.COMMENT_SIGN_STRING + " " + folderFile + ": line " + Cult.format(command.getSourceLineNumStart()) + System.lineSeparator());
 					sb.append(command.toString());
 					sb.append(System.lineSeparator());
 				}
@@ -1755,12 +1767,13 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 			}
 		}
 
-		String clipInfo = "";
-		if (sb.length() > 0) {
+		if (sb.length() > 0) 
 			SystemClipboard.setText(sb.toString());
-			clipInfo += " (details see clipboard)";
-		}
-		Message.show("Pattern matches found for " + Cult.format(matchCount) + " commands in " + Cult.format(fileCount) + " files" + clipInfo );
+
+		String taskInfo = "Pattern matches " + (doCleanup ? "after cleanup" : "before cleanup");
+		String matchInfo = " found for " + Cult.format(matchCount) + " commands in " + Cult.format(fileCount) + " files";
+		String clipInfo = (sb.length() > 0) ? " (details see clipboard)" : "";
+		Message.show(taskInfo + matchInfo + clipInfo);
 	}
 
 	private void setBlockRule(int usedRulesIndex, boolean blocked) {
