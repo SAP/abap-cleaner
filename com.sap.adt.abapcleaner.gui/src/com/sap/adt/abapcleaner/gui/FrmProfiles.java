@@ -18,7 +18,6 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.swt.widgets.Text;
-
 import org.eclipse.swt.events.KeyAdapter;
 import org.eclipse.swt.events.KeyEvent;
 import org.eclipse.swt.events.MouseAdapter;
@@ -65,28 +64,6 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 
    private int suspendItemCheck = 0;
 
-   private Font ruleChaptersFontLink;
-   private Font ruleChaptersFontNormal;
-   private Color ruleChaptersForeColorNormal;
-   private Color ruleChaptersForeColorLink;
-   
-   private Color normalRuleListBackground;
-   private Color normalRuleNameBackground;
-   private Color newRuleBackground;
-   private Color enhancedRuleBackground;
-   private Color ruleActivatedBackground;
-   private Color ruleDeactivatedBackground;
-   private Color changedConfigBackground;
-   private Color newConfigBackground;
-   private Color normalAutoActivateBackground;
-   private Color normalHighlightBackground;
-   private Color normalPasteExampleBackground;
-   private Color normalImportExportBackground;
-   private Color normalLblFilterBackground;
-   private Color normalActivateBackground;
-   private Color normalHighlightDeclarationsBackground;
-   private Color normalHighlightWritePositionsBackground;   
-   
    private Label[] lblRuleSources;
    private Label[] lblRuleChapters;
    private String[] ruleChapterLink;
@@ -137,8 +114,164 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
    private Button chkHighlightDeclarationKeywords;
    private Button chkHighlightWritePositions;
    private Button btnChangeProfilesFolder;
-   
-	/**
+
+   /** encapsulates fonts and colors for highlighting rules, options and UI controls */
+   private class Highlighter {
+   	// fonts and colors for rule reference chapters
+      private final Font ruleChaptersFontLink;
+      private final Font ruleChaptersFontNormal;
+      private final Color ruleChaptersForeColorNormal;
+      private final Color ruleChaptersForeColorLink;
+      
+      // colors for rules list and rule name
+      private final Color normalRuleListBackground;
+      private final Color normalRuleNameBackground;
+      private final Color newRuleBackground;
+      private final Color enhancedRuleBackground;
+      private final Color ruleActivatedBackground;
+      private final Color ruleDeactivatedBackground;
+
+      // colors for configuration labels
+      private final Color changedConfigBackground;
+      private final Color newConfigBackground;
+      
+      private final Color normalAutoActivateBackground;
+      private final Color normalHighlightBackground;
+      private final Color normalPasteExampleBackground;
+      private final Color normalImportExportBackground;
+      private final Color normalLblFilterBackground;
+      private final Color normalActivateBackground;
+      private final Color normalHighlightDeclarationsBackground;
+      private final Color normalHighlightWritePositionsBackground;   
+      
+      public Highlighter(Display display) {
+   		// determine fonts and colors of rule chapters
+         ruleChaptersForeColorNormal = lblRuleChapter0.getForeground();
+         ruleChaptersForeColorLink = new Color(0, 0, 139); // dark blue
+         ruleChaptersFontNormal = lblRuleChapter0.getFont();
+         FontData modelFont = ruleChaptersFontNormal.getFontData()[0]; 
+         ruleChaptersFontLink = new Font(display, modelFont.getName(), modelFont.getHeight(), SWT.NORMAL);
+
+         // determine 'normal' colors for features that could be highlighted as "added" or "changed"
+         normalRuleListBackground = chkRules.getBackground();
+         normalRuleNameBackground = lblRuleName.getBackground();
+         normalAutoActivateBackground = chkAutoActivateNewFeatures.getBackground();
+         normalHighlightBackground = lblHighlight.getBackground();
+         normalPasteExampleBackground = btnPasteExample.getBackground();
+         normalImportExportBackground = btnImportProfile.getBackground();
+         normalLblFilterBackground = lblFilter.getBackground();
+         normalActivateBackground = btnActivateDefaultRules.getBackground();
+         normalHighlightDeclarationsBackground = chkHighlightDeclarationKeywords.getBackground();
+         normalHighlightWritePositionsBackground = chkHighlightWritePositions.getBackground();
+
+         // determine colors for highlighting new features (using color for "added" or "changed") 
+         boolean useDark = CodeDisplayColors.getUseDarkTheme(normalRuleListBackground);
+         newRuleBackground      = CodeDisplayColors.createColor(  6,  74,   6, useDark, 217, 255, 217, null); // cp. CodeDisplayColors.lineAdded;
+         enhancedRuleBackground = CodeDisplayColors.createColor( 98,  98,   0, useDark, 231, 231, 152, null); // cp. CodeDisplayColors.lineChanged;
+         newConfigBackground = newRuleBackground;
+         
+         ruleActivatedBackground = newRuleBackground;
+         ruleDeactivatedBackground = CodeDisplayColors.createColor( 98,   5,   5, useDark, 255, 215, 215, null); // cp. CodeDisplayColors.lineDeleted;
+         changedConfigBackground = enhancedRuleBackground;
+      }
+      
+      public void dispose() {
+   		ruleChaptersFontLink.dispose();
+      }
+
+		public void setControlsHighlight(ProfileHighlightItem highlightItem) {
+			setBackground(chkAutoActivateNewFeatures, highlightItem.highlightFeatureOf(2022, 6, 5) ? newConfigBackground : normalAutoActivateBackground);
+	      setBackground(lblHighlight, highlightItem.highlightFeatureOf(2022, 10, 31) ? newConfigBackground : normalHighlightBackground); // first highlight on (2022, 9, 8)
+	      setBackground(btnPasteExample, highlightItem.highlightFeatureOf(2022, 5, 25) ? newConfigBackground : normalPasteExampleBackground);
+	      
+	      Color importExportBackground = highlightItem.highlightFeatureOf(2022, 10, 14) ? newConfigBackground : normalImportExportBackground;
+	      setBackground(btnImportProfile, importExportBackground);
+	      setBackground(btnExportProfile, importExportBackground);
+	      setBackground(btnExportAllProfiles, importExportBackground);
+	      setBackground(btnChangeProfilesFolder, highlightItem.highlightFeatureOf(2023, 3, 9) ? newConfigBackground : normalImportExportBackground);
+	
+	      setBackground(lblFilter, highlightItem.highlightFeatureOf(2023, 3, 9) ? newConfigBackground : normalLblFilterBackground);
+	      
+	      Color activateBackground = highlightItem.highlightFeatureOf(2023, 3, 7) ? newConfigBackground : normalActivateBackground;
+	      setBackground(btnActivateAllRules, normalActivateBackground);
+	      setBackground(btnActivateDefaultRules, activateBackground);
+	      setBackground(btnActivateEssentialRules, activateBackground);
+	      setBackground(btnDeactivateAllRules, normalActivateBackground);
+	
+	      setBackground(chkHighlightDeclarationKeywords, highlightItem.highlightFeatureOf(2023, 3, 28) ? newConfigBackground : normalHighlightDeclarationsBackground);
+	      setBackground(chkHighlightWritePositions, highlightItem.highlightFeatureOf(2023, 3, 9) ? newConfigBackground : normalHighlightWritePositionsBackground);
+		}
+
+	   private void setBackground(Control control, Color color) {
+	   	if (!control.getBackground().equals(color))
+	   		control.setBackground(color);
+		}
+
+	   private Color getRuleBackground(Rule rule, ProfileHighlightItem highlightItem, boolean forRuleList) {
+	   	Color normalBackground = forRuleList ? normalRuleListBackground : normalRuleNameBackground;
+	   	if (rule == null || highlightItem == null)
+	      	return normalBackground;
+
+			Release release = highlightItem.getRelease();
+			Profile compareToProfile = highlightItem.getCompareToProfile();
+	   	if (release != null) {
+		   	if (rule.wasAddedSince(release)) { 
+		      	return newRuleBackground;
+		   	} else if(rule.wasEnhancedSince(release)) { 
+		      	return enhancedRuleBackground;
+		   	}
+		   	
+	   	} else if (compareToProfile != null) {
+	   		Rule compareToRule = compareToProfile.getRule(rule.getID());
+	   		if (compareToRule == null)  {
+	   	   	return normalBackground;
+	   		} else if (rule.isActive && !compareToRule.isActive) {
+		      	return ruleActivatedBackground;
+	   		} else if (!rule.isActive && compareToRule.isActive) {
+		      	return ruleDeactivatedBackground;
+	   		} else if (!rule.hasSameConfigurationAs(compareToRule)) {
+	   			return changedConfigBackground;
+	   		}
+	   	}
+
+	   	return normalBackground;
+	   }
+	   
+	   private void setRuleHighlight(Rule rule, int index) {
+	      ProfileHighlightItem highlightItem = getHighlightItem();
+	      Color ruleBackground = getRuleBackground(rule, highlightItem, true);
+	   	TableItem tableItem = chkRules.getItem(index);
+	      if (!tableItem.getBackground().equals(ruleBackground))
+	      	tableItem.setBackground(ruleBackground);
+	      if (rule == curRule)
+	      	setRuleNameHighlight(rule);
+	   }
+	   
+	   private void setRuleNameHighlight(Rule rule) {
+	   	setBackground(lblRuleName, getRuleBackground(rule, getHighlightItem(), false));
+		}
+
+		public void setRuleChaptersStyle(Label lblRuleChapter, boolean hasLink) {
+			lblRuleChapter.setFont(hasLink ? ruleChaptersFontLink : ruleChaptersFontNormal);
+			lblRuleChapter.setForeground(hasLink ? ruleChaptersForeColorLink : ruleChaptersForeColorNormal);
+		}
+
+	   private void setConfigHighlight(Rule rule, ConfigControl configControl) {
+	   	ConfigValue configValue = configControl.getConfigValue();
+	      ProfileHighlightItem highlightItem = getHighlightItem();
+	   	if (highlightItem != null && highlightItem.isNewConfig(configValue)) {
+	      	configControl.setHighlighted(true, newConfigBackground);
+	   	} else if (highlightItem != null && highlightItem.isChangedConfig(rule, configValue)) {
+	      	configControl.setHighlighted(true, changedConfigBackground);
+	   	} else {
+	      	configControl.setHighlighted(false, null);
+	   	}
+		}
+   }
+
+   private Highlighter highlighter;
+
+   /**
 	 * Open the window.
 	 * @wbp.parser.entryPoint
 	 */
@@ -160,34 +293,6 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 		Display display = Display.getDefault();
 		createContents();
 
-      ruleChaptersForeColorNormal = lblRuleChapter0.getForeground();
-      ruleChaptersForeColorLink = new Color(0, 0, 139); // dark blue
-      ruleChaptersFontNormal = lblRuleChapter0.getFont();
-      FontData modelFont = ruleChaptersFontNormal.getFontData()[0]; 
-      ruleChaptersFontLink = new Font(display, modelFont.getName(), modelFont.getHeight(), SWT.NORMAL);
-
-      // determine 'normal' colors for features that could be highlighted as "added" or "changed"
-      normalRuleListBackground = chkRules.getBackground();
-      normalRuleNameBackground = lblRuleName.getBackground();
-      normalAutoActivateBackground = chkAutoActivateNewFeatures.getBackground();
-      normalHighlightBackground = lblHighlight.getBackground();
-      normalPasteExampleBackground = btnPasteExample.getBackground();
-      normalImportExportBackground = btnImportProfile.getBackground();
-      normalLblFilterBackground = lblFilter.getBackground();
-      normalActivateBackground = btnActivateDefaultRules.getBackground();
-      normalHighlightDeclarationsBackground = chkHighlightDeclarationKeywords.getBackground();
-      normalHighlightWritePositionsBackground = chkHighlightWritePositions.getBackground();
-
-      // determine colors for highlighting new features (using color for "added" or "changed") 
-      boolean useDark = CodeDisplayColors.getUseDarkTheme(normalRuleListBackground);
-      newRuleBackground      = CodeDisplayColors.createColor(  6,  74,   6, useDark, 217, 255, 217, null); // cp. CodeDisplayColors.lineAdded;
-      enhancedRuleBackground = CodeDisplayColors.createColor( 98,  98,   0, useDark, 231, 231, 152, null); // cp. CodeDisplayColors.lineChanged;
-      newConfigBackground = newRuleBackground;
-      
-      ruleActivatedBackground = newRuleBackground;
-      ruleDeactivatedBackground = CodeDisplayColors.createColor( 98,   5,   5, useDark, 255, 215, 215, null); // cp. CodeDisplayColors.lineDeleted;
-      changedConfigBackground = enhancedRuleBackground;
-
       lblRuleSources = new Label[] { lblRuleSource0, lblRuleSource1, lblRuleSource2, lblRuleSource3 };
       lblRuleChapters = new Label[] { lblRuleChapter0, lblRuleChapter1, lblRuleChapter2, lblRuleChapter3 };
       ruleChapterLink = new String[lblRuleChapters.length];
@@ -199,7 +304,12 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
       codeDisplay.setHighlightDeclarationKeywords(settings.profilesHighlightDeclarationKeywords);
       codeDisplay.setHighlightWritePositions(settings.profilesHighlightWritePositions);
 
-      refreshProfileList(curProfileName);
+      // clear Labels to improve display of shell before it is filled with content
+      lblRuleName.setText("");
+      for (Label lblRuleSource : lblRuleSources) 
+      	lblRuleSource.setText("");
+      for (Label lblRuleChapter : lblRuleChapters) 
+      	lblRuleChapter.setText("");
       
       btnGenerateUnitTest.setVisible(Program.showDevFeatures());
       btnGenerateExample.setVisible(Program.showDevFeatures());
@@ -207,13 +317,17 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 		shell.open();
 		shell.layout();
 
+      // only now, Colors for highlighting can be retrieved and controls filled 
+		highlighter = new Highlighter(display);
+      refreshProfileList(curProfileName);
+      
 		while (!shell.isDisposed()) {
 			if (!display.readAndDispatch()) {
 				display.sleep();
 			}
 		}
 		
-		ruleChaptersFontLink.dispose();
+		highlighter.dispose();
 
       if (resultSave) { 
 	      // delete files of deleted or renamed profiles
@@ -542,7 +656,7 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 		lblRuleName = new Label(pnlRule, SWT.NONE);
 		lblRuleName.setFont(SWTResourceManager.getFont("Segoe UI", 12, SWT.BOLD));
 		lblRuleName.setLayoutData(new GridData(SWT.LEFT, SWT.TOP, false, false, 1, 1));
-		lblRuleName.setText("_");
+		lblRuleName.setText(".");
 		
 		Label lblRuleDescription = new Label(pnlRule, SWT.NONE);
 		lblRuleDescription.setFont(SWTResourceManager.getFont("Segoe UI", 9, SWT.BOLD));
@@ -574,7 +688,7 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 		gd_lblRuleSource0.minimumWidth = 120;
 		lblRuleSource0.setLayoutData(gd_lblRuleSource0);
 		lblRuleSource0.setBounds(0, 0, 160, 15);
-		lblRuleSource0.setText("#");
+		lblRuleSource0.setText(".");
 		
 		lblRuleChapter0 = new Label(pnlRuleReferences, SWT.NONE);
 		lblRuleChapter0.addMouseListener(new MouseAdapter() {
@@ -584,11 +698,11 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 			}
 		});
 		lblRuleChapter0.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, true, false, 1, 1));
-		lblRuleChapter0.setText("#");
+		lblRuleChapter0.setText(".");
 
 		lblRuleSource1 = new Label(pnlRuleReferences, SWT.NONE);
 		lblRuleSource1.setBounds(0, 0, 160, 15);
-		lblRuleSource1.setText("#");
+		lblRuleSource1.setText(".");
 		
 		lblRuleChapter1 = new Label(pnlRuleReferences, SWT.NONE);
 		lblRuleChapter1.addMouseListener(new MouseAdapter() {
@@ -598,11 +712,11 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 			}
 		});
 		lblRuleChapter1.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, true, false, 1, 1));
-		lblRuleChapter1.setText("#");
+		lblRuleChapter1.setText(".");
 
 		lblRuleSource2 = new Label(pnlRuleReferences, SWT.NONE);
 		lblRuleSource2.setBounds(0, 0, 160, 15);
-		lblRuleSource2.setText("#");
+		lblRuleSource2.setText(".");
 		
 		lblRuleChapter2 = new Label(pnlRuleReferences, SWT.NONE);
 		lblRuleChapter2.addMouseListener(new MouseAdapter() {
@@ -612,11 +726,11 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 			}
 		});
 		lblRuleChapter2.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, true, false, 1, 1));
-		lblRuleChapter2.setText("#");
+		lblRuleChapter2.setText(".");
 
 		lblRuleSource3 = new Label(pnlRuleReferences, SWT.NONE);
 		lblRuleSource3.setBounds(0, 0, 160, 15);
-		lblRuleSource3.setText("#");
+		lblRuleSource3.setText(".");
 		
 		lblRuleChapter3 = new Label(pnlRuleReferences, SWT.NONE);
 		lblRuleChapter3.addMouseListener(new MouseAdapter() {
@@ -626,7 +740,7 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 			}
 		});
 		lblRuleChapter3.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, true, false, 1, 1));
-		lblRuleChapter3.setText("#");
+		lblRuleChapter3.setText(".");
 
 		Composite pnlOptionsInfo = new Composite(pnlRule, SWT.NONE);
 		GridData gd_pnlOptionsInfo = new GridData(SWT.FILL, SWT.TOP, false, false, 1, 1);
@@ -836,28 +950,10 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
       chkAutoActivateNewFeatures.setSelection(profile.autoActivateNewFeatures);
       
       ProfileHighlightItem highlightItem = getHighlightItem();
-
-      chkAutoActivateNewFeatures.setBackground(highlightItem.highlightFeatureOf(2022, 6, 5) ? newConfigBackground : normalAutoActivateBackground);
-      lblHighlight.setBackground(highlightItem.highlightFeatureOf(2022, 10, 31) ? newConfigBackground : normalHighlightBackground); // first highlight on (2022, 9, 8)
-      btnPasteExample.setBackground(highlightItem.highlightFeatureOf(2022, 5, 25) ? newConfigBackground : normalPasteExampleBackground);
+      if (highlighter != null) {
+	      highlighter.setControlsHighlight(highlightItem);
+      }
       
-      Color importExportBackground = highlightItem.highlightFeatureOf(2022, 10, 14) ? newConfigBackground : normalImportExportBackground;
-      btnImportProfile.setBackground(importExportBackground);
-      btnExportProfile.setBackground(importExportBackground);
-      btnExportAllProfiles.setBackground(importExportBackground);
-      btnChangeProfilesFolder.setBackground(highlightItem.highlightFeatureOf(2023, 3, 9) ? newConfigBackground : normalImportExportBackground);
-
-      lblFilter.setBackground(highlightItem.highlightFeatureOf(2023, 3, 9) ? newConfigBackground : normalLblFilterBackground);
-      
-      Color activateBackground = highlightItem.highlightFeatureOf(2023, 3, 7) ? newConfigBackground : normalActivateBackground;
-      btnActivateAllRules.setBackground(normalActivateBackground);
-      btnActivateDefaultRules.setBackground(activateBackground);
-      btnActivateEssentialRules.setBackground(activateBackground);
-      btnDeactivateAllRules.setBackground(normalActivateBackground);
-
-      chkHighlightDeclarationKeywords.setBackground(highlightItem.highlightFeatureOf(2023, 3, 28) ? newConfigBackground : normalHighlightDeclarationsBackground);
-      chkHighlightWritePositions.setBackground(highlightItem.highlightFeatureOf(2023, 3, 9) ? newConfigBackground : normalHighlightWritePositionsBackground);
-
       // determine item count
       Rule[] rules = sortByGroup ? profile.getRulesSortedByGroup() : profile.getRulesSortedByName();
       String filterTextUpper = txtFilter.getText().toUpperCase();
@@ -903,7 +999,9 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
          curItem = chkRules.getItem(itemIndex);
          curItem.setText(rule.getDisplayName());
          curItem.setChecked(rule.isActive);
-        	curItem.setBackground(getRuleBackground(rule, highlightItem, normalRuleListBackground));
+         if (highlighter != null) {
+         	curItem.setBackground(highlighter.getRuleBackground(rule, highlightItem, true));
+         }
          itemsInChkRules[itemIndex] = rule;
          ++itemIndex;
       }
@@ -924,35 +1022,6 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 		chkRules.setRedraw(true);
    }
 
-   private Color getRuleBackground(Rule rule, ProfileHighlightItem highlightItem, Color normalBackground) {
-   	if (rule == null || highlightItem == null)
-      	return normalBackground;
-
-		Release release = highlightItem.getRelease();
-		Profile compareToProfile = highlightItem.getCompareToProfile();
-   	if (release != null) {
-	   	if (rule.wasAddedSince(release)) { 
-	      	return newRuleBackground;
-	   	} else if(rule.wasEnhancedSince(release)) { 
-	      	return enhancedRuleBackground;
-	   	}
-	   	
-   	} else if (compareToProfile != null) {
-   		Rule compareToRule = compareToProfile.getRule(rule.getID());
-   		if (compareToRule == null)  {
-   	   	return normalBackground;
-   		} else if (rule.isActive && !compareToRule.isActive) {
-	      	return ruleActivatedBackground;
-   		} else if (!rule.isActive && compareToRule.isActive) {
-	      	return ruleDeactivatedBackground;
-   		} else if (!rule.hasSameConfigurationAs(compareToRule)) {
-   			return changedConfigBackground;
-   		}
-   	}
-
-   	return normalBackground;
-   }
-   
    private int findRuleIndex(RuleID ruleID) {
    	if (ruleID == null)
    		return -1;
@@ -985,7 +1054,9 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
       disposeConfigControls();
 
       lblRuleName.setText((rule != null && rule.getDisplayName() != null) ? rule.getDisplayName() : "");
-      setRuleNameHighlight(rule);
+      if (highlighter != null) {
+      	highlighter.setRuleNameHighlight(rule);
+      }
       
       txtRuleDescription.setText((rule != null && rule.getDescription() != null) ? rule.getDescription() : "");
 
@@ -1013,9 +1084,8 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
          lblRuleChapters[i].setText((reference != null && reference.chapterTitle != null) ? reference.chapterTitle : "");
          ruleChapterLink[i] = (reference != null ? reference.getLink() : null);
          lblRuleChapters[i].setLocation(chapterLeft, lblRuleChapters[i].getLocation().y);
-         if (reference != null) {
-            lblRuleChapters[i].setFont(reference.hasLink() ? ruleChaptersFontLink : ruleChaptersFontNormal);
-            lblRuleChapters[i].setForeground(reference.hasLink() ? ruleChaptersForeColorLink : ruleChaptersForeColorNormal);
+         if (reference != null && highlighter != null) {
+         	highlighter.setRuleChaptersStyle(lblRuleChapters[i], reference.hasLink());
             // TODO: set mouse cursor when hovering over lblRuleChapters[i] - this may only be possible with StyledText, which apparently does this automatically for SWT.UNDERLINE_LINK
          }
          lblRuleChapters[i].setVisible((reference != null));
@@ -1087,10 +1157,12 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
       pnlRuleOptions.layout();
       pnlRuleOptions.setRedraw(true);
       
-      // set the highlight only after .setRedraw(true), otherwise, if dark theme is used in ADT, 
-      // .getBackground() will still return light theme colors (see ConfigControl.setHighlighted())! 
-      for (ConfigControl configControl : configControls) {
-      	setConfigHighlight(rule, configControl);
+      if (highlighter != null) {
+	      // set the highlight only after .setRedraw(true), otherwise, if dark theme is used in ADT, 
+	      // .getBackground() will still return light theme colors (see ConfigControl.setHighlighted())! 
+	      for (ConfigControl configControl : configControls) {
+	      	highlighter.setConfigHighlight(rule, configControl);
+	      }
       }
 
       pnlRule.layout();
@@ -1203,17 +1275,19 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
       if (curRule != null && configControls != null) {
 	      for (ConfigControl configControl : configControls) {
 	      	configControl.setEnabled(curRule.isConfigValueEnabled(configControl.getConfigValue()));
-	      	setConfigHighlight(curRule, configControl);
+	      	if (highlighter != null) {
+	      		highlighter.setConfigHighlight(curRule, configControl);
+	      	}
 	      }
       }
-      if (curRule != null) {
+      if (curRule != null && highlighter != null) {
 	      for (int i = 0; i < chkRules.getItemCount(); ++i) {
 	         if (itemsInChkRules[i] == curRule) {
-	         	setRuleHighlight(curRule, i);
+	         	highlighter.setRuleHighlight(curRule, i);
 	         	break;
 	         }
          }
-	      setRuleNameHighlight(curRule);
+	      highlighter.setRuleNameHighlight(curRule);
       }
    }
 
@@ -1507,8 +1581,10 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
          if (itemsInChkRules[index] instanceof Rule) {
          	Rule rule = (Rule)itemsInChkRules[index];
             rule.isActive = activate;
-         	setRuleHighlight(rule, index);
-
+            if (highlighter != null) {
+            	highlighter.setRuleHighlight(rule, index);
+            }
+            
             int groupIndex = findRuleGroupIndex(rule.getGroupID());
             if (groupIndex >= 0 && groupIndex < itemsInChkRules.length) {
             	// determine whether any of the visible(!) rules of this group is active
@@ -1536,7 +1612,9 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
                	Rule rule = (Rule)itemsInChkRules[i];
                   if (rule.getGroupID() == group.iD && rule.isActive != activate) {
                      rule.isActive = activate;
-                  	setRuleHighlight(rule, i);
+                     if (highlighter != null) {
+                     	highlighter.setRuleHighlight(rule, i);
+                     }
                      chkRules.getItem(i).setChecked(activate);
                   }
                }
@@ -1590,34 +1668,6 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
       if (!parseSuccess)
       	refreshExample(curRule, curRule.getExample());
 		return true;
-	}
-
-   private void setRuleHighlight(Rule rule, int index) {
-      ProfileHighlightItem highlightItem = getHighlightItem();
-      Color ruleBackground = getRuleBackground(rule, highlightItem, normalRuleListBackground);
-   	TableItem tableItem = chkRules.getItem(index);
-      if (!tableItem.getBackground().equals(ruleBackground))
-      	tableItem.setBackground(ruleBackground);
-      if (rule == curRule)
-      	setRuleNameHighlight(rule);
-   }
-   
-   private void setRuleNameHighlight(Rule rule) {
-   	Color color = getRuleBackground(rule, getHighlightItem(), normalRuleNameBackground);
-   	if (!lblRuleName.getBackground().equals(color))
-   		lblRuleName.setBackground(color);
-	}
-
-   private void setConfigHighlight(Rule rule, ConfigControl configControl) {
-   	ConfigValue configValue = configControl.getConfigValue();
-      ProfileHighlightItem highlightItem = getHighlightItem();
-   	if (highlightItem != null && highlightItem.isNewConfig(configValue)) {
-      	configControl.setHighlighted(true, newConfigBackground);
-   	} else if (highlightItem != null && highlightItem.isChangedConfig(rule, configValue)) {
-      	configControl.setHighlighted(true, changedConfigBackground);
-   	} else {
-      	configControl.setHighlighted(false, null);
-   	}
 	}
 
    private void changeProfilesFolder() {
