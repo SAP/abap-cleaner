@@ -552,6 +552,9 @@ public class AlignParametersRule extends RuleForCommands {
 					// store 'other line starts'; in case this is a keyword like "EXPORTING", this may be removed again later
 					otherLineStarts.add(token); 
 					tableEndsWithOtherLine = true;
+				} else if (token.textEquals("(") && token.getPrevCodeSibling() != null && token.getPrevCodeSibling().isKeyword("WHERE")) {
+					// skip this case of a logical expression in parentheses after WHERE, because it is NOT a table row:
+					// 'VALUE type( FOR ... IN ... WHERE ( log_exp ) ... ).' 
 				} else if (token.textEquals("(")) {
 					// always store the start of rows in VALUE or NEW constructors (even if they do not yet start a line) 
 					otherLineStarts.add(token); 

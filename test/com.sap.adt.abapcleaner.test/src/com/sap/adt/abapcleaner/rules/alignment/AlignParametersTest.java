@@ -2099,4 +2099,18 @@ class AlignParametersTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testParenthesesAfterWhereUnchanged() {
+		// expect "( comp = 1 )" to NOT be moved to the next line
+		buildSrc("    rts_result = VALUE ty_ts_table( FOR <ls_struc> IN mts_source");
+		buildSrc("                                    WHERE ( comp = 1 )");
+		buildSrc("                                    ( <ls_key> ) ).");
+
+		copyExpFromSrc();
+		
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }
