@@ -2106,9 +2106,25 @@ public class Command {
       // - was a certain cleanup rule used?
 		//   changeControl.wasRuleUsed(RuleID....);
 
-      Token token = firstToken.getLastTokenDeep(true, TokenSearch.ASTERISK, "WHERE|WHEN|UNTIL|WHILE");
-      return (token != null && token.lineBreaks == 0 && token.getNextCodeToken() != null && token.getNextCodeToken().lineBreaks > 0);
-      
-		// return false;
+		Token token = getFirstToken();
+		while (token != null) {
+			Token end = token.getEndOfParamsOrComponentsList(); 
+			if (end != null && token.textEquals("(")) {
+				token = end.getNextSibling();
+				
+				while (token != null) {
+					end = token.getEndOfParamsOrComponentsList(); 
+					if (end != null && token.textEquals("(")) {
+						return true;
+					}
+					token = token.getNextSibling();
+				}
+				
+				return false;
+			}
+			token = token.getNext();
+		}
+
+		return false;
 	}
 }

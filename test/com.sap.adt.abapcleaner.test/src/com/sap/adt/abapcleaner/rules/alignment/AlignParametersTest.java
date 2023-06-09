@@ -24,6 +24,7 @@ class AlignParametersTest extends RuleTestBase {
 		rule.configPutProceduralCallKeywordsOnOwnLine.setValue(false);
 		rule.configPutFunctionalCallKeywordsOnOwnLine.setValue(false);
 		rule.configAlignAssignments.setValue(true);
+		rule.configAlignAcrossTableRows.setValue(true);
 		rule.configKeepComponentsOnSingleLine.setEnumValue(ComponentsOnSingleLine.IF_BELOW_MAX_LINE_LENGTH);
 		rule.configAllowContentLeftOfAssignOp.setEnumValue(ContentLeftOfAssignOp.TO_KEEP_MAX_LINE_LENGTH);
 	}
@@ -2193,6 +2194,207 @@ class AlignParametersTest extends RuleTestBase {
 		buildExp("            text   = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa2' ) ).");
 
 		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testAlignAcrossTableRows() {
+		buildSrc("    ets_table = VALUE #( date = gc_any_date");
+		buildSrc("                           id = gc_any_id");
+		buildSrc("");
+		buildSrc("                           ( item_name = 'ANY'");
+		buildSrc("                              quantity = 1 )");
+		buildSrc("                             ( item_name = 'OTHER'");
+		buildSrc("                                quantity = 2");
+		buildSrc("                                reference_id = '12345' )");
+		buildSrc("                                   ( item_name = 'THIRD'");
+		buildSrc("                                  quantity = 3 ) ).");
+
+		buildExp("    ets_table = VALUE #( date = gc_any_date");
+		buildExp("                         id   = gc_any_id");
+		buildExp("");
+		buildExp("                         ( item_name    = 'ANY'");
+		buildExp("                           quantity     = 1 )");
+		buildExp("                         ( item_name    = 'OTHER'");
+		buildExp("                           quantity     = 2");
+		buildExp("                           reference_id = '12345' )");
+		buildExp("                         ( item_name    = 'THIRD'");
+		buildExp("                           quantity     = 3 ) ).");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testAlignWithinTableRows() {
+		rule.configAlignAcrossTableRows.setValue(false);
+		
+		buildSrc("    ets_table = VALUE #( date = gc_any_date");
+		buildSrc("                           id = gc_any_id");
+		buildSrc("");
+		buildSrc("                           ( item_name = 'ANY'");
+		buildSrc("                              quantity = 1 )");
+		buildSrc("                             ( item_name = 'OTHER'");
+		buildSrc("                                quantity = 2");
+		buildSrc("                                reference_id = '12345' )");
+		buildSrc("                                   ( item_name = 'THIRD'");
+		buildSrc("                                  quantity = 3 ) ).");
+
+		buildExp("    ets_table = VALUE #( date = gc_any_date");
+		buildExp("                         id   = gc_any_id");
+		buildExp("");
+		buildExp("                         ( item_name = 'ANY'");
+		buildExp("                           quantity  = 1 )");
+		buildExp("                         ( item_name    = 'OTHER'");
+		buildExp("                           quantity     = 2");
+		buildExp("                           reference_id = '12345' )");
+		buildExp("                         ( item_name = 'THIRD'");
+		buildExp("                           quantity  = 3 ) ).");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testAlignAcrossTableRowsKeepingOneLiners() {
+		// ensure that alignment across table rows works even 
+		// - across comments 
+		// - across other assignments (DATE = GC_OTHER_DATE) 
+		// - across one-liner rows
+		// and that one-liners are kept
+		
+		buildSrc("    ets_table = VALUE #( date = gc_any_date");
+		buildSrc("                           id = gc_any_id");
+		buildSrc("");
+		buildSrc("                           ( item_name = 'ANY'");
+		buildSrc("                              quantity = 1 )");
+		buildSrc("                             \" comment");
+		buildSrc("                             ( item_name = 'OTHER'");
+		buildSrc("                                quantity = 2");
+		buildSrc("                                reference_id = '12345' )");
+		buildSrc("");
+		buildSrc("                           date = gc_other_date");
+		buildSrc("                           id = gc_other_id");
+		buildSrc("                                   ( item_name = 'THIRD'  quantity = 3 )");
+		buildSrc("                                   ( item_name = 'FOURTH' quantity = 4 )");
+		buildSrc("");
+		buildSrc("                                   ( item_name = 'FIFTH'");
+		buildSrc("                                  quantity = 5 ) ).");
+
+		buildExp("    ets_table = VALUE #( date = gc_any_date");
+		buildExp("                         id   = gc_any_id");
+		buildExp("");
+		buildExp("                         ( item_name    = 'ANY'");
+		buildExp("                           quantity     = 1 )");
+		buildExp("                         \" comment");
+		buildExp("                         ( item_name    = 'OTHER'");
+		buildExp("                           quantity     = 2");
+		buildExp("                           reference_id = '12345' )");
+		buildExp("");
+		buildExp("                         date = gc_other_date");
+		buildExp("                         id   = gc_other_id");
+		buildExp("                         ( item_name = 'THIRD'  quantity = 3 )");
+		buildExp("                         ( item_name = 'FOURTH' quantity = 4 )");
+		buildExp("");
+		buildExp("                         ( item_name    = 'FIFTH'");
+		buildExp("                           quantity     = 5 ) ).");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testAlignAsteriskCommentAcrossTableRows() {
+		// ensure that alignment across table rows even works for the commented out assignment
+		buildSrc("    lts_table_with_long_name = VALUE #( ( component1 = lv_any_id");
+		buildSrc("*                                          comp_2 = 'commented out' ");
+		buildSrc("                                          comp_3 = 'A' )");
+		buildSrc("");
+		buildSrc("                                    ( component1 = lv_other_id");
+		buildSrc("                                          comp_3 = 'B'");
+		buildSrc("                                          long_component = cl_any_factory=>get( )->get_utility_with_long_name( )->get_any_value( ) ) ).");
+
+		buildExp("    lts_table_with_long_name = VALUE #(");
+		buildExp("        ( component1     = lv_any_id");
+		buildExp("*          comp_2         = 'commented out' ");
+		buildExp("          comp_3         = 'A' )");
+		buildExp("");
+		buildExp("        ( component1     = lv_other_id");
+		buildExp("          comp_3         = 'B'");
+		buildExp("          long_component = cl_any_factory=>get( )->get_utility_with_long_name( )->get_any_value( ) ) ).");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testFunctionalCallWithSingleExpression() {
+		buildSrc("    any_method(");
+		buildSrc("      42 ).");
+		buildSrc("    any_method(");
+		buildSrc("      lv_value + 3 * ( 5 + 7 ) ).");
+		buildSrc("    any_method(");
+		buildSrc("      VALUE #( ) ).");
+
+		buildExp("    any_method( 42 ).");
+		buildExp("    any_method( lv_value + 3 * ( 5 + 7 ) ).");
+		buildExp("    any_method( VALUE #( ) ).");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testFunctionalCallWithNestedValue() {
+		buildSrc("    mo_any_utility_with_long_name->any_method_long_name(");
+		buildSrc("      VALUE #( ( any_component = if_any_interface=>co_any_constant_for_comp");
+		buildSrc("              other_component = VALUE #( ( comp = ms_any_struc-any_comp");
+		buildSrc("                                       comp_2 = ms_any_struc-any_value )");
+		buildSrc("                                           ( comp = ms_any_struc-other_comp");
+		buildSrc("                                              component_3 = ms_any_struc-any_value ) ) )");
+		buildSrc("               ( any_component = if_any_interface=>co_other_constant_for_comp");
+		buildSrc("                   other_component = VALUE #( ( comp = ms_any_struc-any_comp ) ) ) ) ).");
+
+		buildExp("    mo_any_utility_with_long_name->any_method_long_name(");
+		buildExp("        VALUE #( ( any_component   = if_any_interface=>co_any_constant_for_comp");
+		buildExp("                   other_component = VALUE #( ( comp        = ms_any_struc-any_comp");
+		buildExp("                                                comp_2      = ms_any_struc-any_value )");
+		buildExp("                                              ( comp        = ms_any_struc-other_comp");
+		buildExp("                                                component_3 = ms_any_struc-any_value ) ) )");
+		buildExp("                 ( any_component   = if_any_interface=>co_other_constant_for_comp");
+		buildExp("                   other_component = VALUE #( ( comp = ms_any_struc-any_comp ) ) ) ) ).");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testCallFunctionWithValue() {
+		buildSrc("    CALL FUNCTION 'ANY_FUNCTION'");
+		buildSrc("      EXPORTING");
+		buildSrc("        its_table = VALUE ty_ts_table( ( any_comp = 1");
+		buildSrc("                                       other_comp = 'ABC' )");
+		buildSrc("                                         ( any_comp = 2");
+		buildSrc("                                    third_component = abap_true ) )");
+		buildSrc("      IMPORTING");
+		buildSrc("        ev_result = lv_result");
+		buildSrc("      EXCEPTIONS");
+		buildSrc("        any_exception = 1.");
+
+		buildExp("    CALL FUNCTION 'ANY_FUNCTION'");
+		buildExp("      EXPORTING  its_table     = VALUE ty_ts_table( ( any_comp        = 1");
+		buildExp("                                                      other_comp      = 'ABC' )");
+		buildExp("                                                    ( any_comp        = 2");
+		buildExp("                                                      third_component = abap_true ) )");
+		buildExp("      IMPORTING  ev_result     = lv_result");
+		buildExp("      EXCEPTIONS any_exception = 1.");
 
 		testRule();
 	}
