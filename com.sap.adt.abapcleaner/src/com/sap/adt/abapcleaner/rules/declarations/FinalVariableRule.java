@@ -33,8 +33,10 @@ public class FinalVariableRule extends RuleForDeclarations {
 	public String getDisplayName() { return "Use FINAL for immutable variables"; }
 
 	@Override
-	public String getDescription() { return "Replaces DATA() inline declarations with FINAL() if no other write access to the respective variable is found." + System.lineSeparator() + 
-														 "This rule requires a NetWeaver version >= 7.57. Note that this rule will skip methods in which macros are used."; }
+	public String getDescription() { return "Replaces DATA() inline declarations with FINAL() if no other write access to the respective variable is found."; }
+
+	@Override
+	public String getHintsAndRestrictions() { return "This rule requires a NetWeaver version >= 7.57. Note that this rule will skip methods in which macros are used."; }
 
 	@Override
 	public LocalDate getDateCreated() { return LocalDate.of(2023, 3, 4); }

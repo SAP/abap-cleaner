@@ -37,10 +37,10 @@ public class TranslateRule extends RuleForCommands {
 	public String getDisplayName() { return "Replace TRANSLATE with string functions"; }
 
 	@Override
-	public String getDescription() {
-		return "Replaces the deprecated TRANSLATE statement with corresponding string processing functions." + System.lineSeparator() 
-			 + "'TRANSLATE text USING mask' is only replaced if the mask is a literal.";
-	}
+	public String getDescription() { return "Replaces the deprecated TRANSLATE statement with corresponding string processing functions."; }
+
+	@Override
+	public String getHintsAndRestrictions() { return "'TRANSLATE text USING mask' is only replaced if the mask is a literal."; }
 
 	@Override
 	public LocalDate getDateCreated() { return LocalDate.of(2023, 3, 29); }

@@ -31,8 +31,10 @@ public class AlignMethodsRedefinitionRule extends AlignMethodsWithoutParamsRuleB
 	public String getDisplayName() { return "Align METHODS ... REDEFINITION"; }
 
 	@Override
-	public String getDescription() { return "Aligns consecutive METHODS ... [FINAL] REDEFINITION declarations." + System.lineSeparator() 
-													  + "Activate this rule if you want to override the result of 'Align METHODS declarations' with special settings."; }
+	public String getDescription() { return "Aligns consecutive METHODS ... [FINAL] REDEFINITION declarations."; }
+
+	@Override
+	public String getHintsAndRestrictions() { return "Activate this rule if you want to override the result of 'Align METHODS declarations' with special settings."; }
 
 	@Override
 	public LocalDate getDateCreated() { return LocalDate.of(2021, 1, 9); }

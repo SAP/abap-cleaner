@@ -132,6 +132,8 @@ public abstract class RuleTestBase {
 		// make sure that all required info fields are maintained (i.e. non-empty)
 		assertTrue(rule.getDisplayName().length() > 0);
 		assertTrue(rule.getDescription().length() > 0);
+		assertTrue(rule.getDescription().indexOf(System.lineSeparator()) < 0);
+		assertNotNull(rule.getHintsAndRestrictions());
 		assertTrue(rule.getReferences().length > 0);
 		assertTrue(rule.getExample().length() > 0);
 		assertEquals(rule.getDisplayName(), rule.toString());

@@ -52,8 +52,10 @@ public class LocalDeclarationOrderRule extends RuleForDeclarations {
 
 	@Override
 	public String getDescription() { return "Rearranges up-front declarations of TYPES, CONSTANTS, DATA, and FIELD-SYMBOLS. " 
-	+ "Chains are kept and only rearranged within, therefore this rule should be used in combination with the '" + ChainRule.displayName + "' rule. " + System.lineSeparator() 
-	+ "Moving declarations to their innermost block is discouraged, but may help to refactor long methods."; }
+	+ "Chains are kept and only rearranged within, therefore this rule should be used in combination with the '" + ChainRule.displayName + "' rule. "; }
+
+	@Override
+	public String getHintsAndRestrictions() { return "Moving declarations to their innermost block is discouraged, but may help to refactor long methods."; }
 
 	@Override
 	public LocalDate getDateCreated() { return LocalDate.of(2023, 3, 26); }
