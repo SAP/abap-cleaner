@@ -95,11 +95,12 @@ public class AlignLogicalExpressionsRule extends RuleForLogicalExpressions {
 	ConfigEnumValue<AlignStyle> configAlignCheckWithBoolOps = new ConfigEnumValue<AlignStyle>(this, "AlignCheckWithBoolOps", "Align AND / OR / EQUIV with CHECK", alignStyleSelection, AlignStyle.DO_NOT_ALIGN);
 	ConfigEnumValue<AlignStyle> configAlignWhileWithBoolOps = new ConfigEnumValue<AlignStyle>(this, "AlignWhileWithBoolOps", "Align AND / OR / EQUIV with WHILE", alignStyleSelection, AlignStyle.DO_NOT_ALIGN);
 	ConfigEnumValue<AlignStyle> configAlignWhereWithBoolOps = new ConfigEnumValue<AlignStyle>(this, "AlignWhereWithBoolOps", "Align AND / OR / EQUIV with WHERE", alignStyleSelection, AlignStyle.DO_NOT_ALIGN);
+	ConfigEnumValue<AlignStyle> configAlignUntilWithBoolOps = new ConfigEnumValue<AlignStyle>(this, "AlignUntilWithBoolOps", "Align AND / OR / EQUIV with UNTIL", alignStyleSelection, AlignStyle.DO_NOT_ALIGN, AlignStyle.DO_NOT_ALIGN, LocalDate.of(2023, 6, 9));
 	ConfigBoolValue configRightAlignComparisonOps = new ConfigBoolValue(this, "RightAlignComparisonOps", "Right-align comparison operators / IS", true);
 	ConfigBoolValue configOnlyAlignSameObjects = new ConfigBoolValue(this, "OnlyAlignSameObjects", "Only align comparisons on same object", false);
 	ConfigIntValue configMaxInnerSpaces = new ConfigIntValue(this, "MaxInnerSpaces", "Do not align if more than", "inner spaces would be required", 1, 20, 999);
 
-	private final ConfigValue[] configValues = new ConfigValue[] { configAlignIfWithBoolOps, configAlignElseIfWithBoolOps, configAlignCheckWithBoolOps, configAlignWhileWithBoolOps, configAlignWhereWithBoolOps, 
+	private final ConfigValue[] configValues = new ConfigValue[] { configAlignIfWithBoolOps, configAlignElseIfWithBoolOps, configAlignCheckWithBoolOps, configAlignWhileWithBoolOps, configAlignWhereWithBoolOps, configAlignUntilWithBoolOps, 
 			configRightAlignComparisonOps, configOnlyAlignSameObjects, configMaxInnerSpaces };
 
 	@Override
@@ -121,11 +122,13 @@ public class AlignLogicalExpressionsRule extends RuleForLogicalExpressions {
 	protected boolean executeOn(Code code, Command command, Token keyword, Token end, int releaseRestriction) throws UnexpectedSyntaxAfterChanges {
 		AlignStyle keywordAlignStyle = getAlignStyle(keyword);
 		try {
-			LogicalExpression logicalExpression = LogicalExpression.create(keyword.getNextCodeToken(), end.getPrev());
-			if (logicalExpression.isSupported()) {
-				TreeAlign treeAlign = TreeAlign.createFrom(logicalExpression);
-				return treeAlign.align(keyword, keywordAlignStyle, configRightAlignComparisonOps.getValue(), true, configOnlyAlignSameObjects.getValue(), configMaxInnerSpaces.getValue());
-			}
+			Token logExpStart = keyword.getNextCodeToken();
+			LogicalExpression logicalExpression = LogicalExpression.create(logExpStart, end.getPrev());
+			if (!logicalExpression.isSupported()) 
+				return false;
+
+			TreeAlign treeAlign = TreeAlign.createFrom(logicalExpression);
+			return treeAlign.align(keyword, keywordAlignStyle, configRightAlignComparisonOps.getValue(), true, configOnlyAlignSameObjects.getValue(), configMaxInnerSpaces.getValue());
 		} catch (UnexpectedSyntaxException ex) {
 			(new UnexpectedSyntaxBeforeChanges(this, ex)).addToLog();
 		}
@@ -141,8 +144,10 @@ public class AlignLogicalExpressionsRule extends RuleForLogicalExpressions {
 			return AlignStyle.forValue(configAlignCheckWithBoolOps.getValue());
 		else if (keyword.isKeyword("WHILE"))
 			return AlignStyle.forValue(configAlignWhileWithBoolOps.getValue());
-		else if (keyword.isKeyword("WHERE")) // in LOOP
+		else if (keyword.isKeyword("WHERE")) // in LOOPs or constructor expressions
 			return AlignStyle.forValue(configAlignWhereWithBoolOps.getValue());
+		else if (keyword.isKeyword("UNTIL")) // in constructor expressions
+			return AlignStyle.forValue(configAlignUntilWithBoolOps.getValue());
 		else if (keyword.textEquals("xsdbool("))
 			return AlignStyle.DO_NOT_ALIGN;
 		else

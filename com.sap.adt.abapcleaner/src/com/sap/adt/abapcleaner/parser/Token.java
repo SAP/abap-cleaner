@@ -1244,6 +1244,17 @@ public class Token {
 		return result;
 	}
 
+	public final int getMinIndexInLine(Token endToken) {
+		int minIndex = this.getStartIndexInLine();
+		Token token = this;
+		while (token != endToken) {
+			if (token.lineBreaks > 0)
+				minIndex = Math.min(minIndex, token.spacesLeft);
+			token = token.next;
+		}
+		return minIndex;
+	}
+
 	public final int getMaxIndexInLine(Token endToken) {
 		int maxIndex = 0;
 		Token token = this;
@@ -2133,13 +2144,13 @@ public class Token {
 	 * @return
 	 */
 	public Token getEndOfLogicalExpression() {
-      // the following must be aligned with Command.finishBuild!
       Token firstCode = parentCommand.getFirstCodeToken();
 
+      // 1. cases on top level (parent == null)
       if (this == firstCode && firstCode.isAnyKeyword("IF", "ELSEIF", "CHECK", "WHILE")) {
       	return parentCommand.getLastNonCommentToken();
 
-      } else if (isKeyword("WHERE") && firstCode.matchesOnSiblings(true, "LOOP AT|MODIFY|DELETE|FOR")) {
+      } else if (isKeyword("WHERE") && parent == null && firstCode.matchesOnSiblings(true, "LOOP AT|MODIFY|DELETE|FOR")) {
          // LOOP AT ... WHERE <logical_expression> [GROUP BY ...].
          // MODIFY itab ... WHERE log_exp ... etc. 
          Token end = getLastTokenOnSiblings(true, TokenSearch.ASTERISK, "GROUP BY|USING KEY|TRANSPORTING|FROM");
@@ -2150,17 +2161,58 @@ public class Token {
          } else {
          	return end;
          }
-            
-      } else if (textEqualsAny("xsdbool(", "boolc(")) {
+
+      } else if (isKeyword("UNTIL") && parent == null && firstCode.isKeyword("WAIT")) {
+         // WAIT FOR ASYNCHRONOUS TASKS [MESSAGING CHANNELS] [PUSH CHANNELS] UNTIL log_exp [UP TO sec SECONDS].
+         Token end = getLastTokenOnSiblings(true, TokenSearch.ASTERISK, "UP", "TO");
+         if (end == null) {
+            return parentCommand.getLastCodeToken();
+         } else {
+            return end.getPrevCodeSibling(); // "UP"
+         }
+      } 
+      
+      // 2. xsdbool( ... ) and boolc( ... )
+      if (textEqualsAny("xsdbool(", "boolc(")) {
       	return getNextSibling();
-         
-      } else if (isAnyKeyword("WHEN", "UNTIL", "WHILE") && parent != null && parent.prev != null && parent.prev.isAnyKeyword("COND", "REDUCE", "NEW", "VALUE")) {
-         // COND type( [let_exp] WHEN log_exp THEN ... WHEN .. )
-         // REDUCE|NEW|VALUE identifier( ... FOR var = rhs [THEN expr] UNTIL|WHILE log_exp [let_exp] ... ) - see ABAP Reference, 
-      	// - "FOR, Iteration Expressions", https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/index.htm?file=abenfor.htm
-      	// - "FOR, Conditional Iteration", https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/index.htm?file=abenfor_conditional.htm
-         return getLastTokenOnSiblings(true, TokenSearch.ASTERISK, "THEN|LET|NEXT|FOR");
       }
-		return null;
+      
+      
+      // 3. WHEN / UNTIL / WHILE / WHERE clauses inside constructor expressions
+      // the following must be aligned with Command.finishBuild()!
+      Token ctorKeyword = (parent == null) ? null : parent.getPrevCodeSibling();
+      if (ctorKeyword == null || !ctorKeyword.isKeyword()) {
+      	return null;
+      
+      } else if (isAnyKeyword("WHEN") && ctorKeyword.isAnyKeyword("COND")) {
+      	// "FOR, Iteration Expressions", https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/index.htm?file=abenfor.htm, context:
+      	// - COND type( [let_exp] WHEN log_exp THEN ... WHEN .. )
+      	return getLastTokenOnSiblings(true, TokenSearch.ASTERISK, "THEN");
+      
+      } else if (isAnyKeyword("UNTIL", "WHILE") && ctorKeyword.isAnyKeyword("REDUCE", "NEW", "VALUE")) {
+      	// "FOR, Conditional Iteration", https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/index.htm?file=abenfor_conditional.htm, context:
+         // - REDUCE|NEW|VALUE identifier( ... FOR var = rhs [THEN expr] UNTIL|WHILE log_exp [let_exp] ... ) 
+      	return getLastTokenOnSiblings(true, TokenSearch.ASTERISK, "LET|NEXT|FOR");
+
+      } else if (isKeyword("WHERE") && ctorKeyword.isAnyKeyword("FILTER")) {
+      	// FILTER type( itab [EXCEPT] [USING KEY keyname] WHERE c1 op f1 [AND c2 op f2 [...]] ) ...
+      	// FILTER type( itab [EXCEPT] IN ftab [USING KEY keyname] WHERE c1 op f1 [AND c2 op f2 [...]] ) ...
+        	return parent.getNextSibling();
+         
+      } else if (isKeyword("WHERE") && ctorKeyword.isAnyKeyword("REDUCE", "NEW", "VALUE") && getNextCodeSibling() != null && getNextCodeSibling().textEquals("(")) {
+         // "FOR, Table Iterations", https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/index.htm?file=abenfor_itab.htm
+      	// Context:
+      	// - VALUE|NEW type( [let_exp] [BASE itab] [FOR for_exp1 FOR for_exp2 ... ] ( line_spec1 ) ( line_spec2 ) ... ) ...
+      	// - REDUCE type( [let_exp] INIT ... FOR for_exp1 FOR for_exp2 ... NEXT ... ) 
+      	// FOR clause:
+      	// - FOR wa|<fs> IN itab [INDEX INTO idx] [ cond] [let_exp]
+      	// - FOR GROUPS [group|<group>] OF wa|<fs> IN itab [INDEX INTO idx] [cond] GROUP BY group_key [ASCENDING|DESCENDING [AS TEXT]] [WITHOUT MEMBERS] [let_exp] ...
+      	// - FOR { wa|<fs> IN GROUP group [INDEX INTO idx] [ WHERE ( log_exp )] }
+      	//     | { GROUPS OF wa|<fs> IN GROUP group [INDEX INTO idx] [ WHERE ( log_exp )] GROUP BY group_key [ASCENDING|DESCENDING [AS TEXT]] [WITHOUT MEMBERS] } [ let_exp] ...
+      	// Condition [cond]: in this case, the condition is in parentheses:
+      	// - ... [USING KEY keyname] [FROM idx1] [TO idx2] [STEP n] [WHERE ( log_exp )|(cond_syntax)] ...
+         return getNextCodeSibling().getNextSibling().getNext();
+      }
+      return null;
 	}
 }
