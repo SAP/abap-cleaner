@@ -36,10 +36,10 @@ public class UnusedVariablesRule extends RuleForDeclarations {
 	public String getDisplayName() { return "Delete unused variables"; }
 
 	@Override
-	public String getDescription() {
-		return "Deletes unused variables, or comments them out if they are 'used' in commented-out code. TODO comments can be added for variables that are assigned but never used." + System.lineSeparator() + 
-				 "Note that this rule will skip methods in which macros are used.";
-	}
+	public String getDescription() { return "Deletes unused variables, or comments them out if they are 'used' in commented-out code. TODO comments can be added for variables that are assigned but never used."; }
+
+	@Override
+	public String getHintsAndRestrictions() { return "Note that this rule will skip methods in which macros are used."; }
 
 	@Override
 	public LocalDate getDateCreated() { return LocalDate.of(2021, 1, 15); }

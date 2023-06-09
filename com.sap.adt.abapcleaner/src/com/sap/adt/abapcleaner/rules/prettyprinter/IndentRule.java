@@ -21,10 +21,10 @@ public class IndentRule extends Rule {
 	public String getDisplayName() { return "Indent lines"; }
 
 	@Override
-	public String getDescription() {
-		return "Moves all commands and comments to the correct indentation." + System.lineSeparator() 
-			  + "Relative indents within the lines of a command (or command chain) are not changed by this rule.";
-	}
+	public String getDescription() { return "Moves all commands and comments to the correct indentation."; }
+
+	@Override
+	public String getHintsAndRestrictions() { return "Relative indents within the lines of a command (or command chain) are not changed by this rule."; }
 
 	@Override
 	public LocalDate getDateCreated() { return LocalDate.of(2021, 1, 2); }

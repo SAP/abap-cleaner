@@ -72,7 +72,6 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 
    private Shell shell;
 	private Table chkRules;
-	private Text txtRuleDescription;
 	private List lstProfiles;
    private Button btnImportProfile;
    private Button btnExportProfile;
@@ -81,6 +80,9 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 	private Label lblRules;
 	private Composite pnlRule;
 	private Label lblRuleName;
+	private Composite pnlRuleDescription;
+	private Label lblRuleDescription;
+	private Label lblRuleHintsAndRestrictions;
 	private Composite pnlRuleReferences;
 	private Label lblRuleSource0;
 	private Label lblRuleSource1;
@@ -367,16 +369,16 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 		shell.setText("Profiles and Rules");
 		shell.setLayout(new GridLayout(2, false));
 		
-		Composite composite = new Composite(shell, SWT.NONE);
-		composite.setLayout(new GridLayout(1, false));
-		composite.setLayoutData(new GridData(SWT.LEFT, SWT.FILL, false, true, 1, 1));
+		Composite cpsProfilesAndRules = new Composite(shell, SWT.NONE);
+		cpsProfilesAndRules.setLayout(new GridLayout(1, false));
+		cpsProfilesAndRules.setLayoutData(new GridData(SWT.LEFT, SWT.FILL, false, true, 1, 1));
 		
-		Label lblProfiles = new Label(composite, SWT.NONE);
+		Label lblProfiles = new Label(cpsProfilesAndRules, SWT.NONE);
 		lblProfiles.setFont(SWTResourceManager.getFont("Segoe UI", 11, SWT.BOLD));
 		lblProfiles.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
 		lblProfiles.setText("Profiles");
 		
-		lstProfiles = new List(composite, SWT.BORDER);
+		lstProfiles = new List(cpsProfilesAndRules, SWT.BORDER);
 		lstProfiles.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
@@ -387,7 +389,7 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 		gd_lstProfiles.heightHint = 145;
 		lstProfiles.setLayoutData(gd_lstProfiles);
 		
-		Composite pnlProfileButtons = new Composite(composite, SWT.NONE);
+		Composite pnlProfileButtons = new Composite(cpsProfilesAndRules, SWT.NONE);
 		pnlProfileButtons.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
 		pnlProfileButtons.setLayout(new FillLayout(SWT.HORIZONTAL));
 		
@@ -427,7 +429,7 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 		});
 		btnRenameProfile.setText("Rename");
 		
-		pngProfileImportExport = new Composite(composite, SWT.NONE);
+		pngProfileImportExport = new Composite(cpsProfilesAndRules, SWT.NONE);
 		pngProfileImportExport.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
 		pngProfileImportExport.setLayout(new FillLayout(SWT.HORIZONTAL));
 		
@@ -475,14 +477,14 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 		btnChangeProfilesFolder.setToolTipText("change the folder in which profiles are stored");
 		btnChangeProfilesFolder.setText("Folder...");
 		
-		lblRules = new Label(composite, SWT.NONE);
+		lblRules = new Label(cpsProfilesAndRules, SWT.NONE);
 		GridData gd_lblRules = new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1);
 		gd_lblRules.verticalIndent = 18;
 		lblRules.setLayoutData(gd_lblRules);
 		lblRules.setFont(SWTResourceManager.getFont("Segoe UI", 11, SWT.BOLD));
 		lblRules.setText("Rules in Current Profile");
 		 
-		chkAutoActivateNewFeatures = new Button(composite, SWT.CHECK);
+		chkAutoActivateNewFeatures = new Button(cpsProfilesAndRules, SWT.CHECK);
 		chkAutoActivateNewFeatures.setText("Automatically activate new features after updates");
 		chkAutoActivateNewFeatures.addSelectionListener(new SelectionAdapter() {
 			@Override
@@ -493,7 +495,7 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 			}
 		});
 
-		Composite cpsHighlight = new Composite(composite, SWT.NONE);
+		Composite cpsHighlight = new Composite(cpsProfilesAndRules, SWT.NONE);
 		cpsHighlight.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
 		GridLayout gl_cpsHighlight = new GridLayout(2, false);
 		gl_cpsHighlight.marginWidth = 0;
@@ -544,7 +546,7 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 		btnClearFilter.setText("X");
 		btnClearFilter.setToolTipText("clear rule name filter");
 		
-		CheckboxTableViewer checkboxTableViewer = CheckboxTableViewer.newCheckList(composite, SWT.BORDER | SWT.FULL_SELECTION);
+		CheckboxTableViewer checkboxTableViewer = CheckboxTableViewer.newCheckList(cpsProfilesAndRules, SWT.BORDER | SWT.FULL_SELECTION);
 		chkRules = checkboxTableViewer.getTable();
 		chkRules.addSelectionListener(new SelectionAdapter() {
 			private int lastIndex;
@@ -578,7 +580,7 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 		gd_chkRules.minimumWidth = 290;
 		chkRules.setLayoutData(gd_chkRules);
 		
-		Composite pnlRuleListButtons = new Composite(composite, SWT.NONE);
+		Composite pnlRuleListButtons = new Composite(cpsProfilesAndRules, SWT.NONE);
 		pnlRuleListButtons.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
 		pnlRuleListButtons.setLayout(new FillLayout(SWT.HORIZONTAL));
 		
@@ -658,17 +660,28 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 		lblRuleName.setLayoutData(new GridData(SWT.LEFT, SWT.TOP, false, false, 1, 1));
 		lblRuleName.setText(".");
 		
-		Label lblRuleDescription = new Label(pnlRule, SWT.NONE);
-		lblRuleDescription.setFont(SWTResourceManager.getFont("Segoe UI", 9, SWT.BOLD));
-		lblRuleDescription.setLayoutData(new GridData(SWT.RIGHT, SWT.TOP, false, false, 1, 1));
-		lblRuleDescription.setText("Description:");
+		Label lblRuleDescriptionTitle = new Label(pnlRule, SWT.NONE);
+		lblRuleDescriptionTitle.setFont(SWTResourceManager.getFont("Segoe UI", 9, SWT.BOLD));
+		lblRuleDescriptionTitle.setLayoutData(new GridData(SWT.RIGHT, SWT.TOP, false, false, 1, 1));
+		lblRuleDescriptionTitle.setText("Description:");
 		
-		txtRuleDescription = new Text(pnlRule, SWT.READ_ONLY | SWT.MULTI);
-		GridData gd_txtRuleDescription = new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1);
-		gd_txtRuleDescription.heightHint = 30;
-		gd_txtRuleDescription.minimumHeight = 30;
-		txtRuleDescription.setLayoutData(gd_txtRuleDescription);
+		pnlRuleDescription = new Composite(pnlRule, SWT.NONE);
+		GridData gd_pnlRuleDescription = new GridData(SWT.FILL, SWT.TOP, true, false, 1, 1);
+		pnlRuleDescription.setLayoutData(gd_pnlRuleDescription);
+		GridLayout gl_pnlRuleDescription = new GridLayout(1, false);
+		gl_pnlRuleDescription.marginHeight = 0;
+		gl_pnlRuleDescription.verticalSpacing = 2;
+		gl_pnlRuleDescription.marginWidth = 0;
+		pnlRuleDescription.setLayout(gl_pnlRuleDescription);
 		
+		lblRuleDescription = new Label(pnlRuleDescription, SWT.NONE);
+		lblRuleDescription.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));
+		lblRuleDescription.setText(".");
+
+		lblRuleHintsAndRestrictions = new Label(pnlRuleDescription, SWT.NONE);
+		lblRuleHintsAndRestrictions.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));
+		lblRuleHintsAndRestrictions.setText(".");
+
 		Label lblRuleReferences = new Label(pnlRule, SWT.NONE);
 		lblRuleReferences.setFont(SWTResourceManager.getFont("Segoe UI", 9, SWT.BOLD));
 		lblRuleReferences.setLayoutData(new GridData(SWT.LEFT, SWT.TOP, false, false, 1, 1));
@@ -1058,7 +1071,8 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
       	highlighter.setRuleNameHighlight(rule);
       }
       
-      txtRuleDescription.setText((rule != null && rule.getDescription() != null) ? rule.getDescription() : "");
+      lblRuleDescription.setText((rule != null && rule.getDescription() != null) ? rule.getDescription() : "");
+      lblRuleHintsAndRestrictions.setText((rule != null && rule.getHintsAndRestrictions() != null) ? rule.getHintsAndRestrictions() : "");
 
       // show references
       pnlRuleReferences.setRedraw(false);

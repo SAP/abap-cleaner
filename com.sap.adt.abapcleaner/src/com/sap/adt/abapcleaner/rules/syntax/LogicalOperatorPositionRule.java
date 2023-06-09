@@ -20,10 +20,10 @@ public class LogicalOperatorPositionRule extends RuleForLogicalExpressions {
 	public String getDisplayName() { return "Move AND/OR from line end to next line start"; }
 
 	@Override
-	public String getDescription() {
-		return "Moves boolean operators (AND, OR, EQUIV) from the end of a line to the start of the next line." + System.lineSeparator() 
-				+ "The expression is then aligned according to the settings of the rule '" + AlignLogicalExpressionsRule.DEFAULT_NAME + "' (even if the rule is otherwise deactivated).";
-	}
+	public String getDescription() { return "Moves boolean operators (AND, OR, EQUIV) from the end of a line to the start of the next line."; }
+
+	@Override
+	public String getHintsAndRestrictions() { return "The expression is then aligned according to the settings of the rule '" + AlignLogicalExpressionsRule.DEFAULT_NAME + "' (even if the rule is otherwise deactivated)."; }
 
 	@Override
 	public LocalDate getDateCreated() { return LocalDate.of(2021, 1, 21); }

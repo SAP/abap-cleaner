@@ -157,6 +157,8 @@ public abstract class Rule {
 
 	public abstract String getDescription();
 
+	public String getHintsAndRestrictions() { return ""; }
+
 	public abstract LocalDate getDateCreated();
 	
 	public abstract RuleReference[] getReferences();

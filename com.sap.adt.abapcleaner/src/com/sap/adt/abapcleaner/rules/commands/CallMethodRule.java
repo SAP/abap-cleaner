@@ -33,10 +33,10 @@ public class CallMethodRule extends RuleForCommands {
 	public String getDisplayName() { return "Replace CALL METHOD with functional call"; }
 
 	@Override
-	public String getDescription() {
-		return "Replaces obsolete CALL METHOD statements with functional calls, adding parentheses, if missing." + System.lineSeparator() 
-			  + "Keeps CALL METHOD if dynamic typing is used for the method name, since no function equivalent is available here.";
-	}
+	public String getDescription() { return "Replaces obsolete CALL METHOD statements with functional calls, adding parentheses, if missing."; }
+
+	@Override
+	public String getHintsAndRestrictions() { return "Keeps CALL METHOD if dynamic typing is used for the method name, since no function equivalent is available here."; }
 
 	@Override
 	public LocalDate getDateCreated() { return LocalDate.of(2020, 12, 28); }

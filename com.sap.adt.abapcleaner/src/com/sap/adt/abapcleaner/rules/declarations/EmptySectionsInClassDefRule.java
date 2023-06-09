@@ -30,8 +30,10 @@ public class EmptySectionsInClassDefRule extends Rule {
 	public String getDisplayName() { return "Remove empty class definition SECTIONs"; }
 
 	@Override
-	public String getDescription() { return "Removes empty PUBLIC / PROTECTED / PRIVATE SECTIONs from class definitions (except from public classes that are non-final or inheriting)." + System.lineSeparator() 
-													  + "SECTIONs that contain comments will be kept, except for the auto-generated 'do not include other source files here!!!' comments."; }
+	public String getDescription() { return "Removes empty PUBLIC / PROTECTED / PRIVATE SECTIONs from class definitions (except from public classes that are non-final or inheriting)."; }
+
+	@Override
+	public String getHintsAndRestrictions() { return "SECTIONs that contain comments will be kept, except for the auto-generated 'do not include other source files here!!!' comments."; }
 
 	@Override
 	public LocalDate getDateCreated() { return LocalDate.of(2022, 9, 9); }

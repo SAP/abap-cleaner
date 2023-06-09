@@ -35,8 +35,10 @@ public class PseudoCommentRule extends RuleForTokens {
 	public String getDisplayName() { return "Replace obsolete pseudo comments with pragmas"; }
 
 	@Override
-	public String getDescription() { return "Replaces obsolete pseudo comments (\"#EC ...) for the Extended Program Check (SLIN) with corresponding pragmas." + System.lineSeparator() 
-													  + "This rule requires a NetWeaver version >= 7.0 EhP2. Note that pseudo comments for Code Inspector (\"#EC CI_...) are kept, as they have not been replaced by pragmas yet."; }
+	public String getDescription() { return "Replaces obsolete pseudo comments (\"#EC ...) for the Extended Program Check (SLIN) with corresponding pragmas."; }
+
+	@Override
+	public String getHintsAndRestrictions() { return "This rule requires a NetWeaver version >= 7.0 EhP2. Note that pseudo comments for Code Inspector (\"#EC CI_...) are kept, as they have not been replaced by pragmas yet."; }
 
 	@Override
 	public LocalDate getDateCreated() { return LocalDate.of(2023, 3, 20); }
