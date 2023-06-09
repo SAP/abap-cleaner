@@ -1005,4 +1005,113 @@ class AlignLogicalExpressionsTest extends RuleTestBase {
 		
 		testRule();
 	}
+
+	@Test
+	void testAlignWhereInConstructorExpressions() {
+		buildSrc("    rt_result = VALUE #( FOR ls_struc IN lt_table");
+		buildSrc("                         WHERE ( status = 'a'");
+		buildSrc("                         OR status = 'b' )");
+		buildSrc("                         ( ls_struc ) ).");
+		buildSrc("");
+		buildSrc("    lt_other_result = FILTER #( lt_any_table USING KEY any_key");
+		buildSrc("                                WHERE active = abap_true   AND   used = abap_true ).");
+
+		buildExp("    rt_result = VALUE #( FOR ls_struc IN lt_table");
+		buildExp("                         WHERE (    status = 'a'");
+		buildExp("                                 OR status = 'b' )");
+		buildExp("                         ( ls_struc ) ).");
+		buildExp("");
+		buildExp("    lt_other_result = FILTER #( lt_any_table USING KEY any_key");
+		buildExp("                                WHERE active = abap_true AND used = abap_true ).");
+
+		putAnyMethodAroundSrcAndExp();
+		
+		testRule();
+	}
+
+	@Test
+	void testUntilAndWhileInReduceConstructor() {
+		buildSrc("    lv_sum = REDUCE i( INIT s = 0");
+		buildSrc("                       FOR i = 1");
+		buildSrc("                       UNTIL i = 10");
+		buildSrc("                       OR i >= iv_max");
+		buildSrc("                       NEXT s += i ).");
+		buildSrc("");
+		buildSrc("    lv_sum = REDUCE i( INIT s = 0");
+		buildSrc("                       FOR i = 1");
+		buildSrc("                       WHILE i < 10");
+		buildSrc("                       AND i < iv_max");
+		buildSrc("                       NEXT s += i ).");
+
+		buildExp("    lv_sum = REDUCE i( INIT s = 0");
+		buildExp("                       FOR i = 1");
+		buildExp("                       UNTIL    i  = 10");
+		buildExp("                             OR i >= iv_max");
+		buildExp("                       NEXT s += i ).");
+		buildExp("");
+		buildExp("    lv_sum = REDUCE i( INIT s = 0");
+		buildExp("                       FOR i = 1");
+		buildExp("                       WHILE     i < 10");
+		buildExp("                             AND i < iv_max");
+		buildExp("                       NEXT s += i ).");
+
+		putAnyMethodAroundSrcAndExp();
+		
+		testRule();
+	}
+
+	@Test
+	void testWaitUntil() {
+		buildSrc("    WAIT FOR ASYNCHRONOUS TASKS MESSAGING CHANNELS");
+		buildSrc("         UNTIL lo_instance=>is_task_done( lv_task_id ) = abap_true");
+		buildSrc("         OR lo_instance=>is_task_cancelled( lv_task_id ) = abap_true");
+		buildSrc("         UP TO 10 SECONDS.");
+
+		buildExp("    WAIT FOR ASYNCHRONOUS TASKS MESSAGING CHANNELS");
+		buildExp("         UNTIL    lo_instance=>is_task_done( lv_task_id )      = abap_true");
+		buildExp("               OR lo_instance=>is_task_cancelled( lv_task_id ) = abap_true");
+		buildExp("         UP TO 10 SECONDS.");
+
+		putAnyMethodAroundSrcAndExp();
+		
+		testRule();
+	}
+
+	@Test
+	void testWhereParenthesisInNextLine() {
+		// expect the WHERE condition to be moved below the FOR
+		buildSrc("    lt_result = VALUE #( FOR ls_struc IN lt_table WHERE");
+		buildSrc("                         ( comp = '1'");
+		buildSrc("AND comp2 = 'A' )");
+		buildSrc("                         ( ls_struc ) ).");
+
+		buildExp("    lt_result = VALUE #( FOR ls_struc IN lt_table WHERE");
+		buildExp("                         (     comp  = '1'");
+		buildExp("                           AND comp2 = 'A' )");
+		buildExp("                         ( ls_struc ) ).");
+
+		putAnyMethodAroundSrcAndExp();
+		
+		testRule();
+	}
+
+	@Test
+	void testWhereParenthesisInNextLineLeftOfEquals() {
+		// expect the WHERE condition to be moved below the FOR, which is at its leftmost position here
+		buildSrc("    lt_result = VALUE #(");
+		buildSrc("        FOR ls_struc IN lt_table WHERE");
+		buildSrc("    ( comp = '1'");
+		buildSrc("    AND comp2 = 'A' )");
+		buildSrc("        ( ls_struc ) ).");
+
+		buildExp("    lt_result = VALUE #(");
+		buildExp("        FOR ls_struc IN lt_table WHERE");
+		buildExp("        (     comp  = '1'");
+		buildExp("          AND comp2 = 'A' )");
+		buildExp("        ( ls_struc ) ).");
+
+		putAnyMethodAroundSrcAndExp();
+		
+		testRule();
+	}
 }

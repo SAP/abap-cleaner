@@ -1,5 +1,6 @@
 package com.sap.adt.abapcleaner.rulehelpers;
 
+import com.sap.adt.abapcleaner.base.ABAP;
 import com.sap.adt.abapcleaner.parser.*;
 import com.sap.adt.abapcleaner.programbase.UnexpectedSyntaxAfterChanges;
 import com.sap.adt.abapcleaner.programbase.UnexpectedSyntaxException;
@@ -107,9 +108,20 @@ public class TreeAlign {
 		// align first EQUIV / AND / OR column with the keyword "IF", "ELSEIF", "CHECK", "WHILE" or "WHERE" (right-aligned),
 		// unless that keyword is further right than the following lines (e.g. with WHERE at line end)
 		int basicIndent;
-		if (keyword.isLastTokenInLineExceptComment() && keyword.getStartIndexInLine() > leftMostIndent)
+		if (keyword.isLastTokenInLineExceptComment() && keyword.getStartIndexInLine() > leftMostIndent) {
 			basicIndent = leftMostIndent;
-		else if ((keywordAlignStyle != AlignStyle.DO_NOT_ALIGN) && allColumns.size() >= 2 && allColumns.get(0).columnType == TreeAlignColumnType.OPEN_BRACKET_FOR_BOOL_OP
+			// move basicIndent to the right if it is too far left: 
+			// - if basicIndent is further right than the first code Token inside the parent parenthesis, use this Token's indent
+			if (keyword.getParent() != null) {
+				Token firstCodeChild = keyword.getParent().getFirstChild().getNextWhileComment();
+				if (firstCodeChild != null && basicIndent < firstCodeChild.getStartIndexInLine()) {
+					basicIndent = firstCodeChild.getStartIndexInLine();
+				}
+			}
+			// - move basicIndent at least 2 blanks behind the indent of the command
+			basicIndent = Math.max(basicIndent, keyword.getParentCommand().getFirstToken().spacesLeft + ABAP.INDENT_STEP);
+			
+		} else if ((keywordAlignStyle != AlignStyle.DO_NOT_ALIGN) && allColumns.size() >= 2 && allColumns.get(0).columnType == TreeAlignColumnType.OPEN_BRACKET_FOR_BOOL_OP
 				&& allColumns.get(0).isEmpty() && allColumns.get(1).columnType == TreeAlignColumnType.BOOL_OPERATOR) {
 			allColumns.get(1).insertFirst(new AlignCellToken(keyword));
 			allColumns.get(1).rightAlign = (keywordAlignStyle == AlignStyle.RIGHT_ALIGN);

@@ -2113,4 +2113,38 @@ class AlignParametersTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testCompleteWhereClauseMoved() {
+		buildSrc("    rts_result = VALUE ty_ts_table( FOR <ls_struc> IN mts_source");
+		buildSrc("WHERE (    comp = 1");
+		buildSrc("        OR comp = 2 )");
+		buildSrc("                                    ( <ls_key> ) ).");
+
+		buildExp("    rts_result = VALUE ty_ts_table( FOR <ls_struc> IN mts_source");
+		buildExp("                                    WHERE (    comp = 1");
+		buildExp("                                            OR comp = 2 )");
+		buildExp("                                    ( <ls_key> ) ).");
+
+		putAnyMethodAroundSrcAndExp();
+		
+		testRule();
+	}
+
+	@Test
+	void testWhereParenthesisMoved() {
+		buildSrc("    rts_result = VALUE ty_ts_table( FOR <ls_struc> IN mts_source WHERE");
+		buildSrc("(    comp = 1");
+		buildSrc("  OR comp = 2 )");
+		buildSrc("                                    ( <ls_key> ) ).");
+
+		buildExp("    rts_result = VALUE ty_ts_table( FOR <ls_struc> IN mts_source WHERE");
+		buildExp("                                    (    comp = 1");
+		buildExp("                                      OR comp = 2 )");
+		buildExp("                                    ( <ls_key> ) ).");
+
+		putAnyMethodAroundSrcAndExp();
+		
+		testRule();
+	}
 }

@@ -296,20 +296,22 @@ class LogicalOperatorPositionTest extends RuleTestBase {
 
 	@Test
 	void testWaitUntil() {
-		buildSrc("  WAIT FOR ASYNCHRONOUS TASKS UNTIL");
-		buildSrc("       lo_instance=>is_task_done( lv_task_id ) = abap_true.");
+		buildSrc("    WAIT FOR ASYNCHRONOUS TASKS UNTIL");
+		buildSrc("         lo_instance=>is_task_done( lv_task_id ) = abap_true.");
 		buildSrc("");
-		buildSrc("  WAIT FOR ASYNCHRONOUS TASKS MESSAGING CHANNELS UNTIL");
-		buildSrc("       lo_instance=>is_task_done( lv_task_id ) = abap_true");
-		buildSrc("       UP TO 10 SECONDS.");
+		buildSrc("    WAIT FOR ASYNCHRONOUS TASKS MESSAGING CHANNELS UNTIL");
+		buildSrc("         lo_instance=>is_task_done( lv_task_id ) = abap_true");
+		buildSrc("         UP TO 10 SECONDS.");
 
-		buildExp("  WAIT FOR ASYNCHRONOUS TASKS");
-		buildExp("       UNTIL lo_instance=>is_task_done( lv_task_id ) = abap_true.");
+		buildExp("    WAIT FOR ASYNCHRONOUS TASKS");
+		buildExp("         UNTIL lo_instance=>is_task_done( lv_task_id ) = abap_true.");
 		buildExp("");
-		buildExp("  WAIT FOR ASYNCHRONOUS TASKS MESSAGING CHANNELS");
-		buildExp("       UNTIL lo_instance=>is_task_done( lv_task_id ) = abap_true");
-		buildExp("       UP TO 10 SECONDS.");
+		buildExp("    WAIT FOR ASYNCHRONOUS TASKS MESSAGING CHANNELS");
+		buildExp("         UNTIL lo_instance=>is_task_done( lv_task_id ) = abap_true");
+		buildExp("         UP TO 10 SECONDS.");
 
+		putAnyMethodAroundSrcAndExp();
+		
 		testRule();
 	}
 
@@ -325,6 +327,8 @@ class LogicalOperatorPositionTest extends RuleTestBase {
 		buildExp("               OR comp = 2 TRANSPORTING NO FIELDS.");
 		buildExp("    ENDLOOP.");
 
+		putAnyMethodAroundSrcAndExp();
+		
 		testRule();
 	}
 }
