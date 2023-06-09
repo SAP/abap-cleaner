@@ -329,9 +329,10 @@ public class AlignParametersRule extends RuleForCommands {
 			// rows in a VALUE or NEW constructor expression were already moved when the outer VALUE or NEW constructor itself was processed 
 			return token.getStartIndexInLine();
 		} else {
-			// return the start index of the first token in same line 
+			// return the start index of the first token in same line; however, do not go to parent level, e.g. in case of 
+			// "ls_struc = VALUE #( inner_struc = VALUE #( component = '1' ...", keep "component" right of "inner_struc"
 			Token testToken = token;
-			while (testToken.lineBreaks == 0 && testToken.getPrev() != null)
+			while (testToken.lineBreaks == 0 && testToken.getPrev() != null && testToken.getPrev() != token.getParent())
 				testToken = testToken.getPrev();
 			
 			// however, if the start of the line assigns to a very short variable (e.g. "exp = ..." or "act = ..."), 

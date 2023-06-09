@@ -2147,4 +2147,53 @@ class AlignParametersTest extends RuleTestBase {
 		
 		testRule();
 	}
+
+	@Test
+	void testOuterParenthesesObserved() {
+		// ensure that the components in the inner VALUE constructors are NOT moved further to the left than the components 
+		// of the outer VALUE constructor
+		rule.configMaxLineLength.setValue(100);
+
+		buildSrc("    rs_result = VALUE #( comp_1 = VALUE #(");
+		buildSrc("                            number = '001'");
+		buildSrc("                            text   = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1' )");
+		buildSrc("                        comp_2 = VALUE #(");
+		buildSrc("                            number = '002'");
+		buildSrc("                            text   = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa2' ) ).");
+
+		buildExp("    rs_result = VALUE #( comp_1 = VALUE #(");
+		buildExp("                             number = '001'");
+		buildExp("                             text   = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1' )");
+		buildExp("                         comp_2 = VALUE #(");
+		buildExp("                             number = '002'");
+		buildExp("                             text   = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa2' ) ).");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testCondenseNestedConstructors() {
+		rule.configMaxLineLength.setValue(80);
+
+		buildSrc("    rs_result = VALUE #( comp_1 = VALUE #(");
+		buildSrc("                            number = '001'");
+		buildSrc("                            text   = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1' )");
+		buildSrc("                        comp_2 = VALUE #(");
+		buildSrc("                            number = '002'");
+		buildSrc("                            text   = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa2' ) ).");
+
+		buildExp("    rs_result = VALUE #(");
+		buildExp("        comp_1 = VALUE #(");
+		buildExp("            number = '001'");
+		buildExp("            text   = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1' )");
+		buildExp("        comp_2 = VALUE #(");
+		buildExp("            number = '002'");
+		buildExp("            text   = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa2' ) ).");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }
