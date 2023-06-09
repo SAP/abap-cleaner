@@ -965,9 +965,10 @@ public class Command {
 		}
 
 		// distinguish assignment operators from comparison operators // this must be aligned with RuleForLogicalExpressions.executeOn()!
-		if (firstCode != null && firstCode.isAnyKeyword("IF", "ELSEIF", "CHECK", "WHILE"))
+		if (firstCode != null && firstCode.isAnyKeyword("IF", "ELSEIF", "CHECK", "WHILE")) {
 			distinguishOperators(true, firstCode, null);
-		else if (firstCode != null && firstCode.matchesOnSiblings(true, "LOOP AT|MODIFY|DELETE|FOR")) {
+		
+		} else if (firstCode != null && firstCode.matchesOnSiblings(true, "LOOP AT|MODIFY|DELETE|FOR")) {
 			// "LOOP AT ... [WHERE log_exp] [GROUP BY ...]"; "MODIFY itab ... WHERE log_exp ..." etc. // TODO: still missing: "PROVIDE", "ASSERT ... CONDITION", ...
 			// see ABAP Reference: 
 			// - "LOOP AT, itab", https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/index.htm?file=abaploop_at_itab.htm
@@ -976,8 +977,14 @@ public class Command {
 			// - "FOR, Table Iterations", https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/index.htm?file=abenfor_itab.htm
 			// - "FOR ... IN GROUP", https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/index.htm?file=abenfor_in_group.htm
 			distinguishOperators(false, firstCode, null, "WHERE", "GROUP BY|USING KEY|TRANSPORTING|FROM");
+
 		} else if (firstCode != null && firstCode.isKeyword("SELECT")) {
 			distinguishOperators(false, firstCode, null, "WHERE", "GROUP BY|HAVING|ORDER BY|%_HINTS|UNION|INTO");
+
+		} else if (firstCode != null && firstCode.isKeyword("WAIT")) {
+         // WAIT FOR ASYNCHRONOUS TASKS [MESSAGING CHANNELS] [PUSH CHANNELS] UNTIL log_exp [UP TO sec SECONDS].
+			distinguishOperators(false, firstCode, null, "UNTIL", "UP TO");
+		
 		} else {
 			distinguishOperators(false, firstToken, null);
 		}
@@ -1128,23 +1135,31 @@ public class Command {
 				token.type = isComparisonPosition ? TokenType.COMPARISON_OP : TokenType.KEYWORD;
 
 			if (token.getOpensLevel()) {
+				// cp. Token.getEndOfLogicalExpression(), section 2. and 3. 
+		      Token ctorKeyword = token.getPrevCodeSibling();
 				if (token.textEqualsAny("xsdbool(", "boolc(")) { // TODO: boolx( not yet supported, that one has parameters...
 					distinguishOperators(true, token.getNext(), token.getNextSibling());
 					
-				} else if (token.getPrev() != null && token.getPrev().isKeyword("COND")) { 
+				} else if (ctorKeyword != null && ctorKeyword.isKeyword("COND")) { 
 					// COND type( [let_exp] WHEN log_exp THEN ... WHEN .. )
 					distinguishOperators(false, token.getNext(), token.getNextSibling(), "WHEN", "THEN");
 				
-				} else if (token.getPrev() != null && token.getPrev().isKeyword("WHERE")) { 
-					// "FOR ... WHERE ( log_exp )", see ABAP Reference:
-					// - "FOR, cond", https://ldcier1.wdf.sap.corp:44300/sap/public/bc/abap/docu?object=abenfor_cond
-					distinguishOperators(true, token.getNext(), token.getNextSibling());
-				
-				} else if (token.getPrev() != null && token.getPrev().isAnyKeyword("REDUCE", "NEW", "VALUE")) { 
+				} else if (ctorKeyword != null && ctorKeyword.isAnyKeyword("REDUCE", "NEW", "VALUE")) { 
 					// "FOR var = rhs [THEN expr] UNTIL|WHILE log_exp [let_exp] ...", see ABAP Reference:
 					// - "FOR, Iteration Expressions", https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/index.htm?file=abenfor.htm
 					// - "FOR, Conditional Iteration", https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/index.htm?file=abenfor_conditional.htm
 					distinguishOperators(false, token.getNext(), token.getNextSibling(), "UNTIL|WHILE", "LET|NEXT|FOR");
+				
+				} else if (ctorKeyword != null && ctorKeyword.isKeyword("FILTER")) { 
+		      	// FILTER type( itab [EXCEPT] [USING KEY keyname] WHERE c1 op f1 [AND c2 op f2 [...]] ) ...
+		      	// FILTER type( itab [EXCEPT] IN ftab [USING KEY keyname] WHERE c1 op f1 [AND c2 op f2 [...]] ) ...
+					distinguishOperators(false, token.getNext(), token.getNextSibling(), "WHERE", null);
+				
+				} else if (ctorKeyword != null && ctorKeyword.isKeyword("WHERE")) { 
+					// "FOR ... WHERE ( log_exp )" in REDUCE|NEW|VALUE constructor expressions, see ABAP Reference:
+		         // - "FOR, Table Iterations", https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/index.htm?file=abenfor_itab.htm
+					// - "FOR, cond", https://ldcier1.wdf.sap.corp:44300/sap/public/bc/abap/docu?object=abenfor_cond
+					distinguishOperators(true, token.getNext(), token.getNextSibling());
 				
 				} else if (token.textEquals("(")) {
 					// use the current value inside the parenthesis
@@ -2081,12 +2096,19 @@ public class Command {
 		return (firstToken.isIdentifier() && !firstToken.getOpensLevel() && next != null && next.type != TokenType.ASSIGNMENT_OP);
 	}
 
-	/** a hard-coded pattern used for development to find matching Commands in all sample code files */
+	/** Returns true if the Command matches a hard-coded pattern or condition.
+	 * This method can be used during development to search for examples in all sample code files. */
 	public final boolean matchesPattern() {
-		// find MOVE: chains
-		return firstToken.isKeyword("MOVE") && isSimpleChain();
+      // useful snippets:
+      // - is a certain Token found anywhere?
+      //   Token token = firstToken.getLastTokenDeep(true, TokenSearch.ASTERISK, "SEARCH_TEXT|ALTERNATIVE|...");
+      //   return (token != null && ...);
+      // - was a certain cleanup rule used?
+		//   changeControl.wasRuleUsed(RuleID....);
 
-		// snippet to make the pattern match depend on whether a certain cleanup rule was used:
-		// changeControl.wasRuleUsed(RuleID....);
-}
+      Token token = firstToken.getLastTokenDeep(true, TokenSearch.ASTERISK, "WHERE|WHEN|UNTIL|WHILE");
+      return (token != null && token.lineBreaks == 0 && token.getNextCodeToken() != null && token.getNextCodeToken().lineBreaks > 0);
+      
+		// return false;
+	}
 }
