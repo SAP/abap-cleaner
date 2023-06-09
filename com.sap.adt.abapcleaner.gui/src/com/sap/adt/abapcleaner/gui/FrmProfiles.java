@@ -239,14 +239,11 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 	   	return normalBackground;
 	   }
 	   
-	   private void setRuleHighlight(Rule rule, int index) {
-	      ProfileHighlightItem highlightItem = getHighlightItem();
+	   private void setRuleHighlight(Rule rule, int index, ProfileHighlightItem highlightItem) {
 	      Color ruleBackground = getRuleBackground(rule, highlightItem, true);
 	   	TableItem tableItem = chkRules.getItem(index);
 	      if (!tableItem.getBackground().equals(ruleBackground))
 	      	tableItem.setBackground(ruleBackground);
-	      if (rule == curRule)
-	      	setRuleNameHighlight(rule);
 	   }
 	   
 	   private void setRuleNameHighlight(Rule rule) {
@@ -315,13 +312,16 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
       
       btnGenerateUnitTest.setVisible(Program.showDevFeatures());
       btnGenerateExample.setVisible(Program.showDevFeatures());
-      
+
+      // fill the lists of profiles and rules and show the selected rule, without highlighting them yet  
+      refreshProfileList(curProfileName);
+
 		shell.open();
 		shell.layout();
 
-      // only now, Colors for highlighting can be retrieved and controls filled 
+      // only now, Colors for highlighting can be retrieved and highlighting applied - otherwise colors would be wrong for dark mode  
 		highlighter = new Highlighter(display);
-      refreshProfileList(curProfileName);
+		refreshHighlight(false);
       
 		while (!shell.isDisposed()) {
 			if (!display.readAndDispatch()) {
@@ -666,7 +666,7 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 		lblRuleDescriptionTitle.setText("Description:");
 		
 		pnlRuleDescription = new Composite(pnlRule, SWT.NONE);
-		GridData gd_pnlRuleDescription = new GridData(SWT.FILL, SWT.TOP, true, false, 1, 1);
+		GridData gd_pnlRuleDescription = new GridData(SWT.FILL, SWT.TOP, false, false, 1, 1);
 		pnlRuleDescription.setLayoutData(gd_pnlRuleDescription);
 		GridLayout gl_pnlRuleDescription = new GridLayout(1, false);
 		gl_pnlRuleDescription.marginHeight = 0;
@@ -830,7 +830,7 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 
 		codeDisplay = new CodeDisplay(pnlRule, SWT.NONE);
 		codeDisplay.setColors(codeDisplayColors);
-		codeDisplay.setLayoutData(new GridData(SWT.FILL, SWT.FILL, false, true, 1, 1));
+		codeDisplay.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1));
 		codeDisplay.setCodeFontSize(CodeDisplay.DEFAULT_FONT_SIZE);
 		new Label(pnlRule, SWT.NONE);
 		
@@ -1289,23 +1289,62 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
       if (curRule != null && configControls != null) {
 	      for (ConfigControl configControl : configControls) {
 	      	configControl.setEnabled(curRule.isConfigValueEnabled(configControl.getConfigValue()));
-	      	if (highlighter != null) {
-	      		highlighter.setConfigHighlight(curRule, configControl);
-	      	}
 	      }
       }
-      if (curRule != null && highlighter != null) {
-	      for (int i = 0; i < chkRules.getItemCount(); ++i) {
-	         if (itemsInChkRules[i] == curRule) {
-	         	highlighter.setRuleHighlight(curRule, i);
-	         	break;
-	         }
-         }
-	      highlighter.setRuleNameHighlight(curRule);
-      }
+      
+      refreshHighlight(true);
    }
 
-	private void createProfile() {
+   private void refreshHighlight(boolean curRuleOnly) {
+   	// calls highlighter function as done by setProfile() and setRule(), but without everything else
+   	// if curRuleOnly == true, then only update highlighting that is affected by changed configuration 
+   	
+   	if (curProfile == null || highlighter == null)
+   		return;
+
+   	ProfileHighlightItem highlightItem = getHighlightItem();
+   	
+   	// general (i.e. non-rule-specific) UI features (buttons, options, labels)
+   	if (!curRuleOnly) {
+   		highlighter.setControlsHighlight(highlightItem);
+   	}
+   	
+   	// list of rules
+      for (int i = 0; i < chkRules.getItemCount(); ++i) {
+      	if (itemsInChkRules[i] instanceof Rule) {
+      		Rule rule = (Rule)itemsInChkRules[i];
+      		if (rule == curRule || !curRuleOnly) {
+	         	highlighter.setRuleHighlight(curRule, i, highlightItem);
+      		}
+      	}
+      }
+
+      if (curRule != null) {
+      	// rule name
+      	highlighter.setRuleNameHighlight(curRule);
+
+      	// rule references
+      	if (!curRuleOnly) {
+	      	RuleReference[] references = curRule.getReferences();
+	         for (int i = 0; i < getRuleReferenceCount(); ++i) {
+	            RuleReference reference = (references == null || i >= references.length) ? null : references[i];
+	            if (reference != null) {
+	            	highlighter.setRuleChaptersStyle(lblRuleChapters[i], reference.hasLink());
+	            }
+	         }
+      	}
+
+      	// rule configuration
+      	if (configControls != null) {
+		      for (ConfigControl configControl : configControls) {
+		      	highlighter.setConfigHighlight(curRule, configControl);
+		      }
+         }
+	   }
+   }
+   
+
+   private void createProfile() {
       FrmInputBox inputBox = new FrmInputBox();
       String name = inputBox.open("", "Profile name:", true);
       if (StringUtil.isNullOrEmpty(name))
@@ -1592,11 +1631,12 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
       ++suspendItemCheck;
       try {
          boolean activate = chkRules.getItem(index).getChecked(); 
+	      ProfileHighlightItem highlightItem = getHighlightItem();
          if (itemsInChkRules[index] instanceof Rule) {
          	Rule rule = (Rule)itemsInChkRules[index];
             rule.isActive = activate;
             if (highlighter != null) {
-            	highlighter.setRuleHighlight(rule, index);
+            	highlighter.setRuleHighlight(rule, index, highlightItem);
             }
             
             int groupIndex = findRuleGroupIndex(rule.getGroupID());
@@ -1627,7 +1667,7 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
                   if (rule.getGroupID() == group.iD && rule.isActive != activate) {
                      rule.isActive = activate;
                      if (highlighter != null) {
-                     	highlighter.setRuleHighlight(rule, i);
+                     	highlighter.setRuleHighlight(rule, i, highlightItem);
                      }
                      chkRules.getItem(i).setChecked(activate);
                   }
