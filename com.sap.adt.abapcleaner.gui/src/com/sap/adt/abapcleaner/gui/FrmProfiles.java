@@ -1314,7 +1314,7 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
       	if (itemsInChkRules[i] instanceof Rule) {
       		Rule rule = (Rule)itemsInChkRules[i];
       		if (rule == curRule || !curRuleOnly) {
-	         	highlighter.setRuleHighlight(curRule, i, highlightItem);
+	         	highlighter.setRuleHighlight(rule, i, highlightItem);
       		}
       	}
       }
