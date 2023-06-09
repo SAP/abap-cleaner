@@ -446,7 +446,12 @@ public class AlignParametersRule extends RuleForCommands {
 			} else if (!other.isAsteriskCommentLine()) { //  other.isQuotMarkComment() && other.isCommentLine()
 				int curIndent = other.getStartIndexInLine();
 				if (curIndent != otherLineIndent) {
-					command.addIndent(otherLineIndent - curIndent, curIndent, other, other.getNextSibling());
+					Token addIndentEnd = other.getNextSibling();
+					// in case of WHERE ( ... ), add indent to the whole clause
+					if (other.isKeyword("WHERE") && addIndentEnd.textEquals("(")) {
+						addIndentEnd = addIndentEnd.getNextSibling().getNextSibling();
+					}
+					command.addIndent(otherLineIndent - curIndent, curIndent, other, addIndentEnd);
 					changed = true;
 				}
 				// if applicable, adjust the line breaks of the first 'otherLine', e.g. moving it behind the parent token 
@@ -552,7 +557,7 @@ public class AlignParametersRule extends RuleForCommands {
 					// store 'other line starts'; in case this is a keyword like "EXPORTING", this may be removed again later
 					otherLineStarts.add(token); 
 					tableEndsWithOtherLine = true;
-				} else if (token.textEquals("(") && token.getPrevCodeSibling() != null && token.getPrevCodeSibling().isKeyword("WHERE")) {
+				} else if (token.textEquals("(") && token.lineBreaks == 0 && token.getPrevCodeSibling() != null && token.getPrevCodeSibling().isKeyword("WHERE")) {
 					// skip this case of a logical expression in parentheses after WHERE, because it is NOT a table row:
 					// 'VALUE type( FOR ... IN ... WHERE ( log_exp ) ... ).' 
 				} else if (token.textEquals("(")) {
