@@ -1761,6 +1761,17 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 					sb.append(System.lineSeparator());
 					sb.append(ABAP.COMMENT_SIGN_STRING + " " + folderFile + ": line " + Cult.format(command.getSourceLineNumStart()) + System.lineSeparator());
 					sb.append(command.toString());
+
+					// for Commands like LOOP ..., IF ... etc., add the closing Command, too, so the resulting text can more easily be used for testing
+					if (command.getOpensLevel() && !command.getClosesLevel()) {
+						Command closingCommand = command.getNextSibling();
+						while (closingCommand != null && closingCommand.getOpensLevel()) { 
+							closingCommand = closingCommand.getNextSibling();
+						}
+						if (closingCommand != null) {
+							sb.append(closingCommand.toString());
+						}
+					}
 					sb.append(System.lineSeparator());
 				}
 				command = command.getNext();
