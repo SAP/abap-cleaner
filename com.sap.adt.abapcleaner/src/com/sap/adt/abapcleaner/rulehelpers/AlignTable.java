@@ -51,13 +51,17 @@ public class AlignTable {
 
 	public final void removeLastLine() {
 		if (getLineCount() > 0) {
-			AlignLine line = lines.get(lines.size() - 1);
-			for (AlignColumn column : columns) {
-				if (line.getCell(column) != null)
-					column.invalidate();
-			}
-			lines.remove(lines.size() - 1);
+			removeLineAt(getLineCount() - 1);
 		}
+	}
+
+	private final void removeLineAt(int index) {
+		AlignLine line = lines.get(index);
+		for (AlignColumn column : columns) {
+			if (line.getCell(column) != null)
+				column.invalidate();
+		}
+		lines.remove(index);
 	}
 
 	public final int getTotalMonoLineWidth() {
@@ -160,9 +164,19 @@ public class AlignTable {
 		boolean isFirstLine = true;
 		for (AlignLine line : lines) {
 			int lineBreaks = isFirstLine ? firstLineBreaks : 1;
-			int spacesLeft = (isFirstLine && (firstLineBreaks == 0) && !startsWithFirstTokenInCode) ? 1 : basicIndent;
+			int spacesLeft = (lineBreaks == 0 && !startsWithFirstTokenInCode) ? 1 : basicIndent;
 			boolean lineChanged = false;
 
+			// in the special case VALUE or NEW constructors for tables, the AlignTable may contain the assignments for 
+			// multiple table rows, which should all continue behind their opening "(", rather than being moved to the next line  
+			Token firstTokenInLine = line.getFirstToken();
+			Token prevToken = (firstTokenInLine == null) ? null : firstTokenInLine.getPrev();
+			if (!isFirstLine && firstTokenInLine != null && firstTokenInLine.lineBreaks == 0 
+					&& prevToken != null && prevToken.getOpensLevel() && prevToken.getEndIndexInLine() + 1 == basicIndent) {
+				lineBreaks = 0;
+				spacesLeft = 1;
+			}
+			
 			int columnIndent = basicIndent;
 			for (AlignColumn column : columns) {
 				if (column.getForceIndent() >= 0) {
@@ -261,5 +275,15 @@ public class AlignTable {
 			sb.append(System.lineSeparator());
 		}
 		return sb.toString();
+	}
+
+	public void removeAllLinesOfParent(Token parentToken) {
+		for (int i = lines.size() - 1; i >= 0; --i) {
+			AlignLine line = lines.get(i);
+			Token firstToken = line.getFirstToken();
+			if (firstToken == null || firstToken.getParent() == parentToken) {
+				removeLineAt(i);
+			}
+		}
 	}
 }

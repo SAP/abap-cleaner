@@ -94,7 +94,7 @@ public class Term {
 		lastToken.setNextSibling(value);
 	}
 
-	static boolean isFirstTokenAllowed(Token token) {
+	public static boolean isFirstTokenAllowed(Token token) {
 		switch (token.type) {
 			case IDENTIFIER:
 			case LITERAL:

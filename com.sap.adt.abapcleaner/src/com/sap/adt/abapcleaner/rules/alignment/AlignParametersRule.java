@@ -102,32 +102,36 @@ public class AlignParametersRule extends RuleForCommands {
 			+ LINE_SEP 
 			+ LINE_SEP + "    lts_other_table = cl_other_class=>create_table(" 
 			+ LINE_SEP + "      EXPORTING" 
-			+ LINE_SEP + "        iv_item_key = '20220030000102'" 
+			+ LINE_SEP + "        iv_item_key = '12345'" 
 			+ LINE_SEP + "        iv_category = 'ABC'" 
+			+ LINE_SEP + "*        iv_size = 100'" 
 			+ LINE_SEP + "        iv_name = 'ANY_NAME'" 
 			+ LINE_SEP + "        iv_qty = 8 )." 
 			+ LINE_SEP 
 			+ LINE_SEP + "    CALL METHOD procedural_call_example" 
 			+ LINE_SEP + "      EXPORTING" 
 			+ LINE_SEP + "        iv_contract_id = lo_contract1->ms_data-contract_id" 
-			+ LINE_SEP + "        iv_item_key = '20220030000102'" 
+			+ LINE_SEP + "        iv_item_key = '13579'" 
 			+ LINE_SEP + "      IMPORTING" 
 			+ LINE_SEP + "        ev_category = lv_any_category" 
 			+ LINE_SEP + "        ev_item_type = lv_any_item_type" 
 			+ LINE_SEP + "      CHANGING" 
 			+ LINE_SEP + "        cv_qty = lv_quantity." 
 			+ LINE_SEP 
-			+ LINE_SEP + "    ets_fulfillment = VALUE #( event_date = gc_any_event_date" 
-			+ LINE_SEP + "                                amount = gc_any_amount_per_unit" 
-			+ LINE_SEP + "                               ( fulfillment_number = lc_fulfill_num_1" 
-			+ LINE_SEP + "                                  qty = lc_fulfill_qty_1 )" 
-			+ LINE_SEP + "                                 ( fulfillment_number = lc_fulfill_num_2" 
-			+ LINE_SEP + "                                    qty = lc_fulfill_qty_2 )" 
-			+ LINE_SEP + "                                       ( fulfillment_number = lc_fulfill_num_3" 
-			+ LINE_SEP + "                                      qty = lc_fulfill_qty_3 ) )." 
+			+ LINE_SEP + "    ets_table = VALUE #( date = gc_any_date" 
+			+ LINE_SEP + "                           id = gc_any_id" 
 			+ LINE_SEP 
-			+ LINE_SEP + "    ets_fulfillment = VALUE #( event_date = gc_other_event_date" 
-			+ LINE_SEP + "                                amount = gc_other_amount_per_unit" 
+			+ LINE_SEP + "                           ( item_name = 'ANY'" 
+			+ LINE_SEP + "*                      size = 'M'" 
+			+ LINE_SEP + "                              quantity = 1 )" 
+			+ LINE_SEP + "                             ( item_name = 'OTHER'" 
+			+ LINE_SEP + "                                quantity = 2" 
+			+ LINE_SEP + "                                reference_id = '12345' )" 
+			+ LINE_SEP + "                                   ( item_name = 'THIRD'" 
+			+ LINE_SEP + "                                  quantity = 3 ) )." 
+			+ LINE_SEP 
+			+ LINE_SEP + "    ets_fulfillment = VALUE #( event_date = gc_any_event_date" 
+			+ LINE_SEP + "                                amount = gc_any_amount" 
 			+ LINE_SEP + "                               ( fulfillment_number = lc_fulfill_num_1  qty = lc_fulfill_qty_1 )" 
 			+ LINE_SEP + "                                 ( fulfillment_number = lc_fulfill_num_2  qty = lc_fulfill_qty_2 )" 
 			+ LINE_SEP + "                                     ( fulfillment_number = lc_fulfill_num_3  qty = lc_fulfill_qty_3 ) )." 
@@ -150,13 +154,15 @@ public class AlignParametersRule extends RuleForCommands {
 	final ConfigBoolValue configPutProceduralCallKeywordsOnOwnLine = new ConfigBoolValue(this, "PutProceduralCallKeywordsOnOwnLine", "Procedural call: put keywords (EXPORTING etc.) on own line", false);
 	final ConfigBoolValue configPutFunctionalCallKeywordsOnOwnLine = new ConfigBoolValue(this, "PutFunctionalCallKeywordsOnOwnLine", "Functional call: put keywords (EXPORTING etc.) on own line", false);
 	final ConfigBoolValue configAlignAssignments = new ConfigBoolValue(this, "AlignAssignments", "Align assignments", true, true, LocalDate.of(2023, 3, 3));
+	final ConfigBoolValue configAlignAcrossTableRows = new ConfigBoolValue(this, "AlignAcrossTableRows", "Align assignments across rows of table constructors", true, false, LocalDate.of(2023, 6, 9));
 	final ConfigEnumValue<ComponentsOnSingleLine> configKeepComponentsOnSingleLine = new ConfigEnumValue<ComponentsOnSingleLine>(this, "KeepParametersOnSingleLine", "Table rows: Keep multiple components on single line",
 																														new String[] { "never", "if maximum line length B is observed", "always" }, ComponentsOnSingleLine.IF_BELOW_MAX_LINE_LENGTH);
 	final ConfigEnumValue<ContentLeftOfAssignOp> configAllowContentLeftOfAssignOp = new ConfigEnumValue<ContentLeftOfAssignOp>(this, "AllowContentLeftOfAssignOp", "Allow line starts left of assignment operator",
 																															new String[] { "never", "only to keep maximum line length", "always" }, ContentLeftOfAssignOp.TO_KEEP_MAX_LINE_LENGTH, ContentLeftOfAssignOp.NEVER, LocalDate.of(2022, 3, 19));
 
 	private final ConfigValue[] configValues = new ConfigValue[] { configMaxLineLength, configMaxLineLengthForSingleLine, configMaxParamCountBehindProceduralCall, configMaxParamCountBehindFunctionalCall, 
-																						configPutProceduralCallKeywordsOnOwnLine, configPutFunctionalCallKeywordsOnOwnLine, configAlignAssignments, configKeepComponentsOnSingleLine, configAllowContentLeftOfAssignOp };
+																						configPutProceduralCallKeywordsOnOwnLine, configPutFunctionalCallKeywordsOnOwnLine, configAlignAssignments, configAlignAcrossTableRows, 
+																						configKeepComponentsOnSingleLine, configAllowContentLeftOfAssignOp };
 
 	@Override
 	public ConfigValue[] getConfigValues() { return configValues; }
@@ -179,6 +185,8 @@ public class AlignParametersRule extends RuleForCommands {
 		if (firstCode == null)
 			return false;
 
+		boolean changed = false;
+
 		// align CALL METHOD|FUNCTION|BADI without parentheses (a call with parentheses will simply be handled by the "all other cases" section below)
 		// also align CREATE OBJECT, if it was not replaced by a NEW constructor by the CreateObjectRule
 		Token period = command.getLastNonCommentToken();
@@ -191,7 +199,9 @@ public class AlignParametersRule extends RuleForCommands {
 			if (firstKeyword != null && firstKeyword.getParent() == null) { // otherwise, continue below
 				Token parentToken = firstKeyword.getPrevCodeSibling();
 				int baseIndent = command.getFirstToken().getStartIndexInLine(); 
-				return alignParams(code, command, parentToken, period, baseIndent, baseIndent, ContentType.PROCEDURAL_CALL_PARAMS);
+				if (alignParams(code, command, parentToken, period, baseIndent, baseIndent, ContentType.PROCEDURAL_CALL_PARAMS)) {
+					changed = true;
+				}
 			} 
 		}
 
@@ -201,49 +211,32 @@ public class AlignParametersRule extends RuleForCommands {
 		 || firstCode.matchesOnSiblings(true, "RAISE", "SHORTDUMP", "TYPE", TokenSearch.ANY_IDENTIFIER, "EXPORTING")) {
 			// (see ABAP Reference: "RAISE EXCEPTION" and "RAISE SHORTDUMP")
 			Token firstKeyword = firstCode.getLastTokenOnSiblings(true, TokenSearch.ASTERISK, "EXPORTING");
-			if (firstKeyword == null)
-				return false;
-			Token parentToken = firstKeyword.getPrevCodeSibling();
-			int baseIndent = command.getFirstToken().getStartIndexInLine(); 
-			return alignParams(code, command, parentToken, period, baseIndent, baseIndent, ContentType.PROCEDURAL_CALL_PARAMS);
+			if (firstKeyword != null) {
+				Token parentToken = firstKeyword.getPrevCodeSibling();
+				int baseIndent = command.getFirstToken().getStartIndexInLine(); 
+				if (alignParams(code, command, parentToken, period, baseIndent, baseIndent, ContentType.PROCEDURAL_CALL_PARAMS)) {
+					changed = true;
+				}
+			}
 		}
 
 		// align READ|DELETE TABLE ... WITH [TABLE] KEY ...
 		if (firstCode.matchesOnSiblings(true, "READ|DELETE", "TABLE")) {
-			Token keyToken = firstCode.getLastTokenOnSiblings(true, TokenSearch.ASTERISK, "WITH", TokenSearch.makeOptional("TABLE"), "KEY");
-			if (keyToken == null)
-				return false;
-
-			// find the first identifier that is followed by a "="
-			Token identifier = keyToken.getNextCodeSibling();
-			if (identifier.textEquals("=")) // "WITH KEY = dobj [BINARY SEARCH]"
-				return false;
-			Token next = identifier.getNextCodeSibling();
-			if (next == null)
-				return false;
-			if (!next.textEquals("=")) {
-				next = next.getNextCodeSibling();
-				if (next != null && next.isKeyword("COMPONENTS"))
-					next = next.getNextCodeSibling();
-				if (next == null)
-					return false;
-				identifier = next;
+			Token identifier = getFirstComponentOfTableKey(firstCode);
+			if (identifier != null) {
+				// find the end of the component assignment sequence
+				// for BINARY SEARCH, REFERENCE INTO, TRANSPORTING NO FIELDS, but because of .getLastTokenOnSiblings, we keep it simple
+				Token end = identifier.getLastTokenOnSiblings(true, TokenSearch.ASTERISK, "BINARY|INTO|ASSIGNING|REFERENCE|TRANSPORTING|.");
+				if (end != null && identifier != end) {
+					int baseIndent = (identifier.lineBreaks > 0) ? identifier.getStartIndexInLine() : identifier.getPrev().getEndIndexInLine() + 1;
+					if (alignParams(code, command, identifier.getPrev(), end, baseIndent, baseIndent, ContentType.TABLE_KEY)) {
+						changed = true;
+					}
+				}
 			}
-			next = identifier.getNextCodeSibling();
-			if (next == null || !next.textEquals("=")) // "WITH KEY dobj [BINARY SEARCH]"
-				return false;
-
-			// find the end of the component assignment sequence
-			// for BINARY SEARCH, REFERENCE INTO, TRANSPORTING NO FIELDS, but because of .getLastTokenOnSiblings, we keep it simple
-			Token end = identifier.getLastTokenOnSiblings(true, TokenSearch.ASTERISK, "BINARY|INTO|ASSIGNING|REFERENCE|TRANSPORTING|.");
-			if (end == null || identifier == end)
-				return false;
-			int baseIndent = (identifier.lineBreaks > 0) ? identifier.getStartIndexInLine() : identifier.getPrev().getEndIndexInLine() + 1;
-			return alignParams(code, command, identifier.getPrev(), end, baseIndent, baseIndent, ContentType.TABLE_KEY);
 		}
 
-		// all other cases: align assignments in parentheses
-		boolean changed = false;
+		// align assignments in parentheses (including parentheses as parts of the above cases!)
 		// if line starts are allowed left of an assignment operator to preserve maximum line length, perform 2 passes,
 		// because we can't predict in advance what happens to inner constructs, and the first pass may prove too radical 
 		// (e.g. if inner lists had to be broken into multiple lines even with the minimum indent); this can then be revised  
@@ -251,6 +244,9 @@ public class AlignParametersRule extends RuleForCommands {
 		ContentLeftOfAssignOp contentLeftOfAssignOp = getConfigAllowContentLeftOfAssignOp();
 		int passCount = (contentLeftOfAssignOp == ContentLeftOfAssignOp.NEVER) ? 1 : 2;
 		for (int pass = 0; pass < passCount; ++pass) {
+			HashSet<Token> allRowsAlignedForParent = new HashSet<>();
+			boolean alignAcrossTableRows = configAlignAcrossTableRows.getValue();
+
 			Token token = command.getFirstToken();
 			while (token != null) {
 				Token end = token.getEndOfParamsOrComponentsList(); 
@@ -271,8 +267,15 @@ public class AlignParametersRule extends RuleForCommands {
 						// keep different values for base indent and minimum indent to decide depending on content width  
 					}
 		
-					if (alignParams(code, command, token, end, baseIndent, minimumIndent, contentType)) {
+					if (contentType == ContentType.ROW_IN_VALUE_OR_NEW_CONSTRUCTOR && allRowsAlignedForParent.contains(token.getParent())) {
+						// skip this row, because it was already aligned with the first row
+					} else if (alignParams(code, command, token, end, baseIndent, minimumIndent, contentType)) {
 						changed = true;
+					}
+					
+					// ensure that further table rows of this constructor will be skipped 
+					if (contentType == ContentType.ROW_IN_VALUE_OR_NEW_CONSTRUCTOR && alignAcrossTableRows) {
+						allRowsAlignedForParent.add(token.getParent());
 					}
 				}
 				token = token.getNext();
@@ -282,6 +285,36 @@ public class AlignParametersRule extends RuleForCommands {
 				break;
 		}
 		return changed;
+	}
+
+	private Token getFirstComponentOfTableKey(Token firstCode) {
+		Token keyToken = firstCode.getLastTokenOnSiblings(true, TokenSearch.ASTERISK, "WITH", TokenSearch.makeOptional("TABLE"), "KEY");
+		if (keyToken == null)
+			return null;
+
+		// find the first identifier that is followed by a "="
+		Token identifier = keyToken.getNextCodeSibling();
+		if (identifier.textEquals("=")) // "WITH KEY = dobj [BINARY SEARCH]"
+			return null;
+		
+		Token next = identifier.getNextCodeSibling();
+		if (next == null)
+			return null;
+		
+		if (!next.textEquals("=")) {
+			next = next.getNextCodeSibling();
+			if (next != null && next.isKeyword("COMPONENTS"))
+				next = next.getNextCodeSibling();
+			if (next == null)
+				return null;
+			identifier = next;
+		}
+		
+		next = identifier.getNextCodeSibling();
+		if (next == null || !next.textEquals("=")) // "WITH KEY dobj [BINARY SEARCH]"
+			return null;
+		
+		return identifier;
 	}
 
 	private ContentType determineContentType(Token token) {
@@ -351,27 +384,49 @@ public class AlignParametersRule extends RuleForCommands {
 		}
 	}
 
-	public final boolean alignParams(Code code, Command command, Token parentToken, Token end, int baseIndent, int minimumIndent, ContentType contentType) throws UnexpectedSyntaxAfterChanges {
+	public final boolean alignParams(Code code, Command command, Token parentToken, Token endToken, int baseIndent, int minimumIndent, ContentType contentType) throws UnexpectedSyntaxAfterChanges {
 		boolean changed = false;
 
 		// -------------------------------------------------------------------
 		// 1. prepare alignment 
 
 		// build an AlignTable and a list of 'otherLineStarts' (i.e. comment lines, inner parentheses)
-		AlignTable table;
+		AlignTable table = new AlignTable(MAX_COLUMN_COUNT);
+		ArrayList<Token> parentTokens = new ArrayList<Token>();
 		ArrayList<Token> otherLineStarts = new ArrayList<Token>();
+		boolean alignAcrossTableRows = configAlignAcrossTableRows.getValue();
 		try {
-			table = buildAlignTable(parentToken, end, contentType, otherLineStarts);
+			// usually, we only consider the range from parentToken to endToken; however, for table constructors, the components  
+			// of ALL rows ( ... ) ( ... ) can be added to the same AlignTable; in this case, parentToken is only the start of the FIRST row
+			Token curParent = parentToken;
+			Token curEnd = endToken;
+			do {
+				parentTokens.add(curParent);
+				buildAlignTable(table, curParent, curEnd, contentType, otherLineStarts);
+
+				// in case of a table constructor, search the parentheses for the next row
+				if (contentType != ContentType.ROW_IN_VALUE_OR_NEW_CONSTRUCTOR || !alignAcrossTableRows)
+					break;
+				Token token = findStartOfNextRow(curEnd);
+				if (token == null)
+					break;
+				
+				// enhance the AlignTable with the next row
+				curParent = token;
+				curEnd = token.getNextSibling();
+			} while(true);
+			
 		} catch (UnexpectedSyntaxException ex) {
 			(new UnexpectedSyntaxBeforeChanges(this, ex)).addToLog();
 			return false;
 		}
+
 		// anything to align?
 		if (table.isEmpty() && otherLineStarts.size() == 0) {
 			return false;
 		}
 
-		// if configured, join assignment operators and expressions into previous columns, this preventing the alignment 
+		// if configured, join assignment operators and expressions into previous columns, thus preventing the alignment
 		// of assignments, or removing existing alignments
 		if (!configAlignAssignments.getValue() ) {
 			Columns[] columnsToJoinIntoPrevious = new Columns[] { Columns.LET_ASSIGNMENT_OP, Columns.LET_EXPRESSION, Columns.ASSIGNMENT_OP, Columns.EXPRESSION };
@@ -394,7 +449,19 @@ public class AlignParametersRule extends RuleForCommands {
 		TableStart tableStart = determineTableStart(parentToken, baseIndent, minimumIndent, contentType, table, otherLineStarts);
 		
 		// determine whether to keep the whole content of the parentheses / brackets on one line
-		boolean keepOnSingleLine = determineKeepOnSingleLine(parentToken, end, tableStart.earlyIndent);
+		
+		boolean keepOnSingleLine = false;
+		if (contentType == ContentType.ROW_IN_VALUE_OR_NEW_CONSTRUCTOR && alignAcrossTableRows) {
+			// for rows that can be kept on one line, remove the corresponding assignments from the AlignTable
+			for (Token curParent : parentTokens) {
+				if (determineKeepOnSingleLine(curParent, curParent.getNextSibling(), tableStart.earlyIndent)) {
+					table.removeAllLinesOfParent(curParent);
+				}
+			}
+		} else {
+			// only the range parentToken ... endToken is included in the AlignTable; determine whether it can be kept on one line
+			keepOnSingleLine = determineKeepOnSingleLine(parentToken, endToken, tableStart.earlyIndent);
+		}
 		
 		// -------------------------------------------------------------------
 		// 2. perform alignment changes 
@@ -473,17 +540,62 @@ public class AlignParametersRule extends RuleForCommands {
 		return changed;
 	}
 
-	private AlignTable buildAlignTable(Token parentToken, Token end, ContentType contentType, ArrayList<Token> otherLineStarts) throws UnexpectedSyntaxException {
-		AlignTable table;
-		table = new AlignTable(MAX_COLUMN_COUNT);
+	private Token findStartOfNextRow(Token endOfRow) throws UnexpectedSyntaxException {
+		// find next table row by skipping any assignments 'component = arithmetic_expression' between rows
+		Token token = endOfRow.getNextCodeSibling();
+		while (token != null) {
+			// start of next table row found?
+			if (token.textEquals("("))
+				return token;
+
+			// skip the component name
+			if (!token.isIdentifier())
+				return null;
+			token = token.getNextCodeSibling();
+			
+			// skip the assignment operator
+			if (token == null || !token.isAssignmentOperator())
+				return null;
+			token = token.getNextCodeSibling();
+			
+			// skip the right-hand-side expression
+			if (token == null)
+				return null;
+			Term expression = Term.createArithmetic(token);
+			token = expression.lastToken.getNextCodeSibling();
+		}
+		
+		return null;
+	}
+	
+	private void buildAlignTable(AlignTable table, Token parentToken, Token end, ContentType contentType, ArrayList<Token> otherLineStarts) throws UnexpectedSyntaxException {
 		table.getColumn(Columns.ASSIGNMENT_OP.getValue()).rightAlign = true; // if both = and ?= appear, align the "=" and make the "?" stand out
 
+		Token token = parentToken.getNext(); // parentToken is the opening parenthesis or bracket
+		if (token == null)
+			return;
+		
+		// consider the special case of a functional call with only an expression, but no actual parameter specified, e.g. 
+		// any_method( VALUE #( ... ) ).
+		if (contentType == ContentType.FUNCTIONAL_CALL_PARAMS && Term.isFirstTokenAllowed(token)) {
+			try {
+				Term onlyExpression = Term.createArithmetic(token);
+				if (onlyExpression.lastToken != null && onlyExpression.lastToken.getNextCodeToken() == end) {
+					AlignLine line = table.addLine();
+					line.setCell(Columns.EXPRESSION.getValue(), new AlignCellTerm(onlyExpression));
+					return;
+				}
+			} catch (UnexpectedSyntaxException ex) {
+				// ignore error
+			}
+		}
+		
 		// find assignments within the siblings inside the parentheses or brackets
 		boolean isInLetExpression = false;
 		boolean hasLetExpression = false;
 		boolean continueLastLine = false;
 		boolean tableEndsWithOtherLine = false; 
-		Token token = parentToken.getNext(); // parentToken is the opening parenthesis or bracket
+
 		while (token != null && token != end && token.getNext() != null) {
 			if ((token.isIdentifier() || token.isKeyword("OTHERS"))
 					&& (token.getPrevCodeSibling() == null || !token.getPrevCodeSibling().isKeyword("FOR")) // exclude conditional iteration "FOR var = rhs [THEN expr] UNTIL|WHILE ..." 
@@ -599,8 +711,6 @@ public class AlignParametersRule extends RuleForCommands {
 				keywordColumn.setForceLineBreakAfter(true);
 			}
 		}
-		
-		return table;
 	}
 
 	private boolean forceLineBreakAfterKeywords(ContentType contentType) {
