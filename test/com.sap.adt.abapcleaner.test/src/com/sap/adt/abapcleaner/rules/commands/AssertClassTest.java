@@ -181,4 +181,65 @@ class AssertClassTest extends RuleTestBase {
 		
 		testRule();
 	}
+
+	@Test
+	void testAssertWithAdditionsUnchanged() {
+		buildSrc("ASSERT ID any_checkpoint_group");
+		buildSrc("       CONDITION lv_any_flag = abap_true.");
+		buildSrc("");
+		buildSrc("ASSERT ID any_checkpoint_group");
+		buildSrc("       SUBKEY sy-uname");
+		buildSrc("       FIELDS 'any field' lv_other_field");
+		buildSrc("       CONDITION lv_any_flag = abap_true.");
+
+		copyExpFromSrc();
+
+		testRule();
+	}
+
+	@Test
+	void testAssertCondition() {
+		buildSrc("    ASSERT CONDITION lo_item IS BOUND.");
+		buildSrc("    ASSERT CONDITION is_structure-component IS NOT BOUND.");
+		buildSrc("    ASSERT CONDITION is_structure-component IS INITIAL.");
+		buildSrc("    ASSERT CONDITION io_instance IS NOT INITIAL.");
+		buildSrc("    ASSERT CONDITION sy-subrc = 0. \" comment");
+		buildSrc("    ASSERT CONDITION sy-subrc = 4.");
+		buildSrc("    ASSERT CONDITION mv_is_valid = abap_false.");
+		buildSrc("    ASSERT CONDITION line_exists( lts_table[ iv_param_a = 1");
+		buildSrc("                                   iv_param_b = 'abc' ] ) = abap_true.");
+		buildSrc("    ASSERT CONDITION ms_struc-component = if_any_interface=>co_any_constant.");
+		buildSrc("    ASSERT CONDITION lv_timestamp(7) = lts_any_table[ 1 ]-lv_timestamp(7).");
+		buildSrc("    ASSERT CONDITION lo_instance->ms_data-item_category <> if_any_interface=>co_any_constant.");
+		buildSrc("    ASSERT CONDITION sy-subrc <> 0.");
+		buildSrc("    ASSERT CONDITION 1 = 2.");
+		buildSrc("    ASSERT CONDITION 314159265 = 42.");
+		buildSrc("    ASSERT CONDITION is_any_struc IS NOT INITIAL OR is_other_struc IS NOT INITIAL.");
+
+		buildExp("    cx_any_assert=>assert_bound( lo_item ).");
+		buildExp("    cx_any_assert=>assert_not_bound( is_structure-component ).");
+		buildExp("    cx_any_assert=>assert_initial( is_structure-component ).");
+		buildExp("    cx_any_assert=>assert_not_initial( io_instance ).");
+		buildExp("    cx_any_assert=>assert_subrc( ). \" comment");
+		buildExp("    cx_any_assert=>assert_subrc( 4 ).");
+		buildExp("    cx_any_assert=>assert_false( mv_is_valid ).");
+		buildExp("    cx_any_assert=>assert_true( line_exists( lts_table[ iv_param_a = 1");
+		buildExp("                                                        iv_param_b = 'abc' ] ) ).");
+		buildExp("    cx_any_assert=>assert_equals( act = ms_struc-component");
+		buildExp("                                  exp = if_any_interface=>co_any_constant ).");
+		buildExp("    cx_any_assert=>assert_equals( act = lv_timestamp(7)");
+		buildExp("                                  exp = lts_any_table[ 1 ]-lv_timestamp(7) ).");
+		buildExp("    cx_any_assert=>assert_differs( act = lo_instance->ms_data-item_category");
+		buildExp("                                   exp = if_any_interface=>co_any_constant ).");
+		buildExp("    cx_any_assert=>assert_differs( act = sy-subrc");
+		buildExp("                                   exp = 0 ).");
+		buildExp("    cx_any_assert=>fail( ).");
+		buildExp("    cx_any_assert=>fail( ).");
+		buildExp("    cx_any_assert=>assert_true( xsdbool( is_any_struc IS NOT INITIAL OR is_other_struc IS NOT INITIAL ) ).");
+		
+		putAnyMethodAroundSrcAndExp();
+		
+		testRule();
+	}
+
 }
