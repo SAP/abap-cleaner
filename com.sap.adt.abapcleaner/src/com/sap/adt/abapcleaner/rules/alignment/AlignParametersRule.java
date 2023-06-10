@@ -187,7 +187,8 @@ public class AlignParametersRule extends RuleForCommands {
 
 		boolean changed = false;
 
-		// note that cases processed here should be skipped in the AlignWithSecondWordRule
+		// note that cases processed here should be skipped in the AlignWithSecondWordRule 
+		// (exception: RAISE ... MESSAGE ... EXPORTING ..., where the MESSAGE section benefits from AlignWithSecondWordRule)
 		
 		// align CALL METHOD|FUNCTION|BADI without parentheses (a call with parentheses will simply be handled by the "all other cases" section below)
 		// also align CREATE OBJECT, if it was not replaced by a NEW constructor by the CreateObjectRule
@@ -207,15 +208,15 @@ public class AlignParametersRule extends RuleForCommands {
 			} 
 		}
 
-		// align parameters of "RAISE [RESUMABLE] EXCEPTION TYPE cx_class EXPORTING ..." and "RAISE SHORTDUMP TYPE cx_class EXPORTING ..."; 
-		// currently, cases with MESSAGE are not processed
-		if (firstCode.matchesOnSiblings(true, "RAISE", TokenSearch.makeOptional("RESUMABLE"), "EXCEPTION", "TYPE", TokenSearch.ANY_IDENTIFIER, "EXPORTING")
-		 || firstCode.matchesOnSiblings(true, "RAISE", "SHORTDUMP", "TYPE", TokenSearch.ANY_IDENTIFIER, "EXPORTING")) {
+		// align parameters of "RAISE [RESUMABLE] EXCEPTION TYPE cx_class ... EXPORTING ..." and "RAISE SHORTDUMP TYPE cx_class ... EXPORTING ..."; 
+		// also processes cases with USING MESSAGE or MESSAGE ..., but only aligns starting from the EXPORTING keyword
+		if (firstCode.matchesOnSiblings(true, "RAISE", TokenSearch.makeOptional("RESUMABLE"), "EXCEPTION", "TYPE", TokenSearch.ANY_IDENTIFIER, TokenSearch.ASTERISK, "EXPORTING")
+		 || firstCode.matchesOnSiblings(true, "RAISE", "SHORTDUMP", "TYPE", TokenSearch.ANY_IDENTIFIER, TokenSearch.ASTERISK, "EXPORTING")) {
 			// (see ABAP Reference: "RAISE EXCEPTION" and "RAISE SHORTDUMP")
 			Token firstKeyword = firstCode.getLastTokenOnSiblings(true, TokenSearch.ASTERISK, "EXPORTING");
 			if (firstKeyword != null) {
 				Token parentToken = firstKeyword.getPrevCodeSibling();
-				int baseIndent = command.getFirstToken().getStartIndexInLine(); 
+				int baseIndent = determineBaseIndentForRaise(command, parentToken);
 				if (alignParams(code, command, parentToken, period, baseIndent, baseIndent, ContentType.PROCEDURAL_CALL_PARAMS)) {
 					changed = true;
 				}
@@ -337,6 +338,28 @@ public class AlignParametersRule extends RuleForCommands {
 		} else {
 			return ContentType.FUNCTIONAL_CALL_PARAMS;
 		}
+	}
+
+	private int determineBaseIndentForRaise(Command command, Token parentToken) {
+		// by default, use the indent of the Command's first Token
+		int baseIndent = command.getFirstToken().getStartIndexInLine(); 
+		
+		// if before the EXPORTING section, there is any keyword at line start (esp. MESSAGE), make baseIndent relative to that keyword 
+		// (esp. for cases of RAISE ... MESSAGE ... which may have been processed by the AlignWithSecondWordRule) - example:
+		// RAISE EXCEPTION TYPE cx_any_exception
+		//       MESSAGE ID ... NUMBER ... 
+		//               WITH ... 
+		//       EXPORTING ... 
+		Token token = command.getFirstToken().getNextCodeSibling();
+		while (token != null && token != parentToken && (!token.isKeyword() || token.lineBreaks == 0)) {
+			token = token.getNextCodeSibling();
+		}
+		if (token != null && token.isKeyword() && token.lineBreaks > 0) {
+			// determineTableStart will put EXPORTING at the position baseIndent + ABAP.INDENT_STEP, therefore subtract it for now: 
+			baseIndent = token.spacesLeft - ABAP.INDENT_STEP; 
+		}
+		
+		return baseIndent;
 	}
 
 	private int determineBaseIndent(Token token, ContentType contentType) {
@@ -723,7 +746,7 @@ public class AlignParametersRule extends RuleForCommands {
 	private TableStart determineTableStart(Token parentToken, int baseIndent, int minimumIndent, ContentType contentType, AlignTable table, ArrayList<Token> otherLineStarts) {
 		AlignColumn keywordColumn = table.getColumn(Columns.KEYWORD.getValue());
 		boolean hasKeywords = !keywordColumn.isEmpty();
-		int addIndent = (contentType == ContentType.ROW_IN_VALUE_OR_NEW_CONSTRUCTOR) ? 2 : (hasKeywords ? 2 : 4);
+		int addIndent = (contentType == ContentType.ROW_IN_VALUE_OR_NEW_CONSTRUCTOR || hasKeywords) ? ABAP.INDENT_STEP : 2 * ABAP.INDENT_STEP; 
 
 		// determine whether to continue on the same line after parentToken (this may be revised later if there is not enough space)
 		// note that continueOnSameLine may refer to the table (if it starts directly after parentToken) or to otherLineStarts

@@ -2396,6 +2396,121 @@ class AlignParametersTest extends RuleTestBase {
 		buildExp("      IMPORTING  ev_result     = lv_result");
 		buildExp("      EXCEPTIONS any_exception = 1.");
 
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+	@Test
+	void testRaiseExceptionWithMessage() {
+		buildSrc("    RAISE EXCEPTION TYPE cx_any_exception");
+		buildSrc("      MESSAGE ID sy-msgid");
+		buildSrc("      NUMBER sy-msgno");
+		buildSrc("      WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4");
+		buildSrc("      EXPORTING");
+		buildSrc("         any_param = 1");
+		buildSrc("        other_param = 'ABC'");
+		buildSrc("          previous = exception.");
+
+		buildExp("    RAISE EXCEPTION TYPE cx_any_exception");
+		buildExp("      MESSAGE ID sy-msgid");
+		buildExp("      NUMBER sy-msgno");
+		buildExp("      WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4");
+		buildExp("      EXPORTING any_param   = 1");
+		buildExp("                other_param = 'ABC'");
+		buildExp("                previous    = exception.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testRaiseExcMessageExportingOnOwnLine() {
+		rule.configPutProceduralCallKeywordsOnOwnLine.setValue(true);
+
+		buildSrc("    RAISE EXCEPTION TYPE cx_any_exception");
+		buildSrc("      MESSAGE ID sy-msgid");
+		buildSrc("      NUMBER sy-msgno");
+		buildSrc("      WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4");
+		buildSrc("      EXPORTING");
+		buildSrc("         any_param = 1");
+		buildSrc("        other_param = 'ABC'");
+		buildSrc("          previous = exception.");
+
+		buildExp("    RAISE EXCEPTION TYPE cx_any_exception");
+		buildExp("      MESSAGE ID sy-msgid");
+		buildExp("      NUMBER sy-msgno");
+		buildExp("      WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4");
+		buildExp("      EXPORTING");
+		buildExp("        any_param   = 1");
+		buildExp("        other_param = 'ABC'");
+		buildExp("        previous    = exception.");
+
+		testRule();
+	}
+
+	@Test
+	void testRaiseExcMessageAlignedWithSecondWord() {
+		buildSrc("    RAISE EXCEPTION TYPE cx_any_exception");
+		buildSrc("          MESSAGE ID     sy-msgid");
+		buildSrc("                  NUMBER sy-msgno");
+		buildSrc("                  WITH   sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4 EXPORTING");
+		buildSrc("         any_param = 1");
+		buildSrc("       other_param = 'ABC'");
+		buildSrc("           previous = exception.");
+
+		buildExp("    RAISE EXCEPTION TYPE cx_any_exception");
+		buildExp("          MESSAGE ID     sy-msgid");
+		buildExp("                  NUMBER sy-msgno");
+		buildExp("                  WITH   sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4");
+		buildExp("          EXPORTING any_param   = 1");
+		buildExp("                    other_param = 'ABC'");
+		buildExp("                    previous    = exception.");
+
+		testRule();
+	}
+
+	@Test
+	void testRaiseExcMessageAtSecondWordExportingOnOwnLine() {
+		rule.configPutProceduralCallKeywordsOnOwnLine.setValue(true);
+
+		buildSrc("    RAISE EXCEPTION TYPE cx_any_exception");
+		buildSrc("          MESSAGE ID sy-msgid");
+		buildSrc("                  NUMBER sy-msgno");
+		buildSrc("                  WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4 EXPORTING");
+		buildSrc("         any_param = 1");
+		buildSrc("       other_param = 'ABC'");
+		buildSrc("           previous = exception.");
+
+		buildExp("    RAISE EXCEPTION TYPE cx_any_exception");
+		buildExp("          MESSAGE ID sy-msgid");
+		buildExp("                  NUMBER sy-msgno");
+		buildExp("                  WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4");
+		buildExp("          EXPORTING");
+		buildExp("            any_param   = 1");
+		buildExp("            other_param = 'ABC'");
+		buildExp("            previous    = exception.");
+
+		testRule();
+	}
+
+	@Test
+	void testRaiseShortdumpWithMessage() {
+		buildSrc("    RAISE SHORTDUMP TYPE cx_any_exception");
+		buildSrc("          MESSAGE e001(FARR_ANY)");
+		buildSrc("          WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4");
+		buildSrc("  EXPORTING");
+		buildSrc("         any_param = 1");
+		buildSrc("       other_param = 'ABC'");
+		buildSrc("           previous = exception.");
+
+		buildExp("    RAISE SHORTDUMP TYPE cx_any_exception");
+		buildExp("          MESSAGE e001(FARR_ANY)");
+		buildExp("          WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4");
+		buildExp("          EXPORTING any_param   = 1");
+		buildExp("                    other_param = 'ABC'");
+		buildExp("                    previous    = exception.");
+
 		testRule();
 	}
 }

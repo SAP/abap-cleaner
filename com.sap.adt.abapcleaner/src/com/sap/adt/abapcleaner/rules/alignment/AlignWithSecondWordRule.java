@@ -87,7 +87,7 @@ public class AlignWithSecondWordRule extends Rule {
 			}
 
 			// certain types of commands are not applicable (e.g. declarations, assignments, METHOD, CLASS, IF, ELSEIF, WHILE, ...);
-			// also, skip cases that are processed by the AlignParametersRule, including "RAISE ..." without MESSAGE
+			// also, skip cases that are processed by the AlignParametersRule, including "RAISE ..." without MESSAGE; however, process cases with MESSAGE
 			Token firstToken = command.getFirstToken();
 			boolean skip = !isInMethod || command.isDeclaration() || command.isAssignment() || command.isAbapSqlOperation() || command.isInClassDefinition()
 					|| command.isDeclarationInClassDef() || (command.getOpensLevel() && !firstToken.isKeyword("LOOP")) 
