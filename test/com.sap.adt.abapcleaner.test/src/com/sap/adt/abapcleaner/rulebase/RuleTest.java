@@ -8,6 +8,7 @@ import java.util.Arrays;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import com.sap.adt.abapcleaner.base.StringUtil;
 import com.sap.adt.abapcleaner.programbase.Program;
 import com.sap.adt.abapcleaner.programbase.Release;
 import com.sap.adt.abapcleaner.rules.alignment.AlignParametersRule;
@@ -290,5 +291,27 @@ class RuleTest {
 		
 		assertFalse(closingBrackRule.hasSameConfigurationAs(alignParamRule));
 		assertFalse(alignParamRule.hasSameConfigurationAs(closingBrackRule));
+	}
+	
+	@Test
+	void testMeasureReplacedWithAction() {
+		Profile profile = Profile.createDefault();
+		Rule[] rules = profile.getAllRules();
+		
+		StringBuilder sbError = new StringBuilder();
+		for (Rule rule : rules) {
+			rule.setNeutral();
+			ConfigValue[] configValues = rule.getConfigValues();
+			for (ConfigValue configValue : configValues) {
+				if (StringUtil.containsIgnoringCase(configValue.description, "measure")) {
+					if (sbError.length() == 0)
+						sbError.append("Replace 'measure' with 'action':").append(System.lineSeparator());
+					sbError.append("- rule '" + rule.getDisplayName() + "', option '" + configValue.description + "'").append(System.lineSeparator());
+				}
+			}
+		}
+		if (sbError.length() > 0) {
+			fail(sbError.toString());
+		}
 	}
 }

@@ -17,12 +17,12 @@ public class EmptySectionsInClassDefTest extends RuleTestBase {
 	@BeforeEach
 	void setUp() {
 		// setup default test configuration (may be modified in the individual test methods)
-		rule.configEmptySectionsMeasure.setEnumValue(EmptySectionsMeasure.REMOVE_ANY_FROM_NON_EMPTY_CLASS);
+		rule.configEmptySectionsAction.setEnumValue(EmptySectionsAction.REMOVE_ANY_FROM_NON_EMPTY_CLASS);
 	}
 
 	@Test
 	void testRemoveProtectedSectionOnly() {
-		rule.configEmptySectionsMeasure.setEnumValue(EmptySectionsMeasure.REMOVE_PROTECTED_OF_FINAL_CLASS);
+		rule.configEmptySectionsAction.setEnumValue(EmptySectionsAction.REMOVE_PROTECTED_OF_FINAL_CLASS);
 
 		buildSrc("CLASS cl_any_final_class DEFINITION FINAL.");
 		buildSrc("  PUBLIC SECTION.");
@@ -57,7 +57,7 @@ public class EmptySectionsInClassDefTest extends RuleTestBase {
 
 	@Test
 	void testKeepProtectedSectionInNonFinalClass() {
-		rule.configEmptySectionsMeasure.setEnumValue(EmptySectionsMeasure.REMOVE_PROTECTED_OF_FINAL_CLASS);
+		rule.configEmptySectionsAction.setEnumValue(EmptySectionsAction.REMOVE_PROTECTED_OF_FINAL_CLASS);
 
 		buildSrc("CLASS cl_any_non_final_class DEFINITION FOR TESTING.");
 		buildSrc("  PUBLIC SECTION.");
@@ -149,7 +149,7 @@ public class EmptySectionsInClassDefTest extends RuleTestBase {
 
 	@Test
 	void testRemoveEmptySectionsFromEmptyClass() {
-		rule.configEmptySectionsMeasure.setEnumValue(EmptySectionsMeasure.REMOVE_ANY);
+		rule.configEmptySectionsAction.setEnumValue(EmptySectionsAction.REMOVE_ANY);
 
 		buildSrc("CLASS cl_any_empty_class DEFINITION.");
 		buildSrc("  PUBLIC SECTION.");
@@ -169,7 +169,7 @@ public class EmptySectionsInClassDefTest extends RuleTestBase {
 
 	@Test
 	void testRemoveEmptySectionsFromAlmostEmptyClass() {
-		rule.configEmptySectionsMeasure.setEnumValue(EmptySectionsMeasure.REMOVE_ANY);
+		rule.configEmptySectionsAction.setEnumValue(EmptySectionsAction.REMOVE_ANY);
 
 		buildSrc("CLASS cl_any_empty_class DEFINITION.");
 		buildSrc("  \" comment outside the first SECTION");
@@ -191,7 +191,7 @@ public class EmptySectionsInClassDefTest extends RuleTestBase {
 
 	@Test
 	void testKeepNonEmptySections() {
-		rule.configEmptySectionsMeasure.setEnumValue(EmptySectionsMeasure.REMOVE_ANY);
+		rule.configEmptySectionsAction.setEnumValue(EmptySectionsAction.REMOVE_ANY);
 
 		buildSrc("CLASS cl_any_empty_class DEFINITION.");
 		buildSrc("  PUBLIC SECTION.");

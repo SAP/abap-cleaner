@@ -1,6 +1,6 @@
 package com.sap.adt.abapcleaner.rules.syntax;
 
-public enum CommentSeparatorMeasure  {
+public enum CommentSeparatorAction  {
    KEEP,
    CONVERT_TO_HYPHEN,
    CONVERT_TO_EQUALS,
@@ -8,7 +8,7 @@ public enum CommentSeparatorMeasure  {
 
 	public int getValue() { return this.ordinal(); }
 
-	public static CommentSeparatorMeasure forValue(int value) {
+	public static CommentSeparatorAction forValue(int value) {
 		return values()[value];
 	}
 }

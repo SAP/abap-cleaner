@@ -1,6 +1,6 @@
 package com.sap.adt.abapcleaner.rules.syntax;
 
-public enum TypoMeasure {
+public enum TypoAction {
 	CHANGE_DIRECTLY,
 	ADD_TODO_COMMENT,
 	KEEP_UNCHANGED;
@@ -11,7 +11,7 @@ public enum TypoMeasure {
       return this.ordinal();
    }
 
-   public static TypoMeasure forValue(int value) {
+   public static TypoAction forValue(int value) {
       return values()[value];
    }
 }

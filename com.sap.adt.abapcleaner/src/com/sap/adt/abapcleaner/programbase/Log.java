@@ -46,24 +46,24 @@ public class Log {
 				continue;
 			if (entryCount > 1)
 				result.append(" - in " + Cult.format(countOfSeverities[i]) + (countOfSeverities[i] == 1 ? " case " : " cases "));
-			String measure;
+			String action;
 			switch (ExceptionSeverity.forValue(i)) {
 				case S0_STOP_COMMAND:
-					measure = "a command was skipped due to unexpected syntax";
+					action = "a command was skipped due to unexpected syntax";
 					break;
 				case S1_STOP_RULE:
-					measure = "the execution of a rule was stopped";
+					action = "the execution of a rule was stopped";
 					break;
 				case S2_STOP_TASK:
-					measure = (wereMultipleFilesProcessed ? "the cleanup was cancelled" : "the cleanup of a code file was cancelled");
+					action = (wereMultipleFilesProcessed ? "the cleanup was cancelled" : "the cleanup of a code file was cancelled");
 					break;
 				case S3_STOP_JOB:
-					measure = "the whole operation was cancelled";
+					action = "the whole operation was cancelled";
 					break;
 				default:
 					throw new IndexOutOfBoundsException();
 			}
-			result.append(measure).append(System.lineSeparator());
+			result.append(action).append(System.lineSeparator());
 		}
 		return result.toString();
 	}

@@ -83,10 +83,10 @@ public class CommentTypeRule extends Rule {
 			+ LINE_SEP + "  ENDMETHOD.";
    }
 
-   final ConfigEnumValue<CommentSeparatorMeasure> configMeasureForLeadingAsterisks = new ConfigEnumValue<CommentSeparatorMeasure>(this, "MeasureForLeadingAsterisks", "Leading *** separators:", new String[] { "keep", "convert to ---", "convert to ===", "remove" }, CommentSeparatorMeasure.DELETE);
-	final ConfigEnumValue<CommentSeparatorMeasure> configMeasureForTrailingAsterisks = new ConfigEnumValue<CommentSeparatorMeasure>(this, "MeasureForTrailingAsterisks", "Trailing *** separators:", new String[] { "keep", "convert to ---", "convert to ===", "remove" }, CommentSeparatorMeasure.CONVERT_TO_HYPHEN);
+   final ConfigEnumValue<CommentSeparatorAction> configActionForLeadingAsterisks = new ConfigEnumValue<CommentSeparatorAction>(this, "MeasureForLeadingAsterisks", "Leading *** separators:", new String[] { "keep", "convert to ---", "convert to ===", "remove" }, CommentSeparatorAction.DELETE);
+	final ConfigEnumValue<CommentSeparatorAction> configActionForTrailingAsterisks = new ConfigEnumValue<CommentSeparatorAction>(this, "MeasureForTrailingAsterisks", "Trailing *** separators:", new String[] { "keep", "convert to ---", "convert to ===", "remove" }, CommentSeparatorAction.CONVERT_TO_HYPHEN);
 
-	private final ConfigValue[] configValues = new ConfigValue[] { configMeasureForLeadingAsterisks, configMeasureForTrailingAsterisks };
+	private final ConfigValue[] configValues = new ConfigValue[] { configActionForLeadingAsterisks, configActionForTrailingAsterisks };
 
 	@Override
 	public ConfigValue[] getConfigValues() { return configValues; }
@@ -103,8 +103,8 @@ public class CommentTypeRule extends Rule {
 
 		CommentIdentifier identifier = new CommentIdentifier();
 
-		CommentSeparatorMeasure measureForLeadingAsterisks = CommentSeparatorMeasure.forValue(configMeasureForLeadingAsterisks.getValue());
-		CommentSeparatorMeasure measureForTrailingAsterisks = CommentSeparatorMeasure.forValue(configMeasureForTrailingAsterisks.getValue());
+		CommentSeparatorAction actionForLeadingAsterisks = CommentSeparatorAction.forValue(configActionForLeadingAsterisks.getValue());
+		CommentSeparatorAction actionForTrailingAsterisks = CommentSeparatorAction.forValue(configActionForTrailingAsterisks.getValue());
 
 		Command command = code.firstCommand;
 		while (command != null) {
@@ -175,16 +175,16 @@ public class CommentTypeRule extends Rule {
 				}
 
 				// replace leading / trailing *** asterisks
-				if (measureForLeadingAsterisks != CommentSeparatorMeasure.KEEP && text.startsWith(ABAP.LINE_COMMENT_SIGN_STRING)) {
+				if (actionForLeadingAsterisks != CommentSeparatorAction.KEEP && text.startsWith(ABAP.LINE_COMMENT_SIGN_STRING)) {
 					String textTemp = StringUtil.trimStart(text, ABAP.LINE_COMMENT_SIGN);
 					if (!StringUtil.isNullOrEmpty(textTemp.trim())) {
-						String newSep = createSeparator(text.length() - textTemp.length(), measureForLeadingAsterisks);
+						String newSep = createSeparator(text.length() - textTemp.length(), actionForLeadingAsterisks);
 						text = StringUtil.isNullOrEmpty(newSep) ? StringUtil.trimStart(textTemp, ' ') : newSep + textTemp;
 					}
 				}
-				if (measureForTrailingAsterisks != CommentSeparatorMeasure.KEEP && text.endsWith(ABAP.LINE_COMMENT_SIGN_STRING)) {
+				if (actionForTrailingAsterisks != CommentSeparatorAction.KEEP && text.endsWith(ABAP.LINE_COMMENT_SIGN_STRING)) {
 					String textTemp = StringUtil.trimEnd(text, ABAP.LINE_COMMENT_SIGN);
-					String newSep = createSeparator(text.length() - textTemp.length(), measureForTrailingAsterisks);
+					String newSep = createSeparator(text.length() - textTemp.length(), actionForTrailingAsterisks);
 					text = StringUtil.isNullOrEmpty(newSep) ? StringUtil.trimEnd(textTemp, ' ') : textTemp + newSep;
 				}
 
@@ -207,8 +207,8 @@ public class CommentTypeRule extends Rule {
 		}
 	}
 
-	private static String createSeparator(int length, CommentSeparatorMeasure measureForLeadingAsterisks) {
-		switch (measureForLeadingAsterisks) {
+	private static String createSeparator(int length, CommentSeparatorAction actionForLeadingAsterisks) {
+		switch (actionForLeadingAsterisks) {
 			case KEEP:
 				return StringUtil.repeatChar(ABAP.LINE_COMMENT_SIGN, length);
 			case CONVERT_TO_HYPHEN:
@@ -218,7 +218,7 @@ public class CommentTypeRule extends Rule {
 			case DELETE:
 				return "";
 			default:
-				throw new IndexOutOfBoundsException("unknown separator measure");
+				throw new IndexOutOfBoundsException("unknown separator action");
 		}
 	}
 }

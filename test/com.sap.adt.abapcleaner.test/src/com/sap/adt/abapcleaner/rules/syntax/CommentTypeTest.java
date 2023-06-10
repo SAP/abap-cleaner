@@ -17,8 +17,8 @@ class CommentTypeTest extends RuleTestBase {
 	@BeforeEach
 	void setUp() {
 		// setup default test configuration (may be modified in the individual test methods)
-	   rule.configMeasureForLeadingAsterisks.setEnumValue(CommentSeparatorMeasure.DELETE);
-	   rule.configMeasureForTrailingAsterisks.setEnumValue(CommentSeparatorMeasure.CONVERT_TO_HYPHEN);
+	   rule.configActionForLeadingAsterisks.setEnumValue(CommentSeparatorAction.DELETE);
+	   rule.configActionForTrailingAsterisks.setEnumValue(CommentSeparatorAction.CONVERT_TO_HYPHEN);
 	}
 	
 	@Test
@@ -132,7 +132,7 @@ class CommentTypeTest extends RuleTestBase {
 	
 	@Test
 	void testKeepLeadingAsterisks() {
-	   rule.configMeasureForLeadingAsterisks.setEnumValue(CommentSeparatorMeasure.KEEP);
+	   rule.configActionForLeadingAsterisks.setEnumValue(CommentSeparatorAction.KEEP);
 
 	   buildSrc("*     \" sometimes, the asterisk is also used to separate code sections");
 		buildSrc("***   leading asterisks");
@@ -149,7 +149,7 @@ class CommentTypeTest extends RuleTestBase {
 
 	@Test
 	void testConvertLeadingAsterisksToHyphen() {
-	   rule.configMeasureForLeadingAsterisks.setEnumValue(CommentSeparatorMeasure.CONVERT_TO_HYPHEN);
+	   rule.configActionForLeadingAsterisks.setEnumValue(CommentSeparatorAction.CONVERT_TO_HYPHEN);
 
 	   buildSrc("*     \" sometimes, the asterisk is also used to separate code sections");
 		buildSrc("***   leading asterisks");
@@ -166,7 +166,7 @@ class CommentTypeTest extends RuleTestBase {
 
 	@Test
 	void testConvertLeadingAsterisksToEquals() {
-	   rule.configMeasureForLeadingAsterisks.setEnumValue(CommentSeparatorMeasure.CONVERT_TO_EQUALS);
+	   rule.configActionForLeadingAsterisks.setEnumValue(CommentSeparatorAction.CONVERT_TO_EQUALS);
 
 	   buildSrc("*     \" sometimes, the asterisk is also used to separate code sections");
 		buildSrc("***   leading asterisks");
@@ -183,7 +183,7 @@ class CommentTypeTest extends RuleTestBase {
 
 	@Test
 	void testDeleteLeadingAsterisks() {
-	   rule.configMeasureForLeadingAsterisks.setEnumValue(CommentSeparatorMeasure.DELETE);
+	   rule.configActionForLeadingAsterisks.setEnumValue(CommentSeparatorAction.DELETE);
 
 	   buildSrc("*     \" sometimes, the asterisk is also used to separate code sections");
 		buildSrc("***   leading asterisks");
@@ -203,7 +203,7 @@ class CommentTypeTest extends RuleTestBase {
 	
 	@Test
 	void testKeepTrailingAsterisks() {
-	   rule.configMeasureForTrailingAsterisks.setEnumValue(CommentSeparatorMeasure.KEEP);
+	   rule.configActionForTrailingAsterisks.setEnumValue(CommentSeparatorAction.KEEP);
 
 		buildSrc("*    trailing asterisks ******************************");
 		buildSrc("**** leading and trailing asterisks ******************");
@@ -218,7 +218,7 @@ class CommentTypeTest extends RuleTestBase {
 
 	@Test
 	void testConvertTrailingAsterisksToHyphen() {
-	   rule.configMeasureForTrailingAsterisks.setEnumValue(CommentSeparatorMeasure.CONVERT_TO_HYPHEN);
+	   rule.configActionForTrailingAsterisks.setEnumValue(CommentSeparatorAction.CONVERT_TO_HYPHEN);
 
 		buildSrc("*    trailing asterisks ******************************");
 		buildSrc("**** leading and trailing asterisks ******************");
@@ -233,7 +233,7 @@ class CommentTypeTest extends RuleTestBase {
 
 	@Test
 	void testConvertTrailingAsterisksToEquals() {
-	   rule.configMeasureForTrailingAsterisks.setEnumValue(CommentSeparatorMeasure.CONVERT_TO_EQUALS);
+	   rule.configActionForTrailingAsterisks.setEnumValue(CommentSeparatorAction.CONVERT_TO_EQUALS);
 
 		buildSrc("*    trailing asterisks ******************************");
 		buildSrc("**** leading and trailing asterisks ******************");
@@ -248,7 +248,7 @@ class CommentTypeTest extends RuleTestBase {
 
 	@Test
 	void testDeleteTrailingsterisks() {
-	   rule.configMeasureForTrailingAsterisks.setEnumValue(CommentSeparatorMeasure.DELETE);
+	   rule.configActionForTrailingAsterisks.setEnumValue(CommentSeparatorAction.DELETE);
 
 		buildSrc("*    trailing asterisks ******************************");
 		buildSrc("**** leading and trailing asterisks ******************");

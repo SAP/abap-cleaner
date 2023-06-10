@@ -148,9 +148,9 @@ public class TypoRule extends Rule {
 	final ConfigBoolValue configProcessShorttexts = new ConfigBoolValue(this, "ProcessShorttexts", "Apply on (synchronized) shorttexts", true); 
 	final ConfigBoolValue configProcessComments = new ConfigBoolValue(this, "ProcessComments", "Apply on textual comments", true); 
 	final ConfigBoolValue configAddTodoBeforeMessage = new ConfigBoolValue(this, "AddTodoBeforeMessage", "Add TODO if textual comment is followed by MESSAGE command", true); 
-   final ConfigEnumValue<TypoMeasure> configMeasureForLiterals = new ConfigEnumValue<TypoMeasure>(this, "MeasureForLiterals", "Apply on literals:", new String[] { "change directly", "add TODO comment", "keep unchanged" }, TypoMeasure.ADD_TODO_COMMENT);
+   final ConfigEnumValue<TypoAction> configActionForLiterals = new ConfigEnumValue<TypoAction>(this, "MeasureForLiterals", "Apply on literals:", new String[] { "change directly", "add TODO comment", "keep unchanged" }, TypoAction.ADD_TODO_COMMENT);
 
-	private final ConfigValue[] configValues = new ConfigValue[] { configCorrectTypos, configConvertBritishToAmerican, configProcessAbapDoc, configProcessShorttexts, configProcessComments, configAddTodoBeforeMessage, configMeasureForLiterals };
+	private final ConfigValue[] configValues = new ConfigValue[] { configCorrectTypos, configConvertBritishToAmerican, configProcessAbapDoc, configProcessShorttexts, configProcessComments, configAddTodoBeforeMessage, configActionForLiterals };
 
 	@Override
 	public ConfigValue[] getConfigValues() { return configValues; }
@@ -295,10 +295,10 @@ public class TypoRule extends Rule {
 			result = identifier.correctComment(text.substring(textStart, textEnd), configCorrectTypos.getValue(), configConvertBritishToAmerican.getValue());
 
 		} else if (token.isStringLiteral()) { 
-		   TypoMeasure measureForLiterals = TypoMeasure.forValue(configMeasureForLiterals.getValue());
-			if (measureForLiterals == TypoMeasure.KEEP_UNCHANGED) 
+		   TypoAction actionForLiterals = TypoAction.forValue(configActionForLiterals.getValue());
+			if (actionForLiterals == TypoAction.KEEP_UNCHANGED) 
 				return false;
-			changeDirectly = (measureForLiterals == TypoMeasure.CHANGE_DIRECTLY);
+			changeDirectly = (actionForLiterals == TypoAction.CHANGE_DIRECTLY);
 			// character literal '...', string literal `...`, or string template |...| etc.
 			char delimiter = token.getText().charAt(0);
 			textStart = 1;
