@@ -2100,30 +2100,13 @@ public class Command {
 	 * This method can be used during development to search for examples in all sample code files. */
 	public final boolean matchesPattern() {
       // useful snippets:
+      // - is this a certain ABAP command?
+      //   return firstCodeTokenIsKeyword("ABAP_KEYWORD");
       // - is a certain Token found anywhere?
       //   Token token = firstToken.getLastTokenDeep(true, TokenSearch.ASTERISK, "SEARCH_TEXT|ALTERNATIVE|...");
       //   return (token != null && ...);
       // - was a certain cleanup rule used?
 		//   changeControl.wasRuleUsed(RuleID....);
-
-		Token token = getFirstToken();
-		while (token != null) {
-			Token end = token.getEndOfParamsOrComponentsList(); 
-			if (end != null && token.textEquals("(")) {
-				token = end.getNextSibling();
-				
-				while (token != null) {
-					end = token.getEndOfParamsOrComponentsList(); 
-					if (end != null && token.textEquals("(")) {
-						return true;
-					}
-					token = token.getNextSibling();
-				}
-				
-				return false;
-			}
-			token = token.getNext();
-		}
 
 		return false;
 	}
