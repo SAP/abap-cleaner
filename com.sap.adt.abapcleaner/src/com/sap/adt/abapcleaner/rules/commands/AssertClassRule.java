@@ -19,7 +19,7 @@ public class AssertClassRule extends RuleForCommands {
 	private static final String METHOD_NAME_SUBRC = "assert_subrc";
 	private static final String METHOD_NAME_FAIL = "fail";
 
-	private final static RuleReference[] references = new RuleReference[] { new RuleReference(RuleSource.ABAP_CLEANER) };
+	private final static RuleReference[] references = new RuleReference[] { new RuleReference(RuleSource.ABAP_STYLE_GUIDE, "Write testable code", "#write-testable-code") };
 
 	@Override
 	public RuleID getID() { return RuleID.ASSERT_CLASS; }
@@ -31,10 +31,10 @@ public class AssertClassRule extends RuleForCommands {
 	public String getDisplayName() { return "Use assert class instead of ASSERT"; }
 
 	@Override
-	public String getDescription() { return "Replaces ASSERT statements (in productive code) with static calls to an assert class."; }
+	public String getDescription() { return "Replaces ASSERT statements (in product code) with static calls to an assert class to make the error cases testable, too."; }
 
 	@Override
-	public String getHintsAndRestrictions() { return "Note that the Assert class name must be adjusted to the respective application (CL_..._ASSERT)."; }
+	public String getHintsAndRestrictions() { return "Note that the class name must be adjusted to the respective application (CX_..._ASSERT). The class should at least implement the methods called in the example below."; }
 
 	@Override
 	public LocalDate getDateCreated() { return LocalDate.of(2021, 1, 11); }
@@ -51,7 +51,8 @@ public class AssertClassRule extends RuleForCommands {
 	@Override
    public String getExample() {
       return "" 
-			+ LINE_SEP + "  METHOD use_productive_assert_class." 
+      	+ LINE_SEP + "CLASS cl_product_code IMPLEMENTATION."
+			+ LINE_SEP + "  METHOD use_assert_class." 
 			+ LINE_SEP + "    ASSERT lo_instance IS BOUND." 
 			+ LINE_SEP + "    ASSERT is_any_structure-component IS NOT BOUND." 
 			+ LINE_SEP 
@@ -82,7 +83,47 @@ public class AssertClassRule extends RuleForCommands {
 			+ LINE_SEP + "    ASSERT <ls_row>-item_key <= ms_parameters-last_item_key." 
 			+ LINE_SEP + "    ASSERT lv_quantity <= 100." 
 			+ LINE_SEP + "    ASSERT abs( <ls_any_field_symbol>-sum_quantity ) > 0." 
-			+ LINE_SEP + "  ENDMETHOD.";
+			+ LINE_SEP + "  ENDMETHOD."
+			+ LINE_SEP + "ENDCLASS."
+			+ LINE_SEP 
+			+ LINE_SEP  + "\" example implementation of the assert class, using simplified CL_ABAP_UNIT_ASSERT method signatures:"
+			+ LINE_SEP + "CLASS cx_xyz_assert DEFINITION PUBLIC"
+			+ LINE_SEP + "      INHERITING FROM cx_no_check FINAL"
+			+ LINE_SEP + "      CREATE PUBLIC."
+			+ LINE_SEP + ""
+			+ LINE_SEP + "  PUBLIC SECTION."
+			+ LINE_SEP + "    METHODS constructor"
+			+ LINE_SEP + "      IMPORTING previous LIKE previous OPTIONAL."
+			+ LINE_SEP + ""
+			+ LINE_SEP + "    CLASS-METHODS assert_equals"
+			+ LINE_SEP + "      IMPORTING VALUE(act) TYPE any"
+			+ LINE_SEP + "                VALUE(exp) TYPE any."
+			+ LINE_SEP + ""
+			+ LINE_SEP + "    CLASS-METHODS assert_bound"
+			+ LINE_SEP + "      IMPORTING VALUE(act) TYPE any."
+			+ LINE_SEP + ""
+			+ LINE_SEP + "    \" ..."
+			+ LINE_SEP + "ENDCLASS."
+			+ LINE_SEP + ""
+			+ LINE_SEP + "CLASS cx_xyz_assert IMPLEMENTATION."
+			+ LINE_SEP + "  METHOD constructor."
+			+ LINE_SEP + "    super->constructor( previous = previous )."
+			+ LINE_SEP + "  ENDMETHOD."
+			+ LINE_SEP + ""
+			+ LINE_SEP + "  METHOD assert_equals."
+			+ LINE_SEP + "    IF act <> exp."
+			+ LINE_SEP + "      RAISE EXCEPTION NEW cx_xyz_assert( )."
+			+ LINE_SEP + "    ENDIF."
+			+ LINE_SEP + "  ENDMETHOD."
+			+ LINE_SEP + ""
+			+ LINE_SEP + "  METHOD assert_bound."
+			+ LINE_SEP + "    IF act IS NOT BOUND."
+			+ LINE_SEP + "      RAISE EXCEPTION NEW cx_xyz_assert( )."
+			+ LINE_SEP + "    ENDIF."
+			+ LINE_SEP + "  ENDMETHOD."
+			+ LINE_SEP + ""
+			+ LINE_SEP + "  \" ..."
+			+ LINE_SEP + "ENDCLASS.";
 	}
 
 	final ConfigTextValue configAssertClassName = new ConfigTextValue(this, "AssertClassName", "Assert class name:", "cx_assert", ConfigTextType.ABAP_CLASS);
@@ -107,8 +148,19 @@ public class AssertClassRule extends RuleForCommands {
 			return false;
 		if (!command.firstCodeTokenIsKeyword("ASSERT"))
 			return false;
-
+		
+		// exclude cases with optional additions ID or FIELDS:
+		// ASSERT [ [ID group [SUBKEY sub]] [FIELDS val1 val2 ...] CONDITION ] log_exp. 
 		Token assertToken = command.getFirstCodeToken();
+		Token next = assertToken.getNextCodeSibling(); 
+		if (next.isAnyKeyword("ID", "FIELDS"))
+			return false;
+
+		// in case of "ASSERT CONDITION ..." without other additions, simply remove the (optional) 'CONDITION' keyword
+		// (at this point, we are already sure that the ASSERT can be replaced, otherwise an exception will be raised)
+		if (next.isKeyword("CONDITION"))
+			next.removeFromCommand();
+		
 		Token period = assertToken.getLastTokenOnSiblings(true, TokenSearch.ASTERISK, ".");
 
 		if (assertToken.getNext().matchesOnSiblings(false, TokenSearch.ANY_TERM, "IS", "BOUND|NOT BOUND|INITIAL|NOT INITIAL", ".")
