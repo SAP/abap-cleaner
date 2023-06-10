@@ -423,6 +423,12 @@ public abstract class Rule {
 		// description
 		mb.startNewParagraph();
 		mb.appendText(getDescription());
+
+		// hints and restrictions
+		if (!StringUtil.isNullOrEmpty(getHintsAndRestrictions())) {
+			mb.startNewParagraph();
+			mb.appendText(getHintsAndRestrictions());
+		}
 		
 		// references with links
 		RuleReference[] references = getReferences();
