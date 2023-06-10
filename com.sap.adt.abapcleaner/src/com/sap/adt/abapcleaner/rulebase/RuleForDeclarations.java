@@ -54,7 +54,7 @@ public abstract class RuleForDeclarations extends Rule {
 		while (command != null) {
 			// determine the current class or interface to add to its method definitions, 
 			// or later (in a class implementation section) read from them
-			if (command.isClassDefinitionStart() || command.isInInterfaceDefinition()) {
+			if (command.isClassDefinitionStart() || command.isInterfaceStart()) {
 				isInDefinition = true;
 				curClassOrInterface = new ClassInfo(command.getDefinedName());
 				classesAndInterfaces.put(getNameKey(curClassOrInterface.name), curClassOrInterface);
@@ -85,6 +85,15 @@ public abstract class RuleForDeclarations extends Rule {
 				} else if (firstCode.isAnyKeyword("METHODS", "CLASS-METHODS")) {
 					// add one or several method definitions
 					addMethodDefinitions(curClassOrInterface, methodVisibility, command);
+				}
+				
+				// process interface declarations, esp. for local interfaces declared in the same code document
+				if (command.firstCodeTokenIsKeyword("INTERFACES")) {
+					addInterfaces(curClassOrInterface, command, classesAndInterfaces);
+				}
+				// process alias declarations
+				if (command.firstCodeTokenIsKeyword("ALIASES")) {
+					addAliases(curClassOrInterface, command, classesAndInterfaces);
 				}
 			}
 			
@@ -148,6 +157,55 @@ public abstract class RuleForDeclarations extends Rule {
 			if (!skipMethod)
 				executeOn(code, methodStart, localVariables, releaseRestriction);
 			localVariables = new LocalVariables(this, null);
+		}
+	}
+
+	private void addInterfaces(ClassInfo curClassOrInterface, Command command, HashMap<String, ClassInfo> classesAndInterfaces) {
+		// INTERFACES intf [PARTIALLY IMPLEMENTED] 
+		// { {[ABSTRACT METHODS meth1 meth2 ... ] [FINAL METHODS meth1 meth2 ... ]} | [ALL METHODS {ABSTRACT|FINAL}] } 
+		// [DATA VALUES attr1 = val1 attr2 = val2 ...].
+		
+		// move to the first identifier
+		Token identifier = command.getFirstToken().getNextCodeSibling();
+		if (identifier.isChainColon())
+			identifier = identifier.getNextCodeSibling();
+
+		while (identifier != null && identifier.isIdentifier()) {
+			// add interface implementation
+			ClassInfo interfaceInfo = classesAndInterfaces.get(getNameKey(identifier.getText()));
+			if (interfaceInfo != null) {
+				curClassOrInterface.addInterface(interfaceInfo);
+			}
+
+			// move behind the next comma or period
+			identifier = identifier.getLastTokenOnSiblings(true, TokenSearch.ASTERISK, ",|.");
+			if (identifier != null) {
+				identifier = identifier.getNextCodeSibling();
+			}
+		}
+	}
+
+	private void addAliases(ClassInfo curClassOrInterface, Command command, HashMap<String, ClassInfo> classesAndInterfaces) {
+		// aliases can be declared for both methods and attributes both in classes and in interfaces (regarding the interfaces they implement themselves)
+		// ALIASES alias FOR intf~comp. 
+		
+		// move to the first identifier
+		Token identifier = command.getFirstToken().getNextCodeSibling();
+		if (identifier.isChainColon())
+			identifier = identifier.getNextCodeSibling();
+
+		while (identifier != null && identifier.matchesOnSiblings(true, TokenSearch.ANY_IDENTIFIER, "FOR", TokenSearch.ANY_IDENTIFIER)) {
+			// add alias
+			String alias = identifier.getText();
+			identifier = identifier.getNextCodeSibling().getNextCodeSibling();
+			String interfaceAndMethod = identifier.getText();
+			curClassOrInterface.addAlias(alias, interfaceAndMethod);
+			
+			// move behind the next comma or period
+			identifier = identifier.getLastTokenOnSiblings(true, TokenSearch.ASTERISK, ",|.");
+			if (identifier != null) {
+				identifier = identifier.getNextCodeSibling();
+			}
 		}
 	}
 
