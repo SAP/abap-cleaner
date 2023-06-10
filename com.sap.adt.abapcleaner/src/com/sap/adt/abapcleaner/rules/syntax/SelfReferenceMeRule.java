@@ -4,6 +4,7 @@ import java.time.LocalDate;
 
 import com.sap.adt.abapcleaner.base.AbapCult;
 import com.sap.adt.abapcleaner.parser.*;
+import com.sap.adt.abapcleaner.programbase.Program;
 import com.sap.adt.abapcleaner.programbase.UnexpectedSyntaxAfterChanges;
 import com.sap.adt.abapcleaner.rulebase.*;
 import com.sap.adt.abapcleaner.rulehelpers.ClassInfo;
@@ -28,6 +29,9 @@ public class SelfReferenceMeRule extends RuleForDeclarations {
 
 	@Override
 	public String getDescription() { return "Removes the self-reference me->."; }
+
+	@Override
+	public String getHintsAndRestrictions() { return "Note that for attributes, me-> cannot be removed if " + Program.PRODUCT_NAME + " cannot 'see' the method signature (e.g. for inherited or interface methods), because a parameter could have the same name."; }
 
 	@Override
 	public LocalDate getDateCreated() { return LocalDate.of(2021, 1, 7); }
