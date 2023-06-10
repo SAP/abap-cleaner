@@ -1106,6 +1106,45 @@ class AlignDeclarationsTest extends RuleTestBase {
 		buildExp("            c5         TYPE c LENGTH 40,");
 		buildExp("          END OF ty_s_struc.");
 
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testJoinValueColumn() {
+		// expect the VALUE to be kept directly behind "TYPE i" instead of getting an own column
+		// (for which AlignColumn.cellCount must be correctly updated when the comment column is joined into the VALUE column)
+		
+		buildSrc("    DATA:");
+		buildSrc("      ls_any_struc TYPE ty_s_struc,");
+		buildSrc("      lv_any_value TYPE i,");
+		buildSrc("      lv_other_value TYPE i VALUE 1000000. \" comment");
+
+		buildExp("    DATA:");
+		buildExp("      ls_any_struc   TYPE ty_s_struc,");
+		buildExp("      lv_any_value   TYPE i,");
+		buildExp("      lv_other_value TYPE i VALUE 1000000. \" comment");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testCreateValueColumnButJoinCommentColumn() {
+		// expect VALUE to get a distinct column, but expect the comment to be joined to the VALUE column
+		
+		buildSrc("    DATA:");
+		buildSrc("      ls_any_struc TYPE ty_s_struc,");
+		buildSrc("      lv_any_value TYPE i VALUE 10, \" comment");
+		buildSrc("      lv_other_value TYPE i VALUE 1000000.");
+
+		buildExp("    DATA:");
+		buildExp("      ls_any_struc   TYPE ty_s_struc,");
+		buildExp("      lv_any_value   TYPE i          VALUE 10, \" comment");
+		buildExp("      lv_other_value TYPE i          VALUE 1000000.");
+
 		testRule();
 	}
 }
