@@ -25,6 +25,7 @@ public class AlignColumn {
 	
 	final int getIndex() { return index; }
 
+	// cellCount can be used without recalculation, even if isValid == false
 	public final int getCellCount() { return cellCount; }
 
 	public final boolean isEmpty() { return (cellCount == 0); }

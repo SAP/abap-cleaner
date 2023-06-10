@@ -37,6 +37,10 @@ public class AlignLine {
 		if (cell == null)
 			throw new NullPointerException("cell");
 
+		// remove an existing cell first to decrease AlignColumn.cellCount and invalidate its statistics
+		if (cells[index] != null)
+			parentTable.getColumn(index).removeCell(cells[index]);
+		
 		cells[index] = cell;
 		parentTable.getColumn(index).addCell(cell);
 
