@@ -17,12 +17,12 @@ class UnusedVariablesTest extends RuleTestBase {
 	@BeforeEach
 	void setUp() {
 		// setup default test configuration (may be modified in the individual test methods)
-		rule.configMeasureForVarsNeverUsed.setEnumValue(UnusedVariableMeasure.DELETE);
-		rule.configMeasureForVarsOnlyUsedInComment.setEnumValue(UnusedVariableMeasure.COMMENT_OUT_WITH_ASTERISK);
-		rule.configMeasureForAssignedVars.setEnumValue(UnusedVariableMeasureIfAssigned.ADD_TODO_COMMENT);
-		rule.configMeasureForAssignedVarsOnlyUsedInComment.setEnumValue(UnusedVariableMeasureIfAssigned.ADD_TODO_COMMENT);
-		rule.configMeasureForConstantsNeverUsed.setEnumValue(UnusedVariableMeasure.COMMENT_OUT_WITH_ASTERISK);
-		rule.configMeasureForConstantsOnlyUsedInComment.setEnumValue(UnusedVariableMeasure.COMMENT_OUT_WITH_ASTERISK);
+		rule.configActionForVarsNeverUsed.setEnumValue(UnusedVariableAction.DELETE);
+		rule.configActionForVarsOnlyUsedInComment.setEnumValue(UnusedVariableAction.COMMENT_OUT_WITH_ASTERISK);
+		rule.configActionForAssignedVars.setEnumValue(UnusedVariableActionIfAssigned.ADD_TODO_COMMENT);
+		rule.configActionForAssignedVarsOnlyUsedInComment.setEnumValue(UnusedVariableActionIfAssigned.ADD_TODO_COMMENT);
+		rule.configActionForConstantsNeverUsed.setEnumValue(UnusedVariableAction.COMMENT_OUT_WITH_ASTERISK);
+		rule.configActionForConstantsOnlyUsedInComment.setEnumValue(UnusedVariableAction.COMMENT_OUT_WITH_ASTERISK);
 	}
 	
 	@Test
@@ -659,7 +659,7 @@ class UnusedVariablesTest extends RuleTestBase {
 
 	@Test
 	void testCommentOutUnusedVarWithAsterisk() {
-		rule.configMeasureForVarsNeverUsed.setEnumValue(UnusedVariableMeasure.COMMENT_OUT_WITH_ASTERISK);
+		rule.configActionForVarsNeverUsed.setEnumValue(UnusedVariableAction.COMMENT_OUT_WITH_ASTERISK);
 		
 		buildSrc("    DATA lv_unused TYPE string.");
 
@@ -672,7 +672,7 @@ class UnusedVariablesTest extends RuleTestBase {
 
 	@Test
 	void testCommentOutUnusedVarWithQuotMark() {
-		rule.configMeasureForVarsNeverUsed.setEnumValue(UnusedVariableMeasure.COMMENT_OUT_WITH_QUOT);
+		rule.configActionForVarsNeverUsed.setEnumValue(UnusedVariableAction.COMMENT_OUT_WITH_QUOT);
 		
 		buildSrc("    DATA lv_unused TYPE string.");
 
@@ -685,7 +685,7 @@ class UnusedVariablesTest extends RuleTestBase {
 
 	@Test
 	void testAddTodoCommentForUnusedVar() {
-		rule.configMeasureForVarsNeverUsed.setEnumValue(UnusedVariableMeasure.ADD_TODO_COMMENT);
+		rule.configActionForVarsNeverUsed.setEnumValue(UnusedVariableAction.ADD_TODO_COMMENT);
 
 		buildSrc("    DATA lv_unused TYPE string.");
 
@@ -699,7 +699,7 @@ class UnusedVariablesTest extends RuleTestBase {
 
 	@Test
 	void testIgnoreUnusedVar() {
-		rule.configMeasureForVarsNeverUsed.setEnumValue(UnusedVariableMeasure.IGNORE);
+		rule.configActionForVarsNeverUsed.setEnumValue(UnusedVariableAction.IGNORE);
 
 		buildSrc("    DATA lv_unused TYPE string.");
 		
@@ -715,7 +715,7 @@ class UnusedVariablesTest extends RuleTestBase {
 
 	@Test
 	void testDeleteVarOnlyUsedInComment() {
-		rule.configMeasureForVarsOnlyUsedInComment.setEnumValue(UnusedVariableMeasure.DELETE);
+		rule.configActionForVarsOnlyUsedInComment.setEnumValue(UnusedVariableAction.DELETE);
 		
 		buildSrc("    DATA lv_only_used_in_comment TYPE string.");
 		buildSrc("*    rv_result = lv_only_used_in_comment.");
@@ -731,7 +731,7 @@ class UnusedVariablesTest extends RuleTestBase {
 
 	@Test
 	void testCommentOutVarOnlyUsedInCommentWithQuot() {
-		rule.configMeasureForVarsOnlyUsedInComment.setEnumValue(UnusedVariableMeasure.COMMENT_OUT_WITH_QUOT);
+		rule.configActionForVarsOnlyUsedInComment.setEnumValue(UnusedVariableAction.COMMENT_OUT_WITH_QUOT);
 		
 		buildSrc("    DATA lv_only_used_in_comment TYPE string.");
 		buildSrc("*    lv_only_used_in_comment = 10.");
@@ -750,7 +750,7 @@ class UnusedVariablesTest extends RuleTestBase {
 
 	@Test
 	void testCommentOutVarOnlyUsedInCommentWithAsterisk() {
-		rule.configMeasureForVarsOnlyUsedInComment.setEnumValue(UnusedVariableMeasure.COMMENT_OUT_WITH_ASTERISK);
+		rule.configActionForVarsOnlyUsedInComment.setEnumValue(UnusedVariableAction.COMMENT_OUT_WITH_ASTERISK);
 		
 		buildSrc("    DATA lv_only_used_in_comment TYPE string.");
 		buildSrc("*    rv_result = lv_only_used_in_comment.");
@@ -765,7 +765,7 @@ class UnusedVariablesTest extends RuleTestBase {
 
 	@Test
 	void testAddTodoCommentForVarOnlyUsedInComment() {
-		rule.configMeasureForVarsOnlyUsedInComment.setEnumValue(UnusedVariableMeasure.ADD_TODO_COMMENT);
+		rule.configActionForVarsOnlyUsedInComment.setEnumValue(UnusedVariableAction.ADD_TODO_COMMENT);
 
 		buildSrc("    DATA lv_only_used_in_comment TYPE i.");
 		buildSrc("*    rv_result = lv_only_used_in_comment.");
@@ -781,7 +781,7 @@ class UnusedVariablesTest extends RuleTestBase {
 
 	@Test
 	void testIgnoreVarOnlyUsedInComment() {
-		rule.configMeasureForVarsOnlyUsedInComment.setEnumValue(UnusedVariableMeasure.IGNORE);
+		rule.configActionForVarsOnlyUsedInComment.setEnumValue(UnusedVariableAction.IGNORE);
 
 		buildSrc("    DATA lv_only_used_in_comment TYPE i.");
 		buildSrc("*    rv_result = lv_only_used_in_comment.");
@@ -798,7 +798,7 @@ class UnusedVariablesTest extends RuleTestBase {
 
 	@Test
 	void testDeleteUnusedConstant() {
-		rule.configMeasureForConstantsNeverUsed.setEnumValue(UnusedVariableMeasure.DELETE);
+		rule.configActionForConstantsNeverUsed.setEnumValue(UnusedVariableAction.DELETE);
 		
 		buildSrc("    CONSTANTS lc_unused TYPE i VALUE 42.");
 		buildSrc("    \" do something");
@@ -814,7 +814,7 @@ class UnusedVariablesTest extends RuleTestBase {
 
 	@Test
 	void testCommentOutUnusedConstantWithAsterisk() {
-		rule.configMeasureForConstantsNeverUsed.setEnumValue(UnusedVariableMeasure.COMMENT_OUT_WITH_ASTERISK);
+		rule.configActionForConstantsNeverUsed.setEnumValue(UnusedVariableAction.COMMENT_OUT_WITH_ASTERISK);
 		
 		buildSrc("    CONSTANTS lc_unused TYPE i VALUE 42.");
 
@@ -827,7 +827,7 @@ class UnusedVariablesTest extends RuleTestBase {
 
 	@Test
 	void testCommentOutUnusedConstantWithQuotMark() {
-		rule.configMeasureForConstantsNeverUsed.setEnumValue(UnusedVariableMeasure.COMMENT_OUT_WITH_QUOT);
+		rule.configActionForConstantsNeverUsed.setEnumValue(UnusedVariableAction.COMMENT_OUT_WITH_QUOT);
 		
 		buildSrc("    CONSTANTS lc_unused TYPE i VALUE 42.");
 
@@ -840,7 +840,7 @@ class UnusedVariablesTest extends RuleTestBase {
 
 	@Test
 	void testAddTodoCommentForUnusedConstant() {
-		rule.configMeasureForConstantsNeverUsed.setEnumValue(UnusedVariableMeasure.ADD_TODO_COMMENT);
+		rule.configActionForConstantsNeverUsed.setEnumValue(UnusedVariableAction.ADD_TODO_COMMENT);
 
 		buildSrc("    CONSTANTS lc_unused TYPE i VALUE 42.");
 
@@ -854,7 +854,7 @@ class UnusedVariablesTest extends RuleTestBase {
 
 	@Test
 	void testIgnoreUnusedConstant() {
-		rule.configMeasureForConstantsNeverUsed.setEnumValue(UnusedVariableMeasure.IGNORE);
+		rule.configActionForConstantsNeverUsed.setEnumValue(UnusedVariableAction.IGNORE);
 
 		buildSrc("    CONSTANTS lc_unused TYPE i VALUE 42.");
 		
@@ -870,7 +870,7 @@ class UnusedVariablesTest extends RuleTestBase {
 
 	@Test
 	void testDeleteConstantOnlyUsedInComment() {
-		rule.configMeasureForConstantsOnlyUsedInComment.setEnumValue(UnusedVariableMeasure.DELETE);
+		rule.configActionForConstantsOnlyUsedInComment.setEnumValue(UnusedVariableAction.DELETE);
 		
 		buildSrc("    CONSTANTS lc_only_used_in_comment TYPE string VALUE 'abc'.");
 		buildSrc("*    rv_result = lc_only_used_in_comment.");
@@ -886,7 +886,7 @@ class UnusedVariablesTest extends RuleTestBase {
 
 	@Test
 	void testCommentOutConstantOnlyUsedInCommentWithQuot() {
-		rule.configMeasureForConstantsOnlyUsedInComment.setEnumValue(UnusedVariableMeasure.COMMENT_OUT_WITH_QUOT);
+		rule.configActionForConstantsOnlyUsedInComment.setEnumValue(UnusedVariableAction.COMMENT_OUT_WITH_QUOT);
 		
 		buildSrc("    CONSTANTS lc_only_used_in_comment TYPE string VALUE 'abc'.");
 		buildSrc("*    rv_result = lc_only_used_in_comment.");
@@ -901,7 +901,7 @@ class UnusedVariablesTest extends RuleTestBase {
 
 	@Test
 	void testCommentOutConstantOnlyUsedInCommentWithAsterisk() {
-		rule.configMeasureForConstantsOnlyUsedInComment.setEnumValue(UnusedVariableMeasure.COMMENT_OUT_WITH_ASTERISK);
+		rule.configActionForConstantsOnlyUsedInComment.setEnumValue(UnusedVariableAction.COMMENT_OUT_WITH_ASTERISK);
 		
 		buildSrc("    CONSTANTS lc_only_used_in_comment TYPE string VALUE 'abc'.");
 		buildSrc("*    rv_result = lc_only_used_in_comment.");
@@ -916,7 +916,7 @@ class UnusedVariablesTest extends RuleTestBase {
 
 	@Test
 	void testAddTodoCommentForConstantOnlyUsedInComment() {
-		rule.configMeasureForConstantsOnlyUsedInComment.setEnumValue(UnusedVariableMeasure.ADD_TODO_COMMENT);
+		rule.configActionForConstantsOnlyUsedInComment.setEnumValue(UnusedVariableAction.ADD_TODO_COMMENT);
 
 		buildSrc("    CONSTANTS lc_only_used_in_comment TYPE string VALUE 'abc'.");
 		buildSrc("*    rv_result = lc_only_used_in_comment.");
@@ -932,7 +932,7 @@ class UnusedVariablesTest extends RuleTestBase {
 
 	@Test
 	void testIgnoreConstantOnlyUsedInComment() {
-		rule.configMeasureForConstantsOnlyUsedInComment.setEnumValue(UnusedVariableMeasure.IGNORE);
+		rule.configActionForConstantsOnlyUsedInComment.setEnumValue(UnusedVariableAction.IGNORE);
 
 		buildSrc("    CONSTANTS lc_only_used_in_comment TYPE string VALUE 'abc'.");
 		buildSrc("*    rv_result = lc_only_used_in_comment.");
@@ -949,7 +949,7 @@ class UnusedVariablesTest extends RuleTestBase {
 
 	@Test
 	void testIgnoreAssigned() {
-		rule.configMeasureForAssignedVars.setEnumValue(UnusedVariableMeasureIfAssigned.IGNORE);
+		rule.configActionForAssignedVars.setEnumValue(UnusedVariableActionIfAssigned.IGNORE);
 
 		buildSrc("    DATA: lv_only_assigned TYPE i,");
 		buildSrc("          lv_unused_but_needed TYPE string ##NEEDED.");
@@ -965,7 +965,7 @@ class UnusedVariablesTest extends RuleTestBase {
 
 	@Test
 	void testIgnoreAssignedOnlyUsedInComment() {
-		rule.configMeasureForAssignedVarsOnlyUsedInComment.setEnumValue(UnusedVariableMeasureIfAssigned.IGNORE);
+		rule.configActionForAssignedVarsOnlyUsedInComment.setEnumValue(UnusedVariableActionIfAssigned.IGNORE);
 
 		buildSrc("    DATA: lv_assigned_but_used_incomment TYPE i,");
 		buildSrc("          lv_unused_but_needed TYPE string ##NEEDED.");

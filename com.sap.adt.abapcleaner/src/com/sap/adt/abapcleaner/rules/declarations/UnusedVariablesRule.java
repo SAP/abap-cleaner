@@ -13,14 +13,14 @@ import java.time.LocalDate;
 public class UnusedVariablesRule extends RuleForDeclarations {
    private final static RuleReference[] references = new RuleReference[] {new RuleReference(RuleSource.ABAP_CLEANER)};
 
-   private static UnusedVariableMeasure convertToMeasure(UnusedVariableMeasureIfAssigned measureIfAssigned) {
-      switch (measureIfAssigned) {
+   private static UnusedVariableAction convertToAction(UnusedVariableActionIfAssigned actionIfAssigned) {
+      switch (actionIfAssigned) {
          case ADD_TODO_COMMENT:
-            return UnusedVariableMeasure.ADD_TODO_COMMENT;
+            return UnusedVariableAction.ADD_TODO_COMMENT;
          case IGNORE:
-            return UnusedVariableMeasure.IGNORE;
+            return UnusedVariableAction.IGNORE;
          default:
-            throw new IndexOutOfBoundsException("unexpected MeasureIfAssigned value");
+            throw new IndexOutOfBoundsException("unexpected ActionIfAssigned value");
       }
    }
 
@@ -107,18 +107,18 @@ public class UnusedVariablesRule extends RuleForDeclarations {
 			+ LINE_SEP + "  ENDMETHOD.";
    }
 
-	private static final String[] measureTexts = new String[] { "delete", "comment out with *", "comment out with \"", "add TODO comment", "ignore" };
-	private static final String[] measureTextsIfAssigned = new String[] { "add TODO comment", "ignore" };
+	private static final String[] actionTexts = new String[] { "delete", "comment out with *", "comment out with \"", "add TODO comment", "ignore" };
+	private static final String[] actionTextsIfAssigned = new String[] { "add TODO comment", "ignore" };
 
-	final ConfigEnumValue<UnusedVariableMeasure> configMeasureForVarsNeverUsed = new ConfigEnumValue<UnusedVariableMeasure>(this, "MeasureForVarsNeverUsed", "Measure for local variables that are never used:", measureTexts, UnusedVariableMeasure.DELETE);
-	final ConfigEnumValue<UnusedVariableMeasure> configMeasureForVarsOnlyUsedInComment = new ConfigEnumValue<UnusedVariableMeasure>(this, "MeasureForVarsOnlyUsedInComment", "Measure for variables only used in commented-out code:", measureTexts, UnusedVariableMeasure.COMMENT_OUT_WITH_ASTERISK);
-	final ConfigEnumValue<UnusedVariableMeasureIfAssigned> configMeasureForAssignedVars = new ConfigEnumValue<UnusedVariableMeasureIfAssigned>(this, "MeasureForAssignedVars", "Measure for assigned but unused local variables:", measureTextsIfAssigned, UnusedVariableMeasureIfAssigned.ADD_TODO_COMMENT);
-	final ConfigEnumValue<UnusedVariableMeasureIfAssigned> configMeasureForAssignedVarsOnlyUsedInComment = new ConfigEnumValue<UnusedVariableMeasureIfAssigned>(this, "MeasureForAssignedVarsOnlyUsedInComment", "Measure for assigned variables only used in commented-out code:", measureTextsIfAssigned, UnusedVariableMeasureIfAssigned.ADD_TODO_COMMENT);
-	final ConfigEnumValue<UnusedVariableMeasure> configMeasureForConstantsNeverUsed = new ConfigEnumValue<UnusedVariableMeasure>(this, "MeasureForConstantsNeverUsed", "Measure for local constants that are never used:", measureTexts, UnusedVariableMeasure.COMMENT_OUT_WITH_ASTERISK);
-	final ConfigEnumValue<UnusedVariableMeasure> configMeasureForConstantsOnlyUsedInComment = new ConfigEnumValue<UnusedVariableMeasure>(this, "MeasureForConstantsOnlyUsedInComment", "Measure for constants only used in commented-out code:", measureTexts, UnusedVariableMeasure.COMMENT_OUT_WITH_ASTERISK);
+	final ConfigEnumValue<UnusedVariableAction> configActionForVarsNeverUsed = new ConfigEnumValue<UnusedVariableAction>(this, "MeasureForVarsNeverUsed", "Action for local variables that are never used:", actionTexts, UnusedVariableAction.DELETE);
+	final ConfigEnumValue<UnusedVariableAction> configActionForVarsOnlyUsedInComment = new ConfigEnumValue<UnusedVariableAction>(this, "MeasureForVarsOnlyUsedInComment", "Action for variables only used in commented-out code:", actionTexts, UnusedVariableAction.COMMENT_OUT_WITH_ASTERISK);
+	final ConfigEnumValue<UnusedVariableActionIfAssigned> configActionForAssignedVars = new ConfigEnumValue<UnusedVariableActionIfAssigned>(this, "MeasureForAssignedVars", "Action for assigned but unused local variables:", actionTextsIfAssigned, UnusedVariableActionIfAssigned.ADD_TODO_COMMENT);
+	final ConfigEnumValue<UnusedVariableActionIfAssigned> configActionForAssignedVarsOnlyUsedInComment = new ConfigEnumValue<UnusedVariableActionIfAssigned>(this, "MeasureForAssignedVarsOnlyUsedInComment", "Action for assigned variables only used in commented-out code:", actionTextsIfAssigned, UnusedVariableActionIfAssigned.ADD_TODO_COMMENT);
+	final ConfigEnumValue<UnusedVariableAction> configActionForConstantsNeverUsed = new ConfigEnumValue<UnusedVariableAction>(this, "MeasureForConstantsNeverUsed", "Action for local constants that are never used:", actionTexts, UnusedVariableAction.COMMENT_OUT_WITH_ASTERISK);
+	final ConfigEnumValue<UnusedVariableAction> configActionForConstantsOnlyUsedInComment = new ConfigEnumValue<UnusedVariableAction>(this, "MeasureForConstantsOnlyUsedInComment", "Action for constants only used in commented-out code:", actionTexts, UnusedVariableAction.COMMENT_OUT_WITH_ASTERISK);
 
-	private final ConfigValue[] configValues = new ConfigValue[] { configMeasureForVarsNeverUsed, configMeasureForVarsOnlyUsedInComment, configMeasureForAssignedVars, configMeasureForAssignedVarsOnlyUsedInComment,
-			configMeasureForConstantsNeverUsed, configMeasureForConstantsOnlyUsedInComment };
+	private final ConfigValue[] configValues = new ConfigValue[] { configActionForVarsNeverUsed, configActionForVarsOnlyUsedInComment, configActionForAssignedVars, configActionForAssignedVarsOnlyUsedInComment,
+			configActionForConstantsNeverUsed, configActionForConstantsOnlyUsedInComment };
 
 	@Override
 	public ConfigValue[] getConfigValues() { return configValues; }
@@ -179,22 +179,22 @@ public class UnusedVariablesRule extends RuleForDeclarations {
 				continue;
 			}
 			
-			// determine the measure to be taken; this is NOT dependent on "usedCountInSelfAssignment" (neither in active code nor comment code)
-			UnusedVariableMeasure measure;
+			// determine the action to be taken; this is NOT dependent on "usedCountInSelfAssignment" (neither in active code nor comment code)
+			UnusedVariableAction action;
 			if (varInfo.isAssigned())
-				measure = convertToMeasure(UnusedVariableMeasureIfAssigned.forValue((varInfo.isUsedInComment()) ? configMeasureForAssignedVarsOnlyUsedInComment.getValue() : configMeasureForAssignedVars.getValue()));
+				action = convertToAction(UnusedVariableActionIfAssigned.forValue((varInfo.isUsedInComment()) ? configActionForAssignedVarsOnlyUsedInComment.getValue() : configActionForAssignedVars.getValue()));
 			else if (varInfo.isUsedInComment() || varInfo.isAssignedInComment())
-				measure = UnusedVariableMeasure.forValue(varInfo.isConstant ? configMeasureForConstantsOnlyUsedInComment.getValue() : configMeasureForVarsOnlyUsedInComment.getValue());
+				action = UnusedVariableAction.forValue(varInfo.isConstant ? configActionForConstantsOnlyUsedInComment.getValue() : configActionForVarsOnlyUsedInComment.getValue());
 			else
-				measure = UnusedVariableMeasure.forValue(varInfo.isConstant ? configMeasureForConstantsNeverUsed.getValue() : configMeasureForVarsNeverUsed.getValue());
+				action = UnusedVariableAction.forValue(varInfo.isConstant ? configActionForConstantsNeverUsed.getValue() : configActionForVarsNeverUsed.getValue());
 
-			if (measure == UnusedVariableMeasure.IGNORE)
+			if (action == UnusedVariableAction.IGNORE)
 				continue;
 
-			// add a to-do comment, if required by the measure, or  
+			// add a to-do comment, if required by the action, or  
 			// - if the variable is declared inline with DATA(...) or FIELD-SYMBOL(...)
 			// - if the variable is declared with DATA/CONSTANTS/STATICS BEGIN OF ... (bound structure data)  
-			if (measure == UnusedVariableMeasure.ADD_TODO_COMMENT || varInfo.isDeclaredInline || varInfo.isBoundStructuredData) {
+			if (action == UnusedVariableAction.ADD_TODO_COMMENT || varInfo.isDeclaredInline || varInfo.isBoundStructuredData) {
 				String message;
 				if (varInfo.isAssigned()) {
 					if (varInfo.isUsedInComment())
@@ -248,7 +248,7 @@ public class UnusedVariablesRule extends RuleForDeclarations {
 					prevComma.type = TokenType.PERIOD;
 				} else if (isFirstInChain) {
 					nextIdentifier.copyWhitespaceFrom(identifier);
-					int lineBreaks = (measure == UnusedVariableMeasure.DELETE) ? keyword.lineBreaks : 1;
+					int lineBreaks = (action == UnusedVariableAction.DELETE) ? keyword.lineBreaks : 1;
 					nextIdentifier.insertLeftSibling(Token.createForAbap(lineBreaks, keyword.spacesLeft, keyword.getText(), TokenType.KEYWORD, keyword.sourceLineNum));
 					if (colon != null)
 						nextIdentifier.insertLeftSibling(Token.createForAbap(0, colon.spacesLeft, colon.getText(), TokenType.COLON, colon.sourceLineNum));
@@ -257,13 +257,13 @@ public class UnusedVariablesRule extends RuleForDeclarations {
 				}
 			}
 
-			switch (measure) {
+			switch (action) {
 				case COMMENT_OUT_WITH_ASTERISK:
 				case COMMENT_OUT_WITH_QUOT:
 					// create a comment line
 					String lineText = Command.sectionToString(firstTokenInLine, lastTokenInLine, true);
 					int indent = 0;
-					if (measure == UnusedVariableMeasure.COMMENT_OUT_WITH_QUOT) {
+					if (action == UnusedVariableAction.COMMENT_OUT_WITH_QUOT) {
 						indent = firstTokenInLine.getStartIndexInLine();
 						lineText = ABAP.COMMENT_SIGN_STRING + " " + StringUtil.trimStart(lineText);
 					} else {
@@ -316,7 +316,7 @@ public class UnusedVariablesRule extends RuleForDeclarations {
 					}
 					break;
 				default:
-					throw new IllegalArgumentException("Unknown Measure!");
+					throw new IllegalArgumentException("Unknown Action!");
 			}
 
 			// if the (remaining) Command starts with one or several comment lines, create separate Commands from it;

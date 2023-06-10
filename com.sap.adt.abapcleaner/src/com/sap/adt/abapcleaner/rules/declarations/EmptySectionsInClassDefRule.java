@@ -89,13 +89,13 @@ public class EmptySectionsInClassDefRule extends Rule {
 			+ LINE_SEP + "ENDCLASS.";
    }
 
-	final ConfigEnumValue<EmptySectionsMeasure> configEmptySectionsMeasure = new ConfigEnumValue<EmptySectionsMeasure>(this, "EmptySectionsMeasure", "Scope:",
-			new String[] { "Remove empty PROTECTED SECTIONs from FINAL classes", "Remove any empty SECTION from non-empty class definitions", "Remove any empty SECTION" }, EmptySectionsMeasure.REMOVE_ANY_FROM_NON_EMPTY_CLASS);
+	final ConfigEnumValue<EmptySectionsAction> configEmptySectionsAction = new ConfigEnumValue<EmptySectionsAction>(this, "EmptySectionsMeasure", "Scope:",
+			new String[] { "Remove empty PROTECTED SECTIONs from FINAL classes", "Remove any empty SECTION from non-empty class definitions", "Remove any empty SECTION" }, EmptySectionsAction.REMOVE_ANY_FROM_NON_EMPTY_CLASS);
 
-	private final ConfigValue[] configValues = new ConfigValue[] { configEmptySectionsMeasure };
+	private final ConfigValue[] configValues = new ConfigValue[] { configEmptySectionsAction };
 
-	private EmptySectionsMeasure getConfigEmptySectionsMeasure() {
-		return EmptySectionsMeasure.forValue(configEmptySectionsMeasure.getValue());
+	private EmptySectionsAction getConfigEmptySectionsAction() {
+		return EmptySectionsAction.forValue(configEmptySectionsAction.getValue());
 	}
 
 	@Override
@@ -170,8 +170,8 @@ public class EmptySectionsInClassDefRule extends Rule {
 			return false;
 		}
 		
-		EmptySectionsMeasure configMeasure = getConfigEmptySectionsMeasure();
-		if (configMeasure == EmptySectionsMeasure.REMOVE_PROTECTED_OF_FINAL_CLASS) {
+		EmptySectionsAction configAction = getConfigEmptySectionsAction();
+		if (configAction == EmptySectionsAction.REMOVE_PROTECTED_OF_FINAL_CLASS) {
 			// only work on empty PROTECTED SECTION of a FINAL class 
 			if (!command.firstCodeTokenIsKeyword("PROTECTED"))
 				return false;
@@ -179,7 +179,7 @@ public class EmptySectionsInClassDefRule extends Rule {
 				return false;
 			// otherwise, remove section below
 
-		} else if (configMeasure == EmptySectionsMeasure.REMOVE_ANY_FROM_NON_EMPTY_CLASS) {
+		} else if (configAction == EmptySectionsAction.REMOVE_ANY_FROM_NON_EMPTY_CLASS) {
 			// only remove section if at least one of the SECTIONs is non-empty
 			boolean areAllSectionsEmpty = true;
 			Command testSection = classStart.getNextSibling();

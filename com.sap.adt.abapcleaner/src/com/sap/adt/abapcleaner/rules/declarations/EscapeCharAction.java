@@ -1,6 +1,6 @@
 package com.sap.adt.abapcleaner.rules.declarations;
 
-public enum EscapeCharMeasure {
+public enum EscapeCharAction {
    ALWAYS,
    KEEP_AS_IS,
    ONLY_FOR_ABAP_WORDS,
@@ -12,7 +12,7 @@ public enum EscapeCharMeasure {
       return this.ordinal();
    }
 
-   public static EscapeCharMeasure forValue(int value) {
+   public static EscapeCharAction forValue(int value) {
       return values()[value];
    }
 

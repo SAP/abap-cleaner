@@ -108,7 +108,7 @@ public class AlignMethodsDeclarationRule extends AlignDeclarationSectionRuleBase
 	final ConfigEnumValue<ChangeType> configContinueAfterMethodName = new ConfigEnumValue<ChangeType>(this, "ContinueAfterMethodName", "Continue line after method name", changeTypeSelection, ChangeType.KEEP_AS_IS);
 	final ConfigEnumValue<ChangeType> configContinueAfterAccess = new ConfigEnumValue<ChangeType>(this, "ContinueAfterAccess", "Continue line after IMPORTING etc.", changeTypeSelection, ChangeType.ALWAYS);
 	final ConfigIntValue configFillPercentageToJustifyOwnColumn = new ConfigIntValue(this, "FillPercentageToJustifyOwnColumn", "Fill ratio to justify own column for DEFAULT / OPTIONAL", "%", 1, 40, 100);
-	final ConfigEnumValue<MethodsOneLinerMeasure> configHandleOneLiners = new ConfigEnumValue<MethodsOneLinerMeasure>(this, "HandleOneLiners", "Handling of (potential) one-liners", handleOneLinersSelection, MethodsOneLinerMeasure.KEEP_EXISTING);
+	final ConfigEnumValue<MethodsOneLinerAction> configHandleOneLiners = new ConfigEnumValue<MethodsOneLinerAction>(this, "HandleOneLiners", "Handling of (potential) one-liners", handleOneLinersSelection, MethodsOneLinerAction.KEEP_EXISTING);
 	final ConfigEnumValue<MethodsSequenceAlignment> configAlignConsecutive = new ConfigEnumValue<MethodsSequenceAlignment>(this, "AlignConsecutive", "Align consecutive declarations", alignConsecutiveSelection, MethodsSequenceAlignment.ONE_LINERS, MethodsSequenceAlignment.NEVER, LocalDate.of(2022, 6, 5));
 	final ConfigBoolValue configSeparateWithEmptyLine = new ConfigBoolValue(this, "SeparateWithEmptyLine", "Separate multi-line declarations with empty lines", true, false, LocalDate.of(2022, 6, 5));
 
@@ -506,7 +506,7 @@ public class AlignMethodsDeclarationRule extends AlignDeclarationSectionRuleBase
 	private void changeLineBreaks(Code code, AlignTable table, boolean alwaysContinueLine, int basicIndent) {
  		boolean isPotentialOneLiner = (table.getLineCount() == 1 && !table.getLine(0).containsComments());
 		boolean isCurrentOneLiner = isPotentialOneLiner && !table.getLine(0).containsInnerLineBreaks(); 
-		MethodsOneLinerMeasure oneLinerMeasure = MethodsOneLinerMeasure.forValue(configHandleOneLiners.getValue());
+		MethodsOneLinerAction oneLinerAction = MethodsOneLinerAction.forValue(configHandleOneLiners.getValue());
 		
 		// insert line breaks depending on rule configuration
 		for (int colIndex = Columns.KEYWORD.getValue(); colIndex <= Columns.ACCESS.getValue(); ++colIndex) {
@@ -518,9 +518,9 @@ public class AlignMethodsDeclarationRule extends AlignDeclarationSectionRuleBase
 			ChangeType continueLine;
 			if (alwaysContinueLine) {
 				continueLine = (colIndex == Columns.KEYWORD.getValue()) ? ChangeType.KEEP_AS_IS : ChangeType.ALWAYS;
-			} else if (isPotentialOneLiner && oneLinerMeasure == MethodsOneLinerMeasure.CREATE) {
+			} else if (isPotentialOneLiner && oneLinerAction == MethodsOneLinerAction.CREATE) {
 				continueLine = ChangeType.ALWAYS;
-			} else if (isCurrentOneLiner && oneLinerMeasure == MethodsOneLinerMeasure.KEEP_EXISTING) {
+			} else if (isCurrentOneLiner && oneLinerAction == MethodsOneLinerAction.KEEP_EXISTING) {
 				continueLine = ChangeType.KEEP_AS_IS;
 			} else {
 				// for multi-liners, or if the one-liner doesn't get special treatment, use regular configuration  

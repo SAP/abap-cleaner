@@ -22,7 +22,7 @@ class AlignMethodsDeclarationTest extends RuleTestBase {
 		rule.configContinueAfterMethodName.setEnumValue(ChangeType.KEEP_AS_IS);
 		rule.configContinueAfterAccess.setEnumValue(ChangeType.ALWAYS);
 		rule.configFillPercentageToJustifyOwnColumn.setValue(40);
-		rule.configHandleOneLiners.setEnumValue(MethodsOneLinerMeasure.KEEP_EXISTING);
+		rule.configHandleOneLiners.setEnumValue(MethodsOneLinerAction.KEEP_EXISTING);
 		rule.configAlignConsecutive.setEnumValue(MethodsSequenceAlignment.ONE_LINERS);
 		rule.configAlignAcrossEmptyLines.setValue(true);
 		rule.configAlignAcrossCommentLines.setValue(false);
@@ -530,7 +530,7 @@ class AlignMethodsDeclarationTest extends RuleTestBase {
 		// - the potential one-liner method declaration GET_MAX_VALUE is changed into a one-liner
 		// - alignment is done across all one-liner methods
 		
-		rule.configHandleOneLiners.setEnumValue(MethodsOneLinerMeasure.CREATE);
+		rule.configHandleOneLiners.setEnumValue(MethodsOneLinerAction.CREATE);
 
 		buildSrc("    METHODS set_value IMPORTING !iv_new_value TYPE i.");
 		buildSrc("    METHODS get_current_value RETURNING VALUE(rv_result) TYPE i.");
@@ -557,7 +557,7 @@ class AlignMethodsDeclarationTest extends RuleTestBase {
 		// - the potential one-liner method declaration GET_MAX_VALUE_CHAIN is changed into a one-liner
 		// - alignment is done across all one-liner methods
 
-		rule.configHandleOneLiners.setEnumValue(MethodsOneLinerMeasure.CREATE);
+		rule.configHandleOneLiners.setEnumValue(MethodsOneLinerAction.CREATE);
 
 		buildSrc("    METHODS: set_value_chained IMPORTING !iv_new_value TYPE i,");
 		buildSrc("      get_current_value_chained RETURNING VALUE(rv_result) TYPE i,");
@@ -584,7 +584,7 @@ class AlignMethodsDeclarationTest extends RuleTestBase {
 		
 		rule.configContinueAfterMethodName.setEnumValue(ChangeType.NEVER);
 		rule.configContinueAfterAccess.setEnumValue(ChangeType.NEVER);
-		rule.configHandleOneLiners.setEnumValue(MethodsOneLinerMeasure.SAME_AS_MULTI_LINERS);
+		rule.configHandleOneLiners.setEnumValue(MethodsOneLinerAction.SAME_AS_MULTI_LINERS);
 		rule.configSeparateWithEmptyLine.setValue(false);
 		
 		buildSrc("    METHODS set_value IMPORTING !iv_new_value TYPE i.");
@@ -642,7 +642,7 @@ class AlignMethodsDeclarationTest extends RuleTestBase {
 		
 		rule.configContinueAfterMethodName.setEnumValue(ChangeType.NEVER);
 		rule.configContinueAfterAccess.setEnumValue(ChangeType.NEVER);
-		rule.configHandleOneLiners.setEnumValue(MethodsOneLinerMeasure.SAME_AS_MULTI_LINERS);
+		rule.configHandleOneLiners.setEnumValue(MethodsOneLinerAction.SAME_AS_MULTI_LINERS);
 		rule.configSeparateWithEmptyLine.setValue(true);
 		
 		buildSrc("    METHODS set_value IMPORTING !iv_new_value TYPE i.");
@@ -720,7 +720,7 @@ class AlignMethodsDeclarationTest extends RuleTestBase {
 
 	@Test
 	void testAlignAcrossEmptyLinesAndComments() {
-		rule.configHandleOneLiners.setEnumValue(MethodsOneLinerMeasure.CREATE);
+		rule.configHandleOneLiners.setEnumValue(MethodsOneLinerAction.CREATE);
 		rule.configAlignAcrossCommentLines.setValue(true);
 
 		buildSrc("    METHODS set_value IMPORTING !iv_new_value TYPE i.");
@@ -766,7 +766,7 @@ class AlignMethodsDeclarationTest extends RuleTestBase {
 
 	@Test
 	void testDoNotAlignAcrossComments() {
-		rule.configHandleOneLiners.setEnumValue(MethodsOneLinerMeasure.CREATE);
+		rule.configHandleOneLiners.setEnumValue(MethodsOneLinerAction.CREATE);
 		rule.configAlignAcrossCommentLines.setValue(false);
 
 		buildSrc("    METHODS set_value IMPORTING !iv_new_value TYPE i.");
@@ -813,7 +813,7 @@ class AlignMethodsDeclarationTest extends RuleTestBase {
 
 	@Test
 	void testDoNotAlignAcrossEmptyLines() {
-		rule.configHandleOneLiners.setEnumValue(MethodsOneLinerMeasure.CREATE);
+		rule.configHandleOneLiners.setEnumValue(MethodsOneLinerAction.CREATE);
 		rule.configAlignAcrossEmptyLines.setValue(false);
 		rule.configAlignAcrossCommentLines.setValue(true);
 
@@ -862,7 +862,7 @@ class AlignMethodsDeclarationTest extends RuleTestBase {
 
 	@Test
 	void testDoNotAlignAcrossEmptyLinesOrComments() {
-		rule.configHandleOneLiners.setEnumValue(MethodsOneLinerMeasure.CREATE);
+		rule.configHandleOneLiners.setEnumValue(MethodsOneLinerAction.CREATE);
 		rule.configAlignAcrossEmptyLines.setValue(false);
 		rule.configAlignAcrossCommentLines.setValue(false);
 

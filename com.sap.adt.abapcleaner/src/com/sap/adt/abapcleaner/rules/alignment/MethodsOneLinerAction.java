@@ -1,6 +1,6 @@
 package com.sap.adt.abapcleaner.rules.alignment;
 
-public enum MethodsOneLinerMeasure {
+public enum MethodsOneLinerAction {
    CREATE,
    KEEP_EXISTING,
    SAME_AS_MULTI_LINERS;
@@ -11,7 +11,7 @@ public enum MethodsOneLinerMeasure {
       return this.ordinal();
    }
 
-   public static MethodsOneLinerMeasure forValue(int value) {
+   public static MethodsOneLinerAction forValue(int value) {
       return values()[value];
    }	
 }

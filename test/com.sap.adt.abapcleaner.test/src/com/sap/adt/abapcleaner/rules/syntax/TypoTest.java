@@ -23,7 +23,7 @@ public class TypoTest extends RuleTestBase {
 		rule.configProcessShorttexts.setValue(true); 
 		rule.configProcessComments.setValue(true); 
 		rule.configAddTodoBeforeMessage.setValue(true); 
-		rule.configMeasureForLiterals.setEnumValue(TypoMeasure.ADD_TODO_COMMENT);
+		rule.configActionForLiterals.setEnumValue(TypoAction.ADD_TODO_COMMENT);
 	}
 
 	@Test
@@ -283,7 +283,7 @@ public class TypoTest extends RuleTestBase {
 	void testLiteralsWithBracketsChangeDirectly() {
 		// ensure that typos are identified and changed, esp. at the start and end of the literals
 		
-		rule.configMeasureForLiterals.setEnumValue(TypoMeasure.CHANGE_DIRECTLY);
+		rule.configActionForLiterals.setEnumValue(TypoAction.CHANGE_DIRECTLY);
 
 		buildSrc("    task = `calcualte all (availabe) attributes`.");
 		buildSrc("");
@@ -304,7 +304,7 @@ public class TypoTest extends RuleTestBase {
 
 	@Test
 	void testLiteralsUnchanged() {
-		rule.configMeasureForLiterals.setEnumValue(TypoMeasure.KEEP_UNCHANGED);
+		rule.configActionForLiterals.setEnumValue(TypoAction.KEEP_UNCHANGED);
 
 		buildSrc("    task = `calcualte all availabe attributes`.");
 		buildSrc("");
@@ -321,7 +321,7 @@ public class TypoTest extends RuleTestBase {
 
 	@Test
 	void testWordsAttachedToStringTemplateChars() {
-		rule.configMeasureForLiterals.setEnumValue(TypoMeasure.CHANGE_DIRECTLY);
+		rule.configActionForLiterals.setEnumValue(TypoAction.CHANGE_DIRECTLY);
 
 		buildSrc("    info = |analysing{ TAB }availabe{ TAB }occurences|.");
 		buildSrc("    message = |optimisation|.");
@@ -384,7 +384,7 @@ public class TypoTest extends RuleTestBase {
 
 	@Test
 	void testLiteralsWithEscapingChangeDirectly() {
-		rule.configMeasureForLiterals.setEnumValue(TypoMeasure.CHANGE_DIRECTLY);
+		rule.configActionForLiterals.setEnumValue(TypoAction.CHANGE_DIRECTLY);
 
 		buildSrc("    task = `didnt, does'nt, dont't`.");
 		buildSrc("");
