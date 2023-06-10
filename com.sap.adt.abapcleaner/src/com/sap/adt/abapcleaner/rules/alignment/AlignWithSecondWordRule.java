@@ -86,12 +86,15 @@ public class AlignWithSecondWordRule extends Rule {
 				continue;
 			}
 
-			// certain types of commands are not applicable (e.g. declarations, assignments, METHOD, CLASS, IF, ELSEIF, WHILE, ...)
+			// certain types of commands are not applicable (e.g. declarations, assignments, METHOD, CLASS, IF, ELSEIF, WHILE, ...);
+			// also, skip cases that are processed by the AlignParametersRule, including "RAISE ..." without MESSAGE
 			Token firstToken = command.getFirstToken();
 			boolean skip = !isInMethod || command.isDeclaration() || command.isAssignment() || command.isAbapSqlOperation() || command.isInClassDefinition()
 					|| command.isDeclarationInClassDef() || (command.getOpensLevel() && !firstToken.isKeyword("LOOP")) 
 					|| firstToken.matchesOnSiblings(true, "CALL", "METHOD|FUNCTION|BADI")
 					|| firstToken.matchesOnSiblings(true, "CREATE", "OBJECT")
+					|| firstToken.matchesOnSiblings(true, "RAISE", TokenSearch.makeOptional("RESUMABLE"), "EXCEPTION", "TYPE", TokenSearch.ANY_IDENTIFIER, "EXPORTING")
+					|| firstToken.matchesOnSiblings(true, "RAISE", "SHORTDUMP", "TYPE", TokenSearch.ANY_IDENTIFIER, "EXPORTING")
 					|| firstToken.getNextSibling() != firstToken.getNext();
 			// TODO: or would it be better to use an include list?
 

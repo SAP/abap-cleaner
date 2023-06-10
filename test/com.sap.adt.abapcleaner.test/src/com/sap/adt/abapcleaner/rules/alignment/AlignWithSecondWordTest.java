@@ -147,6 +147,37 @@ class AlignWithSecondWordTest extends RuleTestBase {
 		buildExp("         SOURCE text = text");
 		buildExp("         RESULT XML xml.");
 
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testRaiseExceptionSkipped() {
+		// ensure that RAISE [RESUMABLE] EXCEPTION without MESSAGE is NOT processed
+		buildSrc("    RAISE EXCEPTION TYPE cx_any_exception");
+		buildSrc("      EXPORTING previous = exception.");
+		buildSrc("");
+		buildSrc("    RAISE RESUMABLE EXCEPTION TYPE cx_other_exception");
+		buildSrc("      EXPORTING previous = exception.");
+
+		copyExpFromSrc();
+		
+		putAnyMethodAroundSrcAndExp();
+		
+		testRule();
+	}
+
+	@Test
+	void testRaiseShortdumpSkipped() {
+		// ensure that RAISE [RESUMABLE] EXCEPTION without MESSAGE is NOT processed
+		buildSrc("    RAISE SHORTDUMP TYPE cx_any_class");
+		buildSrc("      EXPORTING textid = lc_any_text_id.");
+
+		copyExpFromSrc();
+		
+		putAnyMethodAroundSrcAndExp();
+		
 		testRule();
 	}
 }
