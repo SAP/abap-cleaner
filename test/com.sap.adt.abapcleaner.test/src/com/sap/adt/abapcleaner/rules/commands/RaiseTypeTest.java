@@ -142,5 +142,4 @@ public class RaiseTypeTest extends RuleTestBase {
 
 		testRule();
 	}
-
 }

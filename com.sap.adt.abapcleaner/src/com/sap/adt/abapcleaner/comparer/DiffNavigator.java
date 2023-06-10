@@ -135,7 +135,7 @@ public class DiffNavigator {
 		}
 		
 		int sourceLineOfSelStart = startCommand.getSourceLineNumStart();
-		int sourceLineOfSelEnd = lastCommand.getSourceLineNumStart();
+		int sourceLineOfSelEnd = lastCommand.getSourceLineNumEnd();
 		
 		// move the start command to possibly have a parent, but no grandparent (i.e., assuming CLASS ... METHOD ..., move to METHOD level)
 		while (startCommand.getParent() != null && startCommand.getParent().getParent() != null) 
@@ -174,17 +174,19 @@ public class DiffNavigator {
 
 		if (lastCommand == null) 
 			lastCommand = code.lastCommand;
+		
+		// determine the complete line range startLine...lastLine, considering left and right display and original commands
 		startLine = diffDoc.findFirstLineOfCommand(startCommand, DisplaySide.RIGHT, false);
-		if (startCommand.originalCommand != startCommand) {
-			int originalStartLine = diffDoc.findFirstLineOfCommand(startCommand.originalCommand, DisplaySide.LEFT, false);
-			if (originalStartLine >= 0 && originalStartLine < startLine)
-				startLine = originalStartLine;
+		Command startCommandLeft = (startCommand.originalCommand != null) ? startCommand.originalCommand : startCommand;
+		int startLineLeft = diffDoc.findFirstLineOfCommand(startCommandLeft, DisplaySide.LEFT, false);
+		if (startLineLeft >= 0 && startLineLeft < startLine) {
+			startLine = startLineLeft;
 		}
 		lastLine = diffDoc.findLastLineOfCommand(lastCommand, DisplaySide.RIGHT);
-		if (lastCommand.originalCommand != lastCommand) {
-			int originalLastLine = diffDoc.findLastLineOfCommand(lastCommand.originalCommand, DisplaySide.LEFT);
-			if (originalLastLine >= 0 && originalLastLine > lastLine)
-				lastLine = originalLastLine;
+		Command lastCommandLeft = (lastCommand.originalCommand != null) ? lastCommand.originalCommand : lastCommand;
+		int lastLineLeft = diffDoc.findLastLineOfCommand(lastCommandLeft, DisplaySide.LEFT);
+		if (lastLineLeft >= 0 && lastLineLeft > lastLine) {
+			lastLine = lastLineLeft;
 		}
 		int sourceTextStart = startCommand.getSourceTextStart();
 		int sourceTextEnd = lastCommand.getSourceTextEnd();
