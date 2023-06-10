@@ -187,6 +187,8 @@ public class AlignParametersRule extends RuleForCommands {
 
 		boolean changed = false;
 
+		// note that cases processed here should be skipped in the AlignWithSecondWordRule
+		
 		// align CALL METHOD|FUNCTION|BADI without parentheses (a call with parentheses will simply be handled by the "all other cases" section below)
 		// also align CREATE OBJECT, if it was not replaced by a NEW constructor by the CreateObjectRule
 		Token period = command.getLastNonCommentToken();
