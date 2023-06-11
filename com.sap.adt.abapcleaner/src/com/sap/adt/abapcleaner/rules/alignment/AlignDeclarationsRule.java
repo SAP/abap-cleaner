@@ -54,21 +54,27 @@ public class AlignDeclarationsRule extends AlignDeclarationSectionRuleBase {
    	private Stack<AlignTable> tableStack = new Stack<>();
    	private ArrayList<AlignTable> allTables = new ArrayList<>();
    	
+   	/** contains only tables that belong to BEGIN OF ... END OF sections */
+   	private HashSet<AlignTable> structureTables = new HashSet<>();
+   	
    	public TableSet(StructureAlignStyle structureAlignStyle) {
-   		this.structureAlignStyle = structureAlignStyle;
-   		addTable();
+  			this.structureAlignStyle = structureAlignStyle;
+   		addTable(false);
    	}
    	
-   	private void addTable() {
+   	private void addTable(boolean forStructure) {
    		AlignTable newTable = new AlignTable(MAX_COLUMN_COUNT);
    		allTables.add(newTable);
   			tableStack.push(newTable);
+  			if (forStructure) {
+  				structureTables.add(newTable);
+  			}
    	}
    	
    	public AlignTable getCurrentTable() {
    		// in special cases, e.g. if the rule is executed on a "TYPES END OF" line, the table stack may be empty
    		if (tableStack.isEmpty()) {
-      		addTable();
+      		addTable(false);
    		}
    		return tableStack.peek(); 
    	}
@@ -77,7 +83,7 @@ public class AlignDeclarationsRule extends AlignDeclarationSectionRuleBase {
    		if (structureAlignStyle == StructureAlignStyle.ACROSS_LEVELS && additionalIndent > 0) {
    			// continue using the table at the top of the table stack, which was started at the top-level BEGIN OF
    		} else {
-   			addTable();
+   			addTable(true);
    		}
   			additionalIndent += 2;
    	}
@@ -98,13 +104,18 @@ public class AlignDeclarationsRule extends AlignDeclarationSectionRuleBase {
    			// replace the table from the previous level with a new one, which will have independent alignment
    			if (!tableStack.isEmpty())
    				tableStack.pop();
-   			addTable();
+   			boolean forStructure = (additionalIndent != 0); 
+   			addTable(forStructure);
    		}
    	}
 
    	public Iterable<AlignTable> getAllTables() { 
    		return allTables; 
   		}
+   	
+   	public boolean isTableForStructure(AlignTable table) {
+   		return structureTables.contains(table);
+   	}
    }
    
 	@Override
@@ -133,32 +144,41 @@ public class AlignDeclarationsRule extends AlignDeclarationSectionRuleBase {
 				+ LINE_SEP + "               lc_num_contract_change TYPE ty_sequence_number VALUE    1," 
 				+ LINE_SEP + "          lc_start_date TYPE ty_start_date VALUE '20220312'." 
 				+ LINE_SEP 
-				+ LINE_SEP + "    \" if only a single declaration (or a very small ratio of them) has a VALUE, a comment, etc.," 
-				+ LINE_SEP + "    \" no extra column is created for it" 
-				+ LINE_SEP + "    DATA lth_any_table TYPE        ty_th_hash_table_type. \" only line with a comment" 
-				+ LINE_SEP + "    DATA lo_contract TYPE REF TO cl_contract  ##NEEDED." 
-				+ LINE_SEP + "    DATA      ls_item_data  TYPE if_any_interface=>ty_s_item." 
-				+ LINE_SEP + "    DATA lv_was_saved TYPE abap_bool VALUE abap_false ##NO_TEXT." 
-				+ LINE_SEP 
 				+ LINE_SEP + "    FIELD-SYMBOLS: " 
-				+ LINE_SEP + "         <ls_data> TYPE ty_s_data, \" first comment line" 
+				+ LINE_SEP + "         <ls_data> TYPE ty_s_data,   \" first comment line" 
 				+ LINE_SEP + "      <ls_amount> LIKE LINE OF its_amount," 
 				+ LINE_SEP + "    <ls_contract> TYPE ty_s_contract, \" second comment line" 
-				+ LINE_SEP + "   <ls_param> LIKE LINE OF mt_parameter." 
+				+ LINE_SEP + "   <ls_param>  LIKE LINE OF mt_parameter." 
+				+ LINE_SEP 
+				+ LINE_SEP + "    \" if only a single declaration (or a very small ratio of them) has a VALUE, a comment, etc.," 
+				+ LINE_SEP + "    \" no extra column is created for it" 
+				+ LINE_SEP + "    DATA lth_any_table TYPE ty_th_hash_table_type. \" only line with a comment" 
+				+ LINE_SEP + "    DATA lo_contract TYPE REF TO  cl_contract  ##NEEDED." 
+				+ LINE_SEP + "    DATA ls_item_data   TYPE if_any_interface=>ty_s_item." 
+				+ LINE_SEP + "    DATA lv_was_saved   TYPE abap_bool  VALUE abap_false  ##NO_TEXT." 
+				+ LINE_SEP 
+				+ LINE_SEP + "    \" alignment across comments and empty lines (depending on configuration):" 
+				+ LINE_SEP + "    CONSTANTS lc_pi TYPE p LENGTH 10 DECIMALS 10 VALUE '3.1415926536'." 
+				+ LINE_SEP + "    CONSTANTS lc_e TYPE p LENGTH 8 DECIMALS 10 VALUE '2.718281828'." 
+				+ LINE_SEP + "    \" square roots" 
+				+ LINE_SEP + "    CONSTANTS lc_sqrt_2 TYPE p LENGTH 8 DECIMALS 4 VALUE '1.4142'." 
+				+ LINE_SEP + "    CONSTANTS lc_sqrt_32 TYPE p LENGTH 8 DECIMALS 10 VALUE '5.6568542495'." 
+				+ LINE_SEP 
+				+ LINE_SEP + "    CONSTANTS lc_ln_10 TYPE p  LENGTH 8 DECIMALS 4 VALUE '2.3026'." 
 				+ LINE_SEP 
 				+ LINE_SEP + "    TYPES:"
 				+ LINE_SEP + "      BEGIN OF ty_s_outer,"
 				+ LINE_SEP + "      one TYPE i,"
 				+ LINE_SEP + "      two TYPE i,"
 				+ LINE_SEP + "      BEGIN OF ty_s_inner,"
-				+ LINE_SEP + "      a1 TYPE i,"
-				+ LINE_SEP + "      b2 TYPE i,"
-				+ LINE_SEP + "      c3 TYPE i,"
+				+ LINE_SEP + "      alpha TYPE p LENGTH 5 DECIMALS 2,"
+				+ LINE_SEP + "      beta TYPE p LENGTH 10 DECIMALS 2,"
+				+ LINE_SEP + "      gamma TYPE i,"
 				+ LINE_SEP + "      END OF ty_s_inner,"
-				+ LINE_SEP + "      three TYPE i,"
-				+ LINE_SEP + "      four TYPE i,"
+				+ LINE_SEP + "      three  TYPE i,"
+				+ LINE_SEP + "      four   TYPE i,"
 				+ LINE_SEP + "      BEGIN OF ty_s_another_inner,"
-				+ LINE_SEP + "      long_component_name TYPE i,"
+				+ LINE_SEP + "      long_component_name   TYPE i,"
 				+ LINE_SEP + "      very_long_component_name TYPE i,"
 				+ LINE_SEP + "      END OF ty_s_another_inner,"
 				+ LINE_SEP + "      seventeen TYPE i,"
@@ -169,29 +189,56 @@ public class AlignDeclarationsRule extends AlignDeclarationSectionRuleBase {
 				+ LINE_SEP + "      BEGIN OF ty_s_outer_2,"
 				+ LINE_SEP + "      any_component TYPE i,"
 				+ LINE_SEP + "      BEGIN OF ty_s_inner,"
-				+ LINE_SEP + "      alpha TYPE i,"
-				+ LINE_SEP + "      beta TYPE i,"
+				+ LINE_SEP + "      alpha  TYPE i,"
+				+ LINE_SEP + "      beta   TYPE i,"
 				+ LINE_SEP + "      END OF ty_s_inner,"
 				+ LINE_SEP + "      other_component TYPE i,"
 				+ LINE_SEP + "      END OF ty_s_outer_2."
-				+ LINE_SEP 
-				+ LINE_SEP + "    \" alignment across comments and empty lines (depending on configuration):" 
-				+ LINE_SEP + "    DATA lv_value TYPE i." 
-				+ LINE_SEP + "    \" comment" 
-				+ LINE_SEP + "    DATA lv_long_variable_name TYPE string." 
-				+ LINE_SEP 
-				+ LINE_SEP + "    DATA lts_sorted_table LIKE its_table." 
 				+ LINE_SEP + "  ENDMETHOD.";
    }
 
-	final ConfigBoolValue configExecuteOnClassDefinitionSections = new ConfigBoolValue(this, "ExecuteOnClassDefinitionSections", "Execute on CLASS ... DEFINITION sections", true);
+   private final String[] alignChainActionTexts     = new String[] { "align name, TYPE, LENGTH, VALUE etc. if filled", "align name and TYPE (like Pretty Printer)", "align name only" };
+   private final String[] alignNonChainsActionTexts = new String[] { "align name, TYPE, LENGTH, VALUE etc. if filled", "align name and TYPE", "align name only (like Pretty Printer)" };
+   private final String[] alignStructureActionTexts = new String[] { "align name, TYPE, LENGTH, VALUE etc. if filled", "align name and TYPE (like Pretty Printer)", "align name only" };
+   
+   private final String[] structureAlignStyleTexts = new String[] { "align outer structure with inner", "align outer structure independently (like Pretty Printer)", "align each section independently" };
+   
+	final ConfigBoolValue configExecuteOnClassDefAndInterfaces = new ConfigBoolValue(this, "ExecuteOnClassDefinitionSections", "Also execute on CLASS ... DEFINITION sections and INTERFACES", true);
+	final ConfigEnumValue<AlignDeclarationsAction> configAlignChainAction = new ConfigEnumValue<AlignDeclarationsAction>(this, "AlignChainAction", "Action for chains:", alignChainActionTexts, AlignDeclarationsAction.ALIGN_NAME_TYPE_LENGTH_ETC, AlignDeclarationsAction.ALIGN_NAME_TYPE_LENGTH_ETC, LocalDate.of(2023, 6, 10) ); 
+	final ConfigEnumValue<AlignDeclarationsAction> configAlignNonChainsAction = new ConfigEnumValue<AlignDeclarationsAction>(this, "AlignNonChainsAction", "Action for consecutive non-chains:", alignNonChainsActionTexts, AlignDeclarationsAction.ALIGN_NAME_TYPE_LENGTH_ETC, AlignDeclarationsAction.ALIGN_NAME_TYPE_LENGTH_ETC, LocalDate.of(2023, 6, 10) ); 
+	// configAlignAcrossEmptyLines and configAlignAcrossCommentLines are inherited
+	final ConfigEnumValue<AlignDeclarationsAction> configAlignStructureAction = new ConfigEnumValue<AlignDeclarationsAction>(this, "AlignStructureAction", "Action for structures (BEGIN OF ...):", alignStructureActionTexts, AlignDeclarationsAction.ALIGN_NAME_TYPE_LENGTH_ETC, AlignDeclarationsAction.ALIGN_NAME_TYPE_LENGTH_ETC, LocalDate.of(2023, 6, 10) ); 
+	final ConfigEnumValue<StructureAlignStyle> configStructureAlignStyle = new ConfigEnumValue<StructureAlignStyle>(this, "StructureAlignStyle", "Scope of nested structures:", structureAlignStyleTexts, StructureAlignStyle.PER_LEVEL, StructureAlignStyle.ACROSS_LEVELS, LocalDate.of(2023, 5, 21) ); 
 	final ConfigIntValue configFillPercentageToJustifyOwnColumn = new ConfigIntValue(this, "FillPercentageToJustifyOwnColumn", "Fill Ratio to justify own column", "%", 1, 20, 100);
-	final ConfigEnumValue<StructureAlignStyle> configStructureAlignStyle = new ConfigEnumValue<StructureAlignStyle>(this, "StructureAlignStyle", "Alignment of nested structures:", new String[] { "align outer structure with inner", "align outer structure independently (like Pretty Printer)", "align each section independently" }, StructureAlignStyle.PER_LEVEL, StructureAlignStyle.ACROSS_LEVELS, LocalDate.of(2023, 5, 21) ); 
+	final ConfigBoolValue configCondenseInnerSpaces = new ConfigBoolValue(this, "CondenseInnerSpaces", "Condense inner spaces in non-aligned parts", true, true, LocalDate.of(2023, 6, 10));
 
-	private final ConfigValue[] configValues = new ConfigValue[] { configExecuteOnClassDefinitionSections, configAlignAcrossEmptyLines, configAlignAcrossCommentLines, configFillPercentageToJustifyOwnColumn, configStructureAlignStyle };
+	private final ConfigValue[] configValues = new ConfigValue[] { configExecuteOnClassDefAndInterfaces, configAlignChainAction, configAlignNonChainsAction, configAlignAcrossEmptyLines, configAlignAcrossCommentLines, configAlignStructureAction, configStructureAlignStyle, configFillPercentageToJustifyOwnColumn, configCondenseInnerSpaces };
 
 	@Override
 	public ConfigValue[] getConfigValues() { return configValues; }
+
+	private AlignDeclarationsAction getAlignChainAction() { return AlignDeclarationsAction.forValue(configAlignChainAction.getValue()); }
+	private AlignDeclarationsAction getAlignNonChainsAction() { return AlignDeclarationsAction.forValue(configAlignNonChainsAction.getValue()); }
+	private AlignDeclarationsAction getAlignStructureAction() { return AlignDeclarationsAction.forValue(configAlignStructureAction.getValue()); }
+
+	public boolean isConfigValueEnabled(ConfigValue configValue) {
+		if (configValue == configAlignAcrossEmptyLines || configValue == configAlignAcrossCommentLines) {
+			return   (getAlignNonChainsAction() == AlignDeclarationsAction.ALIGN_NAME_TYPE_LENGTH_ETC) 
+					|| (getAlignNonChainsAction() == AlignDeclarationsAction.ALIGN_NAME_AND_TYPE);
+			
+		} else if (configValue == configStructureAlignStyle) {
+			return  (getAlignStructureAction() == AlignDeclarationsAction.ALIGN_NAME_TYPE_LENGTH_ETC
+					|| getAlignStructureAction() == AlignDeclarationsAction.ALIGN_NAME_AND_TYPE);
+			
+		} else if (configValue == configFillPercentageToJustifyOwnColumn) {
+			return  (getAlignChainAction() == AlignDeclarationsAction.ALIGN_NAME_TYPE_LENGTH_ETC 
+					|| getAlignNonChainsAction() == AlignDeclarationsAction.ALIGN_NAME_TYPE_LENGTH_ETC 
+					|| getAlignStructureAction() == AlignDeclarationsAction.ALIGN_NAME_TYPE_LENGTH_ETC);
+			
+		} else {
+			return true;
+		}
+	}
 
 	public AlignDeclarationsRule(Profile profile) {
 		super(profile);
@@ -200,17 +247,22 @@ public class AlignDeclarationsRule extends AlignDeclarationSectionRuleBase {
 
 	@Override
 	protected boolean isMatchForFirstCommand(Command command, int pass) {
-		return command.isDeclaration() && (configExecuteOnClassDefinitionSections.getValue() || !command.isInClassDefinition());
+		if (!configExecuteOnClassDefAndInterfaces.getValue() && (command.isInClassDefinition() || command.isInInterfaceDefinition()))
+			return false;
+		else 
+			return command.isDeclaration();
 	}
 
 	@Override
 	protected boolean isMatchForFurtherCommand(Command command, String keywordOfFirstCommand, int pass) {
-		if (command.getFirstToken().isAnyKeyword(keywordOfFirstCommand))
-			return command.getFirstToken().getNext() != null && !command.getFirstToken().getNext().isChainColon();
-		else if (AbapCult.stringEquals(keywordOfFirstCommand, "TYPES", true) && command.isDeclarationInclude())
+		if (command.getFirstToken().isAnyKeyword(keywordOfFirstCommand)) {
+			return !command.isSimpleChain();
+		} else if (AbapCult.stringEquals(keywordOfFirstCommand, "TYPES", true) && command.isDeclarationInclude()) {
+			// just safeguarding; should not be required, as AlignDeclarationSectionRuleBase already considers "commandBelongsToBlock"
 			return true;
-		else
+		} else {
 			return false;
+		}
 	}
 
 	@Override
@@ -229,10 +281,21 @@ public class AlignDeclarationsRule extends AlignDeclarationSectionRuleBase {
 			tableSet = buildTable(startCommand, endCommand, includeKeywordInTable);
 			if (tableSet == null)
 				return;
+
+			for (AlignTable table : tableSet.getAllTables()) {
+				AlignDeclarationsAction alignAction;
+				if (tableSet.isTableForStructure(table)) {
+					alignAction = getAlignStructureAction();
+				} else { 
+					alignAction = startCommandIsChain ? getAlignChainAction() : getAlignNonChainsAction();
+				}
+				joinColumns(table, alignAction);
+			}
+
 		} catch (UnexpectedSyntaxException ex) {
 			throw new UnexpectedSyntaxBeforeChanges(this, ex);
 		}
-
+		
 		// align the tables
 		int firstLineBreaks = tableStart.firstLineBreaks;
 		for (AlignTable table : tableSet.getAllTables()) { 
@@ -261,7 +324,7 @@ public class AlignDeclarationsRule extends AlignDeclarationSectionRuleBase {
 				}
 			}
 			
-			Command[] changedCommands = table.align(basicIndent, firstLineBreaks, false);
+			Command[] changedCommands = table.align(basicIndent, firstLineBreaks, false, configCondenseInnerSpaces.getValue());
 			code.addRuleUses(this, changedCommands);
 			
 			firstLineBreaks = 1;
@@ -359,8 +422,9 @@ public class AlignDeclarationsRule extends AlignDeclarationSectionRuleBase {
 				while (token != null && token.isCommentLine()) {
 					token = token.getNext();
 				}
-				if (token == null)
+				if (token == null) {
 					break;
+				}
 			} else {
 				// skip Commands that are whole comment lines 
 				while (command.isCommentLine() && command != endCommand)
@@ -408,10 +472,6 @@ public class AlignDeclarationsRule extends AlignDeclarationSectionRuleBase {
 				token = command.getFirstToken();
 			}
 		} while (true);
-		
-		for (AlignTable table : tableSet.getAllTables()) {
-			joinSparselyFilledColumns(table);
-		}
 		
 		return tableSet;
 	}
@@ -556,24 +616,42 @@ public class AlignDeclarationsRule extends AlignDeclarationSectionRuleBase {
 		return token;
 	}
 
-	private void joinSparselyFilledColumns(AlignTable table) throws UnexpectedSyntaxException {
+	private void joinColumns(AlignTable table, AlignDeclarationsAction alignAction) throws UnexpectedSyntaxException {
 		// decide whether rarely used columns should really be aligned (i.e. whether horizontal space should be reserved for them):
 		// if only one single line (or less than 20% of all lines) have content in this column, then join the content into a previous column
 
 		double fillRatioToJustifyOwnColumn = configFillPercentageToJustifyOwnColumn.getValue() / 100.0;
+		boolean condenseSpaceBetweenCells = configCondenseInnerSpaces.getValue();
 
-		for (int i = Columns.LINE_END_COMMENT.getValue(); i >= Columns.LENGTH.getValue(); --i) {
+		for (int i = Columns.LINE_END_COMMENT.getValue(); i >= Columns.TYPE.getValue(); --i) {
 			AlignColumn testColumn = table.getColumn(i);
 			if (testColumn.isEmpty())
 				continue;
-			if (testColumn.getCellCount() <= 1 || testColumn.getCellCount() < (int) (table.getLineCount() * fillRatioToJustifyOwnColumn))
-				testColumn.joinIntoPreviousColumns();
+			
+			boolean join = false;
+			if (alignAction == AlignDeclarationsAction.ALIGN_NAME_ONLY) {
+				// join all columns (except IDENTIFIER, which is not covered by this loop) 
+				join = true;
+
+			} else if (alignAction == AlignDeclarationsAction.ALIGN_NAME_AND_TYPE) {
+				// join all columns except TYPE
+				join = (i != Columns.TYPE.getValue());
+			
+			} else { // alignAction == AlignDeclarationsAction.ALIGN_NAME_TYPE_LENGTH_ETC
+				// only join if the column is sparsely filled
+				join = testColumn.getCellCount() <= 1 || testColumn.getCellCount() < (int) (table.getLineCount() * fillRatioToJustifyOwnColumn); 
+			}
+
+			if (join) {
+				testColumn.joinIntoPreviousColumns(condenseSpaceBetweenCells);
+			}
 		}
 
 		// if LENGTH is always preceded by TYPE sections with the same length ("TYPE c", "TYPE p" etc.), then join it into the TYPE column 
+		// (in case of unalignAll or keepAsIs, this column will already be joined into previous columns by now)
 		AlignColumn lengthColumn = table.getColumn(Columns.LENGTH.getValue()); 
-		if (lengthColumn.isPreviousColumnFixedWidth()) {
-			lengthColumn.joinIntoPreviousColumns();
+		if (!lengthColumn.isEmpty() && lengthColumn.isPreviousColumnFixedWidth()) {
+			lengthColumn.joinIntoPreviousColumns(condenseSpaceBetweenCells);
 		}
 	}
 

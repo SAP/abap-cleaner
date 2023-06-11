@@ -306,7 +306,7 @@ public class AlignCondExpressionsRule extends RuleForCommands {
 		if (configThenOnWhenLine.getValue()) {
 			thenColumn.removeLineBreaksBefore();
 			try {
-				thenColumn.joinIntoPreviousColumns();
+				thenColumn.joinIntoPreviousColumns(true);
 			} catch (UnexpectedSyntaxException e) {
 				throw new UnexpectedSyntaxAfterChanges(this, e);
 			}

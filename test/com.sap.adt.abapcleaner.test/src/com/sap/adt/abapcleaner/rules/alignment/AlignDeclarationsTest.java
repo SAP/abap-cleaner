@@ -3,6 +3,9 @@ package com.sap.adt.abapcleaner.rules.alignment;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import com.sap.adt.abapcleaner.rulebase.RuleID;
 import com.sap.adt.abapcleaner.rulebase.RuleTestBase;
 
@@ -17,11 +20,18 @@ class AlignDeclarationsTest extends RuleTestBase {
 	@BeforeEach
 	void setUp() {
 		// setup default test configuration (may be modified in the individual test methods)
-		rule.configExecuteOnClassDefinitionSections.setValue(true);
+		rule.configExecuteOnClassDefAndInterfaces.setValue(true);
+		rule.configAlignChainAction.setEnumValue(AlignDeclarationsAction.ALIGN_NAME_TYPE_LENGTH_ETC);
+
+		rule.configAlignNonChainsAction.setEnumValue(AlignDeclarationsAction.ALIGN_NAME_TYPE_LENGTH_ETC);
 		rule.configAlignAcrossEmptyLines.setValue(true);
 		rule.configAlignAcrossCommentLines.setValue(true);
-		rule.configFillPercentageToJustifyOwnColumn.setValue(20);
+
+		rule.configAlignStructureAction.setEnumValue(AlignDeclarationsAction.ALIGN_NAME_TYPE_LENGTH_ETC);
 		rule.configStructureAlignStyle.setEnumValue(StructureAlignStyle.PER_LEVEL);
+
+		rule.configFillPercentageToJustifyOwnColumn.setValue(20);
+		rule.configCondenseInnerSpaces.setValue(true);
 	}
 	
 	@Test
@@ -87,7 +97,7 @@ class AlignDeclarationsTest extends RuleTestBase {
 		buildExp("    \" if only a single declaration (or a very small ratio of them) has a VALUE, a comment, etc.,");
 		buildExp("    \" no extra column is created for it");
 		buildExp("    DATA lth_any_table     TYPE ty_th_table. \" only line with a comment");
-		buildExp("    DATA lo_contract       TYPE REF TO cl_contract  ##NEEDED.");
+		buildExp("    DATA lo_contract       TYPE REF TO cl_contract ##NEEDED.");
 		buildExp("    DATA ls_any_struc      TYPE if_contract=>ty_s_struc.");
 		buildExp("    DATA mv_any_bool_value TYPE abap_bool VALUE abap_false ##NO_TEXT.");
 
@@ -717,7 +727,7 @@ class AlignDeclarationsTest extends RuleTestBase {
 
 	@Test
 	void testAlignClassDefinition() {
-		rule.configExecuteOnClassDefinitionSections.setValue(true);
+		rule.configExecuteOnClassDefAndInterfaces.setValue(true);
 		
 		buildSrc("    CONSTANTS lc_item_name_smartphone TYPE ty_item_name VALUE 'SMARTPHONE' ##NO_TEXT.");
 		buildSrc("    CONSTANTS lc_item_name_subscription TYPE ty_item_name      VALUE 'SUBSCRIPTION'  ##NO_TEXT.");
@@ -734,7 +744,7 @@ class AlignDeclarationsTest extends RuleTestBase {
 
 	@Test
 	void testDontAlignClassDefinition() {
-		rule.configExecuteOnClassDefinitionSections.setValue(false);
+		rule.configExecuteOnClassDefAndInterfaces.setValue(false);
 		
 		buildSrc("    CONSTANTS lc_item_name_smartphone TYPE ty_item_name VALUE 'SMARTPHONE' ##NO_TEXT.");
 		buildSrc("    CONSTANTS lc_item_name_subscription TYPE ty_item_name      VALUE 'SUBSCRIPTION'  ##NO_TEXT.");
@@ -1144,6 +1154,304 @@ class AlignDeclarationsTest extends RuleTestBase {
 		buildExp("      ls_any_struc   TYPE ty_s_struc,");
 		buildExp("      lv_any_value   TYPE i          VALUE 10, \" comment");
 		buildExp("      lv_other_value TYPE i          VALUE 1000000.");
+
+		testRule();
+	}
+
+	private void assertConfigAlignActionsEnabled() {
+		assertTrue(rule.isConfigValueEnabled(rule.configAlignChainAction));
+		assertTrue(rule.isConfigValueEnabled(rule.configAlignNonChainsAction));
+		assertTrue(rule.isConfigValueEnabled(rule.configAlignStructureAction));
+	}
+	
+	@Test
+	void testAlignAcrossEnabled() {
+		rule.configAlignNonChainsAction.setEnumValue(AlignDeclarationsAction.ALIGN_NAME_TYPE_LENGTH_ETC);
+		assertTrue(rule.isConfigValueEnabled(rule.configAlignAcrossEmptyLines));
+		assertTrue(rule.isConfigValueEnabled(rule.configAlignAcrossCommentLines));
+		assertConfigAlignActionsEnabled();
+		
+		rule.configAlignNonChainsAction.setEnumValue(AlignDeclarationsAction.ALIGN_NAME_AND_TYPE);
+		assertTrue(rule.isConfigValueEnabled(rule.configAlignAcrossEmptyLines));
+		assertTrue(rule.isConfigValueEnabled(rule.configAlignAcrossCommentLines));
+		assertConfigAlignActionsEnabled();
+	}
+
+	@Test
+	void testAlignAcrossNotEnabled() {
+		rule.configAlignNonChainsAction.setEnumValue(AlignDeclarationsAction.ALIGN_NAME_ONLY);
+		assertFalse(rule.isConfigValueEnabled(rule.configAlignAcrossEmptyLines));
+		assertFalse(rule.isConfigValueEnabled(rule.configAlignAcrossCommentLines));
+		assertConfigAlignActionsEnabled();
+	}
+
+	@Test
+	void testAlignStructureActionEnabled() {
+		rule.configAlignStructureAction.setEnumValue(AlignDeclarationsAction.ALIGN_NAME_TYPE_LENGTH_ETC);
+		assertTrue(rule.isConfigValueEnabled(rule.configStructureAlignStyle));
+		assertConfigAlignActionsEnabled();
+
+		rule.configAlignStructureAction.setEnumValue(AlignDeclarationsAction.ALIGN_NAME_AND_TYPE);
+		assertTrue(rule.isConfigValueEnabled(rule.configStructureAlignStyle));
+		assertConfigAlignActionsEnabled();
+	}
+
+	@Test
+	void testAlignStructureActionNotEnabled() {
+		rule.configAlignStructureAction.setEnumValue(AlignDeclarationsAction.ALIGN_NAME_ONLY);
+		assertFalse(rule.isConfigValueEnabled(rule.configStructureAlignStyle));
+		assertConfigAlignActionsEnabled();
+	}
+
+	@Test
+	void testFillPercentageNotEnabled() {
+		rule.configAlignChainAction.setEnumValue(AlignDeclarationsAction.ALIGN_NAME_AND_TYPE);
+		rule.configAlignNonChainsAction.setEnumValue(AlignDeclarationsAction.ALIGN_NAME_ONLY);
+		rule.configAlignStructureAction.setEnumValue(AlignDeclarationsAction.ALIGN_NAME_ONLY);
+		assertFalse(rule.isConfigValueEnabled(rule.configFillPercentageToJustifyOwnColumn));
+
+		rule.configAlignStructureAction.setEnumValue(AlignDeclarationsAction.ALIGN_NAME_TYPE_LENGTH_ETC);
+		assertTrue(rule.isConfigValueEnabled(rule.configFillPercentageToJustifyOwnColumn));
+	}
+
+	@Test
+	void testChainAlignNameAndTypeOnly() {
+		rule.configAlignChainAction.setEnumValue(AlignDeclarationsAction.ALIGN_NAME_AND_TYPE);
+
+		buildSrc("    CONSTANTS: lc_any_price TYPE ty_price VALUE 1200,");
+		buildSrc("      lc_other_price TYPE ty_price VALUE 1000,");
+		buildSrc("               lc_num_contract_change TYPE ty_sequence_number VALUE    1,");
+		buildSrc("          lc_start_date TYPE ty_start_date VALUE '20220312'.");
+		buildSrc("");
+		buildSrc("    FIELD-SYMBOLS:");
+		buildSrc("         <ls_data> TYPE ty_s_data,   \" first comment line");
+		buildSrc("      <ls_amount> LIKE LINE OF its_amount,");
+		buildSrc("    <ls_contract> TYPE ty_s_contract, \" second comment line");
+		buildSrc("   <ls_param>  LIKE LINE OF mt_parameter.");
+
+		buildExp("    CONSTANTS: lc_any_price           TYPE ty_price VALUE 1200,");
+		buildExp("               lc_other_price         TYPE ty_price VALUE 1000,");
+		buildExp("               lc_num_contract_change TYPE ty_sequence_number VALUE 1,");
+		buildExp("               lc_start_date          TYPE ty_start_date VALUE '20220312'.");
+		buildExp("");
+		buildExp("    FIELD-SYMBOLS:");
+		buildExp("      <ls_data>     TYPE ty_s_data, \" first comment line");
+		buildExp("      <ls_amount>   LIKE LINE OF its_amount,");
+		buildExp("      <ls_contract> TYPE ty_s_contract, \" second comment line");
+		buildExp("      <ls_param>    LIKE LINE OF mt_parameter.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testChainAlignNameOnly() {
+		rule.configAlignChainAction.setEnumValue(AlignDeclarationsAction.ALIGN_NAME_ONLY);
+
+		buildSrc("    CONSTANTS: lc_any_price TYPE ty_price VALUE 1200,");
+		buildSrc("      lc_other_price TYPE ty_price VALUE 1000,");
+		buildSrc("               lc_num_contract_change TYPE ty_sequence_number VALUE    1,");
+		buildSrc("          lc_start_date TYPE ty_start_date VALUE '20220312'.");
+		buildSrc("");
+		buildSrc("    FIELD-SYMBOLS:");
+		buildSrc("         <ls_data> TYPE ty_s_data,   \" first comment line");
+		buildSrc("      <ls_amount> LIKE LINE OF its_amount,");
+		buildSrc("    <ls_contract> TYPE ty_s_contract, \" second comment line");
+		buildSrc("   <ls_param>  LIKE LINE OF mt_parameter.");
+
+		buildExp("    CONSTANTS: lc_any_price TYPE ty_price VALUE 1200,");
+		buildExp("               lc_other_price TYPE ty_price VALUE 1000,");
+		buildExp("               lc_num_contract_change TYPE ty_sequence_number VALUE 1,");
+		buildExp("               lc_start_date TYPE ty_start_date VALUE '20220312'.");
+		buildExp("");
+		buildExp("    FIELD-SYMBOLS:");
+		buildExp("      <ls_data> TYPE ty_s_data, \" first comment line");
+		buildExp("      <ls_amount> LIKE LINE OF its_amount,");
+		buildExp("      <ls_contract> TYPE ty_s_contract, \" second comment line");
+		buildExp("      <ls_param> LIKE LINE OF mt_parameter.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testBlockAlignNameAndTypeOnly() {
+		rule.configAlignNonChainsAction.setEnumValue(AlignDeclarationsAction.ALIGN_NAME_AND_TYPE);
+
+		buildSrc("    CONSTANTS   lc_pi TYPE p LENGTH 10 DECIMALS 10 VALUE '3.1415926536'.");
+		buildSrc("    CONSTANTS lc_e TYPE p LENGTH 8 DECIMALS 10 VALUE '2.718281828'.");
+		buildSrc("    CONSTANTS lc_sqrt_2 TYPE p LENGTH 8 DECIMALS 4 VALUE '1.4142'.");
+		buildSrc("    CONSTANTS    lc_sqrt_32 TYPE p LENGTH 8 DECIMALS 10 VALUE '5.6568542495'.");
+		buildSrc("    CONSTANTS lc_ln_10 TYPE p  LENGTH 8 DECIMALS 4 VALUE '2.3026'.");
+
+		buildExp("    CONSTANTS lc_pi      TYPE p LENGTH 10 DECIMALS 10 VALUE '3.1415926536'.");
+		buildExp("    CONSTANTS lc_e       TYPE p LENGTH 8 DECIMALS 10 VALUE '2.718281828'.");
+		buildExp("    CONSTANTS lc_sqrt_2  TYPE p LENGTH 8 DECIMALS 4 VALUE '1.4142'.");
+		buildExp("    CONSTANTS lc_sqrt_32 TYPE p LENGTH 8 DECIMALS 10 VALUE '5.6568542495'.");
+		buildExp("    CONSTANTS lc_ln_10   TYPE p LENGTH 8 DECIMALS 4 VALUE '2.3026'.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testAlignNameOnly() {
+		rule.configAlignNonChainsAction.setEnumValue(AlignDeclarationsAction.ALIGN_NAME_ONLY);
+
+		buildSrc("    CONSTANTS   lc_pi TYPE p LENGTH 10 DECIMALS 10 VALUE '3.1415926536'.");
+		buildSrc("    CONSTANTS lc_e TYPE p LENGTH 8 DECIMALS 10 VALUE '2.718281828'.");
+		buildSrc("    CONSTANTS lc_sqrt_2 TYPE p LENGTH 8 DECIMALS 4 VALUE '1.4142'.");
+		buildSrc("    CONSTANTS    lc_sqrt_32 TYPE p LENGTH 8 DECIMALS 10 VALUE '5.6568542495'.");
+		buildSrc("    CONSTANTS lc_ln_10 TYPE p  LENGTH 8 DECIMALS 4 VALUE '2.3026'.");
+
+		buildExp("    CONSTANTS lc_pi TYPE p LENGTH 10 DECIMALS 10 VALUE '3.1415926536'.");
+		buildExp("    CONSTANTS lc_e TYPE p LENGTH 8 DECIMALS 10 VALUE '2.718281828'.");
+		buildExp("    CONSTANTS lc_sqrt_2 TYPE p LENGTH 8 DECIMALS 4 VALUE '1.4142'.");
+		buildExp("    CONSTANTS lc_sqrt_32 TYPE p LENGTH 8 DECIMALS 10 VALUE '5.6568542495'.");
+		buildExp("    CONSTANTS lc_ln_10 TYPE p LENGTH 8 DECIMALS 4 VALUE '2.3026'.");
+
+		testRule();
+	}
+
+	@Test
+	void testStructureAlignNameAndTypeOnly() {
+		rule.configAlignStructureAction.setEnumValue(AlignDeclarationsAction.ALIGN_NAME_AND_TYPE);
+
+		buildSrc("    TYPES:");
+		buildSrc("      BEGIN OF ty_s_outer,");
+		buildSrc("      one TYPE i,");
+		buildSrc("      two TYPE i,");
+		buildSrc("      BEGIN OF ty_s_inner,");
+		buildSrc("      alpha TYPE p LENGTH 5 DECIMALS 2,");
+		buildSrc("      beta TYPE p LENGTH 10 DECIMALS 2,");
+		buildSrc("      gamma TYPE i,");
+		buildSrc("      END OF ty_s_inner,");
+		buildSrc("      three  TYPE i,");
+		buildSrc("      four   TYPE i,");
+		buildSrc("      END OF ty_s_outer.");
+
+		buildExp("    TYPES:");
+		buildExp("      BEGIN OF ty_s_outer,");
+		buildExp("        one   TYPE i,");
+		buildExp("        two   TYPE i,");
+		buildExp("        BEGIN OF ty_s_inner,");
+		buildExp("          alpha TYPE p LENGTH 5 DECIMALS 2,");
+		buildExp("          beta  TYPE p LENGTH 10 DECIMALS 2,");
+		buildExp("          gamma TYPE i,");
+		buildExp("        END OF ty_s_inner,");
+		buildExp("        three TYPE i,");
+		buildExp("        four  TYPE i,");
+		buildExp("      END OF ty_s_outer.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testStructureAlignNameOnly() {
+		rule.configAlignStructureAction.setEnumValue(AlignDeclarationsAction.ALIGN_NAME_ONLY);
+
+		buildSrc("    TYPES:");
+		buildSrc("      BEGIN OF ty_s_outer,");
+		buildSrc("      one TYPE i,");
+		buildSrc("      two TYPE i,");
+		buildSrc("      BEGIN OF ty_s_inner,");
+		buildSrc("      alpha TYPE p LENGTH 5 DECIMALS 2,");
+		buildSrc("      beta TYPE p LENGTH 10 DECIMALS 2,");
+		buildSrc("      gamma TYPE i,");
+		buildSrc("      END OF ty_s_inner,");
+		buildSrc("      three  TYPE i,");
+		buildSrc("      four   TYPE i,");
+		buildSrc("      END OF ty_s_outer.");
+
+		buildExp("    TYPES:");
+		buildExp("      BEGIN OF ty_s_outer,");
+		buildExp("        one TYPE i,");
+		buildExp("        two TYPE i,");
+		buildExp("        BEGIN OF ty_s_inner,");
+		buildExp("          alpha TYPE p LENGTH 5 DECIMALS 2,");
+		buildExp("          beta TYPE p LENGTH 10 DECIMALS 2,");
+		buildExp("          gamma TYPE i,");
+		buildExp("        END OF ty_s_inner,");
+		buildExp("        three TYPE i,");
+		buildExp("        four TYPE i,");
+		buildExp("      END OF ty_s_outer.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testChainNoCondense() {
+		rule.configAlignChainAction.setEnumValue(AlignDeclarationsAction.ALIGN_NAME_AND_TYPE);
+		rule.configCondenseInnerSpaces.setValue(false);
+
+		buildSrc("    CONSTANTS: lc_any_price TYPE ty_price VALUE 1200,");
+		buildSrc("      lc_other_price TYPE ty_price   VALUE 1000,");
+		buildSrc("               lc_num_contract_change TYPE ty_sequence_number VALUE    1,");
+		buildSrc("          lc_start_date TYPE ty_start_date VALUE '20220312'.");
+
+		buildExp("    CONSTANTS: lc_any_price           TYPE ty_price VALUE 1200,");
+		buildExp("               lc_other_price         TYPE ty_price   VALUE 1000,");
+		buildExp("               lc_num_contract_change TYPE ty_sequence_number VALUE    1,");
+		buildExp("               lc_start_date          TYPE ty_start_date VALUE '20220312'.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testBlockNoCondense() {
+		rule.configAlignNonChainsAction.setEnumValue(AlignDeclarationsAction.ALIGN_NAME_AND_TYPE);
+		rule.configCondenseInnerSpaces.setValue(false);
+
+		buildSrc("    DATA lth_any_table TYPE ty_th_hash_table_type.   \" only line with a comment");
+		buildSrc("    DATA lo_contract TYPE REF TO  cl_contract  ##NEEDED.");
+		buildSrc("    DATA ls_item_data   TYPE   if_any_interface=>ty_s_item.");
+		buildSrc("    DATA lv_was_saved   TYPE abap_bool  VALUE abap_false  ##NO_TEXT.");
+
+		buildExp("    DATA lth_any_table TYPE ty_th_hash_table_type.   \" only line with a comment");
+		buildExp("    DATA lo_contract   TYPE REF TO  cl_contract  ##NEEDED.");
+		buildExp("    DATA ls_item_data  TYPE   if_any_interface=>ty_s_item.");
+		buildExp("    DATA lv_was_saved  TYPE abap_bool  VALUE abap_false  ##NO_TEXT.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testStructureNoCondense() {
+		rule.configAlignStructureAction.setEnumValue(AlignDeclarationsAction.ALIGN_NAME_ONLY);
+		rule.configCondenseInnerSpaces.setValue(false);
+
+		buildSrc("    TYPES:");
+		buildSrc("      BEGIN OF ty_s_outer_2,");
+		buildSrc("      any_component TYPE i,");
+		buildSrc("      BEGIN OF ty_s_inner,");
+		buildSrc("      alpha  TYPE i,");
+		buildSrc("      beta   TYPE i,");
+		buildSrc("      END OF ty_s_inner,");
+		buildSrc("      other_component TYPE i,");
+		buildSrc("      END OF ty_s_outer_2.");
+
+		buildExp("    TYPES:");
+		buildExp("      BEGIN OF ty_s_outer_2,");
+		buildExp("        any_component TYPE i,");
+		buildExp("        BEGIN OF ty_s_inner,");
+		buildExp("          alpha  TYPE i,");
+		buildExp("          beta   TYPE i,");
+		buildExp("        END OF ty_s_inner,");
+		buildExp("        other_component TYPE i,");
+		buildExp("      END OF ty_s_outer_2.");
+
+		putAnyMethodAroundSrcAndExp();
 
 		testRule();
 	}

@@ -12,6 +12,12 @@ public class AlignCellToken extends AlignCell {
 	public Token getLastToken() { return token; }
 
 	@Override
+	boolean hasInnerComment() { return false; }
+
+	@Override
+	boolean hasCommentAtEnd() { return token.isComment(); }
+
+	@Override
 	int getMonoLineWidth() { 
 		return additionalIndent + ((overrideTextWidth < 0) ? token.getTextLength() : overrideTextWidth); 
 	}
@@ -30,17 +36,12 @@ public class AlignCellToken extends AlignCell {
 	@Override
 	int getEndIndexInLastLine() { return token.getEndIndexInLine(); }
 
-	@Override
-	boolean hasCommentAtAnyLineEnd() {
-		return token.isCommentAfterCode();
-	}
-
 	public AlignCellToken(Token token) {
 		if (token == null)
 			throw new NullPointerException("token");
 
 		this.token = token;
-		oldStartIndexInLine = this.token.getStartIndexInLine();
+		oldStartIndexInLine = token.getStartIndexInLine();
 	}
 
 	public static AlignCellToken createSpecial(Token Token, int additionalIndent, boolean overrideToTextWidth1) {
@@ -62,7 +63,7 @@ public class AlignCellToken extends AlignCell {
 	}
 
 	@Override
-	boolean setWhitespace(int lineBreaks, int spacesLeft, boolean keepMultiline) {
+	boolean setWhitespace(int lineBreaks, int spacesLeft, boolean keepMultiline, boolean condenseInnerSpaces) {
 		return token.setWhitespace(lineBreaks, additionalIndent + spacesLeft);
 	}
 }

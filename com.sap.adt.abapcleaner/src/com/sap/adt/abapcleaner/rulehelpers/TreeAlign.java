@@ -195,7 +195,7 @@ public class TreeAlign {
 						stopAligningLineOf(cell);
 					}
 				}
-				if (cell.setWhitespace(firstToken.lineBreaks, spacesLeft, keepMultiline))
+				if (cell.setWhitespace(firstToken.lineBreaks, spacesLeft, keepMultiline, true))
 					changed = true;
 			}
 		}

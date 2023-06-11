@@ -14,6 +14,10 @@ public abstract class AlignCell {
 
 	public abstract Token getLastToken();
 
+	abstract boolean hasInnerComment();
+
+	abstract boolean hasCommentAtEnd();
+
 	abstract int getMonoLineWidth();
 
 	abstract int getMultiLineWidth();
@@ -24,9 +28,7 @@ public abstract class AlignCell {
 
 	abstract int getEndIndexInLastLine();
 
-	abstract boolean setWhitespace(int lineBreaks, int spacesLeft, boolean keepMultiline);
-
-	abstract boolean hasCommentAtAnyLineEnd();
+	abstract boolean setWhitespace(int lineBreaks, int spacesLeft, boolean keepMultiline, boolean condenseInnerSpaces);
 
 	final String getSimplifiedText() { return getSimplifiedText("|"); }
 	final String getSimplifiedText(String lineBreakSign) {
