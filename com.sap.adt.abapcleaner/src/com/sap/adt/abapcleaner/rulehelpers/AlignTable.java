@@ -173,11 +173,12 @@ public class AlignTable {
 			boolean lineChanged = false;
 
 			// in the special case VALUE or NEW constructors for tables, the AlignTable may contain the assignments for 
-			// multiple table rows, which should all continue behind their opening "(", rather than being moved to the next line  
+			// multiple table rows, which should all continue behind their opening "(", regardless of their previous position  
+			// (this also applies for isFirstLine == true)
 			Token firstTokenInLine = line.getFirstToken();
 			Token prevToken = (firstTokenInLine == null) ? null : firstTokenInLine.getPrev();
-			if (!isFirstLine && firstTokenInLine != null && firstTokenInLine.lineBreaks == 0 
-					&& prevToken != null && prevToken.getOpensLevel() && prevToken.getEndIndexInLine() + 1 == basicIndent) {
+			if (firstTokenInLine != null // &&  !isFirstLine && firstTokenInLine.lineBreaks == 0 
+					&& prevToken != null && prevToken.textEquals("(") && prevToken.getEndIndexInLine() + 1 == basicIndent) {
 				lineBreaks = 0;
 				spacesLeft = 1;
 			}

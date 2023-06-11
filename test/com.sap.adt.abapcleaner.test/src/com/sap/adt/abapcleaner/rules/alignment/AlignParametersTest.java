@@ -2446,6 +2446,8 @@ class AlignParametersTest extends RuleTestBase {
 		buildExp("        other_param = 'ABC'");
 		buildExp("        previous    = exception.");
 
+		putAnyMethodAroundSrcAndExp();
+
 		testRule();
 	}
 
@@ -2466,6 +2468,8 @@ class AlignParametersTest extends RuleTestBase {
 		buildExp("          EXPORTING any_param   = 1");
 		buildExp("                    other_param = 'ABC'");
 		buildExp("                    previous    = exception.");
+
+		putAnyMethodAroundSrcAndExp();
 
 		testRule();
 	}
@@ -2491,6 +2495,8 @@ class AlignParametersTest extends RuleTestBase {
 		buildExp("            other_param = 'ABC'");
 		buildExp("            previous    = exception.");
 
+		putAnyMethodAroundSrcAndExp();
+
 		testRule();
 	}
 
@@ -2510,6 +2516,61 @@ class AlignParametersTest extends RuleTestBase {
 		buildExp("          EXPORTING any_param   = 1");
 		buildExp("                    other_param = 'ABC'");
 		buildExp("                    previous    = exception.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+	
+	@Test
+	void testComponentMovedBehindOpeningParenthesis() {
+		// ensure that in all cases, the first component inside the table row is moved directly behind the opening "(" 
+		buildSrc("    lt_result = VALUE #( ( a = 1 )");
+		buildSrc("                         (");
+		buildSrc("                            b = 2 ) ).");
+		buildSrc("");
+		buildSrc("    lt_result = VALUE #( (");
+		buildSrc("                             a = 1 )");
+		buildSrc("                         (");
+		buildSrc("                          b = 2 ) ).");
+		buildSrc("");
+		buildSrc("    lt_result = VALUE #( ( a = 1");
+		buildSrc("                           b = 1 )");
+		buildSrc("                         (");
+		buildSrc("                           a = 2");
+		buildSrc("                           b = 2 )");
+		buildSrc("                         (");
+		buildSrc("");
+		buildSrc("                           a = 3");
+		buildSrc("                           b = 3 ) ).");
+		buildSrc("");
+		buildSrc("    lt_result = VALUE #(  (");
+		buildSrc("                           a = 1");
+		buildSrc("                           b = 1 )");
+		buildSrc("                       (");
+		buildSrc("");
+		buildSrc("                           a = 2");
+		buildSrc("                           b = 2 ) ).");
+
+		buildExp("    lt_result = VALUE #( ( a = 1 )");
+		buildExp("                         ( b = 2 ) ).");
+		buildExp("");
+		buildExp("    lt_result = VALUE #( ( a = 1 )");
+		buildExp("                         ( b = 2 ) ).");
+		buildExp("");
+		buildExp("    lt_result = VALUE #( ( a = 1");
+		buildExp("                           b = 1 )");
+		buildExp("                         ( a = 2");
+		buildExp("                           b = 2 )");
+		buildExp("                         ( a = 3");
+		buildExp("                           b = 3 ) ).");
+		buildExp("");
+		buildExp("    lt_result = VALUE #( ( a = 1");
+		buildExp("                           b = 1 )");
+		buildExp("                         ( a = 2");
+		buildExp("                           b = 2 ) ).");
+
+		putAnyMethodAroundSrcAndExp();
 
 		testRule();
 	}
