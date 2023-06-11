@@ -610,7 +610,7 @@ public class CodeTest extends CodeTestBase {
 			assertFalse(cleanupResult.hasErrorMessage());
 			assertEquals("", cleanupResult.getSelectedText());
 			
-			code = Code.parse(null, ParseParams.createForCleanupRange("test", codeText, ABAP.NEWEST_RELEASE, CleanupRange.create(1, 4, false)));
+			code = Code.parse(null, ParseParams.createForCleanupRange("test", codeText, ABAP.NEWEST_RELEASE, CleanupRange.create(1, 4, false), CleanupRangeExpandMode.FULL_METHOD));
 			cleanupResult = code.toCleanupResult();
 			assertTrue(cleanupResult.hasCleanedCode());
 			assertEquals(codeText, cleanupResult.getCleanedCode());

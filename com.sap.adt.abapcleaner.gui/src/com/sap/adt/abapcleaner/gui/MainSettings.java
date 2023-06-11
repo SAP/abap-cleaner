@@ -7,6 +7,7 @@ import com.sap.adt.abapcleaner.base.ISettingsReader;
 import com.sap.adt.abapcleaner.base.ISettingsWriter;
 import com.sap.adt.abapcleaner.base.TextSettingsReader;
 import com.sap.adt.abapcleaner.base.TextSettingsWriter;
+import com.sap.adt.abapcleaner.parser.CleanupRangeExpandMode;
 import com.sap.adt.abapcleaner.programbase.FileType;
 import com.sap.adt.abapcleaner.programbase.Persistency;
 import com.sap.adt.abapcleaner.programbase.Program;
@@ -17,6 +18,7 @@ public class MainSettings {
 	private final static int REQUIRED_VERSION = 1;
 
 	private static final String KEY_CUR_PROFILE_NAME = "curProfileName";
+	private static final String KEY_CLEANUP_RANGE_EXPAND_MODE = "cleanupRangeExpandMode";
 	private static final String KEY_HIGHLIGHT_INDENT_CHANGES = "highlightIndentChanges";
 	private static final String KEY_HIGHLIGHT_INNER_SPACE_CHANGES = "highlightInnerSpaceChanges";
 	private static final String KEY_HIGHLIGHT_CASE_CHANGES = "highlightCaseChanges";
@@ -57,6 +59,7 @@ public class MainSettings {
 	// -------------------------------------------------------------------------
 
 	String curProfileName;
+	CleanupRangeExpandMode cleanupRangeExpandMode;
 	boolean highlightIndentChanges;
 	boolean highlightInnerSpaceChanges;
 	boolean highlightCaseChanges;
@@ -151,6 +154,8 @@ public class MainSettings {
 
 		writer.write(KEY_HIGHLIGHT_DECLARATION_KEYWORDS, highlightDeclarationKeywords);
 		writer.write(KEY_PROFILES_HIGHLIGHT_DECLARATION_KEYWORDS, profilesHighlightDeclarationKeywords);
+		
+		writer.write(KEY_CLEANUP_RANGE_EXPAND_MODE, cleanupRangeExpandMode.getValue());
 	}
 
 	void load() {
@@ -253,10 +258,22 @@ public class MainSettings {
 			highlightDeclarationKeywords = false;
 			profilesHighlightDeclarationKeywords = true;
 		}
-}
+
+		if (reader.getFileVersion() >= 22) {
+			try {
+				cleanupRangeExpandMode = CleanupRangeExpandMode.forValue(reader.readInt32(KEY_CLEANUP_RANGE_EXPAND_MODE));
+			} catch (IllegalArgumentException e) {
+				cleanupRangeExpandMode = CleanupRangeExpandMode.getDefault();
+			}
+		} else {
+			cleanupRangeExpandMode = CleanupRangeExpandMode.getDefault();
+		}
+	}
 
 	void setDefault() {
 		curProfileName = Profile.DEFAULT_NAME;
+		cleanupRangeExpandMode = CleanupRangeExpandMode.getDefault();
+
 		highlightIndentChanges = true;
 		highlightInnerSpaceChanges = true;
 		highlightCaseChanges = true;

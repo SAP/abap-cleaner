@@ -2,13 +2,13 @@ package com.sap.adt.abapcleaner.parser;
 
 public class CleanupRange {
 	/** the 0-based start line (incl.) at which cleanup shall begin, leaving all lines before it untouched */
-	public int startLine;
+	public final int startLine;
 
 	/** the 0-based end line (excl.) at which cleanup shall end, leaving this line and all lines after it untouched */
-	public int endLine;
+	public final int endLine;
 
 	/** true if {@link #startLine} and {@link #endLine} shall still be expanded to cover a whole statement, method/section/form/function or class */
-	public boolean expandRange;
+	public final boolean expandRange;
 
 	/**
 	 * Creates a CleanupRange instance.

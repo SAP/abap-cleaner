@@ -198,7 +198,7 @@ public class DiffNavigator {
 		CleanupRange fullCleanupRange = code.getCleanupRange();
 		// partCleanupRange works with the regular line numbers, i.e. we do NOT subtract the lineNumOffset 
 		CleanupRange partCleanupRange = (fullCleanupRange != null) ? CleanupRange.create(fullCleanupRange.startLine, fullCleanupRange.endLine, false) : null;
-		ParseParams parseParams = ParseParams.createForReprocessing(sourceName, codePartText, code.abapRelease, partCleanupRange, lineNumOffset, sourceTextStart, code);
+		ParseParams parseParams = ParseParams.createForReprocessing(sourceName, codePartText, code.abapRelease, partCleanupRange, CleanupRangeExpandMode.FULL_STATEMENT, lineNumOffset, sourceTextStart, code);
 		Job partJob = Job.createForSingleCodeDocument(parseParams, CleanupParams.createForProfile(profile, false, releaseRestriction));
 		partJob.run();
 		Task result = partJob.getResult();

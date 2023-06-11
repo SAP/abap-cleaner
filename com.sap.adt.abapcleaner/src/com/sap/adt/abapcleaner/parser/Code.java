@@ -62,7 +62,7 @@ public class Code {
 		Parser parser = Parser.create(parseParams.codeText);
 		parser.parse(progress, code, parseParams.lineNumOffset, parseParams.surroundingTextOffset);
 		
-		code.expandCleanupRange(CleanupRangeExpandMode.FULL_METHOD); // TODO: make CleanupRangeExpandMode configurable
+		code.expandCleanupRange(parseParams.cleanupRangeExpandMode); 
 
 		return code;
 	}
@@ -479,7 +479,7 @@ public class Code {
 		Command startCommand = findFirstCommandInCleanupRange();
 		if (startCommand == null) {
 			// no chance to expand the cleanup range
-			cleanupRange.expandRange = false;
+			cleanupRange = CleanupRange.create(cleanupRange.startLine, cleanupRange.endLine, false);
 			return;
 		}			
 
@@ -560,9 +560,9 @@ public class Code {
 			lastCommand = this.lastCommand;
 		
 		// modify the CleanupRange and prevent further expansion
-		cleanupRange.startLine = startCommand.getSourceLineNumStart() - 1; // sourceLineNumStart is 1-based, but startLine is 0-based
-		cleanupRange.endLine = lastCommand.getSourceLineNumEnd() - 1 + 1; // endLine must be the 0-based line after the Command  
-		cleanupRange.expandRange = false;
+		int startLine = startCommand.getSourceLineNumStart() - 1; // sourceLineNumStart is 1-based, but startLine is 0-based
+		int endLine = lastCommand.getSourceLineNumEnd() - 1 + 1; // endLine must be the 0-based line after the Command  
+		cleanupRange = CleanupRange.create(startLine, endLine, false);
 	}
 	
 	public int getLineCountInCleanupRange() {

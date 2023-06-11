@@ -1197,7 +1197,7 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
       Task result = job.run();
       if (result.getSuccess()) {
          codeDisplay.setInfo(rule.getDisplayName() + " - example", "", curExampleCode, ABAP.NEWEST_RELEASE, rule);
-         codeDisplay.refreshCode(result.getResultingCode(), result.getResultingDiffDoc(), setPosition, setPosition, setPosition, null);
+         codeDisplay.refreshCode(result.getResultingCode(), result.getResultingDiffDoc(), setPosition, setPosition, setPosition);
          return true;
       } else {
          Message.show(result.getErrorMessage());

@@ -12,35 +12,37 @@ public class ParseParams {
 	public final String abapRelease;
 
 	public final CleanupRange cleanupRange;
+	public final CleanupRangeExpandMode cleanupRangeExpandMode;
 	public final int lineNumOffset;
 	public final int surroundingTextOffset;
 	public final Code surroundingCode;
 
 	/** Create parse parameters for parsing a new ABAP code document */
 	public static ParseParams createForWholeCode(String sourceName, String codeText, String abapRelease) {
-		return new ParseParams(sourceName, codeText, abapRelease, null, 1, 0, null);
+		return new ParseParams(sourceName, codeText, abapRelease, null, CleanupRangeExpandMode.FULL_DOCUMENT, 1, 0, null);
 	}
 
 	/** Create parse parameters for parsing a new ABAP code document */
-	public static ParseParams createForCleanupRange(String sourceName, String codeText, String abapRelease, CleanupRange cleanupRange) {
-		return new ParseParams(sourceName, codeText, abapRelease, cleanupRange, 1, 0, null);
+	public static ParseParams createForCleanupRange(String sourceName, String codeText, String abapRelease, CleanupRange cleanupRange, CleanupRangeExpandMode cleanupRangeExpandMode) {
+		return new ParseParams(sourceName, codeText, abapRelease, cleanupRange, cleanupRangeExpandMode, 1, 0, null);
 	}
 
 	/** Create parse parameters for parsing a new ABAP code document inside a Unit Test */
 	public static ParseParams createForTest(String codeText, String abapRelease) {
-		return new ParseParams("test", codeText, abapRelease, null, 1, 0, null);
+		return new ParseParams("test", codeText, abapRelease, null, CleanupRangeExpandMode.FULL_DOCUMENT, 1, 0, null);
 	}
 
 	/** Create parse parameters for re-parsing only a part of an ABAP code document, in order to replace a part of an existing {@link Code} */
-	public static ParseParams createForReprocessing(String sourceName, String partText, String abapRelease, CleanupRange cleanupRange, int lineNumOffset, int surroundingTextOffset, Code surroundingCode) {
-		return new ParseParams(sourceName, partText, abapRelease, cleanupRange, lineNumOffset, surroundingTextOffset, surroundingCode);
+	public static ParseParams createForReprocessing(String sourceName, String partText, String abapRelease, CleanupRange cleanupRange, CleanupRangeExpandMode cleanupRangeExpandMode, int lineNumOffset, int surroundingTextOffset, Code surroundingCode) {
+		return new ParseParams(sourceName, partText, abapRelease, cleanupRange, cleanupRangeExpandMode, lineNumOffset, surroundingTextOffset, surroundingCode);
 	}
 	
-	private ParseParams(String sourceName, String codeText, String abapRelease, CleanupRange cleanupRange, int lineNumOffset, int surroundingTextOffset, Code surroundingCode) {
+	private ParseParams(String sourceName, String codeText, String abapRelease, CleanupRange cleanupRange, CleanupRangeExpandMode cleanupRangeExpandMode, int lineNumOffset, int surroundingTextOffset, Code surroundingCode) {
 		this.sourceName = sourceName;
 		this.codeText = codeText;
 		this.abapRelease = abapRelease;
 		this.cleanupRange = cleanupRange;
+		this.cleanupRangeExpandMode = cleanupRangeExpandMode;
 		this.lineNumOffset = lineNumOffset;
 		this.surroundingTextOffset = surroundingTextOffset;
 		this.surroundingCode = surroundingCode;
