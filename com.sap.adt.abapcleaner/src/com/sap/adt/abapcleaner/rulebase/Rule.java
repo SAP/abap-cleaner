@@ -185,7 +185,7 @@ public abstract class Rule {
 
 	protected abstract void executeOn(Code code, int releaseRestriction) throws UnexpectedSyntaxBeforeChanges, UnexpectedSyntaxAfterChanges;
 
-	public boolean isConfigValueEnabled(ConfigValue configVaule) { return true; }
+	public boolean isConfigValueEnabled(ConfigValue configValue) { return true; }
 	
 	public final Profile parentProfile;
 	/** holds the Command that is currently processed in executeOn() which may be used for error messages */

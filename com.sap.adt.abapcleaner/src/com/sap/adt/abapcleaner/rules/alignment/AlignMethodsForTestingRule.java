@@ -179,7 +179,7 @@ public class AlignMethodsForTestingRule extends AlignMethodsWithoutParamsRuleBas
 			if (testColumn.isEmpty())
 				continue;
 			if (testColumn.getCellCount() <= 1 || testColumn.getCellCount() < (int) (table.getLineCount() * FILL_RATIO_TO_JUSTIFY_OWN_COLUMN))
-				testColumn.joinIntoPreviousColumns();
+				testColumn.joinIntoPreviousColumns(true);
 		}
 
 		// only now call the super class method, because this may change the code

@@ -109,7 +109,7 @@ public class AlignColumn {
 	 * (which means that no separate horizontal space will be reserved for them); 
 	 * returns true if whitespace was changed
 	 */
-	public final boolean joinIntoPreviousColumns() throws UnexpectedSyntaxException {
+	public final boolean joinIntoPreviousColumns(boolean condenseSpaceBetweenCells) throws UnexpectedSyntaxException {
 		if (index == 0)
 			throw new IllegalStateException("This method cannot be called on the first column!");
 
@@ -119,16 +119,21 @@ public class AlignColumn {
 			if (cell == null)
 				continue;
 
+			// remove the right-hand cell first, so AlignCell.setCell can determine .canAlignToMonoLine correctly
+			line.clearCell(index);
+
 			for (int i = index - 1; i >= 0; --i) {
 				AlignCell destCell = line.getCell(i);
 				if (destCell != null) {
-					if (!cell.getFirstToken().isFirstTokenInLine()) {
+					if (condenseSpaceBetweenCells && !cell.getFirstToken().isFirstTokenInLine()) {
 						if (cell.getFirstToken().setWhitespace()) {
 							changed = true;
 						}
 					}
+					// create a joined Term, but preserve special settings of the destination cell (additionalIndent, overrideTextWidth)
 					Term joinedTerm = Term.createForTokenRange(destCell.getFirstToken(), cell.getLastToken());
-					line.setCell(i, new AlignCellTerm(joinedTerm), true);
+					AlignCellTerm alignCellTerm = AlignCellTerm.createSpecial(joinedTerm, destCell.additionalIndent, (destCell.overrideTextWidth == 1)); 
+					line.setCell(i, alignCellTerm, true);
 					parentTable.getColumn(i).invalidate();
 					break;
 				} else if (i == 0) {
@@ -137,7 +142,6 @@ public class AlignColumn {
 					break;
 				}
 			}
-			line.clearCell(index);
 		}
 		clearStats();
 		return changed;

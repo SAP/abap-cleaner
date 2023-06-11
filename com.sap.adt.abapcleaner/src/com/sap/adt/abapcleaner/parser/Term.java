@@ -306,6 +306,16 @@ public class Term {
 		return result;
 	}
 
+	public final boolean hasInnerComment() {
+		Token token = firstToken; 
+		while (token != lastToken) {
+			if (token.isComment())
+				return true;
+			token = token.getNext();
+		}
+		return false;
+	}
+
 	public final boolean hasCommentAtAnyLineEnd() {
 		Token token = firstToken; // the first Token itself cannot be a comment
 		while (token != lastToken) {

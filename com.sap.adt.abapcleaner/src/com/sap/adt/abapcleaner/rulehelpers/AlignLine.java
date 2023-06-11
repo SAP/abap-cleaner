@@ -44,8 +44,15 @@ public class AlignLine {
 		cells[index] = cell;
 		parentTable.getColumn(index).addCell(cell);
 
-		if (cell.hasCommentAtAnyLineEnd())
+		if (cell.hasInnerComment()) {
 			parentTable.canAlignToMonoLine = false;
+		} else {
+			for (int i = getLastCellIndex() - 1; i >= 0; --i) {
+				if (cells[i] != null && cells[i].hasCommentAtEnd()) {
+					parentTable.canAlignToMonoLine = false;
+				} 
+			}
+		}
 	}
 
 	public final void clearCell(int index) {

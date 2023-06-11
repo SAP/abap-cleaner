@@ -130,16 +130,21 @@ public class AlignTable {
 		}
 	}
 	
+	public final Command[] align(int basicIndent, int firstLineBreaks, boolean keepMultiline) {
+		return align(basicIndent, firstLineBreaks, keepMultiline, true);
+	}
+
 	/**
 	 * aligns all cells of the table
 	 * 
 	 * @param basicIndent
 	 * @param firstLineBreaks
-	 * @param keepMultiline   true = a Term may cover multiple lines; false = put all terms on the same line with 1 space between Tokens (only possible if no Term contains line-end
-	 *                        comments)
+	 * @param keepMultiline   true = a Term may cover multiple lines; false = put all terms on the same line, replacing line breaks with a space between Tokens 
+	 * 							  (only possible if no Term contains line-end comments)
+	 * @param condenseInnerSpaces true = also condense spaces inside Terms with 1 space only
 	 * @return
 	 */
-	public final Command[] align(int basicIndent, int firstLineBreaks, boolean keepMultiline) {
+	public final Command[] align(int basicIndent, int firstLineBreaks, boolean keepMultiline, boolean condenseInnerSpaces) {
 		if (!canAlignToMonoLine)
 			keepMultiline = true;
 
@@ -213,11 +218,11 @@ public class AlignTable {
 				if (column.rightAlign) {
 					int cellWidth = keepMultiline ? cell.getMultiLineWidth() : cell.getMonoLineWidth();
 					spacesLeft += (columnWidth - 1 - cellWidth); // columnWidth includes 1 space separating it from the next column
-					if (cell.setWhitespace(lineBreaks, spacesLeft, keepMultiline))
+					if (cell.setWhitespace(lineBreaks, spacesLeft, keepMultiline, condenseInnerSpaces))
 						lineChanged = true;
 					usedWidth = columnWidth - 1;
 				} else {
-					if (cell.setWhitespace(lineBreaks, spacesLeft, keepMultiline))
+					if (cell.setWhitespace(lineBreaks, spacesLeft, keepMultiline, condenseInnerSpaces))
 						lineChanged = true;
 					usedWidth = keepMultiline ? cell.getActualMultiLineWidth() : cell.getMonoLineWidth(); 
 				}

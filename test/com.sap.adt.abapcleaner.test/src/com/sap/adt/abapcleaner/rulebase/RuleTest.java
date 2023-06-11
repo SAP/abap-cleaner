@@ -314,4 +314,23 @@ class RuleTest {
 			fail(sbError.toString());
 		}
 	}
+	
+	@Test
+	void testConfigValueNamesUnique() {
+		Rule[] rules = Profile.createDefault().getAllRules();
+		
+		for (Rule rule : rules) {
+			HashSet<String> names = new HashSet<>();
+			ConfigValue[] configValues = rule.getConfigValues();
+
+			for (ConfigValue configValue : configValues) {
+				String settingNameUpper = configValue.settingName.toUpperCase();
+				if (names.contains(settingNameUpper)) {
+					fail("rule '" + rule.getDisplayName() + "' has two options with the same setting name '" + configValue.settingName + "'!");
+				} else {
+					names.add(settingNameUpper);
+				}
+			}
+		}
+	}
 }

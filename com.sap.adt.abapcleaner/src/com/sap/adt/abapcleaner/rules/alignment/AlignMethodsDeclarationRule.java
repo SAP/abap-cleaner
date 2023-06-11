@@ -476,7 +476,7 @@ public class AlignMethodsDeclarationRule extends AlignDeclarationSectionRuleBase
 			if (!defOrOptColumn.isEmpty()) {
 				double fillRatioToJustifyOwnColumn = configFillPercentageToJustifyOwnColumn.getValue() / 100.0;
 				if (defOrOptColumn.getCellCount() <= 1 || defOrOptColumn.getCellCount() < (int) (table.getLineCount() * fillRatioToJustifyOwnColumn))
-					defOrOptColumn.joinIntoPreviousColumns();
+					defOrOptColumn.joinIntoPreviousColumns(true);
 			}
 		} catch (UnexpectedSyntaxException ex) {
 			throw new UnexpectedSyntaxBeforeChanges(this, ex);

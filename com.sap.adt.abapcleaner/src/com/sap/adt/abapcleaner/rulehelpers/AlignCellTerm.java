@@ -14,6 +14,12 @@ public class AlignCellTerm extends AlignCell {
 	public Token getLastToken() { return term.lastToken; }
 
 	@Override
+	boolean hasInnerComment() { return term.hasInnerComment(); }
+
+	@Override
+	boolean hasCommentAtEnd() { return term.lastToken.isComment(); }
+
+	@Override
 	int getMonoLineWidth() { 
 		return additionalIndent + ((overrideTextWidth < 0) ? term.getSumTextAndSpaceWidth(true) : overrideTextWidth); 
 	}
@@ -32,16 +38,11 @@ public class AlignCellTerm extends AlignCell {
 	@Override
 	int getEndIndexInLastLine() { return term.lastToken.getEndIndexInLine(); }
 
-	@Override
-	boolean hasCommentAtAnyLineEnd() {
-		return term.hasCommentAtAnyLineEnd();
-	}
-
 	public AlignCellTerm(Term term) {
 		if (term == null)
 			throw new NullPointerException("term");
 		this.term = term;
-		oldStartIndexInLine = this.term.firstToken.getStartIndexInLine();
+		oldStartIndexInLine = term.firstToken.getStartIndexInLine();
 	}
 
 	public static AlignCellTerm createSpecial(Term term, int additionalIndent, boolean overrideToTextWidth1) {
@@ -53,18 +54,23 @@ public class AlignCellTerm extends AlignCell {
 	}
 
 	@Override
-	boolean setWhitespace(int lineBreaks, int spacesLeft, boolean keepMultiline) {
+	boolean setWhitespace(int lineBreaks, int spacesLeft, boolean keepMultiline, boolean condenseInnerSpaces) {
 		boolean changed = false;
 		if (term.firstToken.setWhitespace(lineBreaks, additionalIndent + spacesLeft))
 			changed = true;
 
 		if (keepMultiline) {
-			if (term.addIndent(term.firstToken.getStartIndexInLine() - oldStartIndexInLine))
+			if (term.addIndent(term.firstToken.getStartIndexInLine() - oldStartIndexInLine)) {
 				changed = true;
+			}
 		} else {
 			Token token = term.firstToken;
 			while (token != term.lastToken) {
 				token = token.getNext();
+				if (token.lineBreaks == 0 && !condenseInnerSpaces)
+					continue;
+				if (token.lineBreaks > 0 && token.getPrev() != null && token.getPrev().isComment())
+					continue;
 				// if the Token is attached to the previous Token, keep it that way as in "DATA lv_textdat1(20) TYPE c."
 				int newSpacesLeft = token.isAttached() ? 0 : 1;
 				if (token.setWhitespace(0, newSpacesLeft)) { 
