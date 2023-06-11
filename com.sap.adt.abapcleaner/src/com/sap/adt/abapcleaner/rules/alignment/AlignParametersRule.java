@@ -476,16 +476,23 @@ public class AlignParametersRule extends RuleForCommands {
 		// determine whether to keep the whole content of the parentheses / brackets on one line
 		
 		boolean keepOnSingleLine = false;
+		Token parentTokenOfFirstLine = null;
 		if (contentType == ContentType.ROW_IN_VALUE_OR_NEW_CONSTRUCTOR && alignAcrossTableRows) {
 			// for rows that can be kept on one line, remove the corresponding assignments from the AlignTable
 			for (Token curParent : parentTokens) {
 				if (determineKeepOnSingleLine(curParent, curParent.getNextSibling(), tableStart.earlyIndent)) {
 					table.removeAllLinesOfParent(curParent);
+				} else if (parentTokenOfFirstLine == null) {
+					// remember the parentToken of the first line that remains in the AlignTable (if any)
+					parentTokenOfFirstLine = curParent;
 				}
 			}
 		} else {
 			// only the range parentToken ... endToken is included in the AlignTable; determine whether it can be kept on one line
 			keepOnSingleLine = determineKeepOnSingleLine(parentToken, endToken, tableStart.earlyIndent);
+		}
+		if (parentTokenOfFirstLine == null) {
+			parentTokenOfFirstLine = parentToken;
 		}
 		
 		// -------------------------------------------------------------------
@@ -499,10 +506,11 @@ public class AlignParametersRule extends RuleForCommands {
 		Command[] changedCommands = null;
 		if (!table.isEmpty() && !skipAlign) {
 			int startLineBreaks;
-			if (tableStart.forceTableToNextLine)
+			if (tableStart.forceTableToNextLine) {
 				startLineBreaks = 1;
-			else 
-				startLineBreaks = tableStart.continueOnSameLine && (table.getFirstToken() == parentToken.getNext() || table.getFirstToken().lineBreaks == 0) ? 0 : 1;
+			} else { 
+				startLineBreaks = tableStart.continueOnSameLine && (table.getFirstToken() == parentTokenOfFirstLine.getNext() || table.getFirstToken().lineBreaks == 0) ? 0 : 1;
+			}
 
 			changedCommands = table.align(tableStart.startIndent, startLineBreaks, true);
 			if (changedCommands != null && changedCommands.length > 0) { // changedCommands can only contain this current command
