@@ -71,7 +71,6 @@ public class CodeDisplay extends Composite {
 	private String sourceCode;
 	private String abapRelease;
 	private Rule rule;
-	private CleanupRange cleanupRange;
 	private boolean showVerticalLine = true;
 	private int verticalLinePos = 120;
 	private boolean highlightDeclarationKeywords;
@@ -86,8 +85,6 @@ public class CodeDisplay extends Composite {
 	public final String getSourceCode() { return sourceCode; }
 
 	public final String getAbapRelease() { return abapRelease; }
-
-	public final CleanupRange getCleanupRange() { return cleanupRange; }
 
 	public final boolean getShowVerticalLine() { return showVerticalLine; }
 
@@ -323,7 +320,7 @@ public class CodeDisplay extends Composite {
 			diffDoc = comp1.compareTo(comp2, null);
 		} catch (CompareException e) {
 		}
-		refreshCode(code, diffDoc, 0, 0, 0, null);
+		refreshCode(code, diffDoc, 0, 0, 0);
 		invalidateDisplay();
 	}
 
@@ -336,7 +333,7 @@ public class CodeDisplay extends Composite {
 	}
 
 	public final void refreshCode() {
-		refreshCode(null, null, -1, -1, -1, null);
+		refreshCode(null, null, -1, -1, -1);
 	}
 
 	/**
@@ -346,9 +343,8 @@ public class CodeDisplay extends Composite {
 	 * @param setToCurLineIndex       -1 to keep current position, 0 to set to start
 	 * @param setSelectionToStartLine -1 to keep current position, 0 to set to start
 	 */
-	public final void refreshCode(Code code, DiffDoc diffDoc, int setToTopLineIndex, int setToCurLineIndex, int setSelectionToStartLine, CleanupRange cleanupRange) {
+	public final void refreshCode(Code code, DiffDoc diffDoc, int setToTopLineIndex, int setToCurLineIndex, int setSelectionToStartLine) {
 		navigator.refreshCode(code, diffDoc, setToTopLineIndex, setToCurLineIndex, setSelectionToStartLine);
-		this.cleanupRange = cleanupRange;
 		
 		int lineCount = navigator.getLineCount();
 		vsbCode.setMaximum(lineCount); 

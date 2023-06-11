@@ -28,7 +28,7 @@ cleaning approx. 1 MB of code per second.
 > Obviously, automation is only possible for a subset of the clean code rules - but for a significant one, 
 > including formatting, alignment, replacing obsolete commands, and even reducing some nesting depth. 
 > This saves you tedious work, leaving you more time to focus on more complex requirements, such as 
-> modularization, testability and good naming. 
+> modularization, testability, and good naming. 
 
 ABAP cleaner is installed with two **profiles**: 
 
@@ -102,7 +102,7 @@ If you come across any (suspected) bugs or issues, expect ABAP cleaner to behave
 miss an option to configure a cleanup rule, or have an idea for a great new cleanup rule, 
 please **create a [GitHub issue](../../issues)**, 
 providing a small code snippet of both the original and the cleaned code, 
-and explaining how the result differs from you expectations.
+and explaining how the result differs from your expectations.
 
 The general approach of ABAP cleaner is to only modify statements that match the expected syntax 
 and leave statements unmodified if any unexpected syntax is found (e.g. comments in weird places inside a statement). 
@@ -122,6 +122,9 @@ We as members, contributors, and leaders pledge to make participation in our com
 
 The ABAP cleaner plug-in (as any other plug-in) can only be installed from extensible versions of ABAP Development Tools (ADT), 
 in which menu 'Help / Install New Software...' is available. 
+
+Since ABAP cleaner does not perform additional backend calls, cleanup is restricted to what can be done within the current code document, 
+without retrieving additional DDIC information, signatures, includes etc.
 
 At any given time, known and unresolved issues are shown as "Open" issues with label "bug" in the 
 [Issues](../../issues) section.

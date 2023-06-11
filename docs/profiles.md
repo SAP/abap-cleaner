@@ -3,8 +3,8 @@
 You may both use this window to learn about the rules implemented in ABAP cleaner, 
 and to select and configure these rules in various profiles. 
 
-To show this window, click the 'Edit Profiles and Rules...' button 
-in the 'Profile' section on the [main screen](main-window.md). 
+To show this window, click the 'Configure...' button 
+in the 'Cleanup Settings' section on the [main screen](main-window.md). 
 All changes made here (including changes to several profiles) are kept in the memory 
 until you either save them by leaving the window with the '**Save Profiles and Exit**' button 
 (which also triggers a reprocessing of the current code in the main window), 
@@ -16,7 +16,7 @@ or discard them all by leaving the window with the '**Cancel**' button.
 ## Profiles
 
 Each profile contains all [cleanup rules](rules.md), each rule being either activated or deactivated in the profile. 
-Some of the rules allow further configuration; these options and settings are also profile-specific. 
+Some of the rules allow further configuration; these options and settings are also profile specific. 
 
 Profiles and other ABAP cleaner settings are stored locally on your computer. 
 To pass on profiles to colleagues, you may use the '**Export...**' or '**Export All...**' buttons 
@@ -92,12 +92,12 @@ In some cases, a contradiction of the rule to a guideline may be shown, e.g. wit
 ### Options and Defaults
 
 Options (if any) allow to configure the current rule. The effects are immediately shown in the example code. 
-Click the 'Options: **Default**' button to revert the configuration of the current rule to the ABAP cleaner defaults.
+Click the 'Options: **Default**' button to revert the configuration of the current rule to the ABAP cleaner defaults. 
 
 If you unchecked the option 'Automatically activate new features after updates' (see above) for the current profile, 
 options that were added with a later update to an existing rule will at first be set to a 'neutral value' 
 (so these new options will have NO effect on the cleanup result). If you want to activate these new options, 
-you may again use the '**Default**' button to set them to the ABAP cleaner default (which may differ from the 'neutral value').
+you may again use the '**Default**' button to set them to the ABAP cleaner default (which usually differs from the 'neutral value').
 
 #### Alignment between ABAP cleaner, Clean ABAP style guide, and code pal for ABAP
 
@@ -115,16 +115,17 @@ ABAP cleaner defaults.
 
 The examples demonstrate how a rule (and its configuration with options and settings) works. 
 You may deactivate the '**Highlight: Changes**' option below the code 
-to appreciate the final look of the code (without background color highlighting) before and after the rule is applied. 
+to appreciate the final look of the code (without background color highlighting) 
+before and after the rule is applied (left -&gt; right code display). 
 
 The option '**Highlight: Declarations**' displays declaration keywords such as ```DATA``` or ```FIELD-SYMBOLS``` in 
 a different color. If you activate the option '**Highlight: Write positions**', variables in write positions will be 
 highlighted in a different color, which may be helpful for looking at rules such as 'Use FINAL for immutable variables' 
 and 'Delete unused variables'.
 
-If you would like to test the effect of the current cleanup rule (and its configuration) on your own code, you can copy 
+If you would like to test the effect of the current cleanup rule and its configuration on your own code, you can copy 
 a code section into the clipboard and click the '**Paste -\>**' button. You can then change the configuration options 
-of the rule (if any) to see how different settings look on your code. Please make sure that all blocks in the pasted 
+of the rule (if any) to see how different settings will look on your code. Please make sure that all blocks in the pasted 
 code are closed (i.e. there must not be an `IF` without the corresponding `ENDIF` etc.). Click the 'Examples: **Default**' 
 button to see the built-in example code again (this is done automatically if you move to a different rule). 
 Note that some rules require context information (e.g. whole `METHOD ... ENDMETHOD` blocks) and will therefore 

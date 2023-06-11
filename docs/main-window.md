@@ -28,8 +28,8 @@ _a ... z_               | activate/deactivate item in list 'Rules Used in Curren
 Key                    | Effect
 ---------------------- | -------------------------------------------------------------------
 _Ctrl + F_             | start search mode; afterwards, simply start typing the search text
-_F3_ / _Enter_         | navgiate to next finding
-_Shift + F3_ / _Enter_ | navgiate to previous finding
+_F3_ / _Enter_         | navigate to next finding
+_Shift + F3_ / _Enter_ | navigate to previous finding
 _Esc_                  | exit search mode
 
 ### Copy & Paste Code
@@ -44,23 +44,42 @@ _Ctrl + Shift + C_ | copy selected lines of original code (left-hand side) to th
 The Copy operations will always copy complete statements, 
 even if only the first or last few lines of a multi-line statement are selected in the display. 
 
+## Cleanup Settings
 
-## Selecting a Profile
+The 'Cleanup Settings' allow you to select a profile, a default cleanup range, and a restriction to an ABAP release 
+(see below). These settings are immediately applied to the code shown in interactive cleanup. 
 
-In order to process the current code with a different profile, simply select that profile from the 'Profile' list. 
+Additionally, these settings are saved and used for all subsequent _automated_ cleanups (shortcut _Ctrl + 4_), 
+in which the interactive ABAP cleaner UI is not shown. Therefore, even if you mainly use the automated cleanup, 
+you may occasionally open the interactive ABAP cleaner UI to change these cleanup settings.
+
+
+### Selecting a Profile
+
+In order to process the current code with a different profile (i.e. different cleanup rules and settings), 
+simply select that profile from the 'Profile' list. 
 Note that changes made in the 'Rules Used in Current Selection' list will be reset.
 
-To configure an existing profile or create a new one, click on the 'Edit Profiles and Rules...' button 
-to show the ['Profiles and Rules'](profiles.md) window.
+To configure an existing profile or create a new one, click on the 'Configure...' button 
+to open the ['Profiles and Rules'](profiles.md) window.
 When returning from this window with the 'Save Profiles and Exit' button, 
 the code will automatically be reprocessed with the changed settings. 
 
-## Restricting Rules to an ABAP Release
+### Default cleanup range
+
+If you open the interactive ABAP cleaner from ADT, you can enter the 'Default cleanup range' to be either the 
+'Current command' (at cursor position), the 'Current method' / declaration section / FORM etc., the 'Current class', 
+or even the 'Entire code document'. 
+
+Note that this default only applies if ABAP cleaner is called while no code is selected in the editor: 
+If you select any amount of code, ABAP cleaner will always only clean the selected statements. 
+
+### Restricting Rules to an ABAP Release
 
 If you need to restrict code changes performed by the cleanup rules to the syntax of a specific ABAP Release 
 (e.g. if your code must be downported to older releases), use the setting 
-'Restrict rules to syntax of ABAP release' below the 'Profile' list. E.g., if you select release 7.53 or lower, 
-cleanup rules that introduce calculation assignment operators such as += will be automatically skipped. 
+'Restrict rules to syntax of ...'. E.g., if you select 'ABAP 7.53' or lower, 
+cleanup rules that introduce calculation assignment operators such as ```+=``` will be automatically skipped. 
 Changes to this setting trigger a reprocessing of the current cleanup. 
 
 When called from inside ADT, ABAP cleaner automatically determines the ABAP release of the current code document
@@ -86,7 +105,7 @@ different color; and 'Highlight Write Positions' to show variables in write posi
 ## Incremental Search
 
 In order to perform a text search, press _Ctrl + F_ and directly start typing the search string. 
-Press _F3_ or _Enter_ to navigate to the previous / next finding. 
+Press _(Shift +) F3_ or _(Shift +) Enter_ to navigate to the previous / next finding. 
 With the options in the 'Incremental Search' section, you can influence 
 whether the left-hand and/or right-hand display is searched, 
 and whether the search shall be limited to 'changed lines only' 
@@ -103,7 +122,7 @@ ABAP cleaner will then immediately reprocess the section accordingly.
 Deactivated rules will still appear as deactivated checkboxes to allow you to reactivate them. 
 
 Note that this serves to deactivate rules in _specific_ code places, 
-while the profiles should be used to _generally_ activate or deactivate rules. 
+while the profile configuration should be used to _generally_ activate or deactivate rules. 
 Deactivation of rules in specific code places will be lost when the code is processed again 
 (e.g. with a different profile or by opening ABAP cleaner again).
 

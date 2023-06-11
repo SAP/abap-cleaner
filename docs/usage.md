@@ -23,7 +23,7 @@ To clean ABAP code **automatically** with a single keystroke,
 1. **Select** any amount of **ABAP code** in the current code editor in ADT - 
    or alternatively, do NOT select any code to apply cleanup to the current method or declaration section. 
 2. **Press *Ctrl + 4*** or select menu 'Source Code / Clean Up With Automated ABAP Cleaner'. 
-   The cleanup will be done automatically, using the profile that was last selected 
+   The cleanup will be done automatically, using the profile and cleanup range that was last selected 
    when you used the interactive ABAP cleaner UI (see above). 
 
 If you clean a selection of code, ABAP cleaner will expand your selection to whole ABAP statements. 
@@ -49,7 +49,7 @@ To clean ABAP code,
    (or _Ctrl + Left / Right_ for the previous / next screen with findings). 
    (Un)check the 'Highlight ...' options to focus on certain types of changes. 
    If you come across a changed statement which you prefer to keep in its original state, 
-   simply deactivate the applied rule(s) in the 'Rules used in current selection' list 
+   simply deactivate the applied rule(s) in the 'Rules Used in Current Selection' list 
    for this statement. 
 5. **Copy all cleaned code** from ABAP cleaner to the clipboard 
    by pressing _Ctrl + A_ (to select the entire code) and then _Ctrl + C_, 

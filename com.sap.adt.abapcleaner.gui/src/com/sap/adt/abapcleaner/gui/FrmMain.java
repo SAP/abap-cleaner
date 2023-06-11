@@ -50,6 +50,8 @@ import org.eclipse.swt.graphics.Point;
 public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeControls, IFallbackKeyListener {
 	private static final String SEARCH_INFO = "(press Ctrl + F and type search string)";
 	private static final String TYPE_SEARCH_TEXT = "type search text (Escape = exit)";
+	private static final String RELEASE_RESTRICTION_PREFIX = "ABAP ";
+	private static final String NO_RELEASE_RESTRICTION_DISPLAY = "Latest Release";
 	private static final int WATCH_CLIPBOARD_INTERVAL_MS = 100;
 
 	private static boolean isInitialized = false;
@@ -86,6 +88,8 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 	private Composite pnlRules;
 	private Label lblWatchClipboardInfo;
 	private Combo cboProfile;
+	private Label lblCleanupRangeExpandMode;
+	private Combo cboCleanupRangeExpandMode;
 	private Combo cboReleaseRestriction;
 	
 	private Button chkHighlightIndentChanges;
@@ -110,6 +114,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 
 	private ArrayList<Profile> profiles = new ArrayList<Profile>();
 	private Profile curProfile = Profile.createDefault();
+	private CleanupRange originalCleanupRange;
 	
 	private RuleStats[] usedRules;
 
@@ -228,7 +233,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		if (profile == null)
 			profile = getMostRecentlyUsedProfile(settings);
 		
-		BackgroundJob job = new BackgroundJob(ParseParams.createForCleanupRange("", sourceCode, abapRelease, cleanupRange),
+		BackgroundJob job = new BackgroundJob(ParseParams.createForCleanupRange("", sourceCode, abapRelease, cleanupRange, settings.cleanupRangeExpandMode),
 													     CleanupParams.createForProfile(profile, false, settings.releaseRestriction));
 		job.run();
 		Task result = job.getResult();
@@ -325,6 +330,9 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 			mmuCodeCancel.dispose();
 			mmuCodeApplyAndClose.dispose();
 			
+			lblCleanupRangeExpandMode.dispose();
+			cboCleanupRangeExpandMode.dispose();
+
 			btnApplyAndClose.dispose();
 			btnCancel.dispose();
 			cpsApplyOrCancel.dispose();
@@ -344,7 +352,8 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		shell.update();
 		
 		if (!StringUtil.isNullOrEmpty(sourceCode)) {
-			if (!refreshCode(sourcePageTitle, "", sourceCode, abapRelease, false, -1, -1, -1, cleanupRange) && isPlugin) {
+			originalCleanupRange = cleanupRange;
+			if (!refreshCode(sourcePageTitle, "", sourceCode, abapRelease, false, -1, -1, -1, cleanupRange, settings.cleanupRangeExpandMode) && isPlugin) {
 				dispose();
 				return;
 			}
@@ -355,7 +364,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 			if (!StringUtil.isNullOrEmpty(lastSession.getCodeText())) {
 				lastSession.reloadCodeTextFromCodePath();
 				refreshCode(lastSession.getSourceName(), lastSession.getSourcePath(), lastSession.getCodeText(), lastSession.getAbapRelease(), false, lastSession.getTopLineIndex(), lastSession.getCurLineIndex(),
-						lastSession.getSelectionStartLine(), null); 
+						lastSession.getSelectionStartLine(), null, CleanupRangeExpandMode.FULL_DOCUMENT); 
 			} else {
 				refreshCode("", "", "", ABAP.NEWEST_RELEASE, false);
 			}
@@ -898,29 +907,40 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		gl_pnlRules.marginRight = 5;
 		pnlRules.setLayout(gl_pnlRules);
 		
-		Composite cpsProfileLabel = new Composite(pnlRules, SWT.NONE);
+		Composite cpsCleanupSettingsTitle = new Composite(pnlRules, SWT.NONE);
 		GridLayout gl_cpsProfileLabel = new GridLayout(2, false);
 		gl_cpsProfileLabel.marginWidth = 0;
-		cpsProfileLabel.setLayout(gl_cpsProfileLabel);
-		cpsProfileLabel.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
+		cpsCleanupSettingsTitle.setLayout(gl_cpsProfileLabel);
+		cpsCleanupSettingsTitle.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
 		
-		Label lblProfile = new Label(cpsProfileLabel, SWT.NONE);
-		lblProfile.setSize(37, 15);
-		lblProfile.setFont(SWTResourceManager.getFont("Segoe UI", 9, SWT.BOLD));
-		lblProfile.setText("Profile");
+		Label lblCleanupSettings = new Label(cpsCleanupSettingsTitle, SWT.NONE);
+		lblCleanupSettings.setSize(37, 15);
+		lblCleanupSettings.setFont(SWTResourceManager.getFont("Segoe UI", 9, SWT.BOLD));
+		lblCleanupSettings.setText("Cleanup Settings");
 		
-		lblWatchClipboardInfo = new Label(cpsProfileLabel, SWT.NONE);
+		lblWatchClipboardInfo = new Label(cpsCleanupSettingsTitle, SWT.NONE);
 		lblWatchClipboardInfo.setFont(SWTResourceManager.getFont("Segoe UI", 9, SWT.BOLD));
 		lblWatchClipboardInfo.setForeground(SWTResourceManager.getColor(SWT.COLOR_RED));
 		lblWatchClipboardInfo.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, true, false, 1, 1));
 		lblWatchClipboardInfo.setText("WATCHING AND MODIFYING CLIPBOARD");
 
-		Composite cpsProfile = new Composite(pnlRules, SWT.NONE);
+		Composite cpsCleanupSettings = new Composite(pnlRules, SWT.NONE);
+		GridLayout gl_cpsCleanupSettings = new GridLayout(2, false);
+		gl_cpsCleanupSettings.marginHeight = 0;
+		gl_cpsCleanupSettings.marginWidth = 0;
+		gl_cpsCleanupSettings.horizontalSpacing = 10;
+		cpsCleanupSettings.setLayout(gl_cpsCleanupSettings);
+		cpsCleanupSettings.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
+
+		Label lblProfile = new Label(cpsCleanupSettings, SWT.NONE);
+		lblProfile.setText("Profile:");
+		
+		Composite cpsProfile = new Composite(cpsCleanupSettings, SWT.NONE);
 		GridLayout gl_cpsProfile = new GridLayout(2, false);
 		gl_cpsProfile.marginHeight = 0;
 		gl_cpsProfile.marginWidth = 0;
 		cpsProfile.setLayout(gl_cpsProfile);
-		cpsProfile.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
+		cpsProfile.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));
 
 		cboProfile = new Combo(cpsProfile, SWT.READ_ONLY);
 		cboProfile.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));
@@ -933,6 +953,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		});
 
 		Button btnEditProfiles = new Button(cpsProfile, SWT.NONE);
+		btnEditProfiles.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
 		btnEditProfiles.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
@@ -940,30 +961,47 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 				codeDisplay.focusDisplay();
 			}
 		});
-		btnEditProfiles.setText("Edit &Profiles and Rules...");
+		btnEditProfiles.setText("Con&figure...");
 		
-		Composite cpsRelease = new Composite(pnlRules, SWT.NONE);
-		GridLayout gl_cpsRelease = new GridLayout(2, false);
-		gl_cpsRelease.marginWidth = 0;
-		cpsRelease.setLayout(gl_cpsRelease);
-		cpsRelease.setLayoutData(new GridData(SWT.FILL, SWT.TOP, false, false, 1, 1));
+		lblCleanupRangeExpandMode = new Label(cpsCleanupSettings, SWT.NONE);
+		lblCleanupRangeExpandMode.setText("Default cleanup range:");
 		
-		Label lblReleaseRestriction = new Label(cpsRelease, SWT.NONE);
-		lblReleaseRestriction.setText("Restrict rules to syntax of ABAP release");
-		
-		cboReleaseRestriction = new Combo(cpsRelease, SWT.READ_ONLY);
-		cboReleaseRestriction.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, true, false, 1, 1));
-		for (String releaseRestrictionName : ABAP.RELEASE_RESTRICTION_NAMES)
-			cboReleaseRestriction.add(releaseRestrictionName);
-		cboReleaseRestriction.add(ABAP.NO_RELEASE_RESTRICTION_NAME);
-		cboReleaseRestriction.addSelectionListener(new SelectionAdapter() {
+		cboCleanupRangeExpandMode = new Combo(cpsCleanupSettings, SWT.READ_ONLY);
+		cboCleanupRangeExpandMode.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, true, false, 1, 1));
+		for (CleanupRangeExpandMode expandMode : CleanupRangeExpandMode.values()) {
+			cboCleanupRangeExpandMode.add(expandMode.displayText);
+		}
+		cboCleanupRangeExpandMode.setToolTipText("This cleanup range is used if the cursor is in the editor, but no code is selected.");
+		cboCleanupRangeExpandMode.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				releaseRestrictionChanged();
-				codeDisplay.focusDisplay();
+				int selIndex = cboCleanupRangeExpandMode.getSelectionIndex();
+				if (selIndex >= 0) {
+					cleanupRangeExpandModeChanged(CleanupRangeExpandMode.forValue(selIndex));
+					codeDisplay.focusDisplay();
+				}
 			}
 		});
 		
+		Label lblReleaseRestriction = new Label(cpsCleanupSettings, SWT.NONE);
+		lblReleaseRestriction.setText("Restrict rules to syntax of:");
+		
+		cboReleaseRestriction = new Combo(cpsCleanupSettings, SWT.READ_ONLY);
+		cboReleaseRestriction.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, true, false, 1, 1));
+		for (String releaseRestrictionName : ABAP.RELEASE_RESTRICTION_NAMES)
+			cboReleaseRestriction.add(getReleaseRestrictionDisplay(releaseRestrictionName));
+		cboReleaseRestriction.add(getReleaseRestrictionDisplay(ABAP.NO_RELEASE_RESTRICTION_NAME));
+		cboReleaseRestriction.setToolTipText("Prevents cleanup rules from introducing newer syntax that is unknown to the specified ABAP release.");
+		cboReleaseRestriction.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				if (cboReleaseRestriction.getSelectionIndex() >= 0) {
+					releaseRestrictionChanged(getReleaseRestrictionName(cboReleaseRestriction.getText())); 
+				}
+				codeDisplay.focusDisplay();
+			}
+		});
+
 		Label lblDisplay = new Label(pnlRules, SWT.NONE);
 		lblDisplay.setFont(SWTResourceManager.getFont("Segoe UI", 9, SWT.BOLD));
 		GridData gd_lblDisplay = new GridData(SWT.LEFT, SWT.TOP, false, false, 1, 1);
@@ -1197,6 +1235,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 
 	private void saveSettings() {
 		settings.curProfileName = (curProfile != null && curProfile.name != null) ? curProfile.name : "";
+		// settings.cleanupRangeExpandMode is directly updated in cleanupRangeExpandModeChange()
 
 		settings.highlightIndentChanges = chkHighlightIndentChanges.getSelection();
 		settings.highlightInnerSpaceChanges = chkHighlightInnerSpaceChanges.getSelection();
@@ -1264,10 +1303,16 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		} catch (SWTException ex) { // ERROR_WIDGET_DISPOSED, ERROR_THREAD_INVALID_ACCESS
 		}
 		
+		if (!cboCleanupRangeExpandMode.isDisposed()) {
+			cboCleanupRangeExpandMode.select(settings.cleanupRangeExpandMode.getValue());
+		}
+		
 		String releaseRestrictionName = ABAP.getReleaseRestrictionName(settings.releaseRestriction);
-		int itemIndex = cboReleaseRestriction.indexOf(releaseRestrictionName);
-		if (itemIndex >= 0) {
-      	cboReleaseRestriction.select(itemIndex);
+		if (!cboReleaseRestriction.isDisposed()) {
+			int itemIndex = cboReleaseRestriction.indexOf(getReleaseRestrictionDisplay(releaseRestrictionName));
+			if (itemIndex >= 0) {
+	      	cboReleaseRestriction.select(itemIndex);
+			}
 		}
 
 		// create a profile in which only the 'essential' rules are activated, i.e. those rules that are explicitly  
@@ -1284,20 +1329,20 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 
 	private boolean refreshCode() {
 		// keep source name, path, code and abapRelease, and also try to keep the position
-		return refreshCode(null, null, null, null, true, codeDisplay.getTopLineIndex(), codeDisplay.getCurLineIndex(), codeDisplay.getSelectionStartLine(), codeDisplay.getCleanupRange());
+		return refreshCode(null, null, null, null, true, codeDisplay.getTopLineIndex(), codeDisplay.getCurLineIndex(), codeDisplay.getSelectionStartLine(), originalCleanupRange, settings.cleanupRangeExpandMode);
 	}
 	
 	private boolean refreshCode(String newSourceName, String newSourcePath, String newCodeText, String newAbapRelease, boolean showMessages) {
-		return refreshCode(newSourceName, newSourcePath, newCodeText, newAbapRelease, showMessages, 0, 0, 0, null);
+		return refreshCode(newSourceName, newSourcePath, newCodeText, newAbapRelease, showMessages, 0, 0, 0, null, CleanupRangeExpandMode.FULL_DOCUMENT);
 	}
 
-	private boolean refreshCode(String newSourceName, String newSourcePath, String newCodeText, String newAbapRelease, boolean showMessages, int topLineIndex, int curLineIndex, int selectionStartLine, CleanupRange cleanupRange) {
+	private boolean refreshCode(String newSourceName, String newSourcePath, String newCodeText, String newAbapRelease, boolean showMessages, int topLineIndex, int curLineIndex, int selectionStartLine, CleanupRange cleanupRange, CleanupRangeExpandMode cleanupRangeExpandMode) {
 		String sourceName = (newSourceName != null) ? newSourceName : codeDisplay.getSourceName();
 		String sourcePath = (newSourcePath != null) ? newSourcePath : codeDisplay.getSourcePath();
 		String sourceCode = (newCodeText != null) ? newCodeText : codeDisplay.getSourceCode();
 		String abapRelease = (newAbapRelease != null) ? newAbapRelease : codeDisplay.getAbapRelease();
 		
-		BackgroundJob job = new BackgroundJob(ParseParams.createForCleanupRange(sourceName, sourceCode, abapRelease, cleanupRange), 
+		BackgroundJob job = new BackgroundJob(ParseParams.createForCleanupRange(sourceName, sourceCode, abapRelease, cleanupRange, cleanupRangeExpandMode), 
 														  CleanupParams.createForProfile(curProfile, false, settings.releaseRestriction));
 		Task result = runJobWithProgressUiIfNeeded(job);
 
@@ -1325,7 +1370,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		// show result
 		shell.setText(Program.PRODUCT_NAME + " - " + sourceName);
 		codeDisplay.setInfo(sourceName, sourcePath, sourceCode, abapRelease, curProfile.getSingleActiveRule());
-		codeDisplay.refreshCode(result.getResultingCode(), result.getResultingDiffDoc(), topLineIndex, curLineIndex, selectionStartLine, cleanupRange);
+		codeDisplay.refreshCode(result.getResultingCode(), result.getResultingDiffDoc(), topLineIndex, curLineIndex, selectionStartLine);
 		if (Program.showDevFeatures())
 			shell.setText(Program.PRODUCT_NAME + " - " + sourceName + " - " + result.getCalculationTimeInfo());
 
@@ -1409,7 +1454,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		String sourceName = persistency.getFileNameWithoutExtension(path);
 		String codeText = persistency.readAllTextFromFile(path);
 		if (keepPositionIfSameFile && codeDisplay != null && StringUtil.equalsIgnoreCaseCheckingForNull(path, codeDisplay.getSourcePath()))
-			return refreshCode(sourceName, path, codeText, ABAP.NEWEST_RELEASE, true, codeDisplay.getTopLineIndex(), codeDisplay.getCurLineIndex(), codeDisplay.getSelectionStartLine(), null);
+			return refreshCode(sourceName, path, codeText, ABAP.NEWEST_RELEASE, true, codeDisplay.getTopLineIndex(), codeDisplay.getCurLineIndex(), codeDisplay.getSelectionStartLine(), null, CleanupRangeExpandMode.FULL_DOCUMENT);
 		else
 			return refreshCode(sourceName, path, codeText, ABAP.NEWEST_RELEASE, true);
 	}
@@ -1615,12 +1660,33 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		}
 	}
 
-	private void releaseRestrictionChanged() {
-		if (cboReleaseRestriction.getSelectionIndex() >= 0) {
-			settings.releaseRestriction = ABAP.getReleaseRestrictionNumber(cboReleaseRestriction.getText());
-			if (!StringUtil.isNullOrEmpty(codeDisplay.getSourceCode())) {
-				refreshCode();
-			}
+	private void cleanupRangeExpandModeChanged(CleanupRangeExpandMode newValue) {
+		settings.cleanupRangeExpandMode = newValue;
+		if (!StringUtil.isNullOrEmpty(codeDisplay.getSourceCode()) && originalCleanupRange != null) {
+			refreshCode();
+		}
+	}
+
+	private void releaseRestrictionChanged(String newReleaseRestrictionName) {
+		settings.releaseRestriction = ABAP.getReleaseRestrictionNumber(newReleaseRestrictionName);
+		if (!StringUtil.isNullOrEmpty(codeDisplay.getSourceCode())) {
+			refreshCode();
+		}
+	}
+
+	private String getReleaseRestrictionDisplay(String releaseRestrictionName) {
+		if (releaseRestrictionName.equals(ABAP.NO_RELEASE_RESTRICTION_NAME)) {
+			return NO_RELEASE_RESTRICTION_DISPLAY;
+		} else {
+			return RELEASE_RESTRICTION_PREFIX + releaseRestrictionName;
+		}
+	}
+
+	private String getReleaseRestrictionName(String releaseRestrictionDisplay) {
+		if (releaseRestrictionDisplay.equals(NO_RELEASE_RESTRICTION_DISPLAY)) {
+			return ABAP.NO_RELEASE_RESTRICTION_NAME;
+		} else {
+			return StringUtil.removePrefix(releaseRestrictionDisplay, RELEASE_RESTRICTION_PREFIX, true);
 		}
 	}
 
@@ -1682,7 +1748,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		for (String testPath : paths) {
 			String sourceName = persistency.getFileNameWithoutExtension(testPath);
 			String codeText = persistency.readAllTextFromFile(testPath);
-			BackgroundJob job = new BackgroundJob(ParseParams.createForCleanupRange(sourceName, codeText, ABAP.NEWEST_RELEASE, null), 
+			BackgroundJob job = new BackgroundJob(ParseParams.createForWholeCode(sourceName, codeText, ABAP.NEWEST_RELEASE), 
 															  CleanupParams.createForProfile(curProfile, false, settings.releaseRestriction));
 			Task result = runJobWithProgressUiIfNeeded(job);
 
@@ -1712,7 +1778,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		for (String testPath : paths) {
 			String sourceName = persistency.getFileNameWithoutExtension(testPath);
 			String codeText = persistency.readAllTextFromFile(testPath);
-			BackgroundJob job = new BackgroundJob(ParseParams.createForCleanupRange(sourceName, codeText, ABAP.NEWEST_RELEASE, null), 
+			BackgroundJob job = new BackgroundJob(ParseParams.createForWholeCode(sourceName, codeText, ABAP.NEWEST_RELEASE), 
 															  CleanupParams.createForProfile(curProfile, false, settings.releaseRestriction));
 			Task result = runJobWithProgressUiIfNeeded(job);
 
@@ -1743,7 +1809,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 			String sourceName = persistency.getFileNameWithoutExtension(testPath);
 			String codeText = persistency.readAllTextFromFile(testPath);
 			CleanupParams cleanupParams = doCleanup ? CleanupParams.createForProfile(curProfile, false, settings.releaseRestriction) : null; 
-			BackgroundJob job = new BackgroundJob(ParseParams.createForCleanupRange(sourceName, codeText, ABAP.NEWEST_RELEASE, null), cleanupParams);
+			BackgroundJob job = new BackgroundJob(ParseParams.createForWholeCode(sourceName, codeText, ABAP.NEWEST_RELEASE), cleanupParams);
 			Task result = runJobWithProgressUiIfNeeded(job);
 
 			boolean matchInFile = false;
