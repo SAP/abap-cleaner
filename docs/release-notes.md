@@ -6,6 +6,24 @@ as well as bugfixes of reported issues, i.e. anything that enhances or changes t
 For a complete list of changes (including documentation, tests, refactoring etc.), please refer to 
 the list of [commits](../../../commits/main).
 
+## 2023-06-12 (version 1.4.0)
+
+Great **thanks** to [**ConjuringCoffee**](https://github.com/ConjuringCoffee), [**fabianlupa**](https://github.com/fabianlupa), 
+[**jelliottp**](https://github.com/jelliottp) and [**bjoern-jueliger-sap**](https://github.com/bjoern-jueliger-sap) for all your ideas!
+
+* Main window: Added option for '**Default cleanup range**' to enable cleanup of **entire code document** ([#42](../../../issues/42))
+* Enhanced rule '**Align declarations**' with options '**Action for chains**' etc. and '**Condense inner spaces**' ([#35](../../../issues/35))
+* Enhanced rule '**Align parameters and components**' with option to '**Align assignments across rows ...**' ([#54](../../../issues/54))
+* Enhanced rule '**Align parameters and components**' for **RAISE ... MESSAGE ... EXPORTING** ([#16](../../../issues/16))
+* Enhanced rule '**Align logical expressions**' for alignment of **FOR ... IN ... WHERE** ( ... ) ([#29](../../../issues/29))
+* Enhanced rule '**Move AND/OR etc. from line end to next line start**' with option to '**Move keywords**' ([#29](../../../issues/29))
+* Enhanced rule '**Remove the self-reference me-&gt;**' to consider **local interfaces** and aliases ([#41](../../../issues/41))
+* Enhanced rule '**Use assert class instead of ASSERT**' with descriptions and **example implementation**
+* Fixed rule '**Align parameters and components**' for line starts **left of the assignment** operator in **nested cases** ([#53](../../../issues/53))
+* Fixed rule '**Delete unused variables**' options wording, replacing 'measure' with '**action**' ([#52](../../../issues/52))
+* Fixed **background color** of options in Profiles editor for **dark theme** ([#47](../../../issues/47))
+
+
 ## 2023-06-06 (version 1.3.0)
 
 Many **thanks** to [**jelliottp**](https://github.com/jelliottp), [**ConjuringCoffee**](https://github.com/ConjuringCoffee), [**GPR8**](https://github.com/GPR8), 

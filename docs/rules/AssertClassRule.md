@@ -2,8 +2,13 @@
 
 # Use assert class instead of ASSERT
 
-Replaces ASSERT statements \(in productive code\) with static calls to an assert class.
-Note that the Assert class name must be adjusted to the respective application \(CL\_...\_ASSERT\).
+Replaces ASSERT statements \(in product code\) with static calls to an assert class to make the error cases testable, too.
+
+Note that the class name must be adjusted to the respective application \(CX\_...\_ASSERT\). The class should at least implement the methods called in the example below.
+
+## References
+
+* [Clean ABAP Styleguide: Write testable code](https://github.com/SAP/styleguides/blob/main/clean-abap/CleanABAP.md#write-testable-code)
 
 ## Options
 
@@ -14,7 +19,8 @@ Note that the Assert class name must be adjusted to the respective application \
 
 ```ABAP
 
-  METHOD use_productive_assert_class.
+CLASS cl_product_code IMPLEMENTATION.
+  METHOD use_assert_class.
     ASSERT lo_instance IS BOUND.
     ASSERT is_any_structure-component IS NOT BOUND.
 
@@ -46,13 +52,54 @@ Note that the Assert class name must be adjusted to the respective application \
     ASSERT lv_quantity <= 100.
     ASSERT abs( <ls_any_field_symbol>-sum_quantity ) > 0.
   ENDMETHOD.
+ENDCLASS.
+
+" example implementation of the assert class, using simplified CL_ABAP_UNIT_ASSERT method signatures:
+CLASS cx_xyz_assert DEFINITION PUBLIC
+      INHERITING FROM cx_no_check FINAL
+      CREATE PUBLIC.
+
+  PUBLIC SECTION.
+    METHODS constructor
+      IMPORTING previous LIKE previous OPTIONAL.
+
+    CLASS-METHODS assert_equals
+      IMPORTING VALUE(act) TYPE any
+                VALUE(exp) TYPE any.
+
+    CLASS-METHODS assert_bound
+      IMPORTING VALUE(act) TYPE any.
+
+    " ...
+ENDCLASS.
+
+CLASS cx_xyz_assert IMPLEMENTATION.
+  METHOD constructor.
+    super->constructor( previous = previous ).
+  ENDMETHOD.
+
+  METHOD assert_equals.
+    IF act <> exp.
+      RAISE EXCEPTION NEW cx_xyz_assert( ).
+    ENDIF.
+  ENDMETHOD.
+
+  METHOD assert_bound.
+    IF act IS NOT BOUND.
+      RAISE EXCEPTION NEW cx_xyz_assert( ).
+    ENDIF.
+  ENDMETHOD.
+
+  " ...
+ENDCLASS.
 ```
 
 Resulting code:
 
 ```ABAP
 
-  METHOD use_productive_assert_class.
+CLASS cl_product_code IMPLEMENTATION.
+  METHOD use_assert_class.
     cx_assert=>assert_bound( lo_instance ).
     cx_assert=>assert_not_bound( is_any_structure-component ).
 
@@ -88,6 +135,46 @@ Resulting code:
     cx_assert=>assert_true( xsdbool( lv_quantity <= 100 ) ).
     cx_assert=>assert_true( xsdbool( abs( <ls_any_field_symbol>-sum_quantity ) > 0 ) ).
   ENDMETHOD.
+ENDCLASS.
+
+" example implementation of the assert class, using simplified CL_ABAP_UNIT_ASSERT method signatures:
+CLASS cx_xyz_assert DEFINITION PUBLIC
+      INHERITING FROM cx_no_check FINAL
+      CREATE PUBLIC.
+
+  PUBLIC SECTION.
+    METHODS constructor
+      IMPORTING previous LIKE previous OPTIONAL.
+
+    CLASS-METHODS assert_equals
+      IMPORTING VALUE(act) TYPE any
+                VALUE(exp) TYPE any.
+
+    CLASS-METHODS assert_bound
+      IMPORTING VALUE(act) TYPE any.
+
+    " ...
+ENDCLASS.
+
+CLASS cx_xyz_assert IMPLEMENTATION.
+  METHOD constructor.
+    super->constructor( previous = previous ).
+  ENDMETHOD.
+
+  METHOD assert_equals.
+    IF act <> exp.
+      RAISE EXCEPTION NEW cx_xyz_assert( ).
+    ENDIF.
+  ENDMETHOD.
+
+  METHOD assert_bound.
+    IF act IS NOT BOUND.
+      RAISE EXCEPTION NEW cx_xyz_assert( ).
+    ENDIF.
+  ENDMETHOD.
+
+  " ...
+ENDCLASS.
 ```
 
 ## Related code

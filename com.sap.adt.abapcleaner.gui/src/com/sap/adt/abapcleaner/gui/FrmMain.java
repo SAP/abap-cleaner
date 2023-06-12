@@ -51,7 +51,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 	private static final String SEARCH_INFO = "(press Ctrl + F and type search string)";
 	private static final String TYPE_SEARCH_TEXT = "type search text (Escape = exit)";
 	private static final String RELEASE_RESTRICTION_PREFIX = "ABAP ";
-	private static final String NO_RELEASE_RESTRICTION_DISPLAY = "Latest Release";
+	private static final String NO_RELEASE_RESTRICTION_DISPLAY = "Latest ABAP Release";
 	private static final int WATCH_CLIPBOARD_INTERVAL_MS = 100;
 
 	private static boolean isInitialized = false;
@@ -90,6 +90,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 	private Combo cboProfile;
 	private Label lblCleanupRangeExpandMode;
 	private Combo cboCleanupRangeExpandMode;
+	private Label lblCleanupRangeExpandModeEmptyCell;
 	private Combo cboReleaseRestriction;
 	
 	private Button chkHighlightIndentChanges;
@@ -329,10 +330,11 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		} else {
 			mmuCodeCancel.dispose();
 			mmuCodeApplyAndClose.dispose();
-			
+
 			lblCleanupRangeExpandMode.dispose();
 			cboCleanupRangeExpandMode.dispose();
-
+			lblCleanupRangeExpandModeEmptyCell.dispose();
+			
 			btnApplyAndClose.dispose();
 			btnCancel.dispose();
 			cpsApplyOrCancel.dispose();
@@ -908,9 +910,10 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		pnlRules.setLayout(gl_pnlRules);
 		
 		Composite cpsCleanupSettingsTitle = new Composite(pnlRules, SWT.NONE);
-		GridLayout gl_cpsProfileLabel = new GridLayout(2, false);
-		gl_cpsProfileLabel.marginWidth = 0;
-		cpsCleanupSettingsTitle.setLayout(gl_cpsProfileLabel);
+		GridLayout gl_cpsCleanupSettingsTitle = new GridLayout(2, false);
+		gl_cpsCleanupSettingsTitle.marginWidth = 0;
+		gl_cpsCleanupSettingsTitle.marginHeight = 0;
+		cpsCleanupSettingsTitle.setLayout(gl_cpsCleanupSettingsTitle);
 		cpsCleanupSettingsTitle.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
 		
 		Label lblCleanupSettings = new Label(cpsCleanupSettingsTitle, SWT.NONE);
@@ -925,9 +928,10 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		lblWatchClipboardInfo.setText("WATCHING AND MODIFYING CLIPBOARD");
 
 		Composite cpsCleanupSettings = new Composite(pnlRules, SWT.NONE);
-		GridLayout gl_cpsCleanupSettings = new GridLayout(2, false);
-		gl_cpsCleanupSettings.marginHeight = 0;
+		GridLayout gl_cpsCleanupSettings = new GridLayout(3, false);
 		gl_cpsCleanupSettings.marginWidth = 0;
+		gl_cpsCleanupSettings.marginTop = 0;
+		gl_cpsCleanupSettings.marginBottom = 5;
 		gl_cpsCleanupSettings.horizontalSpacing = 10;
 		cpsCleanupSettings.setLayout(gl_cpsCleanupSettings);
 		cpsCleanupSettings.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
@@ -935,14 +939,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		Label lblProfile = new Label(cpsCleanupSettings, SWT.NONE);
 		lblProfile.setText("Profile:");
 		
-		Composite cpsProfile = new Composite(cpsCleanupSettings, SWT.NONE);
-		GridLayout gl_cpsProfile = new GridLayout(2, false);
-		gl_cpsProfile.marginHeight = 0;
-		gl_cpsProfile.marginWidth = 0;
-		cpsProfile.setLayout(gl_cpsProfile);
-		cpsProfile.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));
-
-		cboProfile = new Combo(cpsProfile, SWT.READ_ONLY);
+		cboProfile = new Combo(cpsCleanupSettings, SWT.READ_ONLY);
 		cboProfile.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));
 		cboProfile.addSelectionListener(new SelectionAdapter() {
 			@Override
@@ -952,7 +949,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 			}
 		});
 
-		Button btnEditProfiles = new Button(cpsProfile, SWT.NONE);
+		Button btnEditProfiles = new Button(cpsCleanupSettings, SWT.NONE);
 		btnEditProfiles.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
 		btnEditProfiles.addSelectionListener(new SelectionAdapter() {
 			@Override
@@ -967,7 +964,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		lblCleanupRangeExpandMode.setText("Default cleanup range:");
 		
 		cboCleanupRangeExpandMode = new Combo(cpsCleanupSettings, SWT.READ_ONLY);
-		cboCleanupRangeExpandMode.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, true, false, 1, 1));
+		cboCleanupRangeExpandMode.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));
 		for (CleanupRangeExpandMode expandMode : CleanupRangeExpandMode.values()) {
 			cboCleanupRangeExpandMode.add(expandMode.displayText);
 		}
@@ -983,11 +980,13 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 			}
 		});
 		
+		lblCleanupRangeExpandModeEmptyCell = new Label(cpsCleanupSettings, SWT.NONE);
+		
 		Label lblReleaseRestriction = new Label(cpsCleanupSettings, SWT.NONE);
 		lblReleaseRestriction.setText("Restrict rules to syntax of:");
 		
 		cboReleaseRestriction = new Combo(cpsCleanupSettings, SWT.READ_ONLY);
-		cboReleaseRestriction.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, true, false, 1, 1));
+		cboReleaseRestriction.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));
 		for (String releaseRestrictionName : ABAP.RELEASE_RESTRICTION_NAMES)
 			cboReleaseRestriction.add(getReleaseRestrictionDisplay(releaseRestrictionName));
 		cboReleaseRestriction.add(getReleaseRestrictionDisplay(ABAP.NO_RELEASE_RESTRICTION_NAME));
@@ -1001,6 +1000,8 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 				codeDisplay.focusDisplay();
 			}
 		});
+
+		new Label(cpsCleanupSettings, SWT.NONE);
 
 		Label lblDisplay = new Label(pnlRules, SWT.NONE);
 		lblDisplay.setFont(SWTResourceManager.getFont("Segoe UI", 9, SWT.BOLD));
@@ -1091,6 +1092,9 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		lblSearchTitle.setText("Incremental Search");
 
 		chkSearchLeftDisplay = new Button(cpsSearch1, SWT.CHECK);
+		GridData gd_chkSearchLeftDisplay = new GridData(SWT.LEFT, SWT.CENTER, false, false, 1, 1);
+		gd_chkSearchLeftDisplay.verticalIndent = 5;
+		chkSearchLeftDisplay.setLayoutData(gd_chkSearchLeftDisplay);
 		chkSearchLeftDisplay.setText("Search in left display");
 
 		chkMatchCase = new Button(cpsSearch1, SWT.CHECK);
@@ -1108,6 +1112,9 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		lblSearch.setText("(press Ctrl + F and type search string)");
 
 		chkSearchRightDisplay = new Button(cpsSearch2, SWT.CHECK);
+		GridData gd_chkSearchRightDisplay = new GridData(SWT.LEFT, SWT.CENTER, false, false, 1, 1);
+		gd_chkSearchRightDisplay.verticalIndent = 5;
+		chkSearchRightDisplay.setLayoutData(gd_chkSearchRightDisplay);
 		chkSearchRightDisplay.setText("Search in right display");
 		chkSearchRightDisplay.setSelection(true);
 

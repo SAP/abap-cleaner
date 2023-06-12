@@ -3,6 +3,7 @@
 # Replace TRANSLATE with string functions
 
 Replaces the deprecated TRANSLATE statement with corresponding string processing functions.
+
 'TRANSLATE text USING mask' is only replaced if the mask is a literal.
 
 ## References

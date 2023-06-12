@@ -3,6 +3,7 @@
 # Replace CALL METHOD with functional call
 
 Replaces obsolete CALL METHOD statements with functional calls, adding parentheses, if missing.
+
 Keeps CALL METHOD if dynamic typing is used for the method name, since no function equivalent is available here.
 
 ## References

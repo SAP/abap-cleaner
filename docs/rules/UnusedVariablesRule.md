@@ -3,16 +3,17 @@
 # Delete unused variables
 
 Deletes unused variables, or comments them out if they are 'used' in commented-out code. TODO comments can be added for variables that are assigned but never used.
+
 Note that this rule will skip methods in which macros are used.
 
 ## Options
 
-* Measure for local variables that are never used: \[delete\]
-* Measure for variables only used in commented-out code: \[comment out with \*\]
-* Measure for assigned but unused local variables: \[add TODO comment\]
-* Measure for assigned variables only used in commented-out code: \[add TODO comment\]
-* Measure for local constants that are never used: \[comment out with \*\]
-* Measure for constants only used in commented-out code: \[comment out with \*\]
+* Action for local variables that are never used: \[delete\]
+* Action for variables only used in commented-out code: \[comment out with \*\]
+* Action for assigned but unused local variables: \[add TODO comment\]
+* Action for assigned variables only used in commented-out code: \[add TODO comment\]
+* Action for local constants that are never used: \[comment out with \*\]
+* Action for constants only used in commented-out code: \[comment out with \*\]
 
 ## Examples
 

@@ -3,6 +3,7 @@
 # Prefer calculation assignment operators \(\+=, -= etc.\)
 
 Transforms assignments like i = i \+ 1 to use calculation assignment operators \(\+=, -= etc.\).
+
 This rule requires a NetWeaver version >= 7.54.
 
 ## Options
