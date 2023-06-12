@@ -3,6 +3,7 @@
 # Remove empty class definition SECTIONs
 
 Removes empty PUBLIC / PROTECTED / PRIVATE SECTIONs from class definitions \(except from public classes that are non-final or inheriting\).
+
 SECTIONs that contain comments will be kept, except for the auto-generated 'do not include other source files here\!\!\!' comments.
 
 ## Options

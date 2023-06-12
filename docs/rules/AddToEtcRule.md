@@ -3,6 +3,7 @@
 # Replace obsolete ADD ... TO etc. with \+= etc.
 
 Replaces obsolete ADD TO, SUBTRACT FROM, MULTIPLY BY and DIVIDE BY statements with the corresponding calculation assignment operators \+=, -=, \*=, and /=.
+
 This rule requires a NetWeaver version >= 7.54. For older syntax, the statements can be replaced with a = a \+ ... etc. \(see options\)
 
 ## References

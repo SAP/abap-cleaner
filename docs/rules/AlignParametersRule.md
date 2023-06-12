@@ -23,6 +23,7 @@ Aligns parameter assignments in method calls, as well as component assignments i
 * \[ \] Procedural call: put keywords \(EXPORTING etc.\) on own line
 * \[ \] Functional call: put keywords \(EXPORTING etc.\) on own line
 * \[X\] Align assignments
+* \[X\] Align assignments across rows of table constructors
 * Table rows: Keep multiple components on single line \[if maximum line length B is observed\]
 * Allow line starts left of assignment operator \[only to keep maximum line length\]
 
@@ -40,32 +41,36 @@ Aligns parameter assignments in method calls, as well as component assignments i
 
     lts_other_table = cl_other_class=>create_table(
       EXPORTING
-        iv_item_key = '20220030000102'
+        iv_item_key = '12345'
         iv_category = 'ABC'
+*        iv_size = 100'
         iv_name = 'ANY_NAME'
         iv_qty = 8 ).
 
     CALL METHOD procedural_call_example
       EXPORTING
         iv_contract_id = lo_contract1->ms_data-contract_id
-        iv_item_key = '20220030000102'
+        iv_item_key = '13579'
       IMPORTING
         ev_category = lv_any_category
         ev_item_type = lv_any_item_type
       CHANGING
         cv_qty = lv_quantity.
 
-    ets_fulfillment = VALUE #( event_date = gc_any_event_date
-                                amount = gc_any_amount_per_unit
-                               ( fulfillment_number = lc_fulfill_num_1
-                                  qty = lc_fulfill_qty_1 )
-                                 ( fulfillment_number = lc_fulfill_num_2
-                                    qty = lc_fulfill_qty_2 )
-                                       ( fulfillment_number = lc_fulfill_num_3
-                                      qty = lc_fulfill_qty_3 ) ).
+    ets_table = VALUE #( date = gc_any_date
+                           id = gc_any_id
 
-    ets_fulfillment = VALUE #( event_date = gc_other_event_date
-                                amount = gc_other_amount_per_unit
+                           ( item_name = 'ANY'
+*                      size = 'M'
+                              quantity = 1 )
+                             ( item_name = 'OTHER'
+                                quantity = 2
+                                reference_id = '12345' )
+                                   ( item_name = 'THIRD'
+                                  quantity = 3 ) ).
+
+    ets_fulfillment = VALUE #( event_date = gc_any_event_date
+                                amount = gc_any_amount
                                ( fulfillment_number = lc_fulfill_num_1  qty = lc_fulfill_qty_1 )
                                  ( fulfillment_number = lc_fulfill_num_2  qty = lc_fulfill_qty_2 )
                                      ( fulfillment_number = lc_fulfill_num_3  qty = lc_fulfill_qty_3 ) ).
@@ -90,29 +95,33 @@ Resulting code:
                                                       iv_contract_type = if_any_interface=>co_any_contract_type
                                                       iv_item_type     = lo_item->get_item_data( )-item_type ).
 
-    lts_other_table = cl_other_class=>create_table( EXPORTING iv_item_key = '20220030000102'
+    lts_other_table = cl_other_class=>create_table( EXPORTING iv_item_key = '12345'
                                                               iv_category = 'ABC'
+*                                                              iv_size     = 100'
                                                               iv_name     = 'ANY_NAME'
                                                               iv_qty      = 8 ).
 
     CALL METHOD procedural_call_example
       EXPORTING iv_contract_id = lo_contract1->ms_data-contract_id
-                iv_item_key    = '20220030000102'
+                iv_item_key    = '13579'
       IMPORTING ev_category    = lv_any_category
                 ev_item_type   = lv_any_item_type
       CHANGING  cv_qty         = lv_quantity.
 
-    ets_fulfillment = VALUE #( event_date = gc_any_event_date
-                               amount     = gc_any_amount_per_unit
-                               ( fulfillment_number = lc_fulfill_num_1
-                                 qty                = lc_fulfill_qty_1 )
-                               ( fulfillment_number = lc_fulfill_num_2
-                                 qty                = lc_fulfill_qty_2 )
-                               ( fulfillment_number = lc_fulfill_num_3
-                                 qty                = lc_fulfill_qty_3 ) ).
+    ets_table = VALUE #( date = gc_any_date
+                         id   = gc_any_id
 
-    ets_fulfillment = VALUE #( event_date = gc_other_event_date
-                               amount     = gc_other_amount_per_unit
+                         ( item_name    = 'ANY'
+*                           size         = 'M'
+                           quantity     = 1 )
+                         ( item_name    = 'OTHER'
+                           quantity     = 2
+                           reference_id = '12345' )
+                         ( item_name    = 'THIRD'
+                           quantity     = 3 ) ).
+
+    ets_fulfillment = VALUE #( event_date = gc_any_event_date
+                               amount     = gc_any_amount
                                ( fulfillment_number = lc_fulfill_num_1  qty = lc_fulfill_qty_1 )
                                ( fulfillment_number = lc_fulfill_num_2  qty = lc_fulfill_qty_2 )
                                ( fulfillment_number = lc_fulfill_num_3  qty = lc_fulfill_qty_3 ) ).

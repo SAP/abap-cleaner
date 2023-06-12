@@ -3,6 +3,7 @@
 # Align METHODS ... REDEFINITION
 
 Aligns consecutive METHODS ... \[FINAL\] REDEFINITION declarations.
+
 Activate this rule if you want to override the result of 'Align METHODS declarations' with special settings.
 
 ## Options
