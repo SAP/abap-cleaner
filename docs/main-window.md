@@ -68,7 +68,8 @@ the code will automatically be reprocessed with the changed settings.
 ### Default cleanup range
 
 If you open the interactive ABAP cleaner from ADT, you can enter the 'Default cleanup range' to be either the 
-'Current command' (at cursor position), the 'Current method' / declaration section / FORM etc., the 'Current class', 
+'Current command' (at cursor position), the 'Current method' / declaration section / FORM etc., 
+the 'Current class' (relevant when working with multiple classes in the same include), 
 or even the 'Entire code document'. 
 
 Note that this default only applies if ABAP cleaner is called while no code is selected in the editor: 
