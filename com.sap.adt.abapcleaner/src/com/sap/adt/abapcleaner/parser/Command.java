@@ -2096,6 +2096,26 @@ public class Command {
 		return (firstToken.isIdentifier() && !firstToken.getOpensLevel() && next != null && next.type != TokenType.ASSIGNMENT_OP);
 	}
 
+	/** returns the corresponding opening Command for ENDMETHOD, ENDLOOP, ENDIF, ENDFORM, CATCH etc. (skipping ELSEIF etc.) */
+	public Command getOpeningCommand() {
+		if (usedLevelCloser == null || !usedLevelCloser.requiresOpener)
+			return null;
+		Command command = this;
+		while (command.usedLevelCloser != null && command.usedLevelCloser.requiresOpener && command.prevSibling != null)
+			command = command.prevSibling;
+		return command;
+	}
+
+	/** returns the corresponding closing Command for METHOD, LOOP, IF, FORM, CATCH etc. (skipping ELSEIF etc.) */
+	public Command getClosingCommand() {
+		if (usedLevelOpener == null || !usedLevelOpener.requiresCloser)
+			return null;
+		Command command = this;
+		while (command.usedLevelOpener != null && command.usedLevelOpener.requiresCloser && command.nextSibling != null)
+			command = command.nextSibling;
+		return command;
+	}
+
 	/** Returns true if the Command matches a hard-coded pattern or condition.
 	 * This method can be used during development to search for examples in all sample code files. */
 	public final boolean matchesPattern() {

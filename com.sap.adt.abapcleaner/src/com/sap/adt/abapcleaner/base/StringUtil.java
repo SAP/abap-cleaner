@@ -156,6 +156,20 @@ public final class StringUtil {
 			return text;
 	}
 	
+	public static String removePrefixRecursively(String text, String prefix, boolean ignoreCase) {
+		String result = text;
+		while (startsWith(result, prefix, ignoreCase))
+			result = result.substring(prefix.length());
+		return result;
+	}
+	
+	public static String removeSuffixRecursively(String text, String suffix, boolean ignoreCase) {
+		String result = text;
+		while (endsWith(result, suffix, ignoreCase))
+			result = result.substring(0, result.length() - suffix.length());
+		return result;
+	}
+	
 	public static int suffixCount(String text, String suffix, boolean ignoreCase) {
 		if (text == null || text.length() == 0 || suffix == null || suffix.length() == 0)
 			return 0;

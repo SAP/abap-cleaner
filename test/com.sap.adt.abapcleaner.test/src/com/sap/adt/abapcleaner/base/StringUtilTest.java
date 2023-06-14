@@ -470,4 +470,30 @@ class StringUtilTest {
 		assertEquals("lv_test", StringUtil.removePrefix("lv_test", "LV_", false));
 		assertEquals("test", StringUtil.removePrefix("lv_test", "LV_", true));
 	}
+	
+	@Test 
+	void testRemoveSuffixRecursively() {
+		assertEquals("test", StringUtil.removeSuffixRecursively("test.txt", ".txt", false));
+		assertEquals("test", StringUtil.removeSuffixRecursively("test.txt", ".txt", true));
+		assertEquals("test", StringUtil.removeSuffixRecursively("test.txt.txt", ".txt", false));
+		assertEquals("test", StringUtil.removeSuffixRecursively("test.txt.txt", ".txt", true));
+		assertEquals("test.txt", StringUtil.removeSuffixRecursively("test.txt", ".abc", true));
+
+		assertEquals("test.txt.txt", StringUtil.removeSuffixRecursively("test.txt.txt", ".TXT", false));
+		assertEquals("test", StringUtil.removeSuffixRecursively("test.txt", ".TXT", true));
+		assertEquals("test", StringUtil.removeSuffixRecursively("test.txt.txt", ".TXT", true));
+	}
+	
+	@Test 
+	void testremovePrefixRecursivelyRecursively() {
+		assertEquals("test", StringUtil.removePrefixRecursively("lv_test", "lv_", false));
+		assertEquals("test", StringUtil.removePrefixRecursively("lv_test", "lv_", true));
+		assertEquals("test", StringUtil.removePrefixRecursively("lv_lv_test", "lv_", false));
+		assertEquals("test", StringUtil.removePrefixRecursively("lv_lv_test", "lv_", true));
+		assertEquals("lv_test", StringUtil.removePrefixRecursively("lv_test", "mv_", true));
+
+		assertEquals("lv_test", StringUtil.removePrefixRecursively("lv_test", "LV_", false));
+		assertEquals("test", StringUtil.removePrefixRecursively("lv_test", "LV_", true));
+		assertEquals("test", StringUtil.removePrefixRecursively("lv_lv_test", "LV_", true));
+	}
 }

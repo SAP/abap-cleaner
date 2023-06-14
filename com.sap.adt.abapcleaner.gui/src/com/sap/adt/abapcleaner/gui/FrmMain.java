@@ -1802,7 +1802,8 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 
 	private void patternMatchesToClip(boolean doCleanup) {
 		String dir = defaultCodeDirectory;
-
+		String LINE_SEP = System.lineSeparator();
+		
 		String[] paths = getAllPaths(dir, FileType.CODE, true, true);
 		if (paths == null) 
 			return;
@@ -1831,20 +1832,23 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 					}
 					String folderFile = testPath.substring(dir.length());
 					folderFile = StringUtil.removeSuffix(folderFile, persistency.getExtension(testPath), true);
-					sb.append(System.lineSeparator());
-					sb.append(ABAP.COMMENT_SIGN_STRING + " " + folderFile + ": line " + Cult.format(command.getSourceLineNumStart()) + System.lineSeparator());
-					sb.append(command.toString());
+					sb.append(LINE_SEP);
+					sb.append(ABAP.COMMENT_SIGN_STRING + " " + folderFile + ": line " + Cult.format(command.getSourceLineNumStart()) + LINE_SEP);
 
-					// for Commands like LOOP ..., IF ... etc., add the closing Command, too, so the resulting text can more easily be used for testing
-					if (command.getOpensLevel() && !command.getClosesLevel()) {
-						Command closingCommand = command.getNextSibling();
-						while (closingCommand != null && closingCommand.getOpensLevel()) { 
-							closingCommand = closingCommand.getNextSibling();
-						}
-						if (closingCommand != null) {
-							sb.append(closingCommand.toString());
-						}
+					// for Commands like [END]LOOP, [END]IF etc., add the corresponding opening and/or closing Command, too, 
+					// so the resulting text can more easily be used for testing
+					Command openingCommand = command.getOpeningCommand();
+					if (openingCommand != null) {
+						sb.append(removeMultipleLineBreaks(openingCommand.toString()));
 					}
+
+					sb.append(removeMultipleLineBreaks(command.toString()));
+					
+					Command closingCommand = command.getClosingCommand();
+					if (closingCommand != null) {
+						sb.append(removeMultipleLineBreaks(closingCommand.toString()));
+					}
+					
 					sb.append(System.lineSeparator());
 				}
 				command = command.getNext();
@@ -1858,6 +1862,10 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		String matchInfo = " found for " + Cult.format(matchCount) + " commands in " + Cult.format(fileCount) + " files";
 		String clipInfo = (sb.length() > 0) ? " (details see clipboard)" : "";
 		Message.show(taskInfo + matchInfo + clipInfo);
+	}
+
+	private String removeMultipleLineBreaks(String codeText) {
+		return System.lineSeparator() + StringUtil.removePrefixRecursively(codeText, System.lineSeparator(), false);
 	}
 
 	private void setBlockRule(int usedRulesIndex, boolean blocked) {
