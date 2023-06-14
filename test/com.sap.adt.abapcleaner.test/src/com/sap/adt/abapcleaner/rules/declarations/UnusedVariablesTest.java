@@ -1755,4 +1755,42 @@ class UnusedVariablesTest extends RuleTestBase {
 		testRule();
 	}
 	
+	@Test
+	void testLineEndCommentRemoved() {
+		buildSrc("    TRY.");
+		buildSrc("        \" do something");
+		buildSrc("      CATCH cx_any_error INTO DATA(lo_exc). \" TODO: variable is assigned but never used (ABAP cleaner)");
+		buildSrc("        RAISE EXCEPTION NEW cx_any_exception( lo_exc ).");
+		buildSrc("      CATCH cx_other_error INTO DATA(lo_exc2). \" any comment\" TODO: variable is assigned but never used (ABAP cleaner)");
+		buildSrc("        RAISE EXCEPTION NEW cx_any_exception( lo_exc2 ).");
+		buildSrc("      CATCH cx_third_error INTO DATA(lo_exc3). \" TODO: variable is assigned but never used (ABAP cleaner) further comment");
+		buildSrc("        RAISE EXCEPTION NEW cx_any_exception( lo_exc3 ).");
+		buildSrc("      CATCH cx_fourth_error INTO DATA(lo_exc4). \" any comment \" TODO: variable is assigned but never used (ABAP cleaner) \" other comment");
+		buildSrc("        RAISE EXCEPTION NEW cx_any_exception( lo_exc4 ).");
+		buildSrc("      CATCH cx_fifth_error INTO DATA(lo_exc5). \" any comment that does not match");
+		buildSrc("        RAISE EXCEPTION NEW cx_any_exception( lo_exc5 ).");
+		buildSrc("      CATCH cx_sixth_error INTO DATA(lo_exc6).");
+		buildSrc("        RAISE EXCEPTION NEW cx_any_exception( lo_exc6 ).");
+		buildSrc("    ENDTRY.");
+
+		buildExp("    TRY.");
+		buildExp("        \" do something");
+		buildExp("      CATCH cx_any_error INTO DATA(lo_exc).");
+		buildExp("        RAISE EXCEPTION NEW cx_any_exception( lo_exc ).");
+		buildExp("      CATCH cx_other_error INTO DATA(lo_exc2). \" any comment");
+		buildExp("        RAISE EXCEPTION NEW cx_any_exception( lo_exc2 ).");
+		buildExp("      CATCH cx_third_error INTO DATA(lo_exc3). \" further comment");
+		buildExp("        RAISE EXCEPTION NEW cx_any_exception( lo_exc3 ).");
+		buildExp("      CATCH cx_fourth_error INTO DATA(lo_exc4). \" any comment \" other comment");
+		buildExp("        RAISE EXCEPTION NEW cx_any_exception( lo_exc4 ).");
+		buildExp("      CATCH cx_fifth_error INTO DATA(lo_exc5). \" any comment that does not match");
+		buildExp("        RAISE EXCEPTION NEW cx_any_exception( lo_exc5 ).");
+		buildExp("      CATCH cx_sixth_error INTO DATA(lo_exc6).");
+		buildExp("        RAISE EXCEPTION NEW cx_any_exception( lo_exc6 ).");
+		buildExp("    ENDTRY.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }

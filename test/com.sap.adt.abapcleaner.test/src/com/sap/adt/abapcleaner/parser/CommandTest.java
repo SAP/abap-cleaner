@@ -841,6 +841,34 @@ public class CommandTest {
 	}
 	
 	@Test
+	void testRemoveMatchingCommentFromLineOf() {
+		String code = "DATA a TYPE i.";
+		
+		// call with token == null
+		try {
+			Command command = buildCommand(code);
+			command.removeMatchingCommentFromLineOf(null, "comment A");
+			fail();
+		} catch (NullPointerException ex) {
+			// expected case
+		} catch (UnexpectedSyntaxException | UnexpectedSyntaxAfterChanges ex) {
+			fail();
+		}
+
+		// call with a token that belongs to another Command
+		try {
+			Token tokenInOtherCommand = Token.createForAbap(1, 1, "SKIP", TokenType.KEYWORD, 1);
+			Command command = buildCommand(code);
+			command.removeMatchingCommentFromLineOf(tokenInOtherCommand, "comment A");
+			fail();
+		} catch (UnexpectedSyntaxException ex) {
+			// expected case
+		} catch (UnexpectedSyntaxAfterChanges e) {
+			fail();
+		}
+	}
+	
+	@Test
 	void testGetNextNonCommentCommand() {
 		buildCommand("* comment" + SEP + "  \" comment" + SEP + "  DATA a TYPE i.");
 

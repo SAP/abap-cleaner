@@ -171,8 +171,17 @@ public class UnusedVariablesRule extends RuleForDeclarations {
 			if (varInfo.isUsed()) {
 				// if an earlier cleanup produced a comment above the declaration of this variable, remove it (now that the variable or constant is used)
 				try {
-					if (command.removeMatchingCommentAboveLineOf(varInfo.declarationToken, (varInfo.isConstant ? constMessages : varMessages)))
-						code.addRuleUse(this, command);
+					if (command.getClosesLevel()) {
+						// revert Command.appendCommentToLineOf
+						if (command.removeMatchingCommentFromLineOf(varInfo.declarationToken, (varInfo.isConstant ? constMessages : varMessages))) {
+							code.addRuleUse(this, command);
+						}
+					} else {
+						// revert Command.putCommentAboveLineOf
+						if (command.removeMatchingCommentAboveLineOf(varInfo.declarationToken, (varInfo.isConstant ? constMessages : varMessages))) {
+							code.addRuleUse(this, command);
+						}
+					}
 				} catch (UnexpectedSyntaxException e) {
 					throw new UnexpectedSyntaxAfterChanges(this, e);
 				}
