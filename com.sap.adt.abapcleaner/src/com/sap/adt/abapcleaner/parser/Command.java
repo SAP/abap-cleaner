@@ -1698,6 +1698,55 @@ public class Command {
 		}
 	}
 
+	public final boolean removeMatchingCommentFromLineOf(Token token, String... commentTextsToMatch) throws UnexpectedSyntaxException, UnexpectedSyntaxAfterChanges, IntegrityBrokenException {
+		if (token == null)
+			throw new NullPointerException("token");
+		else if (token.getParentCommand() != this)
+			throw new UnexpectedSyntaxException(this, "the token instance '" + token.text + "' is not part of this command!");
+		
+		Token lastInLine = token.getLastTokenInLine();
+		if (lastInLine == null || !lastInLine.isCommentAfterCode())
+			return false;
+		
+		// remove supplied comment texts from the comment, but expect the comment to possibly contain more text before or after that,
+		// e.g. '" any comment " comment to be removed " other comment'
+		String text = lastInLine.getText();
+		boolean found = false;
+		for (String commentTextToMatch : commentTextsToMatch) {
+			int matchPos = text.indexOf(commentTextToMatch);
+			if (matchPos < 0)
+				continue;
+			
+			found = true;
+			int matchEnd = matchPos + commentTextToMatch.length();
+			// if the comment was added to an existing comment, an additional space was added by .appendCommentToLineOf()
+			if (matchPos > 0 && text.charAt(matchPos - 1) == ' ') {
+				--matchPos;
+			}
+			text = ((matchPos > 0) ? text.substring(0, matchPos) : "") + ((matchEnd < text.length()) ? text.substring(matchEnd) : "");
+			text = text.trim();
+			if (text.length() == 0) {
+				break;
+			} else if (!text.startsWith(ABAP.COMMENT_SIGN_STRING)) {
+				text = ABAP.COMMENT_SIGN_STRING + " " + text;
+			}
+		}
+		
+		if (!found) {
+			return false;
+
+		} else if (text.length() == 0 || text.equals(ABAP.COMMENT_SIGN_STRING)) {
+			// remove entire line-end comment
+			lastInLine.removeFromCommand();
+			return true;
+
+		} else {
+			// shorten the comment
+			lastInLine.setText(text, false);
+			return true;
+		}
+	}
+
 	public final Command getNextNonCommentCommand() {
 		Command result = next;
 		while (result != null && result.isCommentLine())
