@@ -2,6 +2,7 @@ package com.sap.adt.abapcleaner.rules.declarations;
 
 import java.time.LocalDate;
 import java.util.HashMap;
+import java.util.HashSet;
 
 import com.sap.adt.abapcleaner.base.ABAP;
 import com.sap.adt.abapcleaner.base.StringUtil;
@@ -174,9 +175,9 @@ public class LocalDeclarationOrderRule extends RuleForDeclarations {
 		while (command != null && command != methodStart.getNextSibling()) {
 			if (command.firstCodeTokenIsKeyword("TYPES")) {
 				Section section = getSectionOfTypesDeclarations(command);
-				// as the Section will be most, determine the next Command already now 
+				// as the Section will be moved, determine the next Command already now 
 				Command next = section.lastCommand.getNext();
-				moveSection(section, methodStart, methodStart, code, writePosOfParent);
+				moveSection(section, methodStart, methodStart, code, writePosOfParent, localVariables);
 				command = next;
 			} else {
 				command = command.getNext();
@@ -238,7 +239,7 @@ public class LocalDeclarationOrderRule extends RuleForDeclarations {
 				enclosingCommand = methodStart;
 
 			Section section = getSection(declaration, declaration);
-			moveSection(section, methodStart, enclosingCommand, code, writePosOfParent);
+			moveSection(section, methodStart, enclosingCommand, code, writePosOfParent, localVariables);
 		}
 	}
 
@@ -386,7 +387,7 @@ public class LocalDeclarationOrderRule extends RuleForDeclarations {
 
 	/** moves the supplied Section to the next write position under the supplied ('enclosing') parent Command, adjusts empty lines 
 	 * before and after the (old and new) position of the section, and updates the write position */
-	private void moveSection(Section section, Command methodStart, Command parent, Code code, HashMap<Command, Command> writePosOfParent) throws UnexpectedSyntaxAfterChanges {
+	private void moveSection(Section section, Command methodStart, Command parent, Code code, HashMap<Command, Command> writePosOfParent, LocalVariables localVariables) throws UnexpectedSyntaxAfterChanges {
 		// do not move the section if any of its Commands are blocked
 		Command command = section.firstCommand;
 		while (command != null) {
@@ -403,6 +404,11 @@ public class LocalDeclarationOrderRule extends RuleForDeclarations {
 			writePos = getInitialWritePos(parent, (parent == methodStart));
 			writePosOfParent.put(parent, writePos);
 		}
+
+		// if a section contains declarations "LIKE ...", it can only be moved it if all referenced local declarations 
+		// are found before writePos; note that even TYPES could be declared LIKE a DATA declaration etc.
+		if (!canSectionBeMoved(section, writePos, methodStart, localVariables))
+			return;
 
 		// remember line breaks before the section for later
 		int oldLineBreaksBeforeSection = section.firstCommand.getFirstTokenLineBreaks();
@@ -433,8 +439,9 @@ public class LocalDeclarationOrderRule extends RuleForDeclarations {
 			
 			// only adjust line breaks for the next command (see below) if it is NOT a declaration
 			Command next = section.lastCommand.getNextNonCommentSibling();
-			if (next != null && next.isDeclaration())
+			if (next != null && next.isDeclaration()) {
 				return;
+			}
 
 		} else {
 			firstToken.lineBreaks = lineBreaks;
@@ -497,6 +504,30 @@ public class LocalDeclarationOrderRule extends RuleForDeclarations {
 		} 
 	}
 
+	private boolean canSectionBeMoved(Section section, Command writePos, Command methodStart, LocalVariables localVariables) {
+		HashSet<Command> declarationsBefore = null;
+		for (VariableInfo testLocal : localVariables.getLocalsInDeclarationOrder()) {
+			if (testLocal.getTypeSource() == null || !section.contains(testLocal.declarationToken.getParentCommand())) {
+				continue;
+			}
+			// build a hash set of all declaration Commands before the write position (just in time) 
+			if (declarationsBefore == null) {
+				declarationsBefore = new HashSet<>();
+				Command commandBefore = writePos.getPrev();
+				while (commandBefore != null && commandBefore != methodStart) {
+					if (commandBefore.isDeclaration()) {
+						declarationsBefore.add(commandBefore);
+					}
+					commandBefore = commandBefore.getPrev();
+				}
+			}
+			if (!declarationsBefore.contains(testLocal.getTypeSource().declarationToken.getParentCommand())) {
+				return false;
+			}
+		}
+		return true;
+	}
+	
 	/** determines the initial write position inside the 'enclosing' parent Command */
 	private Command getInitialWritePos(Command parent, boolean parentIsMethodStart) throws UnexpectedSyntaxAfterChanges {
 		Command writePos = parent.getFirstChild();

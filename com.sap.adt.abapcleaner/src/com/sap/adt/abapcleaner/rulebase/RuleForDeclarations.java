@@ -17,7 +17,8 @@ public abstract class RuleForDeclarations extends Rule {
 	protected abstract void executeOn(Code code, ClassInfo classOrInterfaceInfo, int releaseRestriction) throws UnexpectedSyntaxAfterChanges; 
 	protected abstract void executeOn(Code code, Command methodStart, LocalVariables localVariables, int releaseRestriction) throws UnexpectedSyntaxAfterChanges;
 
-   private final static String[] declarationKeywords = new String[] {"CONSTANTS", "DATA", "FIELD-SYMBOLS", "STATICS"}; // "DATA(", "FINAL(" and "FIELD-SYMBOL(" do NOT belong here!
+   private final static String[] declarationKeywords = new String[] {"TYPES", "CONSTANTS", "DATA", "FIELD-SYMBOLS", "STATICS"}; // "DATA(", "FINAL(" and "FIELD-SYMBOL(" do NOT belong here!
+   private final static String[] typesDeclarationKeywords = new String[] {"TYPES"};
    private final static String[] constantsDeclarationKeywords = new String[] {"CONSTANTS"};
 
    protected static String getNameKey(String name) {
@@ -130,15 +131,18 @@ public abstract class RuleForDeclarations extends Rule {
 			// read local variable declarations or usage from the current Command
 			if (isInMethod && !skipMethod) {
 				try {
-					if (command.firstCodeTokenIsAnyKeyword(declarationKeywords))
-						blockLevel = executeOnDeclarationCommand(command, methodStart, localVariables, command.firstCodeTokenIsAnyKeyword(constantsDeclarationKeywords), blockLevel);
-					else if (command.isAsteriskCommentLine())
+					if (command.firstCodeTokenIsAnyKeyword(declarationKeywords)) {
+						boolean isTypeDeclaration = command.firstCodeTokenIsAnyKeyword(typesDeclarationKeywords);
+						boolean isConstantsDeclaration = command.firstCodeTokenIsAnyKeyword(constantsDeclarationKeywords);
+						blockLevel = executeOnDeclarationCommand(command, methodStart, localVariables, isTypeDeclaration, isConstantsDeclaration, blockLevel);
+					} else if (command.isAsteriskCommentLine()) {
 						executeOnCommentLine(command, localVariables, commentIdentifier);
-					else if (!command.isAbap())
+					} else if (!command.isAbap()) {
 						executeOnNonAbapSection(command, localVariables);
-					else
+					} else {
 						executeOnOtherCommand(command, localVariables);
-
+					}
+					
 					// note down if macros are used in this method; in such a case, rules like the UnusedVariablesRule 
 					// must skip this method
 					if (command.usesMacro()) {
@@ -292,7 +296,7 @@ public abstract class RuleForDeclarations extends Rule {
 		}
 	}
 
-	private int executeOnDeclarationCommand(Command command, Command methodStart, LocalVariables localVariables, boolean isConstantsDeclaration, int blockLevel) throws UnexpectedSyntaxBeforeChanges {
+	private int executeOnDeclarationCommand(Command command, Command methodStart, LocalVariables localVariables, boolean isTypeDeclaration, boolean isConstantsDeclaration, int blockLevel) throws UnexpectedSyntaxBeforeChanges {
 		Token token = command.getFirstCodeToken().getNextCodeToken();
 		boolean isChain = token.isChainColon();
 		if (isChain)
@@ -323,7 +327,7 @@ public abstract class RuleForDeclarations extends Rule {
 				
 				// add declaration
 				String varName = token.getText();
-				VariableInfo varInfo = localVariables.addDeclaration(token, false, isConstantsDeclaration, isBoundStructuredData);
+				VariableInfo varInfo = localVariables.addDeclaration(token, false, isTypeDeclaration, isConstantsDeclaration, isBoundStructuredData);
 	
 				// if the declaration uses "LIKE ...", count that as a usage of that variable
 				Token next = token.getNextCodeSibling();
@@ -445,7 +449,7 @@ public abstract class RuleForDeclarations extends Rule {
 			} else if (token.opensInlineDeclaration()) {
 				// process inline declaration
 				token = token.getNext();
-				localVariables.addDeclaration(token, true, false, false);
+				localVariables.addDeclaration(token, true, false, false, false);
 
 				// if the pragma ##NEEDED is defined for this variable, add a "usage" to prevent it from being commented out or deleted
 				if (isNeededPragmaOrPseudoCommentFound(token))

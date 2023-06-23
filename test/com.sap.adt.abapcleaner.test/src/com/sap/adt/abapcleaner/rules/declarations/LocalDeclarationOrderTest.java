@@ -1190,4 +1190,46 @@ public class LocalDeclarationOrderTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testLikeTableAfterStructure() {
+		// ensure that the FIELD-SYMBOLS declaration is NOT moved in front of DATA, because it refers to LT_TABLE
+		buildSrc("    DATA: BEGIN OF ls_struc,");
+		buildSrc("            comp TYPE i,");
+		buildSrc("          END OF ls_struc,");
+		buildSrc("          lt_table TYPE STANDARD TABLE OF ty_s_any WITH DEFAULT KEY.");
+		buildSrc("");
+		buildSrc("    FIELD-SYMBOLS <ls_any> LIKE LINE OF lt_table.");
+		buildSrc("");
+		buildSrc("    rv_result = ls_struc-comp + lines( lt_table ) + <ls_any>-comp.");
+
+		copyExpFromSrc();
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testTypesLikeDataEtc() {
+		// ensure that none of the declarations are moved (including the TYPES declaration!), 
+		// because they would be moved in front of a declaration they refer to with LIKE 
+
+		buildSrc("    DATA lt_any TYPE farr_ts_contract_id.");
+		buildSrc("");
+		buildSrc("    FIELD-SYMBOLS <ls_any>   LIKE LINE OF lt_any.");
+		buildSrc("    FIELD-SYMBOLS <ls_other> LIKE lt_any.");
+		buildSrc("");
+		buildSrc("    CONSTANTS ls_any   LIKE LINE OF lt_any VALUE IS INITIAL.");
+		buildSrc("    CONSTANTS ls_other LIKE <ls_any> VALUE IS INITIAL.");
+		buildSrc("");
+		buildSrc("    TYPES ty_tt_any LIKE lt_any.");
+		buildSrc("    TYPES ty_s_any  LIKE ls_other.");
+
+		copyExpFromSrc();
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }

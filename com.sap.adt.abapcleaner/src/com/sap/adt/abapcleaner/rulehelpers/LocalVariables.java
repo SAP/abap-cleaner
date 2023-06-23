@@ -73,7 +73,7 @@ public class LocalVariables {
 		return localsInNonCommentUsageOrder;
 	}
 	
-	public VariableInfo addDeclaration(Token identifier, boolean isDeclaredInline, boolean isConstant, boolean isBoundStructuredData) throws UnexpectedSyntaxBeforeChanges {
+	public VariableInfo addDeclaration(Token identifier, boolean isDeclaredInline, boolean isType, boolean isConstant, boolean isBoundStructuredData) throws UnexpectedSyntaxBeforeChanges {
 		if (!identifier.isIdentifier())
 			throw new UnexpectedSyntaxBeforeChanges(rule, identifier, "Expected an identifier, but found " + identifier.getTypeAndTextForErrorMessage() + "!");
 
@@ -86,7 +86,7 @@ public class LocalVariables {
 		if (locals.containsKey(key))
 			throw new UnexpectedSyntaxBeforeChanges(rule, identifier, (isConstant ? "Constant" : "Variable") + " '" + identifier.getText() + "' seems to be declared twice!");
 
-		VariableInfo varInfo = new VariableInfo(identifier, isDeclaredInline, isConstant, isBoundStructuredData);
+		VariableInfo varInfo = new VariableInfo(identifier, isDeclaredInline, isType, isConstant, isBoundStructuredData);
 		if (isDeclaredInline) {
 			varInfo.addAssignment(identifier);
 		}
@@ -114,7 +114,7 @@ public class LocalVariables {
 	public void addInlineDeclaration(Token identifier, String name) {
 		addUsage(identifier, name, true, false, false, false);
 	}
-	public void addUsageInLikeClause(Token identifier, String name, Command methodStart, VariableInfo enclosingDeclaration) {
+	public void addUsageInLikeClause(Token identifier, String name, Command methodStart, VariableInfo referringDeclaration) {
 		VariableInfo varInfo = addUsage(identifier, name, false, false, false, false);
 		if (varInfo == null) 
 			return;
@@ -125,10 +125,13 @@ public class LocalVariables {
 		if (!varInfo.isDeclaredInline)
 			varInfo.setEnclosingCommand(methodStart);
 
-		// if varInfo is declared inline, the enclosing declaration (that uses varInfo in its LIKE clause) must NOT be moved
-		// to a different position by the LocalDeclarationOrderRule
-		if (varInfo.isDeclaredInline && enclosingDeclaration != null) 
-			enclosingDeclaration.declarationCannotBeMoved = true;
+		if (referringDeclaration != null) {
+			referringDeclaration.setTypeSource(varInfo);
+			// if varInfo is declared inline, the referring declaration (that uses varInfo in its LIKE clause) must NOT be moved
+			// to a different position by the LocalDeclarationOrderRule
+			if (varInfo.isDeclaredInline) 
+				referringDeclaration.declarationCannotBeMoved = true;
+		}
 	}
 	public void addUsage(Token identifier, String name) {
 		addUsage(identifier, name, false, false, false, false);
