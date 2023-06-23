@@ -1650,6 +1650,12 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		FrmProfiles frmProfiles = new FrmProfiles();
 		EditProfilesResult profileResult = frmProfiles.open(curProfileName, settings, codeDisplay.getShowVerticalLine(), codeDisplay.getVerticalLinePos(), codeDisplayColors);
 		
+		// after returning from FrmProfiles, ensure FrmMain appears in the foreground, 
+		// even if another window was meanwhile activated and is higher in the Z order
+		if (!shell.getMinimized()) {
+			shell.forceActive();
+		}
+		
 		if (profileResult != null) {
 			// lastProfileName.saved is false if FrmProfiles was closed with "Cancel" or with the red X
 			if (profileResult.saved && profileResult.lastProfileName != null) {
