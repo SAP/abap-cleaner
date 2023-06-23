@@ -121,6 +121,8 @@ public class Token {
 		return isComment() && AbapCult.stringStartsWith(text, ABAP.PSEUDO_COMMENT_EC_PREFIX); 
 	}
 
+	public final boolean isPseudoCommentAfterCode() { return isPseudoComment() && (prev != null) && (lineBreaks == 0); }
+
 	public final boolean isLiteral() { return (type == TokenType.LITERAL); }
 
 	public final boolean isIntegerLiteral() { return isLiteral() && !isStringLiteral(); }
@@ -1623,6 +1625,8 @@ public class Token {
 			prevToken = prevToken.getPrevCodeSibling();
 		Token prevPrevToken = (prevToken == null) ? null : prevToken.getPrevCodeSibling();
 		Token nextToken = getNextCodeToken();
+		if (nextToken == null)
+			return MemoryAccessType.NONE;
 		if (nextToken.isChainColon())
 			nextToken = nextToken.getNextCodeToken();
 		
