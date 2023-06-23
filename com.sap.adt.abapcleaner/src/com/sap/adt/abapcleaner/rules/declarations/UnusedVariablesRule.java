@@ -162,6 +162,10 @@ public class UnusedVariablesRule extends RuleForDeclarations {
 			return;
 		
 		for (VariableInfo varInfo : localVariables.getLocalsInDeclarationOrder()) {
+			// TYPES declarations are currently not processed by this rule
+			if (varInfo.isType)
+				continue;
+			
 			Command command = varInfo.declarationToken.getParentCommand();
 			// .isBlocked must be considered only at this point, NOT earlier when usage information is gathered 
 			if (isCommandBlocked(command)) 

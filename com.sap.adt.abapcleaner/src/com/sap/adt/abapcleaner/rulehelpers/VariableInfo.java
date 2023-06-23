@@ -10,6 +10,7 @@ public class VariableInfo {
 	/** the Token that contains the variable name in its declaration */
    public final Token declarationToken;
    public final boolean isDeclaredInline;
+   public final boolean isType;
    public final boolean isConstant;
    /** true if this variable was declared with DATA/CONSTANTS/STATICS BEGIN OF */
    public final boolean isBoundStructuredData;
@@ -20,6 +21,9 @@ public class VariableInfo {
    /** the level-opening Command that encloses all (non-declaration) usages of this variable, including usage in comments */
    private Command enclosingCommandWithCommentUsage;
 
+   /** the declaration from which the type is derived, if this declaration uses LIKE [LINE OF] etc. */
+   private VariableInfo typeSource;
+   
    private int usedCount;
    private int usedCountInComment;
    @SuppressWarnings("unused")
@@ -50,9 +54,10 @@ public class VariableInfo {
    public boolean isAssignedAfterDeclaration() { return isDeclaredInline ? (assignedCount > 1) : (assignedCount > 0); }
    public boolean isAssignedInComment() { return assignedCountInComment > 0; }
    
-   public VariableInfo(Token declarationToken, boolean isDeclaredInline, boolean isConstant, boolean isBoundStructuredData) {
+   public VariableInfo(Token declarationToken, boolean isDeclaredInline, boolean isType, boolean isConstant, boolean isBoundStructuredData) {
       this.declarationToken = declarationToken;
       this.isDeclaredInline = isDeclaredInline;
+      this.isType = isType;
       this.isConstant = isConstant;
       this.isBoundStructuredData = isBoundStructuredData;
    }
@@ -126,7 +131,15 @@ public class VariableInfo {
    	enclosingCommand = command;
    	enclosingCommandWithCommentUsage = command;
    }
+   
+   public void setTypeSource(VariableInfo typeSource) {
+   	this.typeSource = typeSource;
+   }
 
+   public VariableInfo getTypeSource() {
+   	return typeSource;
+   }
+   
    private static Command updateEnclosingCommand(Command enclosingCommand, Command newCommand) {
    	if (newCommand == null)
    		return enclosingCommand;
