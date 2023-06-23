@@ -700,9 +700,15 @@ public class AlignParametersRule extends RuleForCommands {
 
 			} else {
 				if (token == parentToken.getNext() || token.lineBreaks > 0) {
-					// store 'other line starts'; in case this is a keyword like "EXPORTING", this may be removed again later
-					otherLineStarts.add(token); 
-					tableEndsWithOtherLine = true;
+					if  (token.isPseudoCommentAfterCode()) {
+						// avoid moving pseudo comments to the next line if they refer to the line of the parentToken 
+					} else if (token.isCommentAfterCode() && contentType != ContentType.CONSTRUCTOR_EXPR && contentType != ContentType.ROW_IN_VALUE_OR_NEW_CONSTRUCTOR) {
+						// line-end comments after method calls usually do not refer to the parameters; therefore, keep them in their place, too
+					} else {
+						// store 'other line starts'; in case this is a keyword like "EXPORTING", this may be removed again later
+						otherLineStarts.add(token); 
+						tableEndsWithOtherLine = true;
+					}
 				} else if (token.textEquals("(") && token.lineBreaks == 0 && token.getPrevCodeSibling() != null && token.getPrevCodeSibling().isKeyword("WHERE")) {
 					// skip this case of a logical expression in parentheses after WHERE, because it is NOT a table row:
 					// 'VALUE type( FOR ... IN ... WHERE ( log_exp ) ... ).' 

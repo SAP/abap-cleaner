@@ -2574,4 +2574,26 @@ class AlignParametersTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testPseudoCommentKeptAtLineEnd() {
+		// ensure that the pseudo comment is kept at line end (and not moved above EXPORTING); 
+		// also, ensure that line-end comments after method calls are kept, because they usually don't refer to the parameters 
+		
+		buildSrc("    CALL FUNCTION 'ANY_FUNCTION' \"#EC CI_USAGE_OK[1234567]");
+		buildSrc("      EXPORTING");
+		buildSrc("        param1 = val1.");
+		buildSrc("    CALL METHOD any_method( \" any comment");
+		buildSrc("      EXPORTING");
+		buildSrc("        param1 = val1 ).");
+		
+		buildExp("    CALL FUNCTION 'ANY_FUNCTION' \"#EC CI_USAGE_OK[1234567]");
+		buildExp("      EXPORTING param1 = val1.");
+		buildExp("    CALL METHOD any_method( \" any comment");
+		buildExp("      EXPORTING param1 = val1 ).");
+		
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }
