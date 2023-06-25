@@ -745,8 +745,15 @@ public class AlignParametersRule extends RuleForCommands {
 			
 		} else {
 			// if configured, setup the AlignTable to force a line break after EXPORTING, IMPORTING etc. keywords
+			// however, do not force a line break if the table continues behind a call
+			int maxParamCount = 0;
+			if (contentType == ContentType.PROCEDURAL_CALL_PARAMS) 
+				maxParamCount = (configMaxParamCountBehindProceduralCall.getValue() > 0 ? 1 : 0); // alternative: maxParamCount = config...getValue();
+			else if (contentType == ContentType.FUNCTIONAL_CALL_PARAMS) 
+				maxParamCount = (configMaxParamCountBehindFunctionalCall.getValue() > 0 ? 1 : 0); // alternative: maxParamCount = config...getValue();
+
 			AlignColumn keywordColumn = table.getColumn(Columns.KEYWORD.getValue());
-			if (!keywordColumn.isEmpty() && forceLineBreakAfterKeywords(contentType)) {
+			if (!keywordColumn.isEmpty() && forceLineBreakAfterKeywords(contentType) && table.getLineCount() > maxParamCount) {
 				keywordColumn.setForceLineBreakAfter(true);
 			}
 		}

@@ -2596,4 +2596,31 @@ class AlignParametersTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testOneLinerDespiteKeywordOnOwnLine() {
+		// expect the following case to be turned into a one-liner, even if keywords such as CHANGING should normally be 
+		// put on a line of their own 
+		rule.configMaxParamCountBehindFunctionalCall.setValue(3);
+		rule.configPutFunctionalCallKeywordsOnOwnLine.setValue(true);
+
+		buildSrc("   lo_any_class->any_method(");
+		buildSrc("     CHANGING");
+		buildSrc("       iv_param = lv_value ).");
+		buildSrc("");
+		buildSrc("   lo_any_class->any_method(");
+		buildSrc("     CHANGING");
+		buildSrc("       iv_param1 = lv_value1");
+		buildSrc("       iv_param2 = lv_value2 ).");
+
+		buildExp("   lo_any_class->any_method( CHANGING iv_param = lv_value ).");
+		buildExp("");
+		buildExp("   lo_any_class->any_method( CHANGING");
+		buildExp("                               iv_param1 = lv_value1");
+		buildExp("                               iv_param2 = lv_value2 ).");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }
