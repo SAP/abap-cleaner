@@ -6,6 +6,16 @@ as well as bugfixes of reported issues, i.e. anything that enhances or changes t
 For a complete list of changes (including documentation, tests, refactoring etc.), please refer to 
 the list of [commits](../../../commits/main).
 
+## 2023-06-26 (version 1.4.1)
+
+**Thank you** [**jelliottp**](https://github.com/jelliottp), [**ConjuringCoffee**](https://github.com/ConjuringCoffee)
+and [**zmsMarc**](https://github.com/zmsMarc) for opening the issues behind these improvements!
+
+* Enhanced rule '**Align parameters and components**' for one-liners behind the call ([#66](../../../issues/66))
+* Fixed rule '**Align parameters and components**' to keep pseudo comments at line end ([#65](../../../issues/65))
+* Fixed rule '**Rearrange local declarations**' for LIKE across different declaration keywords ([#64](../../../issues/64))
+* Fixed rule '**Delete unused variables**' to remove TODO comments from line end ([#58](../../../issues/58))
+
 ## 2023-06-12 (version 1.4.0)
 
 Great **thanks** to [**ConjuringCoffee**](https://github.com/ConjuringCoffee), [**fabianlupa**](https://github.com/fabianlupa), 
