@@ -23,6 +23,7 @@ Typically, this is done by injecting a trusted root certificate into the Windows
 However, Eclipse, in its default configuration, does not make use of the Windows OS trust store, but uses the trust store 
 of the Java VM. The above solution makes Eclipse use the Windows OS trust store. 
 
+
 ## Info "No updates found" although a newer release exists
 
 **Symptom**: Eclipse menu "Help / Check for Updates" reports "No updates found", although the 
@@ -31,6 +32,21 @@ menu "Window / Preferences -\> Install/Update -\> Available Software Sites" show
 "ABAP Cleaner for ABAP Development Tools (ADT)". 
 
 **Solution**: Same solution as above for 'Error "Unable to read repository ... PKIX path building failed"'.
+
+
+## Error "not reachable", although updatesite URL is correct
+
+**Symptom**: Eclipse menu "Help / Check for Updates" says that the URL of the ABAP cleaner updatesite 
+https://sap.github.io/abap-cleaner/updatesite is not reachable, although the correct URL was entered. 
+
+**Solution**: Same solution as above for 'Error "Unable to read repository ... PKIX path building failed"'.
+
+**Note**: In a browser, the URL https://sap.github.io/abap-cleaner/updatesite will correctly be shown as 
+"404 File not found", because this URL is a folder, not a file. To convince yourself that the updatesite 
+can indeed be reached, you may open in your browser:
+* https://sap.github.io/abap-cleaner, which redirects to the ABAP cleaner repository, or 
+* https://sap.github.io/abap-cleaner/updatesite/p2.index, which downloads a small index file that is used by Eclipse. 
+
 
 ## Error "An error occurred while collecting items to be installed"
 
