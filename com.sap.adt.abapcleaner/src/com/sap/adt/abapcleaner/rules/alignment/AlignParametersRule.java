@@ -688,11 +688,15 @@ public class AlignParametersRule extends RuleForCommands {
 				token = token.getNext();
 				
 			} else if (contentType == ContentType.ROW_IN_VALUE_OR_NEW_CONSTRUCTOR && (token.isIdentifier() || token.isLiteral())) {
-				// in VALUE or NEW constructors, rows may only contain the expression (rather than an assignment), e.g. VALUE #( ( 'A' ) ( 'B' ) ) 
-				// (for tables without structured line type)
+				// in VALUE or NEW constructors, rows may not contain assignments, but only  
+				// - the expression, e.g. "lt_char = VALUE #( ( 'A' ) ( 'B' ) ( lv_char ) )" (for tables without structured line type)
+				// - a variable for a whole structure, e.g. "lt_table = VALUE #( ( ls_struc ) ( comp = 1 ) )"
+				// Note that only the second case can be mixed with other lines that contain assignments, and if alignment across
+				// table rows is activated, 'LS_STRUC' should be aligned with the component 'COMP', not with the value '1'; therefore,  
+				// the .PARAMETER column is used in all non-assignment cases, not the .EXPRESSION column 
 				Term expression = Term.createArithmetic(token);
 				AlignLine line = continueLastLine ? table.getLastLine() : table.addLine();
-				line.setCell(Columns.EXPRESSION.getValue(), new AlignCellTerm(expression));
+				line.setCell(Columns.PARAMETER.getValue(), AlignCellTerm.createSpecial(expression, 0, true));
 				continueLastLine = false;
 				tableEndsWithOtherLine = false;
 			

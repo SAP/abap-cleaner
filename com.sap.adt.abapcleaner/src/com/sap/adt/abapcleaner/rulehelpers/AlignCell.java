@@ -72,6 +72,10 @@ public abstract class AlignCell {
 			parentColumn.invalidate();
 	}
 	
+	public final boolean overridesTextWidth() {
+		return (overrideTextWidth >= 0);
+	}
+	
 	public void setAdditionalIndent(int additionalIndent) {
 		this.additionalIndent = additionalIndent;
 		parentColumn.invalidate();
