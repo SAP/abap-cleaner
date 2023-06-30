@@ -143,6 +143,9 @@ public class AlignLine {
 		if (lastCellIndex < 0) 
 			return;
 		AlignCell cell = cells[lastCellIndex];
+		// do not add width if the cell explicitly overrides the text width of its content
+		if (cell.overridesTextWidth())
+			return;
 		int lastLineWidth = cell.getEndIndexInLastLine() - cell.getStartIndexInFirstLine();
 		int maxLineWidth = cell.getMaxEndIndexInAnyLine() - cell.getStartIndexInFirstLine();
 		if (lastLineWidth + addWidth > maxLineWidth) {

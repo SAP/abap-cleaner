@@ -2623,4 +2623,22 @@ class AlignParametersTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testTableRowWithStrucAlignedWithComponents() {
+		// ensure that the table row which only consist of the structure LS_LINE is aligned with the component 'COMP' 
+		// of the other row, NOT with the value '1', while at the same time, the length of 'LS_LINE' does not cause the 
+		// assignment '= 1' to be moved to the right
+		
+		rule.configAlignAcrossTableRows.setValue(true);
+		rule.configKeepComponentsOnSingleLine.setEnumValue(ComponentsOnSingleLine.NEVER);
+
+		buildSrc("    lt_table = VALUE #( ( ls_line )");
+		buildSrc("                        ( comp = 1 ) ).");
+
+		buildExp("    lt_table = VALUE #( ( ls_line )");
+		buildExp("                        ( comp = 1 ) ).");
+
+		testRule();
+	}
 }
