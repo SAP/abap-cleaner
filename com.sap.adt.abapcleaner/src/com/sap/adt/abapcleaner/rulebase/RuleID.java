@@ -35,6 +35,7 @@ public enum RuleID  {
    // Syntax [obsolete/outdated]
    // - comments and pragmas
    COMMENT_TYPE,
+   END_OF_COMMENT,
    PSEUDO_COMMENT,
    PRAGMA_POSITION,
    TYPO,

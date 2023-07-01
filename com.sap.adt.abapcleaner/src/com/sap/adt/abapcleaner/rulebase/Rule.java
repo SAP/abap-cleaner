@@ -20,7 +20,7 @@ import java.time.LocalDate;
 import java.util.*;
 
 public abstract class Rule {
-	public static final int RULE_COUNT = 59;
+	public static final int RULE_COUNT = 60;
 	public static final int RULE_GROUP_COUNT = 7;
 
 	protected static final String LINE_SEP = ABAP.LINE_SEPARATOR;
@@ -83,6 +83,7 @@ public abstract class Rule {
          
          // syntax
          new CommentTypeRule(profile),
+         new EndOfCommentRule(profile),
          new PseudoCommentRule(profile),
          new PragmaPositionRule(profile),
          new TypoRule(profile),
