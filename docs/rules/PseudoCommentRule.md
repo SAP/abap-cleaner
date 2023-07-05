@@ -1,4 +1,4 @@
-[<-- previous rule](CommentTypeRule.md) | [overview](../rules.md) | [next rule -->](PragmaPositionRule.md)
+[<-- previous rule](EndOfCommentRule.md) | [overview](../rules.md) | [next rule -->](PragmaPositionRule.md)
 
 # Replace obsolete pseudo comments with pragmas
 

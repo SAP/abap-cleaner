@@ -1,6 +1,6 @@
 # Available Cleanup Rules
 
-ABAP cleaner offers 59 cleanup rules with a total of 186 configuration options:
+ABAP cleaner offers 60 cleanup rules with a total of 189 configuration options:
 
 ## Empty Lines
 
@@ -32,6 +32,7 @@ ABAP cleaner offers 59 cleanup rules with a total of 186 configuration options:
 ## Syntax
 
 * [Comment with ", not with \* \(for text\)](rules/CommentTypeRule.md)
+* [Remove end-of comments](rules/EndOfCommentRule.md)
 * [Replace obsolete pseudo comments with pragmas](rules/PseudoCommentRule.md)
 * [Move pragmas to correct position](rules/PragmaPositionRule.md)
 * [Correct frequent typos](rules/TypoRule.md)

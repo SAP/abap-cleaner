@@ -6,6 +6,16 @@ as well as bugfixes of reported issues, i.e. anything that enhances or changes t
 For a complete list of changes (including documentation, tests, refactoring etc.), please refer to 
 the list of [commits](../../../commits/main).
 
+## 2023-07-05 (version 1.5)
+
+Many **thanks** to [**se38**](https://github.com/se38), [**ConjuringCoffee**](https://github.com/ConjuringCoffee)
+and [**richardbruenning**](https://github.com/richardbruenning) for the ideas and bug reports behind these improvements!
+
+* Added new rule '**Remove end-of comments**' ([#60](../../../issues/60))
+* Fixed rules '**Convert CHECK in/outside loop**' for SELECT...ENDSELECT ([#71](../../../issues/71))
+* Fixed rule '**Align parameters and components**' for row with structure variable ([#70](../../../issues/70))
+* Added "not reachable" to known installation issues ([#69](../../../issues/69))
+
 ## 2023-06-26 (version 1.4.1)
 
 **Thank you** [**jelliottp**](https://github.com/jelliottp), [**ConjuringCoffee**](https://github.com/ConjuringCoffee)
