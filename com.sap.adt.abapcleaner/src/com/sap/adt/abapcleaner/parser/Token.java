@@ -1378,6 +1378,17 @@ public class Token {
 		return result;
 	}
 
+	public final Token getNextTokenOfTypeAndText(TokenType tokenType, String... texts) {
+		Token result = next;
+		while (result != null) {
+			if (result.type == tokenType && result.textEqualsAny(texts)) {
+				return result;
+			}
+			result = result.next;
+		}
+		return null;
+	}
+
 	public final Token getNextTokenOfTypes(TokenType... tokenTypes) {
 		Token result = next;
 		while (result != null) {
@@ -2102,11 +2113,22 @@ public class Token {
 	public Token getEndOfParamsOrComponentsList() {
 		if (!getOpensLevel() || !hasChildren() || isLiteral()) {
 			return null;
-		} else if(next.isAttached() && (next.isIdentifier() || next.isLiteral())) {
+		} else if (next.isAttached() && (next.isIdentifier() || next.isLiteral())) {
 			// e.g. DATA(lv_variable) or lv_any(5)
+			return null; 
+
+		} else if (textEqualsAny("boolc(", " boolx(", " xsdbool(")) {
+			// skip built-in functions for logical expressions; also skip "boolx( bool = log_exp bit = bit )", 
+			// because parameters that expect a log_exp are not yet considered in AlignParametersRule. 
 			return null;
-		} else if(textEqualsAny("xsdbool(", "boolc(", "boolx(")) {
-			return null;
+
+			// By contrast, NO need to skip the other ABAP.builtInFunctionsWithoutNamedParams, because they have the same 
+			// syntax as a method call "any_method( arg )" that omits the parameter name. After excluding log_exp, the  
+			// argument could be of type table expression, numeric, string / byte string, or table, e.g.
+			// line_index( table_exp ), sin( arg ), strlen( arg ), lines( itab ). 
+			// Also note that a class may define methods with the same name as a built-in function; in such a case,   
+			// the built-in function is 'shadowed' (even if the method has a different signature) and the method is called.
+
 		} else if (textEquals("(")) {
 			// stand-alone " ( " only starts a component list if it is a row inside a VALUE or NEW constructor expression, 
 			// not if it is part of arithmetic expressions etc.
@@ -2218,5 +2240,24 @@ public class Token {
          return getNextCodeSibling().getNextSibling().getNext();
       }
       return null;
+	}
+	
+	public boolean startsFunctionalMethodCall(boolean considerBuiltInFunctionsAsMethodCalls) {
+		// exclude all cases that don't have the syntax of a functional method call
+		if (!isIdentifier() || !getOpensLevel())
+			return false;
+		else if (next == null || next.isAttached()) // e.g. DATA(lv_variable) or lv_any(5)
+			return false;
+		
+		// if applicable, exclude built-in functions (which do NOT set sy-subrc, as opposed to ENDMETHOD in functional calls)
+		if (!considerBuiltInFunctionsAsMethodCalls && textEqualsAny(ABAP.builtInFunctions))
+			return false;
+
+		// exclude constructor expressions
+		Token prev = getPrevCodeToken();
+		if (prev != null && prev.isAnyKeyword("NEW", "VALUE", "CONV", "CORRESPONDING", "CAST", "REF", "EXACT", "REDUCE", "FILTER", "COND", "SWITCH")) {
+			return false;
+		}
+		return true;
 	}
 }
