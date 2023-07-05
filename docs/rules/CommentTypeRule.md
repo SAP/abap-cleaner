@@ -1,4 +1,4 @@
-[<-- previous rule](AbapDocLangRule.md) | [overview](../rules.md) | [next rule -->](PseudoCommentRule.md)
+[<-- previous rule](AbapDocLangRule.md) | [overview](../rules.md) | [next rule -->](EndOfCommentRule.md)
 
 # Comment with ", not with \* \(for text\)
 
