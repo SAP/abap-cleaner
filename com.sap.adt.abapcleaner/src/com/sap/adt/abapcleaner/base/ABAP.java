@@ -157,6 +157,10 @@ public final class ABAP {
    private static HashSet<String> abapKeywordCollocations;
    private static HashSet<String> abapKeywordCollocationStarts;
 
+	// cp. https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/abenabap_loops.htm
+   public final static String[] loopKeywords = new String[] { "LOOP", "DO", "WHILE", "SELECT", "PROVIDE" }; 
+   public final static String[] loopEndKeywords = new String[] { "ENDLOOP", "ENDDO", "ENDWHILE", "ENDSELECT", "ENDPROVIDE" };
+
    // -------------------------------------------------------------------------
    // helper methods for optional / lazy instantiation 
 

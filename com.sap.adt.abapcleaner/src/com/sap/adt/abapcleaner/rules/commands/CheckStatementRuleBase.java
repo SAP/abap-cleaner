@@ -9,9 +9,6 @@ import com.sap.adt.abapcleaner.rulehelpers.*;
 import com.sap.adt.abapcleaner.rules.alignment.AlignLogicalExpressionsRule;
 
 public abstract class CheckStatementRuleBase extends Rule {
-	protected final static String[] loopKeywords = new String[] { "LOOP", "DO", "WHILE" }; // TODO: any further loop type with influence on CHECK?
-	protected final static String[] loopEndKeywords = new String[] { "ENDLOOP", "ENDDO", "ENDWHILE" };
-
    protected final ConfigBoolValue configConvertAbapFalseAndAbapTrue = new ConfigBoolValue(this, "ConvertAbapFalseAndAbapTrue", "Convert abap_false <-> abap_true (assuming abap_undefined is never used)", true);
    protected final ConfigEnumValue<NegationStyle> configNegationStyle = new ConfigEnumValue<NegationStyle>(this, "NegationStyle", NegationStyle.description, NegationStyle.selectionTexts, NegationStyle.AVOID_INNER_NEGATIONS, NegationStyle.NEVER, LocalDate.of(2022, 10, 17));
 
