@@ -2165,6 +2165,375 @@ public class Command {
 		return command;
 	}
 
+	public final Token findTokenOfType(TokenType tokenType, String... texts) {
+		if (firstToken.type == tokenType && firstToken.textEqualsAny(texts))
+			return firstToken;
+		else 
+			return firstToken.getNextTokenOfTypeAndText(tokenType, texts);
+	}
+
+	/** Returns true if the Command evaluates sy-subrc */
+	public final boolean evaluatesSySubrc() {
+		Token test = getFirstCodeToken();
+		while (test != null) {
+			if (test.textEquals("sy-subrc") && test.getMemoryAccessType().mayRead) {
+				return true;
+			}
+			test = test.getNextCodeToken();
+		}
+		return false;
+	}
+
+	/** Returns true if the Command changes sy-subrc */
+	public final boolean setsSySubrc() {
+		// the following is structured like the ABAP statements overview in   
+		// https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/abenabap_statements_overview.htm
+		// and considers all places in the ABAP keyword documentation that explicitly mention sy-subrc
+		
+		Token token = getFirstCodeToken();
+		if (token == null)
+			return false;
+
+		// direct assignments to sy-subrc
+		Token test = token;
+		while (test != null) {
+			if (test.textEquals("sy-subrc") && test.getMemoryAccessType().mayWrite) {
+				return true;
+			}
+			test = test.getNextCodeToken();
+		}
+		
+		// ----------------------------------------------------------------------
+		// Object Creation
+
+		if (token.matchesOnSiblings(true, "CREATE", "OBJECT")) {
+			// true, because this is a method call to the instance constructor
+			return true;
+		} else {
+			// the instance operator NEW always sets 0, except when anonymous data objects are created (not set)
+			Token newToken = findTokenOfType(TokenType.KEYWORD, "NEW");
+			while (newToken != null) {
+				if (newToken.getNext() != null && newToken.getNext().isIdentifier()) {
+					return true;
+				}
+				newToken = newToken.getNextTokenOfTypeAndText(TokenType.KEYWORD, "NEW");
+			}
+		}
+
+		// ----------------------------------------------------------------------
+		// Calling and Exiting Program Units
+
+		// Calling Programs
+		if (token.isKeyword("SUBMIT"))
+			return true;
+		
+		// Calling Processing Blocks
+		if (token.matchesOnSiblings(true, "CALL", "FUNCTION|METHOD")) {
+			// for both static and dynamic calls, sy-subrc is set to 0 upon calling; later, it may be set to a non-class-based exception value
+			// however, after CALL FUNCTION ... IN UPDATE TASK, sy-subrc is undefined
+			// CALL METHOD/FUNCTION ... EXCEPTION-TABLE can contain NAME / VALUE pairs for exception values
+			return true;
+		} else if (token.matchesOnSiblings(true, "SET", "HANDLER")) {
+			return true;
+		} else {
+			// search for a functional method call, which sets sy-subrc = 0 when returning to the caller with ENDMETHOD;
+			// built-in functions such as xsdbool( ... ), line_exists( ... ), cos( ... ) etc. do NOT set sy-subrc 
+			// and are therefore excluded here; 
+			// TODO: however, if a class happens to have a method of the same name as a built-in functions, 
+			// this method will be called instead of the built-in function (it 'shadows' the built-in function even 
+			// if it has a different signature); this distinction is not yet considered
+			test = token;
+			boolean considerBuiltInFunctionsAsMethodCalls = false;
+			while (test != null) {
+				if (test.startsFunctionalMethodCall(considerBuiltInFunctionsAsMethodCalls)) {
+					return true;
+				}
+				test = test.getNextCodeToken();
+			}
+		}
+
+		// ----------------------------------------------------------------------
+		// Program Flow Logic
+
+		// Program Interruption
+		if (token.matchesOnSiblings(true, "WAIT", "UP", "TO")) {
+			// always sets sy-subrc = 0
+			return true;
+		}
+
+		// Exception Handling
+		if (token.isKeyword("RAISE")) {
+			return true;
+		}
+		
+		// ----------------------------------------------------------------------
+		// Assignments
+
+		// Setting References
+		if (token.isKeyword("ASSIGN")) {
+			// however: NOT for the static_dobj variant: ASSIGN dobj[+off][(len)]
+			return true;
+		}
+
+		// ----------------------------------------------------------------------
+		// Processing Internal Data
+
+		// Character String and Byte String Processing
+		if (token.isAnyKeyword("CONCATENATE", "FIND", "OVERLAY", "REPLACE", "SHIFT", "SPLIT")) {
+			return true;
+		} else if (token.matchesOnSiblings(true, "GET|SET", "BIT")) {
+			return true;
+		} else if (token.matchesOnSiblings(true, "WRITE", TokenSearch.ASTERISK, "TO")) {
+			return true;
+		// } else if (token.matchesOnSiblings(true, "REPLACE", "SECTION", TokenSearch.ASTERISK, "OF")) {
+		// 	return true;
+		}
+
+		// Date and Time Processing
+		if (token.matchesOnSiblings(true, "CONVERT", TokenSearch.ASTERISK, "INTO", "TIME", "STAMP")) {
+			return true;
+		} else if (token.matchesOnSiblings(true, "CONVERT", "TIME", "STAMP")) {
+			return true;
+		}
+
+		// Internal Tables
+		if (token.isAnyKeyword("DELETE", "INSERT", "ENDLOOP", "MODIFY")) {
+			// same for DELETE|INSERT|MODIFY mesh_path (and dbtab, see below)
+			return true;
+		} else if (token.isKeyword("ENDLOOP")) {
+			// note that sy-subrc is set by ENDLOOP, not by 'LOOP AT'
+			return true;
+		} else if (token.matchesOnSiblings(true, "FIND|REPLACE", TokenSearch.ASTERISK, "IN", "TABLE")) {
+			return true;
+		} else if (token.matchesOnSiblings(true, "LOOP", "AT", "GROUP")) {
+			return true;
+		} else if (token.matchesOnSiblings(true, "READ", "TABLE")) {
+			return true;
+		}
+
+		// ----------------------------------------------------------------------
+		// Processing External Data
+
+		// ABAP SQL
+		if (token.isAnyKeyword("DELETE", "FETCH", "INSERT", "MODIFY", "SELECT", "UPDATE")) {
+			return true;
+		} else if (token.matchesOnSiblings(true, "OPEN", "CURSOR")) {
+			return true;
+		}
+		
+		// Native SQL
+		if (token.isKeyword("ENDEXEC")) {
+			return true;
+		} 
+
+		// Data Clusters
+		if (token.isKeyword("IMPORT")) {
+			// including "IMPORT DIRECTORY"
+			return true;
+		} else if (token.matchesOnSiblings(true, "DELETE", "FROM")) {
+			return true;
+		}
+
+		// File Interface
+		if (token.matchesOnSiblings(true, "CLOSE|DELETE|GET|OPEN|READ|SET|TRUNCATE", "DATASET")) {
+			return true;
+		} else if (token.isKeyword("TRANSFER")) {
+			return true;
+		}
+
+		// Data Consistency
+		if (token.isKeyword("AUTHORITY-CHECK")) {
+			return true;
+		} else if (token.matchesOnSiblings(true, "COMMIT|ROLLBACK", "WORK")) {
+			return true;
+		} else if (token.matchesOnSiblings(true, "SET", "UPDATE", "TASK", "LOCAL")) {
+			return true;
+		}
+
+		// ----------------------------------------------------------------------
+		// ABAP for RAP Business Objects
+
+		// ABAP EML
+		if (token.matchesOnSiblings(true, "COMMIT", "ENTITIES")) {
+			return true;
+		}
+
+		// ----------------------------------------------------------------------
+		// Program Parameters
+		
+		// User Memory
+		if (token.matchesOnSiblings(true, "GET", "PARAMETER")) {
+			return true;
+		}
+
+		// Language Environment
+		if (token.matchesOnSiblings(true, "SET", "COUNTRY|LANGUAGE")) {
+			return true;
+		}
+
+		// ----------------------------------------------------------------------
+		// Program Editing
+		
+		// Testing and Checking Programs
+		if (token.matchesOnSiblings(true, "SET", "RUN", "TIME", "ANALYZER")) {
+			return true;
+		}
+
+		// Dynamic Program Development
+		if (token.matchesOnSiblings(true, "GENERATE", "SUBROUTINE", "POOL")) {
+			return true;
+		} else if (token.matchesOnSiblings(true, "INSERT|READ", "REPORT|TEXTPOOL")) {
+			return true;
+		} else if (token.isKeyword("SYNTAX-CHECK")) {
+			// including SYNTAX-CHECK FOR PROGRAM
+			return true;
+		} 
+
+		// ----------------------------------------------------------------------
+		// ABAP Data and Communication Interfaces
+
+		// Remote Function Call
+		if (token.matchesOnSiblings(true, "RECEIVE", "RESULTS", "FROM", "FUNCTION")) {
+			return true;
+		} else if (token.matchesOnSiblings(true, "WAIT", "FOR", "ASYNCHRONOUS", "TASKS")) {
+			return true;
+		} else if (token.matchesOnSiblings(true, "WAIT", "FOR", "MESSAGING|PUSH", "CHANNELS")) {
+			return true;
+		} 
+
+		// OLE Interface
+		// CALL METHOD and CREATE OBJECT see above
+		if (token.matchesOnSiblings(true, "FREE", "OBJECT")) {
+			return true;
+		} else if (token.matchesOnSiblings(true, "GET|SET", "PROPERTY")) {
+			return true;
+		}
+
+		// ----------------------------------------------------------------------
+		// User Dialogs
+
+		// Dynpros
+		if (token.matchesOnSiblings(true, "GET", "CURSOR")) {
+			return true;
+		} else if (token.matchesOnSiblings(true, "SET", "TITLEBAR")) {
+			return true;
+		}
+
+		// Selection Screens
+		if (token.matchesOnSiblings(true, "CALL", "SELECTION-SCREEN")) {
+			return true;
+		}
+
+		// Lists
+		if (token.matchesOnSiblings(true, "DESCRIBE", "LIST")) {
+			return true;
+		} else if (token.matchesOnSiblings(true, "MODIFY", TokenSearch.makeOptional("CURRENT"), "LINE")) {
+			return true;
+		} else if (token.matchesOnSiblings(true, "GET", "CURSOR")) {
+			return true;
+		} else if (token.matchesOnSiblings(true, "READ", "LINE")) {
+			return true;
+		} else if (token.matchesOnSiblings(true, "SCROLL", "LIST")) {
+			return true;
+		}
+
+		// ----------------------------------------------------------------------
+		// Enhancements
+		
+		// Enhancements Using BAdIs
+		if (token.matchesOnSiblings(true, "CALL", "BADI")) {
+			return true;
+		}
+		
+		// ----------------------------------------------------------------------
+		// Statements for Experts
+
+		if (token.isAnyKeyword("PROVIDE", "ENDPROVIDE")) {
+			return true;
+		} 
+
+		// ----------------------------------------------------------------------
+		// Obsolete Statements
+
+		// Obsolete Calls
+		if (token.matchesOnSiblings(true, "CALL", "CUSTOMER-FUNCTION")) {
+			return true;
+		} else if (token.matchesOnSiblings(true, "CALL", "DIALOG", TokenSearch.ASTERISK, "IMPORTING")) {
+			// TODO: more conditions to this?
+			return true;
+		}
+
+		// Obsolete Exception Handling
+		if (token.matchesOnSiblings(true, "CATCH", "SYSTEM-EXCEPTIONS")) {
+			return true;
+		}
+
+		
+		// Obsolete Character String and Byte String Processing
+		if (token.matchesOnSiblings(true, "REPLACE", TokenSearch.ASTERISK, "WITH")) {
+			// TODO: more conditions to this?
+			return true;
+		} else if (token.isKeyword("SEARCH")) {
+			return true;
+		} 
+		
+		// Obsolete Internal Table Processing
+		// SEARCH itab: see SEARCH above
+		if (token.matchesOnSiblings(true, "REFRESH", TokenSearch.ASTERISK, "FROM", "TABLE")) {
+			return true;
+		} else if (token.matchesOnSiblings(true, "WRITE", "TO")) {
+			return true;
+		} 
+
+		// Obsolete Extracts
+		// see ENDLOOP above
+
+		// Obsolete Database Access
+		// see LOOP AT / READ TABLE above
+
+		// Contexts
+		if (token.isKeyword("DEMAND")) {
+			return true;
+		} 
+		
+		// Obsolete Editor Calls
+		if (token.matchesOnSiblings(true, "EDITOR-CALL", "FOR")) {
+			return true;
+		} 
+
+		// Obsolete External Programming Interface
+		if (token.isKeyword("COMMUNICATION")) {
+			return true;
+		} 
+
+		// ----------------------------------------------------------------------
+		// Internal Statements
+		
+		// Program Editing
+		if (token.matchesOnSiblings(true, "DELETE|GENERATE", "DYNPRO|REPORT")) {
+			return true;
+		} else if (token.matchesOnSiblings(true, "DELETE", "TEXTPOOL", TokenSearch.ASTERISK, "STATE")) {
+			// apparently, sy-subrc is only set with the STATE addition
+			return true;
+		} else if (token.matchesOnSiblings(true, "LOAD", "REPORT")) {
+			return true;
+		} else if (token.matchesOnSiblings(true, "IMPORT", "DYNPRO")) {
+			return true;
+		} else if (token.isKeyword("SCAN")) {
+			return true;
+		} else if (token.matchesOnSiblings(true, "SYNTAX-CHECK", "FOR", "DYNPRO")) {
+			return true;
+		}
+
+		// External Interface
+		if (token.matchesOnSiblings(true, "CALL", TokenSearch.ASTERISK, "ID")) {
+			// sy-subrc may be set by a System Function Call
+			return true;
+		}
+		
+		return false;
+	}
+	
 	/** Returns true if the Command matches a hard-coded pattern or condition.
 	 * This method can be used during development to search for examples in all sample code files. */
 	public final boolean matchesPattern() {
