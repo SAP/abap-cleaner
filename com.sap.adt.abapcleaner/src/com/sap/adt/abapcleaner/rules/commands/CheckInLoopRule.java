@@ -2,6 +2,7 @@ package com.sap.adt.abapcleaner.rules.commands;
 
 import java.time.LocalDate;
 
+import com.sap.adt.abapcleaner.base.ABAP;
 import com.sap.adt.abapcleaner.parser.*;
 import com.sap.adt.abapcleaner.programbase.UnexpectedSyntaxAfterChanges;
 import com.sap.adt.abapcleaner.programbase.UnexpectedSyntaxBeforeChanges;
@@ -101,10 +102,10 @@ public class CheckInLoopRule extends CheckStatementRuleBase {
 
 			// update "convert up to"
 			Token firstToken = command.getFirstToken(); 
-			if (command.firstCodeTokenIsAnyKeyword(loopKeywords)) {
+			if (command.getOpensLevel() && command.firstCodeTokenIsAnyKeyword(ABAP.loopKeywords)) {
 				++loopLevel;
 				convertUpTo = KeepCheckInLoopCondition.NEVER;
-			} else if (command.firstCodeTokenIsAnyKeyword(loopEndKeywords)) {
+			} else if (command.getClosesLevel() && command.firstCodeTokenIsAnyKeyword(ABAP.loopEndKeywords)) {
 				--loopLevel;
 				convertUpTo = KeepCheckInLoopCondition.KEEP_AT_LOOP_START; // with respect to the outer loop (if any), we are no more at loop start (as we just ended an inner loop)
 			} else if (!firstToken.isKeyword("CHECK") && !firstToken.isComment()) {

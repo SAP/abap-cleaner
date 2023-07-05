@@ -2,6 +2,7 @@ package com.sap.adt.abapcleaner.rules.commands;
 
 import java.time.LocalDate;
 
+import com.sap.adt.abapcleaner.base.ABAP;
 import com.sap.adt.abapcleaner.parser.*;
 import com.sap.adt.abapcleaner.programbase.UnexpectedSyntaxAfterChanges;
 import com.sap.adt.abapcleaner.programbase.UnexpectedSyntaxBeforeChanges;
@@ -118,7 +119,7 @@ public class CheckOutsideLoopRule extends CheckStatementRuleBase {
 			if (isInsideMethod && !isCommandBlocked(command) && command.firstCodeTokenIsKeyword("CHECK") && !command.containsChainColon() && keepCondition.getValue() <= convertUpTo.getValue())
 				executeOn(code, command, false, negationStyle, convertAbapFalseAndAbapTrue, releaseRestriction);
 
-			if (command.firstCodeTokenIsAnyKeyword(loopKeywords))
+			if (command.getOpensLevel() && command.firstCodeTokenIsAnyKeyword(ABAP.loopKeywords))
 				command = command.getNextSibling();
 			else
 				command = command.getNext();

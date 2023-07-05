@@ -403,4 +403,33 @@ class CheckInLoopTest extends RuleTestBase {
 		
 		testRule();
 	}
+
+	@Test
+	void testCheckInSelectEndSelect() {
+		// ensure SELECT ... ENDSELECT is correctly recognized as a loop 
+
+		buildSrc("    SELECT * FROM any_table");
+		buildSrc("      WHERE comp = '1'");
+		buildSrc("      INTO @DATA(ls_data).");
+		buildSrc("");
+		buildSrc("      CHECK ls_data-comp2 IS INITIAL.");
+		buildSrc("");
+		buildSrc("      \" do something");
+		buildSrc("    ENDSELECT.");
+
+		buildExp("    SELECT * FROM any_table");
+		buildExp("      WHERE comp = '1'");
+		buildExp("      INTO @DATA(ls_data).");
+		buildExp("");
+		buildExp("      IF ls_data-comp2 IS NOT INITIAL.");
+		buildExp("        CONTINUE.");
+		buildExp("      ENDIF.");
+		buildExp("");
+		buildExp("      \" do something");
+		buildExp("    ENDSELECT.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }
