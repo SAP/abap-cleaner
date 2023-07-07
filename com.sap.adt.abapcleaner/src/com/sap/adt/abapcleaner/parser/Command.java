@@ -2172,11 +2172,52 @@ public class Command {
 			return firstToken.getNextTokenOfTypeAndText(tokenType, texts);
 	}
 
-	/** Returns true if the Command evaluates sy-subrc */
-	public final boolean evaluatesSySubrc() {
+	/** Returns true if the Command evaluates SY-SUBRC */
+	public final boolean readsSySubrc() {
+		return readsSyField(ABAP.SY_FIELD_SUBRC);
+	}
+
+	/** Returns true if the Command evaluates SY-TABIX */
+	public final boolean readsSyTabix() {
+		return readsSyField(ABAP.SY_FIELD_TABIX);
+	}
+
+	/** Returns true if the Command evaluates SY-INDEX */
+	public final boolean readsSyIndex() {
+		return readsSyField(ABAP.SY_FIELD_INDEX);
+	}
+
+	/**
+	 * Returns true if the Command reads the specified system field
+	 * @param fieldName - field name without prefix SY- or SYST-, e.g. "subrc" or "tabix"
+	 */
+	public final boolean readsSyField(String fieldName) {
+		// both SY-... and SYST-... could be used to access the same system structure
+		String syField = ABAP.SY_PREFIX + fieldName;
+		String systField = ABAP.SYST_PREFIX + fieldName;
+		
 		Token test = getFirstCodeToken();
 		while (test != null) {
-			if (test.textEquals("sy-subrc") && test.getMemoryAccessType().mayRead) {
+			if (test.textEqualsAny(syField, systField) && test.getMemoryAccessType().mayRead) {
+				return true;
+			}
+			test = test.getNextCodeToken();
+		}
+		return false;
+	}
+
+	/**
+	 * Returns true if the Command explicitly sets the specified system field (having it in a write position)
+	 * @param fieldName - field name without prefix SY- or SYST-, e.g. "subrc" or "tabix"
+	 */
+	private final boolean writesToSyField(String fieldName) {
+		// both SY-... and SYST-... could be used to access the same system structure
+		String syField = ABAP.SY_PREFIX + fieldName;
+		String systField = ABAP.SYST_PREFIX + fieldName;
+		
+		Token test = getFirstCodeToken();
+		while (test != null) {
+			if (test.textEqualsAny(syField, systField) && test.getMemoryAccessType().mayWrite) {
 				return true;
 			}
 			test = test.getNextCodeToken();
@@ -2185,7 +2226,7 @@ public class Command {
 	}
 
 	/** Returns true if the Command changes sy-subrc */
-	public final boolean setsSySubrc() {
+	public final boolean changesSySubrc() {
 		// the following is structured like the ABAP statements overview in   
 		// https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/abenabap_statements_overview.htm
 		// and considers all places in the ABAP keyword documentation that explicitly mention sy-subrc
@@ -2195,13 +2236,8 @@ public class Command {
 			return false;
 
 		// direct assignments to sy-subrc
-		Token test = token;
-		while (test != null) {
-			if (test.textEquals("sy-subrc") && test.getMemoryAccessType().mayWrite) {
-				return true;
-			}
-			test = test.getNextCodeToken();
-		}
+		if (writesToSyField(ABAP.SY_FIELD_SUBRC))
+			return true;
 		
 		// ----------------------------------------------------------------------
 		// Object Creation
@@ -2242,7 +2278,7 @@ public class Command {
 			// TODO: however, if a class happens to have a method of the same name as a built-in functions, 
 			// this method will be called instead of the built-in function (it 'shadows' the built-in function even 
 			// if it has a different signature); this distinction is not yet considered
-			test = token;
+			Token test = token;
 			boolean considerBuiltInFunctionsAsMethodCalls = false;
 			while (test != null) {
 				if (test.startsFunctionalMethodCall(considerBuiltInFunctionsAsMethodCalls)) {
@@ -2528,6 +2564,115 @@ public class Command {
 		// External Interface
 		if (token.matchesOnSiblings(true, "CALL", TokenSearch.ASTERISK, "ID")) {
 			// sy-subrc may be set by a System Function Call
+			return true;
+		}
+		
+		return false;
+	}
+
+	/** Returns true if the Command changes SY-TABIX */
+	public final boolean changesSyTabix() {
+		// the following is structured like the ABAP statements overview in   
+		// https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/abenabap_statements_overview.htm
+		// and considers all places in the ABAP keyword documentation that explicitly mention SY-TABIX
+
+		// SY-TABIX is explicitly NOT changed by
+		// - INSERT/MODIFY/DELETE itab
+		// - FIND/REPACE ... IN TABLE
+		// - table expression unless ASSIGN is used!
+		// - FOR, Table Iteration (instead, 'INDEX INTO idx' can be used)
+
+		Token token = getFirstCodeToken();
+		if (token == null)
+			return false;
+
+		// direct assignments to SY-TABIX
+		if (writesToSyField(ABAP.SY_FIELD_TABIX))
+			return true;
+		
+		// ----------------------------------------------------------------------
+		// Assignments
+
+		// Setting References
+		if (token.isKeyword("ASSIGN")) {
+			// only if table expressions are assigned - this sets SY-TABIX and SY-SUBRC just like READ TABLE ... ASSIGNING
+			Token test = token;
+			while (test != null) {
+				if (test.getOpensLevel() && test.textEndsWith("[")) {
+					return true;
+				}
+				test = test.getNextCodeToken();
+			}
+			return false;
+		}
+
+		// ----------------------------------------------------------------------
+		// Processing Internal Data
+
+		// Internal Tables
+		if (token.matchesOnSiblings(true, "LOOP", "AT")) { 
+			// - for standard or sorted tables, LOOP AT sets SY-TABIX to the line number in the used (primary or secondary) index;  
+			// - for hashed tables, it sets SY-TABIX = 0
+			// - LOOP AT ... GROUP BY / LOOP AT GROUP ... / LOOP AT mesh_path also set SY-TABIX. 
+			// - note that LOOP AT (like DESCRIBE TABLE and READ TABLE) also sets SY-TFILL (number of lines) and SY-TLENG (line size) 
+			return true;
+		} else if (token.isKeyword("ENDLOOP")) {
+			// sets SY-TABIX to the value before entering the LOOP
+			return true;
+
+		} else if (token.matchesOnSiblings(true, "READ", "TABLE")) {
+			// - for sy-subrc = 0, sets SY-TABIX to the line number in the primary or secondary table index where the entry was found (or 0 if a hash key was used)
+			// - for sy-subrc = 4, sets SY-TABIX to the line number before the position where the entry would need to be
+			// - for sy-subrc = 8, sets SY-TABIX to the number of table lines + 1
+			// - also, see detailed documentation for READ TABLE, table_key / READ TABLE, free_key
+			// - note that READ TABLE (like DESCRIBE TABLE and LOOP AT) also sets SY-TFILL (number of lines) and SY-TLENG (line size)
+			return true;
+			
+		} else if (token.isKeyword("COLLECT")) {
+			// for standard or sorted tables, sets SY-TABIX to the line number of the inserted or existing line in the primary index
+			// for hashed tables, sets SY-TABIX = 0
+			return true;
+
+		} else if (token.isKeyword("APPEND")) {
+			// sets SY-TABIX to the line number of the last appended line in the primary index
+			return true;
+		}
+
+		// ----------------------------------------------------------------------
+		// Statements for Experts
+
+		if (token.isAnyKeyword("PROVIDE", "ENDPROVIDE")) {
+			// PROVIDE sets SY-TABIX to 0 before every loop pass; ENDPROVIDE also sets it to 0
+			return true;
+		} 
+		
+		return false;
+	}
+
+	/** Returns true if the Command changes SY-INDEX */
+	public final boolean changesSyIndex() {
+		// the following is structured like the ABAP statements overview in   
+		// https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/abenabap_statements_overview.htm
+		// and considers all places in the ABAP keyword documentation that explicitly mention SY-INDEX
+
+		// SY-INDEX is explicitly NOT changed by "FOR, Conditional Iteration"
+
+		Token token = getFirstCodeToken();
+		if (token == null)
+			return false;
+
+		// direct assignments to SY-INDEX
+		if (writesToSyField(ABAP.SY_FIELD_INDEX))
+			return true;
+		
+		// ----------------------------------------------------------------------
+		// Program Flow Logic
+
+		// Control Structures
+		if (token.isAnyKeyword("DO", "WHILE", "ENDDO", "ENDWHILE")) {
+			// - DO and WHILE set SY-INDEX to the number of previous loop passes, including the current one
+			//   (this is done immediately, so a condition like 'WHILE sy-index <= 3.' can already evaluate it)
+			// - ENDDO and ENDWHILE restore it to its previous value, so it always refers to the current loop 
 			return true;
 		}
 		
