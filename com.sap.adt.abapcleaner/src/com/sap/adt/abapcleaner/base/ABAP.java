@@ -26,6 +26,17 @@ public final class ABAP {
    public static final String ABAP_FALSE = "abap_false";
    public static final String ABAP_SPACE = "space";
 
+   public static final String SY_PREFIX = "sy-";
+   public static final String SYST_PREFIX = "syst-";
+   
+   public static final String SY_FIELD_SUBRC = "subrc";
+   public static final String SY_FIELD_TABIX = "tabix";
+   public static final String SY_FIELD_INDEX = "index";
+   /** number of lines of the table accessed via DESCRIBE TABLE, LOOP AT, and READ TABLE */
+   public static final String SY_FIELD_TFILL = "tfill";
+   /** line size of the table accessed via DESCRIBE TABLE, LOOP AT, and READ TABLE */
+   public static final String SY_FIELD_TLENG = "tleng";
+   
    public static final String LINE_SEPARATOR = "\r\n";
    public static final char COMPONENT_SELECTOR = '-';
    public static final String COMPONENT_SELECTOR_STRING = "-";
