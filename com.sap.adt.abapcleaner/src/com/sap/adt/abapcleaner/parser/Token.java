@@ -2244,7 +2244,7 @@ public class Token {
 	
 	public boolean startsFunctionalMethodCall(boolean considerBuiltInFunctionsAsMethodCalls) {
 		// exclude all cases that don't have the syntax of a functional method call
-		if (!isIdentifier() || !getOpensLevel())
+		if (!isIdentifier() || !getOpensLevel() || !textEndsWith("("))
 			return false;
 		else if (next == null || next.isAttached()) // e.g. DATA(lv_variable) or lv_any(5)
 			return false;

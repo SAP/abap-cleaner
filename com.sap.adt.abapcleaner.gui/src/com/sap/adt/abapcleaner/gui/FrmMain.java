@@ -1841,18 +1841,16 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 					sb.append(LINE_SEP);
 					sb.append(ABAP.COMMENT_SIGN_STRING + " " + folderFile + ": line " + Cult.format(command.getSourceLineNumStart()) + LINE_SEP);
 
-					// for Commands like [END]LOOP, [END]IF etc., add the corresponding opening and/or closing Command, too, 
-					// so the resulting text can more easily be used for testing
-					Command openingCommand = command.getOpeningCommand();
-					if (openingCommand != null) {
-						sb.append(removeMultipleLineBreaks(openingCommand.toString()));
-					}
-
-					sb.append(removeMultipleLineBreaks(command.toString()));
+					// append the Command itself and the corresponding opening / closing Command
+					addPatternMatch(sb, command, false);
 					
-					Command closingCommand = command.getClosingCommand();
-					if (closingCommand != null) {
-						sb.append(removeMultipleLineBreaks(closingCommand.toString()));
+					// append related commands, if any
+					ArrayList<Command> relatedCommands = command.getCommandsRelatedToPatternMatch();
+					if (relatedCommands != null) {
+						for (Command relatedCommand : relatedCommands) {
+							sb.append(System.lineSeparator());
+							addPatternMatch(sb, relatedCommand, true);
+						}
 					}
 					
 					sb.append(System.lineSeparator());
@@ -1868,6 +1866,27 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		String matchInfo = " found for " + Cult.format(matchCount) + " commands in " + Cult.format(fileCount) + " files";
 		String clipInfo = (sb.length() > 0) ? " (details see clipboard)" : "";
 		Message.show(taskInfo + matchInfo + clipInfo);
+	}
+
+	private void addPatternMatch(StringBuilder sb, Command command, boolean addLineNumber) {
+		// for Commands like [END]LOOP, [END]IF etc., add the corresponding opening and/or closing Command, too, 
+		// so the resulting text can more easily be used for testing
+		Command openingCommand = command.getOpeningCommand();
+		if (openingCommand != null) {
+			sb.append(removeMultipleLineBreaks(openingCommand.toString()));
+		}
+
+		if (addLineNumber) {
+			sb.append(System.lineSeparator());
+			sb.append(StringUtil.repeatChar(' ', command.getFirstToken().spacesLeft));
+			sb.append(ABAP.COMMENT_SIGN_STRING + " line " + String.valueOf(command.getSourceLineNumStart()));
+		}
+		sb.append(removeMultipleLineBreaks(command.toString()));
+		
+		Command closingCommand = command.getClosingCommand();
+		if (closingCommand != null) {
+			sb.append(removeMultipleLineBreaks(closingCommand.toString()));
+		}
 	}
 
 	private String removeMultipleLineBreaks(String codeText) {

@@ -228,6 +228,10 @@ public class Command {
 	
 	public final boolean isLateChain() { return containsChainColon() && !isSimpleChain(); }
 
+	public final boolean startsLoop() { return getOpensLevel() && firstCodeTokenIsAnyKeyword(ABAP.loopKeywords); }
+	
+	public final boolean endsLoop() { return getClosesLevel() && firstCodeTokenIsAnyKeyword(ABAP.loopEndKeywords); }
+	
 	private boolean isTryStart() { return isLevelOpener("TRY"); }
 
 	// private boolean isTryEnd() { return isLevelCloser("ENDTRY"); }
@@ -2172,33 +2176,26 @@ public class Command {
 			return firstToken.getNextTokenOfTypeAndText(tokenType, texts);
 	}
 
-	/** Returns true if the Command evaluates SY-SUBRC */
-	public final boolean readsSySubrc() {
-		return readsSyField(ABAP.SY_FIELD_SUBRC);
-	}
-
-	/** Returns true if the Command evaluates SY-TABIX */
-	public final boolean readsSyTabix() {
-		return readsSyField(ABAP.SY_FIELD_TABIX);
-	}
-
-	/** Returns true if the Command evaluates SY-INDEX */
-	public final boolean readsSyIndex() {
-		return readsSyField(ABAP.SY_FIELD_INDEX);
+	public boolean isInLoop() {
+		Command test = parent;
+		while (test != null) {
+			if (test.startsLoop()) {
+				return true;
+			}
+			test = test.parent;
+		}
+		return false;
 	}
 
 	/**
 	 * Returns true if the Command reads the specified system field
 	 * @param fieldName - field name without prefix SY- or SYST-, e.g. "subrc" or "tabix"
 	 */
-	public final boolean readsSyField(String fieldName) {
-		// both SY-... and SYST-... could be used to access the same system structure
-		String syField = ABAP.SY_PREFIX + fieldName;
-		String systField = ABAP.SYST_PREFIX + fieldName;
-		
+	public final boolean readsSyField(ABAP.SyField syField) {
 		Token test = getFirstCodeToken();
 		while (test != null) {
-			if (test.textEqualsAny(syField, systField) && test.getMemoryAccessType().mayRead) {
+			// both SY-... and SYST-... could be used to access the same system structure
+			if (test.textEqualsAny(syField.syField, syField.systField) && test.getMemoryAccessType().mayRead) {
 				return true;
 			}
 			test = test.getNextCodeToken();
@@ -2208,16 +2205,31 @@ public class Command {
 
 	/**
 	 * Returns true if the Command explicitly sets the specified system field (having it in a write position)
-	 * @param fieldName - field name without prefix SY- or SYST-, e.g. "subrc" or "tabix"
 	 */
-	private final boolean writesToSyField(String fieldName) {
-		// both SY-... and SYST-... could be used to access the same system structure
-		String syField = ABAP.SY_PREFIX + fieldName;
-		String systField = ABAP.SYST_PREFIX + fieldName;
-		
+	public final boolean changesSyField(ABAP.SyField syField) {
+		switch (syField) {
+			case SUBRC:
+				return changesSySubrc();
+			case TABIX:
+				return changesSyTabix();
+			case INDEX:
+				return changesSyIndex();
+			case TFILL: 
+			case TLENG:
+				return changesSyTFillOrTLeng();
+			default:
+				throw new IllegalArgumentException();
+		}
+	}
+
+	/**
+	 * Returns true if the Command explicitly sets the specified system field (having it in a write position)
+	 */
+	private final boolean writesToSyField(ABAP.SyField syField) {
 		Token test = getFirstCodeToken();
 		while (test != null) {
-			if (test.textEqualsAny(syField, systField) && test.getMemoryAccessType().mayWrite) {
+			// both SY-... and SYST-... could be used to access the same system structure
+			if (test.textEqualsAny(syField.syField, syField.systField) && test.getMemoryAccessType().mayWrite) {
 				return true;
 			}
 			test = test.getNextCodeToken();
@@ -2236,7 +2248,7 @@ public class Command {
 			return false;
 
 		// direct assignments to sy-subrc
-		if (writesToSyField(ABAP.SY_FIELD_SUBRC))
+		if (writesToSyField(ABAP.SyField.SUBRC))
 			return true;
 		
 		// ----------------------------------------------------------------------
@@ -2245,7 +2257,7 @@ public class Command {
 		if (token.matchesOnSiblings(true, "CREATE", "OBJECT")) {
 			// true, because this is a method call to the instance constructor
 			return true;
-		} else {
+		} else if (!token.matchesOnSiblings(true, "AT", "NEW") && !token.matchesOnSiblings(true, "SELECT")) {
 			// the instance operator NEW always sets 0, except when anonymous data objects are created (not set)
 			Token newToken = findTokenOfType(TokenType.KEYWORD, "NEW");
 			while (newToken != null) {
@@ -2264,6 +2276,7 @@ public class Command {
 			return true;
 		
 		// Calling Processing Blocks
+		// - PERFORM / FORM ... ENDFORM itself does NOT change sy-subrc (but inside the FORM, something may happen, of course) 
 		if (token.matchesOnSiblings(true, "CALL", "FUNCTION|METHOD")) {
 			// for both static and dynamic calls, sy-subrc is set to 0 upon calling; later, it may be set to a non-class-based exception value
 			// however, after CALL FUNCTION ... IN UPDATE TASK, sy-subrc is undefined
@@ -2316,13 +2329,12 @@ public class Command {
 
 		// Character String and Byte String Processing
 		if (token.isAnyKeyword("CONCATENATE", "FIND", "OVERLAY", "REPLACE", "SHIFT", "SPLIT")) {
+			// including REPLACE SECTION ... OF
 			return true;
 		} else if (token.matchesOnSiblings(true, "GET|SET", "BIT")) {
 			return true;
 		} else if (token.matchesOnSiblings(true, "WRITE", TokenSearch.ASTERISK, "TO")) {
 			return true;
-		// } else if (token.matchesOnSiblings(true, "REPLACE", "SECTION", TokenSearch.ASTERISK, "OF")) {
-		// 	return true;
 		}
 
 		// Date and Time Processing
@@ -2333,13 +2345,12 @@ public class Command {
 		}
 
 		// Internal Tables
-		if (token.isAnyKeyword("DELETE", "INSERT", "ENDLOOP", "MODIFY")) {
+		// - FIND|REPLACE ... IN TABLE see above
+		if (token.isAnyKeyword("DELETE", "INSERT", "MODIFY") && !token.matchesOnSiblings(true, "DELETE", "DYNPRO|REPORT|TEXTPOOL")) {
 			// same for DELETE|INSERT|MODIFY mesh_path (and dbtab, see below)
 			return true;
 		} else if (token.isKeyword("ENDLOOP")) {
 			// note that sy-subrc is set by ENDLOOP, not by 'LOOP AT'
-			return true;
-		} else if (token.matchesOnSiblings(true, "FIND|REPLACE", TokenSearch.ASTERISK, "IN", "TABLE")) {
 			return true;
 		} else if (token.matchesOnSiblings(true, "LOOP", "AT", "GROUP")) {
 			return true;
@@ -2351,7 +2362,8 @@ public class Command {
 		// Processing External Data
 
 		// ABAP SQL
-		if (token.isAnyKeyword("DELETE", "FETCH", "INSERT", "MODIFY", "SELECT", "UPDATE")) {
+		// - DELETE, INSERT, MODIFY see above
+		if (token.isAnyKeyword("FETCH", "SELECT", "UPDATE")) {
 			return true;
 		} else if (token.matchesOnSiblings(true, "OPEN", "CURSOR")) {
 			return true;
@@ -2363,10 +2375,9 @@ public class Command {
 		} 
 
 		// Data Clusters
+		// - DELETE FROM see above
 		if (token.isKeyword("IMPORT")) {
-			// including "IMPORT DIRECTORY"
-			return true;
-		} else if (token.matchesOnSiblings(true, "DELETE", "FROM")) {
+			// including "IMPORT DIRECTORY" (and "IMPORT DYNPRO")
 			return true;
 		}
 
@@ -2421,7 +2432,7 @@ public class Command {
 		} else if (token.matchesOnSiblings(true, "INSERT|READ", "REPORT|TEXTPOOL")) {
 			return true;
 		} else if (token.isKeyword("SYNTAX-CHECK")) {
-			// including SYNTAX-CHECK FOR PROGRAM
+			// including SYNTAX-CHECK FOR PROGRAM and SYNTAX-CHECK FOR DYNPRO
 			return true;
 		} 
 
@@ -2438,7 +2449,7 @@ public class Command {
 		} 
 
 		// OLE Interface
-		// CALL METHOD and CREATE OBJECT see above
+		// - CALL METHOD and CREATE OBJECT see above
 		if (token.matchesOnSiblings(true, "FREE", "OBJECT")) {
 			return true;
 		} else if (token.matchesOnSiblings(true, "GET|SET", "PROPERTY")) {
@@ -2461,11 +2472,8 @@ public class Command {
 		}
 
 		// Lists
+		// - MODIFY [CURRENT] LINE, GET CURSOR see above
 		if (token.matchesOnSiblings(true, "DESCRIBE", "LIST")) {
-			return true;
-		} else if (token.matchesOnSiblings(true, "MODIFY", TokenSearch.makeOptional("CURRENT"), "LINE")) {
-			return true;
-		} else if (token.matchesOnSiblings(true, "GET", "CURSOR")) {
 			return true;
 		} else if (token.matchesOnSiblings(true, "READ", "LINE")) {
 			return true;
@@ -2495,6 +2503,7 @@ public class Command {
 		if (token.matchesOnSiblings(true, "CALL", "CUSTOMER-FUNCTION")) {
 			return true;
 		} else if (token.matchesOnSiblings(true, "CALL", "DIALOG", TokenSearch.ASTERISK, "IMPORTING")) {
+			// cp. https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/abapcall_dialog.htm
 			// TODO: more conditions to this?
 			return true;
 		}
@@ -2506,18 +2515,15 @@ public class Command {
 
 		
 		// Obsolete Character String and Byte String Processing
-		if (token.matchesOnSiblings(true, "REPLACE", TokenSearch.ASTERISK, "WITH")) {
-			// TODO: more conditions to this?
-			return true;
-		} else if (token.isKeyword("SEARCH")) {
+		// - REPLACE ... WITH see above (more conditions to this?)
+		if (token.isKeyword("SEARCH")) {
 			return true;
 		} 
 		
 		// Obsolete Internal Table Processing
-		// SEARCH itab: see SEARCH above
+		// - SEARCH itab: see SEARCH above
+		// - WRITE ... TO: see above
 		if (token.matchesOnSiblings(true, "REFRESH", TokenSearch.ASTERISK, "FROM", "TABLE")) {
-			return true;
-		} else if (token.matchesOnSiblings(true, "WRITE", "TO")) {
 			return true;
 		} 
 
@@ -2546,6 +2552,7 @@ public class Command {
 		// Internal Statements
 		
 		// Program Editing
+		// - IMPORT DYNPRO, SYNTAX-CHECK FOR DYNPRO: see above
 		if (token.matchesOnSiblings(true, "DELETE|GENERATE", "DYNPRO|REPORT")) {
 			return true;
 		} else if (token.matchesOnSiblings(true, "DELETE", "TEXTPOOL", TokenSearch.ASTERISK, "STATE")) {
@@ -2553,11 +2560,7 @@ public class Command {
 			return true;
 		} else if (token.matchesOnSiblings(true, "LOAD", "REPORT")) {
 			return true;
-		} else if (token.matchesOnSiblings(true, "IMPORT", "DYNPRO")) {
-			return true;
 		} else if (token.isKeyword("SCAN")) {
-			return true;
-		} else if (token.matchesOnSiblings(true, "SYNTAX-CHECK", "FOR", "DYNPRO")) {
 			return true;
 		}
 
@@ -2578,8 +2581,8 @@ public class Command {
 
 		// SY-TABIX is explicitly NOT changed by
 		// - INSERT/MODIFY/DELETE itab
-		// - FIND/REPACE ... IN TABLE
-		// - table expression unless ASSIGN is used!
+		// - FIND/REPLACE ... IN TABLE
+		// - table expressions unless ASSIGN is used
 		// - FOR, Table Iteration (instead, 'INDEX INTO idx' can be used)
 
 		Token token = getFirstCodeToken();
@@ -2587,7 +2590,7 @@ public class Command {
 			return false;
 
 		// direct assignments to SY-TABIX
-		if (writesToSyField(ABAP.SY_FIELD_TABIX))
+		if (writesToSyField(ABAP.SyField.TABIX))
 			return true;
 		
 		// ----------------------------------------------------------------------
@@ -2595,13 +2598,14 @@ public class Command {
 
 		// Setting References
 		if (token.isKeyword("ASSIGN")) {
-			// only if table expressions are assigned - this sets SY-TABIX and SY-SUBRC just like READ TABLE ... ASSIGNING
+			// determine whether a table expressions is assigned, which sets SY-TABIX and SY-SUBRC just like 
+			// READ TABLE ... ASSIGNING does; otherwise, SY-TABIX is not changed
 			Token test = token;
 			while (test != null) {
 				if (test.getOpensLevel() && test.textEndsWith("[")) {
 					return true;
 				}
-				test = test.getNextCodeToken();
+				test = test.getNextCodeSibling();
 			}
 			return false;
 		}
@@ -2662,7 +2666,7 @@ public class Command {
 			return false;
 
 		// direct assignments to SY-INDEX
-		if (writesToSyField(ABAP.SY_FIELD_INDEX))
+		if (writesToSyField(ABAP.SyField.INDEX))
 			return true;
 		
 		// ----------------------------------------------------------------------
@@ -2678,7 +2682,34 @@ public class Command {
 		
 		return false;
 	}
-	
+
+	/** Returns true if the Command changes SY-TFILL or SY-TLENG */
+	public final boolean changesSyTFillOrTLeng() {
+		Token token = getFirstCodeToken();
+		if (token == null)
+			return false;
+
+		// direct assignments to SY-TFILL or SY-TLENG
+		if (writesToSyField(ABAP.SyField.TFILL) || writesToSyField(ABAP.SyField.TLENG))
+			return true;
+		
+		// ----------------------------------------------------------------------
+		// Processing Internal Data
+
+		// Internal Tables
+		if (token.matchesOnSiblings(true, "LOOP", "AT") && !token.matchesOnSiblings(true, "LOOP", "AT", "GROUP")) { 
+			return true;
+		} else if (token.matchesOnSiblings(true, "READ", "TABLE")) {
+			return true;
+		}
+		
+		// Properties of Data Objects
+		if (token.matchesOnSiblings(true, "DESCRIBE", "TABLE")) {
+			return true;
+		}
+
+		return false;
+	}
 	/** Returns true if the Command matches a hard-coded pattern or condition.
 	 * This method can be used during development to search for examples in all sample code files. */
 	public final boolean matchesPattern() {
@@ -2689,8 +2720,15 @@ public class Command {
       //   Token token = firstToken.getLastTokenDeep(true, TokenSearch.ASTERISK, "SEARCH_TEXT|ALTERNATIVE|...");
       //   return (token != null && ...);
       // - was a certain cleanup rule used?
-		//   changeControl.wasRuleUsed(RuleID....);
-
+		//   return changeControl.wasRuleUsed(RuleID....);
+		// - is a certain system field modified with at least 2 reads on this system field in subsequent program flow?
+		//   return changesSyField(ABAP.SyField.SUBRC) && SyFieldAnalyzer.getSyFieldReadersFor(ABAP.SyField.SUBRC, this).size() >= 2;
+		//   - getCommandsRelatedToPatternMatch() can then return SyFieldAnalyzer.getSyFieldReadersFor(ABAP.SyField.SUBRC, this);
+		
 		return false;
+	}
+	
+	public final ArrayList<Command> getCommandsRelatedToPatternMatch() {
+		return null;
 	}
 }

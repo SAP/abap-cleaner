@@ -3,6 +3,7 @@ package com.sap.adt.abapcleaner.parser;
 import org.junit.jupiter.api.Test;
 
 import com.sap.adt.abapcleaner.base.ABAP;
+import com.sap.adt.abapcleaner.base.Language;
 import com.sap.adt.abapcleaner.programbase.IntegrityBrokenException;
 import com.sap.adt.abapcleaner.programbase.ParseException;
 import com.sap.adt.abapcleaner.programbase.TaskType;
@@ -111,6 +112,21 @@ public class CodeTest extends CodeTestBase {
 		putAnyMethodAroundSrc();
 		
 		Code code = testParseCode();
+		assertExecSqlSectionFound(code.firstCommand.getNext(), code.lastCommand.getPrev());
+	}
+
+	@Test
+	void testEmptyExecSql() {
+		buildSrc("    EXEC SQL.");
+		buildSrc("    ENDEXEC.");
+		
+		putAnyMethodAroundSrc();
+		
+		Code code = testParseCode();
+
+		// check that ENDEXEC is identified as ABAP code 
+		assertEquals(Language.ABAP, code.lastCommand.getPrev().getLanguage());
+		
 		assertExecSqlSectionFound(code.firstCommand.getNext(), code.lastCommand.getPrev());
 	}
 

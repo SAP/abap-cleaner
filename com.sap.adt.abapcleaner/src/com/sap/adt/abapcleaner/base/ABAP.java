@@ -37,6 +37,24 @@ public final class ABAP {
    /** line size of the table accessed via DESCRIBE TABLE, LOOP AT, and READ TABLE */
    public static final String SY_FIELD_TLENG = "tleng";
    
+   public static enum SyField {
+   	SUBRC(SY_FIELD_SUBRC),
+   	TABIX(SY_FIELD_TABIX),
+   	INDEX(SY_FIELD_INDEX),
+   	TFILL(SY_FIELD_TFILL),
+   	TLENG(SY_FIELD_TLENG);
+   	
+   	public final String name;
+   	public final String syField;
+   	public final String systField;
+   	
+   	SyField(String name) {
+   		this.name = name;
+   		this.syField = SY_PREFIX + name;
+   		this.systField = SYST_PREFIX + name;
+   	}
+   }
+
    public static final String LINE_SEPARATOR = "\r\n";
    public static final char COMPONENT_SELECTOR = '-';
    public static final String COMPONENT_SELECTOR_STRING = "-";
@@ -149,7 +167,7 @@ public final class ABAP {
    private final static String[] lowerCaseKeywords = new String[] {"abs", "any", "c", "class_constructor", "constructor", "d", "dats", "n", "i", "int1", "int2", "int4", "int8", "lines(", "me", "p", "s", "space", "string", "subrc", "sy", "tims", "timestamp", "timestampl", "x", "xsdbool", "kind", "sign", "option", "low", "high", "uzeit", "uname", "datum", "table_line", "simple"};
 
    /** all built-in functions, cp. https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/abenbuilt_in_functions_overview.htm */
-   public final static String[] builtInFunctions = new String[] {"boolc(", " boolx(", " xsdbool(", " contains(", " contains_any_of(", " contains_any_not_of(", " matches(", " line_exists(", " abs(", " ceil(", " floor(", " frac(", " sign(", " trunc(", " ipow(", " nmax(", " nmin(", " acos(", " asin(", " atan(", " cos(", " sin(", " tan(", " cosh(", " sinh(", " tanh(", " exp(", " log(", " log10(", " sqrt(", " round(", " rescale(", " charlen(", " dbmaxlen(", " numofchar(", " strlen(", " char_off(", " cmax(", " cmin(", " count(", " count_any_of(", " count_any_not_of(", " distance(", " condense(", " concat_lines_of(", " escape(", " find(", " find_end(", " find_any_of(", " find_any_not_of(", " insert(", " match(", " repeat(", " replace(", " reverse(", " segment(", " shift_left(", " shift_right(", " substring(", " substring_after(", " substring_from(", " substring_before(", " substring_to(", " to_upper(", " to_lower(", " to_mixed(", " from_mixed(", " translate(", " xstrlen(", " bit-set(", " utclong_current(", " utclong_add(", " utclong_diff(", " lines(", " line_index("};
+   public final static String[] builtInFunctions = new String[] {"boolc(", "boolx(", "xsdbool(", "contains(", "contains_any_of(", "contains_any_not_of(", "matches(", "line_exists(", "abs(", "ceil(", "floor(", "frac(", "sign(", "trunc(", "ipow(", "nmax(", "nmin(", "acos(", "asin(", "atan(", "cos(", "sin(", "tan(", "cosh(", "sinh(", "tanh(", "exp(", "log(", "log10(", "sqrt(", "round(", "rescale(", "charlen(", "dbmaxlen(", "numofchar(", "strlen(", "char_off(", "cmax(", "cmin(", "count(", "count_any_of(", "count_any_not_of(", "distance(", "condense(", "concat_lines_of(", "escape(", "find(", "find_end(", "find_any_of(", "find_any_not_of(", "insert(", "match(", "repeat(", "replace(", "reverse(", "segment(", "shift_left(", "shift_right(", "substring(", "substring_after(", "substring_from(", "substring_before(", "substring_to(", "to_upper(", "to_lower(", "to_mixed(", "from_mixed(", "translate(", "xstrlen(", "bit-set(", "utclong_current(", "utclong_add(", "utclong_diff(", "lines(", "line_index("};
    /** built-in functions that have named parameters (and therefore could be aligned like method calls) */
    public final static String[] builtInFunctionsWithNamedParams = new String[] {"boolx(", "contains(", "contains_any_of(", "contains_any_not_of(", "matches(", "ipow(", "nmax(", "mnim(", "round(", "rescale(", "char_off(", "cmax(", "cmin(", "count(", "count_any_of(", "count_any_not_of(", "distance(", "condense(", "concat_lines_of(", "escape(", "find(", "find_end(", "find_any_of(", "find_any_not_of(", "insert(", "match(", "repeat(", "replace(", "reverse(", "segment(", "shift_left(", "shift_right(", "substring(", "substring_after(", "substring_from(", "substring_before(", "substring_to(", "to_upper(", "to_lower(", "to_mixed(", "from_mixed(", "translate(", "utclong_add(", "utclong_diff("};
    /** built-in functions that have no named parameters but instead expect one argument of a certain type 

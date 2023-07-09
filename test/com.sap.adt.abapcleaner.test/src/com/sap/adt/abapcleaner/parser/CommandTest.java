@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import com.sap.adt.abapcleaner.base.ABAP;
 import com.sap.adt.abapcleaner.base.Language;
 import com.sap.adt.abapcleaner.base.StringUtil;
+import com.sap.adt.abapcleaner.base.ABAP.SyField;
 import com.sap.adt.abapcleaner.programbase.IntegrityBrokenException;
 import com.sap.adt.abapcleaner.programbase.ParseException;
 import com.sap.adt.abapcleaner.programbase.UnexpectedSyntaxAfterChanges;
@@ -1137,6 +1138,277 @@ public class CommandTest {
 		assertFalse(buildCommand("INTERFACE any_interface PUBLIC.").isPublicClassDefinitionStart());
 		assertTrue(buildCommand("CLASS any_class DEFINITION ##PRAGMA PUBLIC.").isPublicClassDefinitionStart());
 		assertTrue(buildCommand("CLASS any_class DEFINITION \"comment" + SEP + "PUBLIC \"comment" + SEP + ".").isPublicClassDefinitionStart());
+	}
+	
+	private void assertChangesSyField(ABAP.SyField syField, boolean expChanges, String code) {
+		assertEquals(expChanges, buildCommand(code).changesSyField(syField));
+	}
+	
+	private void assertChangesSyField(ABAP.SyField syField, boolean expChanges, Command command) {
+		assertEquals(expChanges, command.changesSyField(syField));
+	}
+	
+	private void assertChangesSubrc(boolean expChanges, String code) {
+		assertChangesSyField(SyField.SUBRC, expChanges, code);
+	}
+	
+	private void assertChangesSubrc(boolean expChanges, Command command) {
+		assertChangesSyField(SyField.SUBRC, expChanges, command);
+	}
+	
+	@Test
+	void testChangesSySubrc() {
+		// expect changes on SY-SUBRC for: 
+		assertChangesSubrc(true, "sy-subrc = lv_value.");
+		assertChangesSubrc(true, "MOVE 1 TO sy-subrc.");
+
+		// Object Creation
+		assertChangesSubrc(true, "CREATE OBJECT lo_any EXPORTING param = lv_value.");
+		assertChangesSubrc(true, "lo_instance = NEW cl_any_class( iv_param = lv_value ).");
+		
+		// Calling and Exiting Program Units
+		assertChangesSubrc(true, "SUBMIT any_program VIA JOB lv_job_name NUMBER lv_jobcount AND RETURN.");
+		assertChangesSubrc(true, "CALL FUNCTION 'ANY_FUNCTION' EXCEPTIONS any_exc = 1 OTHERS = 2.");
+		assertChangesSubrc(true, "CALL METHOD me->(lc_method_name).");
+		assertChangesSubrc(true, "SET HANDLER on_any_event FOR io_instance->get_event( ).");
+		assertChangesSubrc(true, "a = b + c * cos( get_value( param = d ) ).");
+		
+		// Program Flow Logic
+		assertChangesSubrc(true, "WAIT UP TO 5 SECONDS.");
+		assertChangesSubrc(true, "RAISE any_classic_exception.");
+		assertChangesSubrc(true, "RAISE RESUMABLE EXCEPTION NEW cx_any_exception( ).");
+		
+		// Assignments
+		assertChangesSubrc(true, "ASSIGN itab[ 1 ] TO FIELD-SYMBOL(<ls_any>).");
+		assertChangesSubrc(true, "ASSIGN lo_instance->mv_value TO <ls_any>.");
+
+		// Processing Internal Data
+		assertChangesSubrc(true, "CONCATENATE lv_year lv_month '01' INTO lv_date.");
+		assertChangesSubrc(true, "FIND ls_data IN TABLE mt_data.");
+		assertChangesSubrc(true, "OVERLAY text1 WITH text2 ONLY mask.");
+		assertChangesSubrc(true, "REPLACE ALL OCCURRENCES OF lv_any IN <lv_other> WITH lv_other.");
+		assertChangesSubrc(true, "SHIFT lv_value BY 5 PLACES LEFT.");
+		assertChangesSubrc(true, "SPLIT lv_value AT space INTO TABLE lt_table.");
+		assertChangesSubrc(true, "GET BIT lv_bitpos OF lv_string INTO lv_value.");
+		assertChangesSubrc(true, "SET BIT lv_bitpos OF lv_string TO lv_value.");
+		assertChangesSubrc(true, "WRITE lv_timestamp TIME ZONE sy-zonlo TO lv_timestamp_str.");
+		
+		assertChangesSubrc(true, "CONVERT DATE lv_date TIME lv_time INTO TIME STAMP DATA(lv_timestamp) TIME ZONE lv_timezone.");
+		assertChangesSubrc(true, "CONVERT TIME STAMP lv_timestamp TIME ZONE sy-zonlo INTO DATE lv_date.");
+		
+		assertChangesSubrc(true, "DELETE lt_table from 10.");
+		assertChangesSubrc(true, "INSERT VALUE #( comp = 1 ) INTO TABLE lt_table.");
+		assertChangesSubrc(true, buildCommand("LOOP AT lt_any INTO DATA(ls_any). ENDLOOP.").getNext());
+		assertChangesSubrc(true, "LOOP AT GROUP <fs> INTO member. ENDLOOP.");
+		assertChangesSubrc(true, "READ TABLE its_table WITH KEY comp = 1 TRANSPORTING NO FIELDS.");
+		
+		// Processing External Data
+		assertChangesSubrc(true, "DELETE FROM demo_update WHERE id = 'X'.");
+		assertChangesSubrc(true, "FETCH NEXT CURSOR @dbcur INTO @wa.");
+		assertChangesSubrc(true, "INSERT INTO dtab VALUES wa.");
+		assertChangesSubrc(true, "INSERT dtab FROM ( SELECT * FROM dtab2 ). ");
+		assertChangesSubrc(true, "SELECT * FROM dtab INTO TABLE result.");
+		assertChangesSubrc(true, "OPEN CURSOR WITH HOLD @DATA(dbcur) FOR SELECT * FROM dtab.");
+		
+		assertChangesSubrc(true, buildCommand("EXEC SQL." + System.lineSeparator() + "ENDEXEC.").getNext());
+		assertChangesSubrc(true, buildCommand("EXEC SQL." + System.lineSeparator() + "SQL." + System.lineSeparator() + "ENDEXEC.").getNext().getNext());
+		assertChangesSubrc(true, "IMPORT any_tab = other_tab FROM DATABASE any_db(ab) ID any_id TO wa.");
+		assertChangesSubrc(true, "IMPORT DIRECTORY INTO itab FROM DATABASE any_db(ab) ID 'AB'.");
+
+		assertChangesSubrc(true, "CLOSE DATASET dset.");
+		assertChangesSubrc(true, "DELETE DATASET dset.");
+		assertChangesSubrc(true, "GET DATASET file POSITION FINAL(pos).");
+		assertChangesSubrc(true, "OPEN DATASET dset FOR OUTPUT IN BINARY MODE.");
+		assertChangesSubrc(true, "READ DATASET dset INTO xstr ACTUAL LENGTH FINAL(bytes).");
+		assertChangesSubrc(true, "SET DATASET file POSITION END OF FILE.");
+		assertChangesSubrc(true, "TRUNCATE DATASET dset AT CURRENT POSITION.");
+		assertChangesSubrc(true, "TRANSFER text TO dset.");
+
+		assertChangesSubrc(true, "AUTHORITY-CHECK OBJECT 'ANY_OBJ' ID 'ANYID' FIELD iv_value.");
+		assertChangesSubrc(true, "COMMIT WORK.");
+		assertChangesSubrc(true, "ROLLBACK WORK.");
+		assertChangesSubrc(true, "SET UPDATE TASK LOCAL.");
+		
+		// ABAP for RAP Business Objects
+		assertChangesSubrc(true, "COMMIT ENTITIES RESPONSES FAILED _failed_resp REPORTED _reported_resp.");
+		
+		// Program Parameters
+		assertChangesSubrc(true, "GET PARAMETER ID 'PARAM_ID' FIELD DATA(lv_value).");
+		assertChangesSubrc(true, "SET COUNTRY cntry.");
+		assertChangesSubrc(true, "SET LANGUAGE lang.");
+		
+		// Program Editing
+		assertChangesSubrc(true, "SET RUN TIME ANALYZER ON.");
+		assertChangesSubrc(true, "GENERATE SUBROUTINE POOL itab NAME prog.");
+		assertChangesSubrc(true, "INSERT REPORT prog FROM itab.");
+		assertChangesSubrc(true, "INSERT TEXTPOOL prog FROM itab LANGUAGE lang.");
+		assertChangesSubrc(true, "READ REPORT prog INTO itab MAXIMUM WIDTH INTO wid.");
+		assertChangesSubrc(true, "READ TEXTPOOL prog INTO itab LANGUAGE lang.");
+		assertChangesSubrc(true, "SYNTAX-CHECK FOR itab MESSAGE mess LINE lin WORD wrd.");
+		
+		// ABAP Data and Communication Interfaces
+		assertChangesSubrc(true, "RECEIVE RESULTS FROM FUNCTION 'ANY_FUNCTION' IMPORTING et_table = lt_table.");
+		assertChangesSubrc(true, "WAIT FOR ASYNCHRONOUS TASKS UNTIL a > 10 UP TO 10 SECONDS.");
+		assertChangesSubrc(true, "WAIT FOR MESSAGING CHANNELS UNTIL a > 10.");
+		assertChangesSubrc(true, "WAIT FOR PUSH CHANNELS UNTIL a > 10.");
+		
+		assertChangesSubrc(true, "FREE OBJECT ole NO FLUSH.");
+		assertChangesSubrc(true, "GET PROPERTY OF ole prop = dobj.");
+		assertChangesSubrc(true, "SET PROPERTY OF ole prop = dobj.");
+		
+		// User Dialogs
+		assertChangesSubrc(true, "GET CURSOR.");
+		assertChangesSubrc(true, "SET TITLEBAR title OF PROGRAM prog.");
+		assertChangesSubrc(true, "CALL SELECTION-SCREEN '0500' STARTING AT 10 10.");
+		
+		assertChangesSubrc(true, "DESCRIBE LIST NUMBER OF PAGES last_page.");
+		assertChangesSubrc(true, "MODIFY CURRENT LINE LINE FORMAT COLOR 5.");
+		assertChangesSubrc(true, "GET CURSOR LINE line.");
+		assertChangesSubrc(true, "READ LINE lv_line FIELD VALUE flag date INTO wa.");
+		assertChangesSubrc(true, "SCROLL LIST TO PAGE lv_page LINE lv_line.");
+		
+		// Enhancements
+		assertChangesSubrc(true, "CALL BADI lo_badi->any_method CHANGING cts_table = lts_table.");
+		
+		// Statements for Experts
+		assertChangesSubrc(true, "PROVIDE FIELDS col3 FROM itab1 INTO wa1 VALID flag1 BOUNDS col1 AND col2 FIELDS col3 FROM itab2 INTO wa2 VALID flag2 BOUNDS col1 AND col2 BETWEEN 2 AND 14."); 
+		assertChangesSubrc(true, buildCommand("PROVIDE FIELDS col3 FROM itab1 INTO wa1 VALID flag1 BOUNDS col1 AND col2 FIELDS col3 FROM itab2 INTO wa2 VALID flag2 BOUNDS col1 AND col2 BETWEEN 2 AND 14. ENDPROVIDE.").getNext());
+		
+		// Obsolete Statements
+		assertChangesSubrc(true, "CALL CUSTOMER-FUNCTION 'ABC'.");
+		assertChangesSubrc(true, "CALL DIALOG dialog IMPORTING p1 TO a1.");
+		assertChangesSubrc(true, "CATCH SYSTEM-EXCEPTIONS. ENDCATCH.");
+		assertChangesSubrc(true, "SEARCH text FOR 'abc' ABBREVIATED.");
+		assertChangesSubrc(true, "REFRESH itab FROM TABLE dbtab.");
+		assertChangesSubrc(true, "DEMAND val1 = f1 val2 = f2 FROM CONTEXT any_context.");
+		assertChangesSubrc(true, "EDITOR-CALL FOR lt_text BACKUP INTO lt_backup.");
+		assertChangesSubrc(true, "COMMUNICATION ACCEPT ID id.");
+		
+		// Internal Statements
+		assertChangesSubrc(true, "DELETE DYNPRO f.");
+		assertChangesSubrc(true, "DELETE REPORT prog.");
+		assertChangesSubrc(true, "GENERATE REPORT prog.");
+		assertChangesSubrc(true, "DELETE TEXTPOOL prog LANGUAGE lg STATE state.");
+		assertChangesSubrc(true, "LOAD REPORT prog PART 'BASE' INTO itab.");
+		assertChangesSubrc(true, "IMPORT DYNPRO h f e m ID id.");
+		assertChangesSubrc(true, "SCAN AND CHECK ABAP-SOURCE itab1 RESULT INTO itab2.");
+		assertChangesSubrc(true, "SYNTAX-CHECK FOR DYNPRO h f e m MESSAGE f1 LINE f2 WORD f3.");
+		assertChangesSubrc(true, "CALL 'ANY_FUNCTION' ID 'NAME' FIELD 'ANY_NAME' ID 'VALUE' FIELD any_value.");
+		
+		// ----------------------------------------------------------------------
+		// expect NO changes on SY-SUBRC for: 
+		
+		assertChangesSubrc(false, "\" comment.");
+		assertChangesSubrc(false, "a = xsdbool( a OR d).");
+		assertChangesSubrc(false, "IF line_exists( lts_table[ comp = 1 ] ). ENDIF.");
+		assertChangesSubrc(false, "a = sqrt( log( abs( ceil( floor( sign( 5 - 7 ) ) ) ) ) ) * sin( cos( lv_value ) ).");
+		assertChangesSubrc(false, "a = nmax( val1 = b val2 = nmin( val1 = c val2 = d ) ).");
+		assertChangesSubrc(false, "AT NEW comp. ENDAT."); // as opposed to 'a = NEW cl_any_class( ).'
+	}
+	
+	private void assertChangesTabix(boolean expChanges, String code) {
+		assertChangesSyField(SyField.TABIX, expChanges, code);
+	}
+	
+	private void assertChangesTabix(boolean expChanges, Command command) {
+		assertChangesSyField(SyField.TABIX, expChanges, command);
+	}
+	
+	@Test
+	void testChangesSyTabix() {
+		// expect changes on SY-TABIX for: 
+		assertChangesTabix(true, "sy-tabix = lv_value.");
+		assertChangesTabix(true, "MOVE 1 TO sy-tabix.");
+		
+		assertChangesTabix(true, "ASSIGN itab[ 1 ] TO FIELD-SYMBOL(<ls_any>).");
+		assertChangesTabix(true, "ASSIGN its_table[ table_line = 1 ] TO <ls_other>.");
+		
+		assertChangesTabix(true, "LOOP AT lt_any INTO DATA(ls_any). ENDLOOP.");
+		assertChangesTabix(true, buildCommand("LOOP AT lt_any INTO DATA(ls_any). ENDLOOP.").getNext());
+		
+		assertChangesTabix(true, "READ TABLE its_table WITH KEY comp = 1 TRANSPORTING NO FIELDS.");
+		assertChangesTabix(true, "READ TABLE its_table INDEX 1 USING KEY sort_key ASSIGNING FIELD-SYMBOL(<ls_any>).");
+		
+		assertChangesTabix(true, "COLLECT ls_line INTO lts_table.");
+		assertChangesTabix(true, "COLLECT <ls_line> INTO lts_table ASSIGNING FIELD-SYMBOL(<ls_any>).");
+		
+		assertChangesTabix(true, "APPEND VALUE #( comp = 1 ) TO lt_table.");
+		assertChangesTabix(true, "APPEND ls_line TO lt_table ASSIGNING <ls_any>.");
+
+		assertChangesTabix(true, "PROVIDE FIELDS col3 FROM itab1 INTO wa1 VALID flag1 BOUNDS col1 AND col2 FIELDS col3 FROM itab2 INTO wa2 VALID flag2 BOUNDS col1 AND col2 BETWEEN 2 AND 14."); 
+		assertChangesTabix(true, buildCommand("PROVIDE FIELDS col3 FROM itab1 INTO wa1 VALID flag1 BOUNDS col1 AND col2 FIELDS col3 FROM itab2 INTO wa2 VALID flag2 BOUNDS col1 AND col2 BETWEEN 2 AND 14. ENDPROVIDE.").getNext()); 
+
+		// expect NO changes on SY-TABIX for: 
+		assertChangesTabix(false, "\" comment.");
+		assertChangesTabix(false, "ASSIGN lo_instance->mv_value TO <ls_any>.");
+		assertChangesTabix(false, "INSERT VALUE #( comp = 1 ) INTO TABLE lt_table.");
+		assertChangesTabix(false, "DELETE lt_table from 10.");
+		assertChangesTabix(false, "ls_line = lt_table[ 1 ].");
+		assertChangesTabix(false, "ls_line = lt_table[ id = 1 ].");
+	}
+	
+	private void assertChangesIndex(boolean expChanges, String code) {
+		assertChangesSyField(SyField.INDEX, expChanges, code);
+	}
+	
+	private void assertChangesIndex(boolean expChanges, Command command) {
+		assertChangesSyField(SyField.INDEX, expChanges, command);
+	}
+	
+	@Test
+	void testChangesSyIndex() {
+		// expect changes on SY-INDEX for: 
+		assertChangesIndex(true, "sy-index = lv_value.");
+		assertChangesIndex(true, "MOVE 1 TO sy-index.");
+		
+		assertChangesIndex(true, "DO 5 TIMES. ENDDO.");
+		assertChangesIndex(true, buildCommand("DO 5 TIMES. ENDDO.").getNext());
+		
+		assertChangesIndex(true, "WHILE a < 5. ENDWHILE.");
+		assertChangesIndex(true, buildCommand("WHILE a < 5. ENDWHILE.").getNext());
+		
+		// expect NO changes on SY-INDEX for: 
+		assertChangesIndex(false, "\" comment.");
+		assertChangesIndex(false, "LOOP AT lt_any INTO DATA(ls_any). ENDLOOP.");
+		assertChangesIndex(false, "DELETE lt_table from 10.");
+		assertChangesIndex(false, "READ TABLE its_table WITH KEY comp = 1 TRANSPORTING NO FIELDS.");
+		assertChangesIndex(false, "ls_line = lt_table[ id = 1 ].");
+	}
+
+	private void assertChangesTFillOrTLeng(boolean expChanges, String code) {
+		assertChangesSyField(SyField.TFILL, expChanges, code);
+		assertChangesSyField(SyField.TLENG, expChanges, code);
+	}
+	
+	private void assertChangesTFillOrTLeng(boolean expChanges, Command command) {
+		assertChangesSyField(SyField.TFILL, expChanges, command);
+		assertChangesSyField(SyField.TLENG, expChanges, command);
+	}
+	
+	@Test
+	void testChangesSyTFillOrTLeng() {
+		// expect changes on SY-TFILL or SY-TLENG for: 
+		assertChangesTFillOrTLeng(true, "sy-tfill = lv_value.");
+		assertChangesTFillOrTLeng(true, "MOVE 1 TO sy-tfill.");
+		assertChangesTFillOrTLeng(true, "sy-tleng = lv_value.");
+		assertChangesTFillOrTLeng(true, "MOVE 1 TO sy-tleng.");
+		
+		assertChangesTFillOrTLeng(true, "LOOP AT lt_any INTO DATA(ls_any). ENDLOOP.");
+		
+		assertChangesTFillOrTLeng(true, "READ TABLE its_table WITH KEY comp = 1 TRANSPORTING NO FIELDS.");
+		assertChangesTFillOrTLeng(true, "READ TABLE its_table INDEX 1 USING KEY sort_key ASSIGNING FIELD-SYMBOL(<ls_any>).");
+		
+		assertChangesTFillOrTLeng(true, "DESCRIBE TABLE lt_table.");
+		assertChangesTFillOrTLeng(true, "DESCRIBE TABLE lt_table LINES lv_any.");
+		assertChangesTFillOrTLeng(true, "DESCRIBE TABLE lt_table LINES lv_any OCCURS n.");
+
+		// expect NO changes on SY-TFILL or SY-TLENG for: 
+		assertChangesTFillOrTLeng(false, "\" comment.");
+		assertChangesTFillOrTLeng(false, buildCommand("LOOP AT lt_any INTO DATA(ls_any). ENDLOOP.").getNext());
+		assertChangesTFillOrTLeng(false, "LOOP AT GROUP <fs> INTO member. ENDLOOP.");
+		assertChangesTFillOrTLeng(false, "INSERT VALUE #( comp = 1 ) INTO TABLE lt_table.");
+		assertChangesTFillOrTLeng(false, "DELETE lt_table from 10.");
+		assertChangesTFillOrTLeng(false, "ls_line = lt_table[ 1 ].");
 	}
 	
 }

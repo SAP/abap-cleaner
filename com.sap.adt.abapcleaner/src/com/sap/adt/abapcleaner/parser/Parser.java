@@ -69,10 +69,13 @@ class Parser {
 					if (curCommand.getLanguage() == Language.ABAP) {
 						Language nextLanguage = curCommand.getLanguageOfNextCommand();
 						if (nextLanguage != Language.ABAP) {
+							// unless the non-ABAP section is empty (i.e. token is already ENDEXEC or ENDMETHOD), 
 							// create the current Token again, because we now know that it belongs to a non-ABAP language; 
 							// also, tell the Tokenizer which keyword will end the non-ABAP section
 							String endOfNonAbapSection = curCommand.firstCodeTokenIsKeyword("EXEC") ? "ENDEXEC" : "ENDMETHOD";
-							token = tokenizer.changeToNonAbapLanguage(token, nextLanguage, endOfNonAbapSection);
+							if (!token.textEquals(endOfNonAbapSection)) {
+								token = tokenizer.changeToNonAbapLanguage(token, nextLanguage, endOfNonAbapSection);
+							}
 						}
 					}
 
