@@ -1187,7 +1187,7 @@ public class CommandTest {
 		assertChangesSubrc(true, "FIND ls_data IN TABLE mt_data.");
 		assertChangesSubrc(true, "OVERLAY text1 WITH text2 ONLY mask.");
 		assertChangesSubrc(true, "REPLACE ALL OCCURRENCES OF lv_any IN <lv_other> WITH lv_other.");
-		assertChangesSubrc(true, "SHIFT lv_value BY 5 PLACES LEFT.");
+		assertChangesSubrc(true, "SHIFT text UP TO 'abc'.");
 		assertChangesSubrc(true, "SPLIT lv_value AT space INTO TABLE lt_table.");
 		assertChangesSubrc(true, "GET BIT lv_bitpos OF lv_string INTO lv_value.");
 		assertChangesSubrc(true, "SET BIT lv_bitpos OF lv_string TO lv_value.");
@@ -1304,6 +1304,8 @@ public class CommandTest {
 		assertChangesSubrc(false, "a = sqrt( log( abs( ceil( floor( sign( 5 - 7 ) ) ) ) ) ) * sin( cos( lv_value ) ).");
 		assertChangesSubrc(false, "a = nmax( val1 = b val2 = nmin( val1 = c val2 = d ) ).");
 		assertChangesSubrc(false, "AT NEW comp. ENDAT."); // as opposed to 'a = NEW cl_any_class( ).'
+		assertChangesSubrc(false, "SHIFT text BY off PLACES.");
+		assertChangesSubrc(false, "SHIFT txt RIGHT DELETING TRAILING ` `.");
 	}
 	
 	private void assertChangesTabix(boolean expChanges, String code) {
