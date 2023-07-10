@@ -2328,8 +2328,10 @@ public class Command {
 		// Processing Internal Data
 
 		// Character String and Byte String Processing
-		if (token.isAnyKeyword("CONCATENATE", "FIND", "OVERLAY", "REPLACE", "SHIFT", "SPLIT")) {
+		if (token.isAnyKeyword("CONCATENATE", "FIND", "OVERLAY", "REPLACE", "SPLIT")) {
 			// including REPLACE SECTION ... OF
+			return true;
+		} else if (token.isKeyword("SHIFT") && token.matchesOnSiblings(true, TokenSearch.ASTERISK, "UP", "TO")) {
 			return true;
 		} else if (token.matchesOnSiblings(true, "GET|SET", "BIT")) {
 			return true;
