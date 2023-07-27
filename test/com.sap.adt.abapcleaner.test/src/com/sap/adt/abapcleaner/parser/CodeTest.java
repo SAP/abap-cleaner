@@ -931,4 +931,154 @@ public class CodeTest extends CodeTestBase {
 		
 		testParseCode();
 	}
+
+	@Test
+	void testUlineAt() {
+		// ensure that the parser accepts all the following ways of using ULINE [AT] (as does ABAP syntax) 
+		
+		buildSrc("  DATA pos TYPE i.");
+		buildSrc("  DATA len TYPE i.");
+		buildSrc("");
+		buildSrc("  ULINE.");
+		buildSrc("");
+		buildSrc("  ULINE AT /.");
+		buildSrc("  ULINE AT /(20).");
+		buildSrc("  ULINE AT /(len).");
+		buildSrc("  ULINE AT /(*).");
+		buildSrc("  ULINE AT /(**).");
+		buildSrc("");
+		buildSrc("  ULINE AT /10.");
+		buildSrc("  ULINE AT /10(20).");
+		buildSrc("  ULINE AT /10(len).");
+		buildSrc("  ULINE AT /10(*).");
+		buildSrc("  ULINE AT /10(**).");
+		buildSrc("");
+		buildSrc("  ULINE AT /pos.");
+		buildSrc("  ULINE AT /pos(20).");
+		buildSrc("  ULINE AT /pos(len).");
+		buildSrc("  ULINE AT /pos(*).");
+		buildSrc("  ULINE AT /pos(**).");
+		buildSrc("");
+		buildSrc("  ULINE AT (20).");
+		buildSrc("  ULINE AT (len).");
+		buildSrc("  ULINE AT (*).");
+		buildSrc("  ULINE AT (**).");
+		buildSrc("");
+		buildSrc("  ULINE AT 10.");
+		buildSrc("  ULINE AT 10(20).");
+		buildSrc("  ULINE AT 10(len).");
+		buildSrc("  ULINE AT 10(*).");
+		buildSrc("  ULINE AT 10(**).");
+		buildSrc("");
+		buildSrc("  ULINE AT pos.");
+		buildSrc("  ULINE AT pos(20).");
+		buildSrc("  ULINE AT pos(len).");
+		buildSrc("  ULINE AT pos(*).");
+		buildSrc("  ULINE AT pos(**).");
+		buildSrc("");
+		buildSrc("  ULINE /.");
+		buildSrc("  ULINE /(20).");
+		buildSrc("  ULINE /(len)."); // warning about missing 'AT', but no syntax error
+		buildSrc("  ULINE /(*).");
+		buildSrc("  ULINE /(**).");
+		buildSrc("");
+		buildSrc("  ULINE /10.");
+		buildSrc("  ULINE /10(20).");
+		buildSrc("  ULINE /10(len)."); // warning about missing 'AT', but no syntax error
+		buildSrc("  ULINE /10(*).");
+		buildSrc("  ULINE /10(**).");
+		buildSrc("");
+		buildSrc("  ULINE /pos."); 	  // warning about missing 'AT', but no syntax error
+		buildSrc("  ULINE /pos(20).");  // warning about missing 'AT', but no syntax error
+		buildSrc("  ULINE /pos(len)."); // warning about missing 'AT', but no syntax error
+		buildSrc("  ULINE /pos(*).");   // warning about missing 'AT', but no syntax error
+		buildSrc("  ULINE /pos(**).");  // warning about missing 'AT', but no syntax error
+		buildSrc("");
+		buildSrc("  ULINE (20).");
+		buildSrc("  ULINE (*).");
+		buildSrc("  ULINE (**).");
+		buildSrc("");
+		buildSrc("  ULINE 10.");
+		buildSrc("  ULINE 10(20).");
+		buildSrc("  ULINE 10(*).");
+		buildSrc("  ULINE 10(**).");
+
+		putAnyMethodAroundSrc();
+		
+		testParseCode();
+	}
+	
+	@Test
+	void testWriteAt() {
+		// ensure that the parser accepts all the following ways of using WRITE [AT] (as does ABAP syntax) 
+		
+		buildSrc("  DATA pos TYPE i.");
+		buildSrc("  DATA len TYPE i.");
+		buildSrc("");
+		buildSrc("  WRITE AT / 'a'.");
+		buildSrc("  WRITE AT /(20) 'a'.");
+		buildSrc("  WRITE AT /(len) 'a'.");
+		buildSrc("  WRITE AT /(*) 'a'.");
+		buildSrc("  WRITE AT /(**) 'a'.");
+		buildSrc("");
+		buildSrc("  WRITE AT /10 'a'.");
+		buildSrc("  WRITE AT /10(20) 'a'.");
+		buildSrc("  WRITE AT /10(len) 'a'.");
+		buildSrc("  WRITE AT /10(*) 'a'.");
+		buildSrc("  WRITE AT /10(**) 'a'.");
+		buildSrc("");
+		buildSrc("  WRITE AT /pos 'a'.");
+		buildSrc("  WRITE AT /pos(20) 'a'.");
+		buildSrc("  WRITE AT /pos(len) 'a'.");
+		buildSrc("  WRITE AT /pos(*) 'a'.");
+		buildSrc("  WRITE AT /pos(**) 'a'.");
+		buildSrc("");
+		buildSrc("  WRITE AT (20) 'a'.");
+		buildSrc("  WRITE AT (len) 'a'.");
+		buildSrc("  WRITE AT (*) 'a'.");
+		buildSrc("  WRITE AT (**) 'a'.");
+		buildSrc("");
+		buildSrc("  WRITE AT 10 'a'.");
+		buildSrc("  WRITE AT 10(20) 'a'.");
+		buildSrc("  WRITE AT 10(len) 'a'.");
+		buildSrc("  WRITE AT 10(*) 'a'.");
+		buildSrc("  WRITE AT 10(**) 'a'.");
+		buildSrc("");
+		buildSrc("  WRITE AT pos 'a'.");
+		buildSrc("  WRITE AT pos(20) 'a'.");
+		buildSrc("  WRITE AT pos(len) 'a'.");
+		buildSrc("  WRITE AT pos(*) 'a'.");
+		buildSrc("  WRITE AT pos(**) 'a'.");
+		buildSrc("");
+		buildSrc("  WRITE / 'a'.");
+		buildSrc("  WRITE /(20) 'a'.");
+		buildSrc("  WRITE /(len) 'a'."); // warning about missing 'AT', but no syntax error
+		buildSrc("  WRITE /(*) 'a'.");
+		buildSrc("  WRITE /(**) 'a'.");
+		buildSrc("");
+		buildSrc("  WRITE /10 'a'.");
+		buildSrc("  WRITE /10(20) 'a'.");
+		buildSrc("  WRITE /10(len) 'a'."); // warning about missing 'AT', but no syntax error
+		buildSrc("  WRITE /10(*) 'a'.");
+		buildSrc("  WRITE /10(**) 'a'.");
+		buildSrc("");
+		buildSrc("  WRITE /pos 'a'.");      // warning about missing 'AT', but no syntax error
+		buildSrc("  WRITE /pos(20) 'a'.");  // warning about missing 'AT', but no syntax error
+		buildSrc("  WRITE /pos(len) 'a'."); // warning about missing 'AT', but no syntax error
+		buildSrc("  WRITE /pos(*) 'a'.");   // warning about missing 'AT', but no syntax error
+		buildSrc("  WRITE /pos(**) 'a'.");  // warning about missing 'AT', but no syntax error
+		buildSrc("");
+		buildSrc("  WRITE (20) 'a'.");
+		buildSrc("  WRITE (*) 'a'.");
+		buildSrc("  WRITE (**) 'a'.");
+		buildSrc("");
+		buildSrc("  WRITE 10 'a'.");
+		buildSrc("  WRITE 10(20) 'a'.");
+		buildSrc("  WRITE 10(*) 'a'.");
+		buildSrc("  WRITE 10(**) 'a'.");
+
+		putAnyMethodAroundSrc();
+		
+		testParseCode();
+	}
 }

@@ -1133,8 +1133,10 @@ public class Token {
 				return isStringLiteral() ? ColorType.STRING_LITERAL : ColorType.NUMBER;
 
 			case ASSIGNMENT_OP:
-			case OTHER_OP:
 				return ColorType.USUAL_OPERATOR;
+
+			case OTHER_OP:
+				return textEquals(")") && isAttached() ?  ColorType.TOKEN_OPERATOR : ColorType.USUAL_OPERATOR;
 
 			case COMPARISON_OP:
 				if (!StringUtil.isNullOrEmpty(text) && Character.isLetter(text.charAt(0))) // GE, GT, EQ, NE etc.
@@ -1179,9 +1181,11 @@ public class Token {
 		
 		// in most cases, the whole Token is of one ColorType
 		ColorType colType = getMainColorType();
-		if (type != TokenType.KEYWORD && type != TokenType.IDENTIFIER && type != TokenType.LITERAL)
+		if (type != TokenType.KEYWORD && type != TokenType.IDENTIFIER && type != TokenType.LITERAL && type != TokenType.OTHER_OP)
 			isSimpleCase = true;
 		if (type == TokenType.IDENTIFIER && text.charAt(0) == ABAP.FIELD_SYMBOL_START_SIGN)
+			isSimpleCase = true;
+		if (type == TokenType.OTHER_OP && !textEndsWithAny("(", ")")) // "ULINE AT /(20)."
 			isSimpleCase = true;
 
 		// literals may be linked to a text symbol ID, having the form 'literal text'(idf), where 'idf' is always 3 characters long
@@ -1195,7 +1199,7 @@ public class Token {
 												TextBit.create(startIndex + literalLength, 1, ColorType.TOKEN_OPERATOR), 
 												TextBit.create(startIndex + literalLength + 1, 3, ColorType.NUMBER), 
 												TextBit.create(startIndex + literalLength + 4, 1, ColorType.TOKEN_OPERATOR)};
-			} else {
+			} else if (!textEndsWith(")")) { // "ULINE AT 10(20)."
 				isSimpleCase = true;
 			}
 		}
@@ -1209,9 +1213,16 @@ public class Token {
 		for (int i = 0; i < text.length(); ++i) {
 			char c = text.charAt(i);
 			boolean isIdentifier = (type == TokenType.KEYWORD) ? ABAP.isCharAllowedForAnyKeyword(c) : ABAP.isCharAllowedForVariableNames(c);
+			// in some cases, initial '/' does NOT start an identifier with a namespace, e.g. "ULINE AT /.", "ULINE AT /10(20)." or "ULINE at /pos(20)."
+			if (i == 0 && c == '/' && (text.length() <= 1 || text.indexOf('/', 1) < 0)) {
+				isIdentifier = false;
+			}
 			if (i > 0 && isIdentifier != lastWasIdentifier) {
 				// if the text bit is not part of the keyword or the identifier, it is considered a token operator (e.g. "->", "=>", "(" etc.)
 				ColorType bitType = lastWasIdentifier ? colType : ColorType.TOKEN_OPERATOR;
+				// in some cases, a Token of type OTHER_OP contains a number, e.g. "ULINE AT /10(20)." and "ULINE AT 10(**)." 
+				if (ABAP.isInteger(text.substring(writtenPos, i)))
+					bitType = ColorType.NUMBER;
 				result.add(TextBit.create(startIndex + writtenPos, i - writtenPos, bitType));
 				writtenPos = i;
 			}
@@ -1220,6 +1231,9 @@ public class Token {
 		// process the last bit
 		if (writtenPos < text.length()) {
 			ColorType bitType = lastWasIdentifier ? colType : ColorType.TOKEN_OPERATOR;
+			// in some cases, a Token of type IDENTIFIER contains a number, e.g. "ULINE AT /10." 
+			if (ABAP.isInteger(text.substring(writtenPos)))
+				bitType = ColorType.NUMBER;
 			result.add(TextBit.create(startIndex + writtenPos, text.length() - writtenPos, bitType));
 		}
 
