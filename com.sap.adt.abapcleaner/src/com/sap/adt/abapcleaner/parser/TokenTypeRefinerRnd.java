@@ -201,6 +201,10 @@ public class TokenTypeRefinerRnd implements ITokenTypeRefiner {
 						// keywords may contain literals in the special case of Text Elements such as TEXT-001
 						throwException = !token.textStartsWith("TEXT-");
 						break;
+					case OTHER_OP:
+						// other operators may contain literals in the special case of "ULINE AT /10(20).", "ULINE AT 10(20)." etc. 
+						throwException = !token.textStartsWith("/") && !token.textEndsWith("(");
+						break;
 					default:
 						throwException = true;
 						break;
