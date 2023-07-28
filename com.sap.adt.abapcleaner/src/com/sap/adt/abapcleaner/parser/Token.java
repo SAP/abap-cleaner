@@ -2274,4 +2274,20 @@ public class Token {
 		}
 		return true;
 	}
+	
+	public int getCondensedWidthUpTo(Token endToken, boolean considerEndOfComments) {
+		int result = 0;
+		Token token = this;
+		while (token != null) {
+			if (considerEndOfComments || !token.isCommentAfterCode()) {
+				if (token != this && !token.isAttached())
+					result += 1;
+				result += token.getTextLength();
+			}
+			if (token == endToken)
+				break;
+			token = token.getNext();
+		}
+		return result;
+	}
 }

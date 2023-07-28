@@ -5,8 +5,20 @@ import com.sap.adt.abapcleaner.parser.*;
 public class AlignLine {
 	private AlignTable parentTable;
 	private AlignCell[] cells;
-	private String simplifiedText;
 
+	private Token overlengthLineBreakToken = null;
+	private Token overlengthFallbackToken1 = null;
+	private Token overlengthFallbackToken2 = null;
+	
+	/** the Token (e.g. VALUE) within this cell before which a line break can be introduced if otherwise, line length would be exceeded */
+	Token getOverlengthLineBreakToken() { return overlengthLineBreakToken; }
+	
+	/** the Token (e.g. TYPE) within this cell with which the overlengthLineBreakToken shall be aligned */
+	Token getOverlengthFallbackToken1() { return overlengthFallbackToken1; }
+	
+	/** the Token (e.g. TYPE) within this cell with which the overlengthLineBreakToken shall be aligned (extreme cases) */
+	Token getOverlengthFallbackToken2() { return overlengthFallbackToken2; }
+	
 	@Override
 	public String toString() {
 		return getSimplifiedText();
@@ -85,15 +97,15 @@ public class AlignLine {
 	}
 
 	public final String getSimplifiedText() {
-		if (simplifiedText != null)
-			return simplifiedText;
-		StringBuilder text = new StringBuilder();
-		for (AlignCell cell : cells) {
+		StringBuilder sb = new StringBuilder();
+		for (int column = 0; column < parentTable.maxColumnCount; ++ column) {
+			if (column > 0)
+				sb.append("|");
+			AlignCell cell = cells[column];
 			if (cell != null)
-				text.append(cell.getSimplifiedText());
+				sb.append(cell.getSimplifiedText(" "));
 		}
-		simplifiedText = text.toString();
-		return simplifiedText;
+		return sb.toString();
 	}
 
 	public final AlignCell getNextNonEmptyCellAfter(int index) {
@@ -151,5 +163,17 @@ public class AlignLine {
 		if (lastLineWidth + addWidth > maxLineWidth) {
 			cell.setOverrideTextWidth(lastLineWidth + addWidth);
 		}
+	}
+
+	/**
+	 * sets tokens used to introduce an extra line break if line length would be exceeded otherwise
+	 * @param overlengthLineBreakToken - the Token before which a line break may be introduced if needed
+	 * @param overlengthFallbackToken1 - an earlier Token with which the overlengthLineBreakToken shall be aligned 
+	 * @param overlengthFallbackToken2 - an even earlier Token for alignment (may be null)
+	 */
+	public void setOverlengthLineBreakToken(Token overlengthLineBreakToken, Token overlengthFallbackToken1, Token overlengthFallbackToken2) {
+		this.overlengthLineBreakToken = overlengthLineBreakToken;
+		this.overlengthFallbackToken1 = overlengthFallbackToken1;
+		this.overlengthFallbackToken2 = overlengthFallbackToken2;
 	}
 }

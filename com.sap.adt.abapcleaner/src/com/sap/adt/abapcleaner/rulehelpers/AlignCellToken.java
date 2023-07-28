@@ -36,6 +36,9 @@ public class AlignCellToken extends AlignCell {
 	@Override
 	int getEndIndexInLastLine() { return token.getEndIndexInLine(); }
 
+	@Override
+	boolean contains(Token searchToken) { return this.token == searchToken; }
+	
 	public AlignCellToken(Token token) {
 		if (token == null)
 			throw new NullPointerException("token");
@@ -63,7 +66,7 @@ public class AlignCellToken extends AlignCell {
 	}
 
 	@Override
-	boolean setWhitespace(int lineBreaks, int spacesLeft, boolean keepMultiline, boolean condenseInnerSpaces) {
+	boolean setWhitespace(int lineBreaks, int spacesLeft, boolean keepMultiline, boolean condenseInnerSpaces, AlignOverlengthAction overlengthAction) {
 		return token.setWhitespace(lineBreaks, additionalIndent + spacesLeft);
 	}
 }
