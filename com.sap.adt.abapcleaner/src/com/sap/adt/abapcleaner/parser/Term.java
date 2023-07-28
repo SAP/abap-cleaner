@@ -156,7 +156,7 @@ public class Term {
 		} else {
 			while (token.getOpensLevel()) {
 				token = token.getNextSibling();
-				if (!token.isClosingParenthesisOrBracket() && !token.isIdentifier())
+				if (!token.isClosingParenthesisOrBracket() && !token.isIdentifier() && !token.textEquals("]["))
 					throw new UnexpectedSyntaxException(token, "Expected an identifier or a closing bracket, but found " + token.getTypeAndTextForErrorMessage() + "!");
 			}
 		}
