@@ -1455,4 +1455,105 @@ class AlignDeclarationsTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testKeepOverlengthValuesBehindType() {
+		rule.configMaxLineLength.setValue(140);
+
+		buildSrc("    CONSTANTS lc_any_constant_with_long_name TYPE if_any_interface=>ty_any_type VALUE if_any_interface=>co_any_value_with_long_name.");
+		buildSrc("    CONSTANTS lc_other_const_with_long_name TYPE if_any_interface=>ty_other_type VALUE if_any_interface=>co_other_value_with_long_name.");
+		buildSrc("    CONSTANTS lc_third_const_with_long_name TYPE if_any_interface=>ty_third_type VALUE if_any_interface=>co_third_value.");
+
+		buildExp("    CONSTANTS lc_any_constant_with_long_name TYPE if_any_interface=>ty_any_type   VALUE if_any_interface=>co_any_value_with_long_name.");
+		buildExp("    CONSTANTS lc_other_const_with_long_name  TYPE if_any_interface=>ty_other_type VALUE if_any_interface=>co_other_value_with_long_name.");
+		buildExp("    CONSTANTS lc_third_const_with_long_name  TYPE if_any_interface=>ty_third_type VALUE if_any_interface=>co_third_value.");
+
+		testRule();
+	}
+
+	@Test
+	void testMoveOverlengthValuesBelowType() {
+		buildSrc("    CONSTANTS lc_any_constant_with_long_name TYPE if_any_interface=>ty_any_type VALUE if_any_interface=>co_any_value_with_long_name.");
+		buildSrc("    CONSTANTS lc_other_const_with_long_name TYPE if_any_interface=>ty_other_type VALUE if_any_interface=>co_other_value_with_long_name.");
+		buildSrc("    CONSTANTS lc_third_const_with_long_name TYPE if_any_interface=>ty_third_type VALUE if_any_interface=>co_third_value.");
+
+		buildExp("    CONSTANTS lc_any_constant_with_long_name TYPE if_any_interface=>ty_any_type");
+		buildExp("                                             VALUE if_any_interface=>co_any_value_with_long_name.");
+		buildExp("    CONSTANTS lc_other_const_with_long_name  TYPE if_any_interface=>ty_other_type");
+		buildExp("                                             VALUE if_any_interface=>co_other_value_with_long_name.");
+		buildExp("    CONSTANTS lc_third_const_with_long_name  TYPE if_any_interface=>ty_third_type VALUE if_any_interface=>co_third_value.");
+
+		testRule();
+	}
+
+	@Test
+	void testMoveOverlengthValuesBelowNameOrType() {
+		rule.configMaxLineLength.setValue(90);
+
+		buildSrc("    CONSTANTS lc_any_constant_with_long_name TYPE if_any_interface=>ty_any_type VALUE if_any_interface=>co_any_value_with_long_name.");
+		buildSrc("    CONSTANTS lc_other_const_with_long_name TYPE if_any_interface=>ty_other_type VALUE if_any_interface=>co_other_value_with_long_name.");
+		buildSrc("    CONSTANTS lc_third_const_with_long_name TYPE if_any_interface=>ty_third_type VALUE if_any_interface=>co_third_value.");
+
+		buildExp("    CONSTANTS lc_any_constant_with_long_name TYPE if_any_interface=>ty_any_type");
+		buildExp("              VALUE if_any_interface=>co_any_value_with_long_name.");
+		buildExp("    CONSTANTS lc_other_const_with_long_name  TYPE if_any_interface=>ty_other_type");
+		buildExp("              VALUE if_any_interface=>co_other_value_with_long_name.");
+		buildExp("    CONSTANTS lc_third_const_with_long_name  TYPE if_any_interface=>ty_third_type");
+		buildExp("                                             VALUE if_any_interface=>co_third_value.");
+
+		testRule();
+	}
+
+	@Test
+	void testMoveOverlengthValuesBehindType() {
+		rule.configMaxLineLength.setValue(140);
+
+		buildSrc("    CONSTANTS lc_any_constant_with_long_name TYPE if_any_interface=>ty_any_type");
+		buildSrc("                                             VALUE if_any_interface=>co_any_value_with_long_name.");
+		buildSrc("    CONSTANTS lc_other_const_with_long_name  TYPE if_any_interface=>ty_other_type");
+		buildSrc("                                             VALUE if_any_interface=>co_other_value_with_long_name.");
+		buildSrc("    CONSTANTS lc_third_const_with_long_name  TYPE if_any_interface=>ty_third_type VALUE if_any_interface=>co_third_value.");
+
+		buildExp("    CONSTANTS lc_any_constant_with_long_name TYPE if_any_interface=>ty_any_type   VALUE if_any_interface=>co_any_value_with_long_name.");
+		buildExp("    CONSTANTS lc_other_const_with_long_name  TYPE if_any_interface=>ty_other_type VALUE if_any_interface=>co_other_value_with_long_name.");
+		buildExp("    CONSTANTS lc_third_const_with_long_name  TYPE if_any_interface=>ty_third_type VALUE if_any_interface=>co_third_value.");
+
+		testRule();
+	}
+
+	@Test
+	void testMoveOverlengthValuesBelowTypeAlignNameOnly() {
+		rule.configAlignNonChainsAction.setEnumValue(AlignDeclarationsAction.ALIGN_NAME_ONLY);
+
+		buildSrc("    CONSTANTS lc_any_constant_with_long_name TYPE if_any_interface=>ty_any_type VALUE if_any_interface=>co_any_value_with_long_name.");
+		buildSrc("    CONSTANTS lc_other_const_with_long_name TYPE if_any_interface=>ty_other_type VALUE if_any_interface=>co_other_value_with_long_name.");
+		buildSrc("    CONSTANTS lc_third_const_with_long_name TYPE if_any_interface=>ty_third_type VALUE if_any_interface=>co_third_value.");
+
+		buildExp("    CONSTANTS lc_any_constant_with_long_name TYPE if_any_interface=>ty_any_type");
+		buildExp("                                             VALUE if_any_interface=>co_any_value_with_long_name.");
+		buildExp("    CONSTANTS lc_other_const_with_long_name TYPE if_any_interface=>ty_other_type");
+		buildExp("                                            VALUE if_any_interface=>co_other_value_with_long_name.");
+		buildExp("    CONSTANTS lc_third_const_with_long_name TYPE if_any_interface=>ty_third_type VALUE if_any_interface=>co_third_value.");
+
+		testRule();
+	}
+
+	@Test
+	void testMoveOverlengthValuesBelowNameOrTypeAlignNameOnly() {
+		rule.configAlignNonChainsAction.setEnumValue(AlignDeclarationsAction.ALIGN_NAME_ONLY);
+		rule.configMaxLineLength.setValue(90);
+
+		buildSrc("    CONSTANTS lc_any_constant_with_long_name TYPE if_any_interface=>ty_any_type VALUE if_any_interface=>co_any_value_with_long_name.");
+		buildSrc("    CONSTANTS lc_other_const_with_long_name TYPE if_any_interface=>ty_other_type VALUE if_any_interface=>co_other_value_with_long_name.");
+		buildSrc("    CONSTANTS lc_third_const_with_long_name TYPE if_any_interface=>ty_third_type VALUE if_any_interface=>co_third_value.");
+
+		buildExp("    CONSTANTS lc_any_constant_with_long_name TYPE if_any_interface=>ty_any_type");
+		buildExp("              VALUE if_any_interface=>co_any_value_with_long_name.");
+		buildExp("    CONSTANTS lc_other_const_with_long_name TYPE if_any_interface=>ty_other_type");
+		buildExp("              VALUE if_any_interface=>co_other_value_with_long_name.");
+		buildExp("    CONSTANTS lc_third_const_with_long_name TYPE if_any_interface=>ty_third_type");
+		buildExp("                                            VALUE if_any_interface=>co_third_value.");
+
+		testRule();
+	}
 }

@@ -38,6 +38,9 @@ public class AlignCellTerm extends AlignCell {
 	@Override
 	int getEndIndexInLastLine() { return term.lastToken.getEndIndexInLine(); }
 
+	@Override
+	boolean contains(Token searchToken) { return term.contains(searchToken); }
+	
 	public AlignCellTerm(Term term) {
 		if (term == null)
 			throw new NullPointerException("term");
@@ -54,7 +57,7 @@ public class AlignCellTerm extends AlignCell {
 	}
 
 	@Override
-	boolean setWhitespace(int lineBreaks, int spacesLeft, boolean keepMultiline, boolean condenseInnerSpaces) {
+	boolean setWhitespace(int lineBreaks, int spacesLeft, boolean keepMultiline, boolean condenseInnerSpaces, AlignOverlengthAction overlengthAction) {
 		boolean changed = false;
 		if (term.firstToken.setWhitespace(lineBreaks, additionalIndent + spacesLeft))
 			changed = true;
@@ -71,6 +74,14 @@ public class AlignCellTerm extends AlignCell {
 					continue;
 				if (token.lineBreaks > 0 && token.getPrev() != null && token.getPrev().isComment())
 					continue;
+				// if an 'emergency line break' was introduced to avoid exceeding line length, keep the line break  
+				// on this Token (e.g. VALUE) and align it with the reference token (e.g. TYPE) 
+				if (overlengthAction != null && token.lineBreaks > 0 && token == overlengthAction.lineBreakToken) {
+					if (token.setWhitespace(token.lineBreaks, overlengthAction.getSpacesLeft())) {
+						changed = true;
+					}
+					continue;
+				}
 				// if the Token is attached to the previous Token, keep it that way as in "DATA lv_textdat1(20) TYPE c."
 				int newSpacesLeft = token.isAttached() ? 0 : 1;
 				if (token.setWhitespace(0, newSpacesLeft)) { 

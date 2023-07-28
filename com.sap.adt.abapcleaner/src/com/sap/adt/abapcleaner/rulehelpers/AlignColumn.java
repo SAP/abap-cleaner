@@ -37,7 +37,7 @@ public class AlignColumn {
 	public final int getForceIndent() { return forceIndent; }
 
 	public final int getEffectiveIndent() { return effectiveIndent; }
-	
+
 	public final AlignCell getCellFromLine(int lineIndex) {
 		return parentTable.getLine(lineIndex).getCell(index);
 	}
@@ -134,6 +134,7 @@ public class AlignColumn {
 					Term joinedTerm = Term.createForTokenRange(destCell.getFirstToken(), cell.getLastToken());
 					AlignCellTerm alignCellTerm = AlignCellTerm.createSpecial(joinedTerm, destCell.additionalIndent, (destCell.overrideTextWidth == 1)); 
 					line.setCell(i, alignCellTerm, true);
+					
 					parentTable.getColumn(i).invalidate();
 					break;
 				} else if (i == 0) {
@@ -238,4 +239,17 @@ public class AlignColumn {
 		}
 		return (minWidth >= 0 && minWidth == maxWidth);
 	}
+
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		for (AlignLine line : parentTable.getLines()) {
+			AlignCell cell = line.getCell(this);
+			sb.append((cell == null) ? "null" : cell.getSimplifiedText());
+			sb.append(System.lineSeparator());
+		}
+		
+		return sb.toString();
+	}
+
 }

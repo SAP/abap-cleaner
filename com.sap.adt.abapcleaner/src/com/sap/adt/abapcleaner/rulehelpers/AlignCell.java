@@ -9,7 +9,7 @@ public abstract class AlignCell {
 	protected int oldStartIndexInLine;
 	protected int additionalIndent;
 	protected int overrideTextWidth = -1;
-
+	
 	public abstract Token getFirstToken();
 
 	public abstract Token getLastToken();
@@ -27,8 +27,15 @@ public abstract class AlignCell {
 	abstract int getMaxEndIndexInAnyLine();
 
 	abstract int getEndIndexInLastLine();
+ 
+	abstract boolean contains(Token searchToken);
+	
+	abstract boolean setWhitespace(int lineBreaks, int spacesLeft, boolean keepMultiline, boolean condenseInnerSpaces, AlignOverlengthAction overlengthAction);
 
-	abstract boolean setWhitespace(int lineBreaks, int spacesLeft, boolean keepMultiline, boolean condenseInnerSpaces);
+	@Override
+	public String toString() {
+		return getSimplifiedText();
+	}
 
 	final String getSimplifiedText() { return getSimplifiedText("|"); }
 	final String getSimplifiedText(String lineBreakSign) {

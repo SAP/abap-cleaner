@@ -64,6 +64,7 @@ public class AlignDeclarationsRule extends AlignDeclarationSectionRuleBase {
    	
    	private void addTable(boolean forStructure) {
    		AlignTable newTable = new AlignTable(MAX_COLUMN_COUNT);
+   		
    		allTables.add(newTable);
   			tableStack.push(newTable);
   			if (forStructure) {
@@ -210,9 +211,10 @@ public class AlignDeclarationsRule extends AlignDeclarationSectionRuleBase {
 	final ConfigEnumValue<AlignDeclarationsAction> configAlignStructureAction = new ConfigEnumValue<AlignDeclarationsAction>(this, "AlignStructureAction", "Action for structures (BEGIN OF ...):", alignStructureActionTexts, AlignDeclarationsAction.ALIGN_NAME_TYPE_LENGTH_ETC, AlignDeclarationsAction.ALIGN_NAME_TYPE_LENGTH_ETC, LocalDate.of(2023, 6, 10) ); 
 	final ConfigEnumValue<StructureAlignStyle> configStructureAlignStyle = new ConfigEnumValue<StructureAlignStyle>(this, "StructureAlignStyle", "Scope of nested structures:", structureAlignStyleTexts, StructureAlignStyle.PER_LEVEL, StructureAlignStyle.ACROSS_LEVELS, LocalDate.of(2023, 5, 21) ); 
 	final ConfigIntValue configFillPercentageToJustifyOwnColumn = new ConfigIntValue(this, "FillPercentageToJustifyOwnColumn", "Fill Ratio to justify own column", "%", 1, 20, 100);
+	final ConfigIntValue configMaxLineLength = new ConfigIntValue(this, "MaxLineLength", "Maximum line length", "(only used to move VALUE clauses to the next line if required)", 80, 130, 255, 200, LocalDate.of(2023, 7, 28));
 	final ConfigBoolValue configCondenseInnerSpaces = new ConfigBoolValue(this, "CondenseInnerSpaces", "Condense inner spaces in non-aligned parts", true, true, LocalDate.of(2023, 6, 10));
 
-	private final ConfigValue[] configValues = new ConfigValue[] { configExecuteOnClassDefAndInterfaces, configAlignChainAction, configAlignNonChainsAction, configAlignAcrossEmptyLines, configAlignAcrossCommentLines, configAlignStructureAction, configStructureAlignStyle, configFillPercentageToJustifyOwnColumn, configCondenseInnerSpaces };
+	private final ConfigValue[] configValues = new ConfigValue[] { configExecuteOnClassDefAndInterfaces, configAlignChainAction, configAlignNonChainsAction, configAlignAcrossEmptyLines, configAlignAcrossCommentLines, configAlignStructureAction, configStructureAlignStyle, configMaxLineLength, configFillPercentageToJustifyOwnColumn, configCondenseInnerSpaces };
 
 	@Override
 	public ConfigValue[] getConfigValues() { return configValues; }
@@ -302,6 +304,11 @@ public class AlignDeclarationsRule extends AlignDeclarationSectionRuleBase {
 			if (table.getLineCount() == 0) 
 				continue;
 
+			// allow moving the VALUE ... clause to the next line (only possible if there is no dedicated READ-ONLY column)
+			if (table.getColumn(Columns.READ_ONLY.getValue()).isEmpty() && table.getColumn(Columns.LINE_END_COMMENT.getValue()).isEmpty()) {
+				table.setMaxLineLength(configMaxLineLength.getValue());
+			}
+			
 			// determine indents for this table, which may or may not contain a keyword column
 			AlignColumn keywordColumn = table.getColumn(Columns.KEYWORD.getValue());
 			int basicIndent = keywordColumn.isEmpty()? tableStart.basicIdentifierIndent : tableStart.keywordIndent;
@@ -583,6 +590,7 @@ public class AlignDeclarationsRule extends AlignDeclarationSectionRuleBase {
 
 		// [VALUE <term>|{IS INITIAL}]
 		if (token.isKeyword("VALUE")) {
+			Token valueStart = token;
 			Token valueLast = token.getLastTokenOnSiblings(true, "VALUE", "IS", "INITIAL");
 			if (valueLast == null) {
 				Term valueTerm = Term.createSimple(token.getNext());
@@ -590,7 +598,11 @@ public class AlignDeclarationsRule extends AlignDeclarationSectionRuleBase {
 			}
 			if (valueLast == null)
 				return null;
-			line.setCell(Columns.VALUE.getValue(), new AlignCellTerm(Term.createForTokenRange(token, valueLast)));
+			AlignCell valueCell = new AlignCellTerm(Term.createForTokenRange(token, valueLast));
+			// if line length is exceeded, the VALUE section could be moved below TYPE or even below the identifier
+			line.setOverlengthLineBreakToken(valueStart, typeStart, identifier.firstToken);
+			line.setCell(Columns.VALUE.getValue(), valueCell);
+			
 			token = valueLast.getNext();
 		}
 

@@ -16,6 +16,10 @@ public class AlignTable {
 
 	boolean canAlignToMonoLine = true;
 
+	/** if this is set, line breaks may be introduced at defined places (AlignCell.overlength...Token), 
+	 * if maximum line length would otherwise be exceeded */
+	private int maxLineLength = 0;
+	
 	public final boolean isEmpty() { return (lines.isEmpty()); }
 
 	public final int getLineCount() { return lines.size(); }
@@ -201,8 +205,8 @@ public class AlignTable {
 					continue;
 				} 
 			
+				Token prev = cell.getFirstToken().getPrev();
 				if (lineBreaks == 0) {
-					Token prev = cell.getFirstToken().getPrev();
 					if (prev != null && prev.isComment()) {
 						// prevent code from being appended to a comment
 						lineBreaks = 1;
@@ -215,15 +219,47 @@ public class AlignTable {
 					// if there should be a line break, then also keep multiple existing line breaks
 					lineBreaks = cell.getFirstToken().lineBreaks;
 				}
+				
+				// if line length would be exceeded, move the 'overlength line break Token' to the next line, aligning it 
+				// with one of the 'fallback Tokens' (especially, in declarations, move VALUE below TYPE or the identifier)
+				AlignOverlengthAction overlengthAction = null;
+				Token lineBreakToken = line.getOverlengthLineBreakToken();
+				if (maxLineLength > 0 && lineBreakToken != null && cell.contains(lineBreakToken) && lineBreaks == 0 && prev != null && !column.rightAlign && !keepMultiline) {
+					// determine the text width from cell start to the end of this AlignLine (assuming everything is condensed)
+					int remainingWidth = cell.getFirstToken().getCondensedWidthUpTo(line.getLastToken(), false);
+					
+					if (prev.getEndIndexInLine() + spacesLeft + remainingWidth >= maxLineLength) {
+						// determine the text width from the 'overlength line break token' to the end of this AlignLine
+						int requiredWidth = lineBreakToken.getCondensedWidthUpTo(line.getLastToken(), false);
+						overlengthAction = new AlignOverlengthAction(lineBreakToken, line.getOverlengthFallbackToken1(), line.getOverlengthFallbackToken2(), requiredWidth, maxLineLength);
+
+						if (lineBreakToken == cell.getFirstToken()) {
+							// directly add a line break at the beginning of this cell, aligning it with the suitable fallback token 
+							// (which was already aligned as part of an earlier AlignCell)
+							lineBreaks = 1;
+							spacesLeft = overlengthAction.getSpacesLeft();
+							overlengthAction = null;
+						} else {
+							// add a line break within(!) the AlignCell, e.g. if a VALUE clause was merged into a TYPE cell;
+							// in such a case, AlignCell.overlength... tokens were propagated when the cells were joined;
+							// for now, only set the lineBreak; spacesLeft will be set later in cell.setWhitespace(), 
+							// because the position of the fallback tokens is not yet determined
+							if (lineBreakToken.setWhitespace(1, lineBreakToken.spacesLeft)) {
+								lineChanged = true;
+							}
+						}
+					}
+				}
+				
 				int usedWidth;
 				if (column.rightAlign) {
 					int cellWidth = keepMultiline ? cell.getMultiLineWidth() : cell.getMonoLineWidth();
 					spacesLeft += (columnWidth - 1 - cellWidth); // columnWidth includes 1 space separating it from the next column
-					if (cell.setWhitespace(lineBreaks, spacesLeft, keepMultiline, condenseInnerSpaces))
+					if (cell.setWhitespace(lineBreaks, spacesLeft, keepMultiline, condenseInnerSpaces, overlengthAction))
 						lineChanged = true;
 					usedWidth = columnWidth - 1;
 				} else {
-					if (cell.setWhitespace(lineBreaks, spacesLeft, keepMultiline, condenseInnerSpaces))
+					if (cell.setWhitespace(lineBreaks, spacesLeft, keepMultiline, condenseInnerSpaces, overlengthAction))
 						lineChanged = true;
 					usedWidth = keepMultiline ? cell.getActualMultiLineWidth() : cell.getMonoLineWidth(); 
 				}
@@ -271,13 +307,7 @@ public class AlignTable {
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		for (AlignLine line : lines) {
-			for (int column = 0; column < maxColumnCount; ++ column) {
-				if (column > 0)
-					sb.append("|");
-				AlignCell cell = line.getCell(column);
-				if (cell != null)
-				sb.append(cell.getSimplifiedText(" "));
-			}
+			sb.append(line.getSimplifiedText());
 			sb.append(System.lineSeparator());
 		}
 		return sb.toString();
@@ -291,5 +321,9 @@ public class AlignTable {
 				removeLineAt(i);
 			}
 		}
+	}
+	
+	public final void setMaxLineLength(int maxLineLength) {
+		this.maxLineLength = maxLineLength;
 	}
 }
