@@ -195,6 +195,11 @@ public class AlignDeclarationsRule extends AlignDeclarationSectionRuleBase {
 				+ LINE_SEP + "      END OF ty_s_inner,"
 				+ LINE_SEP + "      other_component TYPE i,"
 				+ LINE_SEP + "      END OF ty_s_outer_2."
+				+ LINE_SEP 
+				+ LINE_SEP + "    \" if maximum line length is exceeded, VALUE clauses can be moved below TYPE or even below the name" 
+				+ LINE_SEP + "    CONSTANTS lc_any_constant_with_long_name TYPE if_any_interface=>ty_any_type VALUE if_any_interface=>co_any_value_with_long_name."
+				+ LINE_SEP + "    CONSTANTS lc_other_const_with_long_name TYPE if_any_interface=>ty_other_type VALUE if_any_interface=>co_other_value_with_long_name."
+				+ LINE_SEP + "    CONSTANTS lc_third_const_with_long_name TYPE if_any_interface=>ty_third_type VALUE if_any_interface=>co_third_value."
 				+ LINE_SEP + "  ENDMETHOD.";
    }
 
