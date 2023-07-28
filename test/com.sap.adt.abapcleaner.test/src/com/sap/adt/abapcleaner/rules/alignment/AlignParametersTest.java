@@ -2641,4 +2641,97 @@ class AlignParametersTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testMoveChainedTableExpressionBehindCall() {
+		// expect the complete(!) chained table expression to be moved behind the call  
+		buildSrc("    DATA(lv_some_value_with_a_long_name) = lo_any_instance->any_method_with_a_long_name(");
+		buildSrc("                                           lts_any_table ).");
+		buildSrc("    DATA(lv_some_value_with_a_long_name) = lo_any_instance->any_method_with_a_long_name(");
+		buildSrc("                                           lts_any_table[ 1 ] ).");
+		buildSrc("    DATA(lv_some_value_with_a_long_name) = lo_any_instance->any_method_with_a_long_name(");
+		buildSrc("                                           lts_any_table[ 1 ][ 2 ] ).");
+		buildSrc("    DATA(lv_some_value_with_a_long_name) = lo_any_instance->any_method_with_a_long_name(");
+		buildSrc("                                           lts_any_table[ 1 ][ 2 ][ 3 ] ).");
+
+		buildExp("    DATA(lv_some_value_with_a_long_name) = lo_any_instance->any_method_with_a_long_name( lts_any_table ).");
+		buildExp("    DATA(lv_some_value_with_a_long_name) = lo_any_instance->any_method_with_a_long_name( lts_any_table[ 1 ] ).");
+		buildExp("    DATA(lv_some_value_with_a_long_name) = lo_any_instance->any_method_with_a_long_name( lts_any_table[ 1 ][ 2 ] ).");
+		buildExp("    DATA(lv_some_value_with_a_long_name) = lo_any_instance->any_method_with_a_long_name( lts_any_table[ 1 ][ 2 ][ 3 ] ).");
+
+		testRule();
+	}
+
+	@Test
+	void testMoveChainedTableExpressionToNextLine() {
+		// where line length is exceeded, expect the complete chained table expressions to be moved to the next line   
+		rule.configMaxLineLength.setValue(110);
+
+		buildSrc("    DATA(lv_some_value_with_a_long_name) = lo_any_instance->any_method_with_a_long_name( lts_any_table ).");
+		buildSrc("    DATA(lv_some_value_with_a_long_name) = lo_any_instance->any_method_with_a_long_name( lts_any_table[ 1 ] ).");
+		buildSrc("    DATA(lv_some_value_with_a_long_name) = lo_any_instance->any_method_with_a_long_name( lts_any_table[ 1 ][ 2 ] ).");
+		buildSrc("    DATA(lv_some_value_with_a_long_name) = lo_any_instance->any_method_with_a_long_name( lts_any_table[ 1 ][ 2 ][ 3 ] ).");
+
+		buildExp("    DATA(lv_some_value_with_a_long_name) = lo_any_instance->any_method_with_a_long_name( lts_any_table ).");
+		buildExp("    DATA(lv_some_value_with_a_long_name) = lo_any_instance->any_method_with_a_long_name( lts_any_table[ 1 ] ).");
+		buildExp("    DATA(lv_some_value_with_a_long_name) = lo_any_instance->any_method_with_a_long_name(");
+		buildExp("                                               lts_any_table[ 1 ][ 2 ] ).");
+		buildExp("    DATA(lv_some_value_with_a_long_name) = lo_any_instance->any_method_with_a_long_name(");
+		buildExp("                                               lts_any_table[ 1 ][ 2 ][ 3 ] ).");
+
+		testRule();
+	}
+
+	@Test
+	void testCondenseChainedTableExpression() {
+		// expect the chained table expressions to be condensed and moved behind the call
+
+		buildSrc("    any_method(");
+		buildSrc("        lt_any_table[");
+		buildSrc("            1 ] ).");
+		buildSrc("    any_method(");
+		buildSrc("        lt_any_table[");
+		buildSrc("            1 ][");
+		buildSrc("            2 ] ).");
+		buildSrc("    any_method(");
+		buildSrc("        lt_any_table[");
+		buildSrc("            1 ][");
+		buildSrc("            2 ][");
+		buildSrc("            3 ] ).");
+		buildSrc("    any_method(");
+		buildSrc("        par1 = lt_any_table[");
+		buildSrc("                  1 ]");
+		buildSrc("        param2 = lt_any_table[");
+		buildSrc("                    1 ][");
+		buildSrc("                    2 ]");
+		buildSrc("        parameter3 = lt_any_table[");
+		buildSrc("                        1 ][");
+		buildSrc("                        2 ][");
+		buildSrc("                        3 ] ).");
+
+		buildExp("    any_method( lt_any_table[ 1 ] ).");
+		buildExp("    any_method( lt_any_table[ 1 ][ 2 ] ).");
+		buildExp("    any_method( lt_any_table[ 1 ][ 2 ][ 3 ] ).");
+		buildExp("    any_method( par1       = lt_any_table[ 1 ]");
+		buildExp("                param2     = lt_any_table[ 1 ][ 2 ]");
+		buildExp("                parameter3 = lt_any_table[ 1 ][ 2 ][ 3 ] ).");
+
+		testRule();
+	}
+
+	@Test
+	void testVariousChainedTableExpressions() {
+		// expect chaining of table expressions with -comp and ->attribute to be identified as a single Term
+		
+		buildSrc("    any_method(");
+		buildSrc("        par1 = lt_any_table[ 1 ]-comp");
+		buildSrc("        param2 = lt_any_table[ 1 ]-comp[ 2 ]");
+		buildSrc("        parameter3 = lt_any_table[ 1 ]-comp[ 2 ]->mt_attr[ 3 ] ).");
+
+		buildExp("    any_method( par1       = lt_any_table[ 1 ]-comp");
+		buildExp("                param2     = lt_any_table[ 1 ]-comp[ 2 ]");
+		buildExp("                parameter3 = lt_any_table[ 1 ]-comp[ 2 ]->mt_attr[ 3 ] ).");
+
+		testRule();
+	}
 }
