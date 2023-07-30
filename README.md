@@ -20,6 +20,8 @@ While there is no lack of guidelines and rules on what clean ABAP code should lo
 The ABAP cleaner tool does a lot of this work *for you* by **automating** as many of these rules as possible, 
 while giving you full control over which rules are used and how. 
 
+![ABAP cleaner - code cleanup at a keystroke](docs/images/cleanup-example.png "ABAP cleaner - code cleanup at a keystroke")
+
 With ABAP cleaner, you can clean any amount of code from a single statement to an entire code document 
 with **one keystroke**. ABAP cleaner then applies **55+ different [cleanup rules](docs/rules.md)** to your code section, 
 cleaning approx. 1 MB of code per second.
@@ -84,6 +86,9 @@ To install and use the **ABAP cleaner plug-in for ABAP Development Tools** (ADT)
 2. Start ADT, select menu 'Help / Install New Software...', 
    copy the link https://sap.github.io/abap-cleaner/updatesite to the 'Work with' field, press Enter 
    and follow the installation steps, confirming to install ABAP cleaner. ([Known issues](docs/installation-issues.md))
+
+   ![ABAP cleaner plug-in for ABAP Development Tools - installation](docs/images/adt-installation.png "ABAP cleaner plug-in for ABAP Development Tools - installation")
+
 3. After restarting ADT, open an ABAP code document in an editor, and use the menu 
    'Source Code / Clean Up With Interactive ABAP Cleaner...' 
    (shortcuts *Ctrl + 4* or *Ctrl + Shift + 4*), see [usage](docs/usage.md).
