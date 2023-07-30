@@ -8,9 +8,15 @@ To clean ABAP code **interactively**,
    or alternatively, do NOT select any code to apply cleanup to the current method or declaration section. 
 2. **Press *Ctrl + Shift + 4*** or select menu 'Source Code / Clean Up With Interactive ABAP Cleaner...'. 
    This will open the ABAP cleaner UI to compare the original and the cleaned code. 
+
+   ![ABAP cleaner usage - interactive cleanup](images/usage_menu-interactive.png "ABAP cleaner usage - interactive cleanup")
+
 3. **Check** the changes highlighted in the display, using 
    the arrow keys _Left / Right_ to navigate to the previous / next finding 
    (or _Ctrl + Left / Right_ for the previous / next screen with findings). 
+
+   ![ABAP cleaner usage - interactive cleanup](images/usage_interactive.png "ABAP cleaner usage - interactive cleanup")
+
    (Un)check the 'Highlight ...' options to focus on certain types of changes. 
    If you come across a changed statement which you prefer to keep in its original state, 
    simply deactivate the applied rule(s) in the 'Rules Used in Current Selection' list 
@@ -25,6 +31,8 @@ To clean ABAP code **automatically** with a single keystroke,
 2. **Press *Ctrl + 4*** or select menu 'Source Code / Clean Up With Automated ABAP Cleaner'. 
    The cleanup will be done automatically, using the profile and cleanup range that was last selected 
    when you used the interactive ABAP cleaner UI (see above). 
+
+   ![ABAP cleaner usage - automated cleanup](images/usage_automated.png "ABAP cleaner usage - automated cleanup")
 
 If you clean a selection of code, ABAP cleaner will expand your selection to whole ABAP statements. 
 With the plug-in, you are not required to select complete code blocks 
@@ -51,6 +59,9 @@ To clean ABAP code,
    If you come across a changed statement which you prefer to keep in its original state, 
    simply deactivate the applied rule(s) in the 'Rules Used in Current Selection' list 
    for this statement. 
+
+   ![ABAP cleaner usage - deactivating rules for a selection of statements](images/usage_rules-used.png "ABAP cleaner usage - deactivating rules for a selection of statements")
+
 5. **Copy all cleaned code** from ABAP cleaner to the clipboard 
    by pressing _Ctrl + A_ (to select the entire code) and then _Ctrl + C_, 
    or by using the menu 'Code / Whole Result to Clipboard'.

@@ -18,14 +18,9 @@ or discard them all by leaving the window with the '**Cancel**' button.
 Each profile contains all [cleanup rules](rules.md), each rule being either activated or deactivated in the profile. 
 Some of the rules allow further configuration; these options and settings are also profile specific. 
 
-Profiles and other ABAP cleaner settings are stored locally on your computer. 
-To pass on profiles to colleagues, you may use the '**Export...**' or '**Export All...**' buttons 
-and send the exported .cfj file(s) to your colleagues, who could then '**Import...**' them. 
-To change the local profiles folder (e.g. to a synchronized folder), click '**Folder...**' and select the new folder. 
-Existing profiles will be moved to the newly selected folder. 
-Direct access to the local profiles folder (by default, %APPDATA%\SAP\ABAP cleaner\user\profiles)
-is possible from the [main screen](main-window.md) with the menu 'Help / Open Profiles Folder'.
+![ABAP cleaner profiles and rules - profiles](images/profiles_profiles.png "ABAP cleaner profiles and rules - profiles")
 
+Profiles and other ABAP cleaner settings are stored locally on your computer. 
 You may create any number of different profiles by using the 
 '**Create**' button to create a new profile with default settings, 
 or the '**Copy**' button to copy the settings of an existing profile into a new profile. 
@@ -34,7 +29,17 @@ All profiles can be deleted (except the last remaining one).
 For instance, you may want to configure a standard profile in which all rules are activated that you agree to use, 
 and several special profiles for specific cleanup tasks, in which only one or very few rules are activated. 
 
+To pass on profiles to colleagues, you may use the '**Export...**' or '**Export All...**' buttons 
+and send the exported .cfj file(s) to your colleagues, who could then '**Import...**' them. 
+To change the local profiles folder (e.g. to a synchronized folder), click '**Folder...**' and select the new folder. 
+Existing profiles will be moved to the newly selected folder. 
+Direct access to the local profiles folder (by default, %APPDATA%\SAP\ABAP cleaner\user\profiles)
+is possible from the [main screen](main-window.md) with the menu 'Help / Open Profiles Folder'.
+
+
 ### Profile settings
+
+![ABAP cleaner profiles and rules - profile settings](images/profiles_profile-settings.png "ABAP cleaner profiles and rules - profile settings")
 
 In the section 'Rules in Current Profile', you can select whether to '**Automatically activate new features after updates**': 
 This option determines how the current profile is changed if an ABAP cleaner update contains either a new cleanup 
@@ -54,6 +59,8 @@ a specific earlier ABAP cleaner version. In the rules list, newly added rules wi
 and rules with added configuration in yellow color. Added configuration options as well as added buttons on the 
 profiles editor UI will also be highlighted in green. 
 
+![ABAP cleaner profiles and rules - highlighting rules](images/profiles_highlight.png "ABAP cleaner profiles and rules - highlighting rules")
+
 To quickly see how the currently selected profile differs from the default configuration of ABAP cleaner, 
 you may select '**Highlight: Differences to ABAP cleaner defaults**'. To compare the current profile with another 
 profile from your list, select '**Highlight: Differences to profile '...'**'. In both cases, the colored background 
@@ -68,6 +75,9 @@ Click on the '**X**' button to reset the filter and display all available rules.
 ## Rules
 
 The '**Rules in Current Profile**' list shows which rules are activated in the currently selected profile. 
+
+![ABAP cleaner profiles and rules - rules](images/profiles_rules-list.png "ABAP cleaner profiles and rules - rules")
+
 The rules are grouped into several sections 
 ('EMPTY LINES, SPACES, DECLARATIONS, SYNTAX, COMMANDS, PRETTY PRINTER, ALIGNMENT'); 
 you may (de)activate the section headers to (de)activate all rules in this section, 
@@ -81,7 +91,11 @@ and 'Examples' for this rule on the right-hand side of the window.
 
 ### References
 
-The references show which documents the rule is based on. You may click on the links on the screen to open the specific website:
+The references show which documents the rule is based on. 
+
+![ABAP cleaner profiles and rules - rule references](images/profiles_rule-references.png "ABAP cleaner profiles and rules - rule references")
+
+You may click on the links on the screen to open the specific website:
 
 - the [Clean ABAP Styleguide](https://github.com/SAP/styleguides/blob/main/clean-abap/CleanABAP.md);
 - the [Clean Code Checks](https://github.com/SAP/code-pal-for-abap/blob/master/docs/check_documentation.md), as implemented in the [code pal for ABAP](https://github.com/SAP/code-pal-for-abap) tool;
@@ -93,6 +107,8 @@ In some cases, a contradiction of the rule to a guideline may be shown, e.g. wit
 
 Options (if any) allow to configure the current rule. The effects are immediately shown in the example code. 
 Click the 'Options: **Default**' button to revert the configuration of the current rule to the ABAP cleaner defaults. 
+
+![ABAP cleaner profiles and rules - rule options](images/profiles_rule-options.png "ABAP cleaner profiles and rules - rule options")
 
 If you unchecked the option 'Automatically activate new features after updates' (see above) for the current profile, 
 options that were added with a later update to an existing rule will at first be set to a 'neutral value' 
@@ -117,6 +133,9 @@ The examples demonstrate how a rule (and its configuration with options and sett
 You may deactivate the '**Highlight: Changes**' option below the code 
 to appreciate the final look of the code (without background color highlighting) 
 before and after the rule is applied (left -&gt; right code display). 
+
+![ABAP cleaner profiles and rules - rule examples](images/profiles_rule-examples.png "ABAP cleaner profiles and rules - rule examples")
+![ABAP cleaner profiles and rules - rule examples highlight](images/profiles_rule-examples-highlight.png "ABAP cleaner profiles and rules - rule examples highlight")
 
 The option '**Highlight: Declarations**' displays declaration keywords such as ```DATA``` or ```FIELD-SYMBOLS``` in 
 a different color. If you activate the option '**Highlight: Write positions**', variables in write positions will be 

@@ -49,6 +49,8 @@ even if only the first or last few lines of a multi-line statement are selected 
 The 'Cleanup Settings' allow you to select a profile, a default cleanup range, and a restriction to an ABAP release 
 (see below). These settings are immediately applied to the code shown in interactive cleanup. 
 
+![ABAP cleaner main window - cleanup settings](images/main-window_cleanup-settings.png "ABAP cleaner main window - cleanup settings")
+
 Additionally, these settings are saved and used for all subsequent _automated_ cleanups (shortcut _Ctrl + 4_), 
 in which the interactive ABAP cleaner UI is not shown. Therefore, even if you mainly use the automated cleanup, 
 you may occasionally open the interactive ABAP cleaner UI to change these cleanup settings.
@@ -94,6 +96,9 @@ If you want to focus on certain types of changes, activate or deactivate the opt
 'Highlight inner space changes', 
 'Highlight upper/lower case changes' and 
 'Highlight text and line changes' (where 'line changes' refer to added, deleted, or moved lines). 
+
+![ABAP cleaner main window - display settings](images/main-window_display-settings.png "ABAP cleaner main window - display settings")
+
 Both the highlighting in the display (with yellow / orange background color) 
 and the navigation to the previous / next findings (with the _Left / Right_ keys) 
 will then be restricted to the selected types of changes.
@@ -107,6 +112,9 @@ different color; and 'Highlight Write Positions' to show variables in write posi
 
 In order to perform a text search, press _Ctrl + F_ and directly start typing the search string. 
 Press _(Shift +) F3_ or _(Shift +) Enter_ to navigate to the previous / next finding. 
+
+![ABAP cleaner main window - incremental search](images/main-window_incremental-search.png "ABAP cleaner main window - incremental search")
+
 With the options in the 'Incremental Search' section, you can influence 
 whether the left-hand and/or right-hand display is searched, 
 and whether the search shall be limited to 'changed lines only' 
@@ -118,6 +126,9 @@ and whether the search shall be limited to 'changed lines only'
 If you navigate to (any line within) a statement that was changed by ABAP cleaner, or if you select multiple statements, 
 the 'Rules Used in Current Selection' list will show 
 which ABAP cleaner rules were used to clean the selected ABAP statement(s). 
+
+![ABAP cleaner main window - deactivating rules for a selection of statements](images/main-window_rules-used.png "ABAP cleaner main window - deactivating rules for a selection of statements")
+
 Deactivate the checkbox(es) of one or several rule(s) in order to deactivate the rule for the current selection.
 ABAP cleaner will then immediately reprocess the section accordingly. 
 Deactivated rules will still appear as deactivated checkboxes to allow you to reactivate them. 
