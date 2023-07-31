@@ -6,6 +6,14 @@ as well as bugfixes of reported issues, i.e. anything that enhances or changes t
 For a complete list of changes (including documentation, tests, refactoring etc.), please refer to 
 the list of [commits](../../../commits/main).
 
+## 2023-07-31 (version 1.5.1)
+
+* Enhanced online **documentation** with **screenshots**
+* Enhanced rule '**Align declarations**' with option for '**Maximum line length**' ([#77](../../../issues/77))
+* Enhanced rule '**Align parameters and components**' with documentation for option '**Maximum line length B**' ([#81](../../../issues/81))
+* Fixed rule '**Align parameters and components**' for **table expressions** chained with ```][``` ([#75](../../../issues/75))
+* Fixed parser for **```ULINE AT /pos(len)```** ([#80](../../../issues/80))
+
 ## 2023-07-05 (version 1.5)
 
 Many **thanks** to [**se38**](https://github.com/se38), [**ConjuringCoffee**](https://github.com/ConjuringCoffee)
