@@ -17,6 +17,7 @@ Aligns both chains and consecutive declaration lines of CONSTANTS, DATA, FIELD-S
 * \[X\] Align across comment lines
 * Action for structures \(BEGIN OF ...\): \[align name, TYPE, LENGTH, VALUE etc. if filled\]
 * Scope of nested structures: \[align outer structure independently \(like Pretty Printer\)\]
+* Maximum line length \[130\] \(only used to move VALUE clauses to the next line if required\)
 * Fill Ratio to justify own column \[20\] %
 * \[X\] Condense inner spaces in non-aligned parts
 
@@ -81,6 +82,11 @@ Aligns both chains and consecutive declaration lines of CONSTANTS, DATA, FIELD-S
       END OF ty_s_inner,
       other_component TYPE i,
       END OF ty_s_outer_2.
+
+    " if maximum line length is exceeded, VALUE clauses can be moved below TYPE or even below the name
+    CONSTANTS lc_any_constant_with_long_name TYPE if_any_interface=>ty_any_type VALUE if_any_interface=>co_any_value_with_long_name.
+    CONSTANTS lc_other_const_with_long_name TYPE if_any_interface=>ty_other_type VALUE if_any_interface=>co_other_value_with_long_name.
+    CONSTANTS lc_third_const_with_long_name TYPE if_any_interface=>ty_third_type VALUE if_any_interface=>co_third_value.
   ENDMETHOD.
 ```
 
@@ -144,6 +150,13 @@ Resulting code:
         END OF ty_s_inner,
         other_component TYPE i,
       END OF ty_s_outer_2.
+
+    " if maximum line length is exceeded, VALUE clauses can be moved below TYPE or even below the name
+    CONSTANTS lc_any_constant_with_long_name TYPE if_any_interface=>ty_any_type
+                                             VALUE if_any_interface=>co_any_value_with_long_name.
+    CONSTANTS lc_other_const_with_long_name  TYPE if_any_interface=>ty_other_type
+                                             VALUE if_any_interface=>co_other_value_with_long_name.
+    CONSTANTS lc_third_const_with_long_name  TYPE if_any_interface=>ty_third_type VALUE if_any_interface=>co_third_value.
   ENDMETHOD.
 ```
 

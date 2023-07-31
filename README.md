@@ -23,7 +23,7 @@ while giving you full control over which rules are used and how.
 ![ABAP cleaner - code cleanup at a keystroke](docs/images/cleanup-example.png "ABAP cleaner - code cleanup at a keystroke")
 
 With ABAP cleaner, you can clean any amount of code from a single statement to an entire code document 
-with **one keystroke**. ABAP cleaner then applies **55+ different [cleanup rules](docs/rules.md)** to your code section, 
+with **one keystroke**. ABAP cleaner then applies **60+ different [cleanup rules](docs/rules.md)** to your code section, 
 cleaning approx. 1 MB of code per second.
 
 > Please don't get us wrong: Of course, an automated tool can NOT replace all other clean code efforts. 
@@ -70,7 +70,7 @@ allowing you to stay in SAP GUI and do the cleanup with *Ctrl + C*, *Ctrl + V*.
 ### Scope of the Tool
 
 ABAP cleaner can be used to clean up both existing and new code, both product code and test code, 
-both with a "broadband" approach (simultaneously applying 55+ different rules) 
+both with a "broadband" approach (simultaneously applying 60+ different rules) 
 and a focused approach (cleaning with a limited selection of rules). 
 
 ABAP cleaner was implemented with object-oriented ABAP in mind, but it may also be used for code in reports and functions. 

@@ -17,7 +17,7 @@ Aligns parameter assignments in method calls, as well as component assignments i
 ## Options
 
 * Maximum line length A \(normal\) \[120\] 
-* Maximum line length B \(for single-line parentheses\) \[160\] 
+* Maximum line length B \(for tabular style\) \[160\] 
 * Procedural call: continue behind the call for up to \[0\] parameters
 * Functional call: continue behind the call for up to \[100\] parameters
 * \[ \] Procedural call: put keywords \(EXPORTING etc.\) on own line
@@ -39,6 +39,7 @@ Aligns parameter assignments in method calls, as well as component assignments i
         iv_contract_type = if_any_interface=>co_any_contract_type
         iv_item_type = lo_item->get_item_data( )-item_type ).
 
+    " commented-out parameters are aligned, too:
     lts_other_table = cl_other_class=>create_table(
       EXPORTING
         iv_item_key = '12345'
@@ -75,9 +76,10 @@ Aligns parameter assignments in method calls, as well as component assignments i
                                  ( fulfillment_number = lc_fulfill_num_2  qty = lc_fulfill_qty_2 )
                                      ( fulfillment_number = lc_fulfill_num_3  qty = lc_fulfill_qty_3 ) ).
 
-    mts_extra_long_table_name  = VALUE #( ( item_key = '20220030000101'  event_date = '20220301'  total_quantity = '30'  quantity_unit = 'TAG' )
-                                          ( item_key = '20220040000101'  event_date = '20220401'  total_quantity = '30'  quantity_unit = 'TAG' )
-                                          ( item_key = '20220050000101'  event_date = '20220501'  total_quantity = '30'  quantity_unit = 'TAG' ) ) .
+    " tabular style improves readability, therefore some overlength may be tolerated here (max. line length B):
+    mts_table = VALUE #( ( item_key = '20220030000101'  event_date = '20220301'  total_qty = '30'  qty_unit = 'DAY'  amount = '1000.00'  currency = 'EUR' )
+                         ( item_key = '20220040000101'  event_date = '20220401'  total_qty = '30'  qty_unit = 'DAY'  amount = '1500.00'  currency = 'EUR' )
+                         ( item_key = '20220050000101'  event_date = '20220501'  total_qty = '30'  qty_unit = 'DAY'  amount = '2000.00'  currency = 'EUR' ) ).
 
     READ TABLE lt_any_table_name ASSIGNING <ls_table_row> 
          WITH KEY field1 = ls_any_structure-field1
@@ -95,6 +97,7 @@ Resulting code:
                                                       iv_contract_type = if_any_interface=>co_any_contract_type
                                                       iv_item_type     = lo_item->get_item_data( )-item_type ).
 
+    " commented-out parameters are aligned, too:
     lts_other_table = cl_other_class=>create_table( EXPORTING iv_item_key = '12345'
                                                               iv_category = 'ABC'
 *                                                              iv_size     = 100'
@@ -126,10 +129,11 @@ Resulting code:
                                ( fulfillment_number = lc_fulfill_num_2  qty = lc_fulfill_qty_2 )
                                ( fulfillment_number = lc_fulfill_num_3  qty = lc_fulfill_qty_3 ) ).
 
-    mts_extra_long_table_name  = VALUE #(
-        ( item_key = '20220030000101'  event_date = '20220301'  total_quantity = '30'  quantity_unit = 'TAG' )
-        ( item_key = '20220040000101'  event_date = '20220401'  total_quantity = '30'  quantity_unit = 'TAG' )
-        ( item_key = '20220050000101'  event_date = '20220501'  total_quantity = '30'  quantity_unit = 'TAG' ) ) .
+    " tabular style improves readability, therefore some overlength may be tolerated here (max. line length B):
+    mts_table = VALUE #(
+        ( item_key = '20220030000101'  event_date = '20220301'  total_qty = '30'  qty_unit = 'DAY'  amount = '1000.00'  currency = 'EUR' )
+        ( item_key = '20220040000101'  event_date = '20220401'  total_qty = '30'  qty_unit = 'DAY'  amount = '1500.00'  currency = 'EUR' )
+        ( item_key = '20220050000101'  event_date = '20220501'  total_qty = '30'  qty_unit = 'DAY'  amount = '2000.00'  currency = 'EUR' ) ).
 
     READ TABLE lt_any_table_name ASSIGNING <ls_table_row>
          WITH KEY field1           = ls_any_structure-field1
