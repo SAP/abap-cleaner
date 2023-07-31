@@ -100,6 +100,7 @@ public class AlignParametersRule extends RuleForCommands {
 			+ LINE_SEP + "        iv_contract_type = if_any_interface=>co_any_contract_type" 
 			+ LINE_SEP + "        iv_item_type = lo_item->get_item_data( )-item_type )." 
 			+ LINE_SEP 
+			+ LINE_SEP + "    \" commented-out parameters are aligned, too:" 
 			+ LINE_SEP + "    lts_other_table = cl_other_class=>create_table(" 
 			+ LINE_SEP + "      EXPORTING" 
 			+ LINE_SEP + "        iv_item_key = '12345'" 
@@ -136,9 +137,10 @@ public class AlignParametersRule extends RuleForCommands {
 			+ LINE_SEP + "                                 ( fulfillment_number = lc_fulfill_num_2  qty = lc_fulfill_qty_2 )" 
 			+ LINE_SEP + "                                     ( fulfillment_number = lc_fulfill_num_3  qty = lc_fulfill_qty_3 ) )." 
 			+ LINE_SEP 
-			+ LINE_SEP + "    mts_extra_long_table_name  = VALUE #( ( item_key = '20220030000101'  event_date = '20220301'  total_quantity = '30'  quantity_unit = 'TAG' )" 
-			+ LINE_SEP + "                                          ( item_key = '20220040000101'  event_date = '20220401'  total_quantity = '30'  quantity_unit = 'TAG' )" 
-			+ LINE_SEP + "                                          ( item_key = '20220050000101'  event_date = '20220501'  total_quantity = '30'  quantity_unit = 'TAG' ) ) ." 
+			+ LINE_SEP + "    \" tabular style improves readability, therefore some overlength may be tolerated here (max. line length B):" 
+			+ LINE_SEP + "    mts_table = VALUE #( ( item_key = '20220030000101'  event_date = '20220301'  total_qty = '30'  qty_unit = 'DAY'  amount = '1000.00'  currency = 'EUR' )" 
+			+ LINE_SEP + "                         ( item_key = '20220040000101'  event_date = '20220401'  total_qty = '30'  qty_unit = 'DAY'  amount = '1500.00'  currency = 'EUR' )" 
+			+ LINE_SEP + "                         ( item_key = '20220050000101'  event_date = '20220501'  total_qty = '30'  qty_unit = 'DAY'  amount = '2000.00'  currency = 'EUR' ) )." 
 			+ LINE_SEP 
 			+ LINE_SEP + "    READ TABLE lt_any_table_name ASSIGNING <ls_table_row> " 
 			+ LINE_SEP + "         WITH KEY field1 = ls_any_structure-field1" 
@@ -148,7 +150,7 @@ public class AlignParametersRule extends RuleForCommands {
    }
 
 	final ConfigIntValue configMaxLineLength = new ConfigIntValue(this, "MaxLineLength", "Maximum line length A (normal)", "", 80, 120, ABAP.MAX_LINE_LENGTH);
-	final ConfigIntValue configMaxLineLengthForSingleLine = new ConfigIntValue(this, "MaxLineLengthForSingleLine", "Maximum line length B (for single-line parentheses)", "", 80, 160, ABAP.MAX_LINE_LENGTH);
+	final ConfigIntValue configMaxLineLengthForSingleLine = new ConfigIntValue(this, "MaxLineLengthForSingleLine", "Maximum line length B (for tabular style)", "", 80, 160, ABAP.MAX_LINE_LENGTH);
 	final ConfigIntValue configMaxParamCountBehindProceduralCall = new ConfigIntValue(this, "MaxParamCountBehindProceduralCall", "Procedural call: continue behind the call for up to", "parameters", 0, 0, 100);
 	final ConfigIntValue configMaxParamCountBehindFunctionalCall = new ConfigIntValue(this, "MaxParamCountBehindFunctionalCall", "Functional call: continue behind the call for up to", "parameters", 0, 100, 100);
 	final ConfigBoolValue configPutProceduralCallKeywordsOnOwnLine = new ConfigBoolValue(this, "PutProceduralCallKeywordsOnOwnLine", "Procedural call: put keywords (EXPORTING etc.) on own line", false);
