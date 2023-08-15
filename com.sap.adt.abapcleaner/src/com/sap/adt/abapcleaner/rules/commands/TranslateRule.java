@@ -134,7 +134,6 @@ public class TranslateRule extends RuleForCommands {
 		int sourceLineNum = identifier1.sourceLineNum;
 		
 		// remove TRANSLATE
-		identifier1.copyWhitespaceFrom(firstToken);
 		firstToken.removeFromCommand();
 		
 		// create 'identifier = identifier TO UPPER|LOWER'
@@ -187,7 +186,6 @@ public class TranslateRule extends RuleForCommands {
 		String toCharsText = ABAP.toTextStringLiteral(toChars.toString());
 		
 		// remove TRANSLATE
-		identifier1.copyWhitespaceFrom(firstToken);
 		firstToken.removeFromCommand();
 		
 		// create 'identifier = val  = identifier  

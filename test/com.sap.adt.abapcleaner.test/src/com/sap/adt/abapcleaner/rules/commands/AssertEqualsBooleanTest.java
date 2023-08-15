@@ -102,7 +102,7 @@ class AssertEqualsBooleanTest extends RuleTestBase {
 	}
 	
 	@Test
-	void testExpActWithCommentOnEXp() {
+	void testExpActWithCommentOnExp() {
 		buildSrc("    cl_abap_unit_assert=>assert_equals( exp = abap_false  \" comment on exp");
 		buildSrc("                                        act = lv_value ).");
 

@@ -98,8 +98,6 @@ public class CallMethodRule extends RuleForCommands {
 		if (methodName.textEndsWith("(") && methodName.getNext() != null && !methodName.getNext().isPrecededByWhitespace())
 			return false;
 
-		methodName.copyWhitespaceFrom(firstToken);
-
 		command.getFirstToken().removeFromCommand(); // CALL
 		command.getFirstToken().removeFromCommand(); // METHOD
 		if (methodName.textEndsWith("(")) {

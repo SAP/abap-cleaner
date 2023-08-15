@@ -87,12 +87,24 @@ public class AssertEqualsSubrcRule extends AssertEqualsRuleBase {
 		Token actAssignmentOp = zeroToken.getPrev();
 		Token paramName = actAssignmentOp.getPrev();
 		Token next = zeroToken.getNext();
-		if (next != null)
-			next.copyWhitespaceFrom(paramName);
+
+		// prepare to move the following Token (i.e. the line-end comment, the next parameter, or the closing parenthesis) 
+		// to the position of paramToken - or to the previous line, if it is a line-end comment
+		boolean paramContinuedLine = (paramName.lineBreaks == 0);
+		boolean nextContinuedLine = (next.lineBreaks == 0);
 
 		paramName.removeFromCommand();
 		actAssignmentOp.removeFromCommand();
 		zeroToken.removeFromCommand();
+
+		// move the following Token (see above)
+		if (paramContinuedLine) {
+			next.copyWhitespaceFrom(paramName);
+		} else if (next.isComment() && nextContinuedLine && !next.getPrev().isComment()) {
+			// move the line-end comment behind the previous line
+			next.setWhitespace();
+		}		
+
 		return true;
 	}
 

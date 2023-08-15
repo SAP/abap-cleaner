@@ -149,4 +149,30 @@ class NotIsTest extends RuleTestBase {
 		
 		testRule();
 	}
+
+	@Test
+	void testCommentAfterCheck() {
+		buildSrc("CHECK \" comment");
+		buildSrc("      NOT lv_other IS INITIAL.");
+
+		buildExp("CHECK \" comment");
+		buildExp("      lv_other IS NOT INITIAL.");
+
+		putAnyMethodAroundSrcAndExp();
+		
+		testRule();
+	}
+
+	@Test
+	void testCommentBeforeNot() {
+		buildSrc("CHECK NOT lv_any IS INITIAL AND \" comment");
+		buildSrc("      NOT lv_other IS INITIAL.");
+
+		buildExp("CHECK lv_any   IS NOT INITIAL AND \" comment");
+		buildExp("      lv_other IS NOT INITIAL.");
+
+		putAnyMethodAroundSrcAndExp();
+		
+		testRule();
+	}
 }

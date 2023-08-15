@@ -84,13 +84,7 @@ public class ExportingKeywordRule extends RuleForTokens {
 		int endIndex = keyword.getEndIndexInLine();
 		boolean keywordIsFirstInLine = keyword.isFirstTokenInLine();
 		int moveLeft = 0;
-		if (keywordIsFirstInLine && next.isCommentAfterCode()) {
-			moveLeft = 0; // do not change indent of following lines
-			if (!keyword.getPrev().isComment())
-				next.setWhitespace();
-			else
-				next.copyWhitespaceFrom(keyword);
-		} else if (next.lineBreaks == 0) {
+		if (next.lineBreaks == 0 && !next.isComment()) {
 			if (keywordIsFirstInLine) {
 				moveLeft = keyword.getTextLength() + next.spacesLeft - 2;
 				next.spacesLeft += keyword.spacesLeft + keyword.getTextLength(); // will be moved left below

@@ -125,11 +125,12 @@ public class LogicalOperatorPositionRule extends RuleForLogicalExpressions {
 			
 			// move the logical expression to the right and put the keyword in front of it
 			command.addIndent(addIndent, minLineStartInLogExp, logExpStart, end, true);
-			keyword.setWhitespace(logExpStart.lineBreaks, Math.max(minLineStartInLogExp, minExpLineStart));
+			int newLineBreaks = logExpStart.lineBreaks;
 			if (keyword.getNext() != logExpStart) { // keyword is followed by a line-end comment
 				keyword.removeFromCommand(false);
 				logExpStart.insertLeftSibling(keyword, false);
 			}
+			keyword.setWhitespace(newLineBreaks, Math.max(minLineStartInLogExp, minExpLineStart));
 			logExpStart.setWhitespace(0, 1 + relativeIndentAtLogExpStart);
 			changed = true;
 		}
