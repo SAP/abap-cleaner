@@ -120,11 +120,20 @@ public abstract class RuleForDeclarations extends Rule {
 				localVariables = new LocalVariables(this, curMethod);
 			}
 			
-			// skip macro definitions (i.e. DEFINE ... END-OF-DEFINITION sections) 
-			if (command.firstCodeTokenIsKeyword("DEFINE")) {
+			if (isInMethod && command.firstCodeTokenIsAnyKeyword("TEST-SEAM", "TEST-INJECTION")) {
+				// if test seams / test injections are used in this method, rules like the UnusedVariablesRule and 
+				// FinalVariableRule must skip this method, because variable definitions and/or usages may be out of sight
+				localVariables.setMethodUsesMacrosOrTestInjection();
+				// skip this section to avoid variable definitions from these sections to be moved by the LocalDeclarationOrderRule
 				command = command.getNextSibling();
 				continue;
-			}
+
+			} else if (command.firstCodeTokenIsKeyword("DEFINE")) {
+				// skip macro definitions (i.e. DEFINE ... END-OF-DEFINITION sections), 
+				// esp. to avoid variable definitions from these sections to be moved by the LocalDeclarationOrderRule
+				command = command.getNextSibling();
+				continue;
+			} 
 
 			commandForErrorMsg = command;
 			
@@ -143,10 +152,10 @@ public abstract class RuleForDeclarations extends Rule {
 						executeOnOtherCommand(command, localVariables);
 					}
 					
-					// note down if macros are used in this method; in such a case, rules like the UnusedVariablesRule 
-					// must skip this method
+					// if macros are used in this method, rules like the UnusedVariablesRule and FinalVariableRule 
+					// must skip this method, because variable definitions and/or usages may be out of sight
 					if (command.usesMacro()) {
-						localVariables.setMethodUsesMacros();
+						localVariables.setMethodUsesMacrosOrTestInjection();
 					}
 					
 				} catch (UnexpectedSyntaxBeforeChanges ex) {

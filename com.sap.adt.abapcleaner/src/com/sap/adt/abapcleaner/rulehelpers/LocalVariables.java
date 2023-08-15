@@ -33,7 +33,7 @@ public class LocalVariables {
 	
    private Rule rule;
    private MethodInfo methodInfo;
-   private boolean methodUsesMacros;
+   private boolean methodUsesMacrosOrTestInjection;
    
 	public HashMap<String, VariableInfo> locals = new HashMap<String, VariableInfo>();
 
@@ -159,11 +159,11 @@ public class LocalVariables {
 		return varInfo;
 	}
 	
-	public void setMethodUsesMacros() {
-		methodUsesMacros = true;
+	public void setMethodUsesMacrosOrTestInjection() {
+		methodUsesMacrosOrTestInjection = true;
 	}
 	
-	public boolean getMethodUsesMacros() {
-		return methodUsesMacros;
+	public boolean getMethodUsesMacrosOrTestInjection() {
+		return methodUsesMacrosOrTestInjection;
 	}
 }

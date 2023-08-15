@@ -158,7 +158,7 @@ public class UnusedVariablesRule extends RuleForDeclarations {
 	protected void executeOn(Code code, Command methodStart, LocalVariables localVariables, int releaseRestriction) throws UnexpectedSyntaxAfterChanges, IntegrityBrokenException {
 		// skip this method if macros are used inside the method to avoid deletion of variables that are used inside 
 		// the macros (note that macro code may be local or 'out of sight')
-		if (localVariables.getMethodUsesMacros())
+		if (localVariables.getMethodUsesMacrosOrTestInjection())
 			return;
 		
 		for (VariableInfo varInfo : localVariables.getLocalsInDeclarationOrder()) {
