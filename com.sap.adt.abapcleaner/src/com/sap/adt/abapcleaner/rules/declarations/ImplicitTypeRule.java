@@ -181,7 +181,8 @@ public class ImplicitTypeRule extends RuleForCommands {
 		boolean hasLengthInParens = identifier.textEndsWith(")");
 		boolean hasLength = hasLengthInParens;
 		boolean hasDecimals = false; // for packed numbers
-
+		boolean skip = false;
+		
 		Token typeKeyword = null;
 		Token typeIdentifier = null;
 		Token lengthKeyword = null;
@@ -194,11 +195,15 @@ public class ImplicitTypeRule extends RuleForCommands {
 		Token token = identifier.getNextCodeSibling();
 		while (token != null && !token.isCommaOrPeriod()) {
 			if (token.isKeyword()) {
-				if (token.isAnyKeyword("TYPE", "LIKE")) {
+				if (token.isKeyword("TYPE")) {
 					hasType = true;
 					typeKeyword = token;
 					typeIdentifier = token.getNextCodeSibling();
 				
+				} else if (token.isKeyword("LIKE")) {
+					// skip declarations with LIKE
+					skip = true;
+
 				} else if (token.isKeyword("LENGTH")) {
 					hasLength = true;
 					lengthKeyword = token;
@@ -206,14 +211,23 @@ public class ImplicitTypeRule extends RuleForCommands {
 				
 				} else if (token.isKeyword("DECIMALS")) {
 					hasDecimals = true;
+
+				} else if (token.isKeyword("OCCURS")) {
+					// skip obsolete DATA ... OCCURS / TYPES ... OCCURS declarations (forbidden in classes),   
+					// because changing 'DATA lt_val(20) OCCURS 0 WITH HEADER LINE.' into
+					// 'DATA lt_any TYPE c LENGTH 20 OCCURS 0 WITH HEADER LINE.' would be a syntax error, see 
+					// https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/abapdata_occurs.htm
+					// https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/abaptypes_occurs.htm
+					skip = true;
 				}
 			}
 			token = token.getNextCodeSibling();
 		}
 		
-		// skip declarations with LIKE  
-		if (typeKeyword != null && typeKeyword.isKeyword("LIKE"))
+		// skip declarations with LIKE or obsolete OCCURS    
+		if (skip)
 			return token;
+
 		// only continue with built-in types c, n, x, and p without TYPE, the type is "c" (ABAP.DEFAULT_TYPE)
 		boolean isBuiltInTypeCNXP = !hasType || typeIdentifier.textEqualsAny("c", "n", "x", "p");
 		if (!isBuiltInTypeCNXP)

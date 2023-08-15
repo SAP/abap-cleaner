@@ -349,4 +349,22 @@ public class ImplicitTypeTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testDataOccursUnchanged() {
+		// ensure that obsolete TYPES/DATA ... OCCURS definitions are unchanged, because changing  
+		// 'DATA lt_val(20) OCCURS 0 WITH HEADER LINE.' into
+		// 'DATA lt_any TYPE c LENGTH 20 OCCURS 0 WITH HEADER LINE.' would be a syntax error
+		
+		buildSrc("  TYPES ty_tt(20) OCCURS 0.");
+		buildSrc("  DATA lt_any(20) OCCURS 0 WITH HEADER LINE.");
+		buildSrc("  STATICS  gt_any(20) OCCURS 0 WITH HEADER LINE.");
+		buildSrc("  CONSTANTS ct_any(20) OCCURS 0 VALUE IS INITIAL."); // not a syntax error, although ADT highlights OCCURS in red
+
+		copyExpFromSrc();
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }
