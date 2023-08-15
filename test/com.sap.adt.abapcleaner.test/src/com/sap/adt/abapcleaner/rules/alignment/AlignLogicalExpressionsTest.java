@@ -1114,4 +1114,20 @@ class AlignLogicalExpressionsTest extends RuleTestBase {
 		
 		testRule();
 	}
+
+	@Test
+	void testIfWithoutSpacesLeft() {
+		// ensure that no spaces are added left of 'IF' and 'AND'
+		rule.configAlignIfWithBoolOps.setEnumValue(AlignStyle.LEFT_ALIGN);
+
+		buildSrc("IF a = 1");
+		buildSrc("AND b = 2.");
+		buildSrc("ENDIF.");
+
+		buildExp("IF  a = 1");
+		buildExp("AND b = 2.");
+		buildExp("ENDIF.");
+
+		testRule();
+	}
 }

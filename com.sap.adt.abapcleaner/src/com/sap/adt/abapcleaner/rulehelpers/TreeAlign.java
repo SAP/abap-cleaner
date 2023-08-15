@@ -185,7 +185,10 @@ public class TreeAlign {
 				}
 
 				Token firstToken = cell.getFirstToken();
-				int spacesLeft = Math.max(firstToken.spacesLeft + (newIndent - currentIndent), 1);
+				int spacesLeft = firstToken.spacesLeft + (newIndent - currentIndent);
+				if (columnIndent > 0) {
+					spacesLeft = Math.max(spacesLeft, 1);
+				}
 				if (firstToken.lineBreaks == 0) {
 					if (column.doNotAlign || (onlyAlignSameObjects && isAlignmentStoppedForLineOf(cell)))
 						spacesLeft = 1;

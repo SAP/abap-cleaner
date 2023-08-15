@@ -120,8 +120,9 @@ public class ClosingBracketsPositionRule extends RuleForCommands {
 				// therefore remove and insert the comment, NOT the bracket (otherwise, referential integrity is broken)
 				Token prev = token.getPrev();
 				boolean prevIsPseudoComment = prev.isPseudoComment();
-				prev.spacesLeft = Math.max(prev.spacesLeft - token.spacesLeft - token.getTextLength(), 1);
+				int newSpacesLeft = Math.max(prev.spacesLeft - token.spacesLeft - token.getTextLength(), 1);
 				prev.removeFromCommand();
+				prev.spacesLeft = newSpacesLeft;
 				if (lineEndToken.isComment()) {
 					// merge comments
 					String commentWithoutSign = StringUtil.trimStart(lineEndToken.getText().substring(ABAP.COMMENT_SIGN_STRING.length()));
@@ -137,13 +138,9 @@ public class ClosingBracketsPositionRule extends RuleForCommands {
 					// the pragma changes its level (and therefore its siblings) when a bracket is moved up,
 					// therefore remove and insert the pragma, NOT the bracket 
 					Token pragma = token.getPrev();
-					if (pragma.isFirstTokenInLine()) {
-						token.copyWhitespaceFrom(pragma);
-						pragma.setWhitespace();
-					} else {
-						pragma.spacesLeft = Math.max(pragma.spacesLeft - token.spacesLeft - token.getTextLength(), 1);
-					}
+					int newSpacesLeft = pragma.isFirstTokenInLine() ? 1 : Math.max(pragma.spacesLeft - token.spacesLeft - token.getTextLength(), 1);
 					pragma.removeFromCommand();
+					pragma.spacesLeft = newSpacesLeft;
 					token.insertRightSibling(pragma);
 				}
 			}

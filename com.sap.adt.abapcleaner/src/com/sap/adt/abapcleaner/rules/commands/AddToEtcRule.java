@@ -124,6 +124,7 @@ public class AddToEtcRule extends RuleForCommands {
 		destVariable.removeFromCommand();
 		destVariable.copyWhitespaceFrom(keyword1);
 		keyword1.insertLeftSibling(destVariable);
+		keyword1.setWhitespace();
 
 		if (areCalcAssignOpsAllowed) {
 			// insert calculation assignment operator (+= or -=) 

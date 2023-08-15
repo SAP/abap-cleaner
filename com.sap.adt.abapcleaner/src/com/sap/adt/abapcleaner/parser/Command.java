@@ -2001,15 +2001,10 @@ public class Command {
 			if (token.isChainColon()) {
 				Token colon = token;
 				
-				// ensure the next Token will not be appended to a comment and has at least one space before it
+				// ensure the next Token has at least one space before it
 				Token next = colon.getNext();
-				if (next != null) {
-					Token prev = colon.getPrev();
-					if (prev != null && prev.isComment() && next.lineBreaks == 0) 
-						next.copyWhitespaceFrom(colon);
-					else if (next.spacesLeft == 0 && next.lineBreaks == 0)
-						next.setWhitespace();
-				}
+				if (next != null && next.isAttached()) 
+					next.setWhitespace();
 
 				colon.removeFromCommand();
 				token = next;
@@ -2727,7 +2722,8 @@ public class Command {
 		//   return changesSyField(ABAP.SyField.SUBRC) && SyFieldAnalyzer.getSyFieldReadersFor(ABAP.SyField.SUBRC, this).size() >= 2;
 		//   - getCommandsRelatedToPatternMatch() can then return SyFieldAnalyzer.getSyFieldReadersFor(ABAP.SyField.SUBRC, this);
 		
-		return false;
+		return changeControl.wasRuleUsed(RuleID.ALIGN_LOGICAL_EXPRESSIONS) && this.containsCommentBetween(firstToken, null);
+		//return false;
 	}
 	
 	public final ArrayList<Command> getCommandsRelatedToPatternMatch() {

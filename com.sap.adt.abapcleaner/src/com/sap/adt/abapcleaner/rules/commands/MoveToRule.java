@@ -148,6 +148,7 @@ public class MoveToRule extends RuleForCommands {
 		destVariable.removeFromCommand();
 		destVariable.copyWhitespaceFrom(moveToken);
 		moveToken.insertLeftSibling(destVariable);
+		moveToken.setWhitespace();
 		
 		String assignmentOp = toToken.textEquals("?TO") ? "?=" : "=";
 		moveToken.insertLeftSibling(Token.createForAbap(0, 1, assignmentOp, TokenType.ASSIGNMENT_OP, moveToken.sourceLineNum));

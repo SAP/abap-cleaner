@@ -627,6 +627,19 @@ public class Token {
 		int length = spacesLeft + getTextLength();
 		int rightPos = mayMoveFollowingLinesLeft ? getEndIndexInLine() : 0; // save performance if variable is not needed
 
+		// prevent the next Token in the line from being moved up to the previous line, esp. if the previous line ends 
+		// with a comment; if the to-be-removed Token is afterwards moved to a different place, its new lineBreaks / spacesLeft
+		// must therefore be set only AFTER calling .removeFromCommand()
+		if (lineBreaks > 0 && next != null && next.lineBreaks == 0) {
+			int newSpacesLeft = spacesLeft;
+			if (mayMoveFollowingLinesLeft) {
+				// for now, keep the next Token at its position, and adjust the length for the .addIndent() call below
+				newSpacesLeft = rightPos + next.spacesLeft;
+				length = getTextLength() + next.spacesLeft;
+			}
+			next.setWhitespace(lineBreaks, newSpacesLeft);
+		}
+
 		if (parentCommand.firstToken == this)
 			parentCommand.firstToken = next;
 		if (parentCommand.lastToken == this)
@@ -1319,6 +1332,11 @@ public class Token {
 	/** returns this Token unless it is a pragma or a comment; otherwise the next 'code' Token */
 	public final Token getThisOrNextCodeToken() { 
 		return isComment() || isPragma() ? getNextCodeToken() : this; 
+	}
+
+	/** returns this Token unless it is a pragma or a comment; otherwise the next 'code' Token */
+	public final Token getThisOrPrevCodeToken() { 
+		return isComment() || isPragma() ? getPrevCodeToken() : this; 
 	}
 
 	/** returns the next Token that is not a comment (but may be a pragma) */

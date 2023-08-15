@@ -79,7 +79,7 @@ public class NotIsRule extends RuleForLogicalExpressions {
 	protected boolean executeOn(Code code, Command command, Token keyword, Token end, int releaseRestriction) throws UnexpectedSyntaxAfterChanges {
 		LogicalExpression logicalExpression;
 		try {
-			logicalExpression = LogicalExpression.create(keyword.getNext(), end.getPrev());
+			logicalExpression = LogicalExpression.create(keyword.getNextNonCommentToken(), end.getPrev());
 		} catch (UnexpectedSyntaxException ex) {
 			(new UnexpectedSyntaxBeforeChanges(this, ex)).addToLog();
 			return false;

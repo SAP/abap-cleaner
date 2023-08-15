@@ -142,8 +142,6 @@ public class ChainOfOneRule extends RuleForCommands {
 		int oldIndentOfNextNonComment = nextNonComment.getStartIndexInLine();
 		boolean wasColonAfterInitialKeywords = firstToken.isKeyword() && (prevNonComment == firstToken.getLastTokenOfKeywordCollocation()); 
 
-		if (chainSign.getPrev().isComment() && chainSign.getNext().lineBreaks == 0) 
-			chainSign.getNext().copyWhitespaceFrom(chainSign);
 		chainSign.removeFromCommand();
 
 		// if the chain colon was directly after the first keyword (typically, a declaration keyword) or keyword collocation (like CALL METHOD) ...  

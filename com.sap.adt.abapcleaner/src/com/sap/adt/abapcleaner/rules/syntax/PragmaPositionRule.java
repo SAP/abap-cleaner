@@ -208,10 +208,10 @@ public class PragmaPositionRule extends Rule {
 				throw new UnexpectedSyntaxAfterChanges(this,  ex);
 			}
 		} else {
+			token.removeFromCommand();
 			if (token.getNext() != null) {
 				token.getNext().copyWhitespaceFrom(token);
 			}
-			token.removeFromCommand();
 		}
 		token.setWhitespace();
 		insertBefore.insertLeftSibling(token);
@@ -240,8 +240,6 @@ public class PragmaPositionRule extends Rule {
 		Token insertAfter = findLeftSiblingOfTargetPos(token);
 		if (insertAfter == null)
 			return false;
-		if (token.lineBreaks > 0)
-			token.getNext().copyWhitespaceFrom(token);
 		token.removeFromCommand();
 		token.setWhitespace();
 		insertAfter.insertRightSibling(token);

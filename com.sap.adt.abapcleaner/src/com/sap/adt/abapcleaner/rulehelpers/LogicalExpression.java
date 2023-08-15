@@ -76,9 +76,9 @@ public class LogicalExpression {
 
 	final Token getFirstToken() { return firstToken; }
 
-	private Token getFirstTokenExceptOpeningParenthesis() { return isInParentheses ? firstToken.getNext() : firstToken; }
+	private Token getFirstTokenExceptOpeningParenthesis() { return isInParentheses ? firstToken.getNextCodeToken() : firstToken; }
 
-	private Token getLastTokenExceptClosingParenthesis() { return isInParentheses ? lastToken.getPrev() : lastToken; }
+	private Token getLastTokenExceptClosingParenthesis() { return isInParentheses ? lastToken.getPrevCodeToken() : lastToken; }
 
 	private Token getEndTokenExceptClosingParenthesis() { return isInParentheses ? lastToken : endToken; }
 
@@ -95,13 +95,13 @@ public class LogicalExpression {
 		return new LogicalExpression(parentExpression, firstToken, lastToken);
 	}
 	
-	private LogicalExpression(LogicalExpression parentExpression, Token firstToken, Token lastToken) throws UnexpectedSyntaxException {
+	private LogicalExpression(LogicalExpression parentExpression, Token firstToken_, Token lastToken_) throws UnexpectedSyntaxException {
 		this.parentExpression = parentExpression;
-		this.firstToken = firstToken;
-		this.lastToken = lastToken;
+		this.firstToken = firstToken_.getThisOrNextCodeToken();
+		this.lastToken = lastToken_.getThisOrPrevCodeToken();
 
-		endToken = lastToken.getNext();
-		isInParentheses = (firstToken.getOpensLevel() && lastToken.closesLevel() && firstToken.textEquals("(") && lastToken.textEquals(")") && lastToken == firstToken.getNextSibling());
+		endToken = lastToken.getNextCodeToken();
+		isInParentheses = (firstToken.getOpensLevel() && lastToken.closesLevel() && firstToken.textEquals("(") && lastToken.textEquals(")") && lastToken == firstToken.getNextCodeSibling());
 
 		// determine BindingLevel
 		BindingLevel minBindingLevel = BindingLevel.COMPARISON_OR_PREDICATE;
@@ -120,7 +120,7 @@ public class LogicalExpression {
 				if (tokenBindingLevel != BindingLevel.UNKNOWN && tokenBindingLevel.getValue() < minBindingLevel.getValue())
 					minBindingLevel = tokenBindingLevel;
 			}
-			token = token.getNextSibling();
+			token = token.getNextCodeSibling();
 			isFirst = false;
 		}
 		bindingLevel = minBindingLevel;
@@ -143,16 +143,16 @@ public class LogicalExpression {
 					if (token == start && bindingLevel != BindingLevel.NOT)
 						throw new UnexpectedSyntaxException(token, "unexpected position of ABAP keyword '" + keyword + "'");
 					if (token != start)
-						addInnerExpression(start, token.getPrevNonCommentToken());
+						addInnerExpression(start, token.getPrevCodeToken());
 					keywords.add(token);
-					start = token.getNextSibling();
+					start = token.getNextCodeSibling();
 				}
 				if (bindingLevel == BindingLevel.NOT)
 					break;
-				token = token.getNextSibling();
+				token = token.getNextCodeSibling();
 			}
 			if (start != end)
-				addInnerExpression(start, end.getPrevNonCommentToken());
+				addInnerExpression(start, end.getPrevCodeToken());
 			relExprType = RelationalExpressionType.NONE;
 
 		} else {
@@ -209,7 +209,7 @@ public class LogicalExpression {
 		// determine predicative method calls; the result of such method calls can have any data type (not necessarily abap_bool)
 		// and is implicitly evaluated by ABAP with IS NOT INITIAL; negation should therefore use NOT  
 		// (cp. https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/index.htm?file=abenpredicative_method_calls.htm)
-		if (start.isIdentifier() && start.textEndsWith("(") && start.getNextSibling() != null && start.getNextSibling().getNext() == end) {
+		if (start.isIdentifier() && start.textEndsWith("(") && start.getNextCodeSibling() != null && start.getNextCodeSibling().getNextCodeToken() == end) {
 			// relationalExpressionType = RelationalExpressionType.PREDICATE_FUNCTION;
 			return start;
 		}
@@ -238,10 +238,10 @@ public class LogicalExpression {
 				if (token == nextKeyword) {
 					if (nextKeyword.isIdentifier() && nextKeyword.textEndsWith("(")) {
 						result.append(" !" + nextKeyword.getText() + " )!");
-						token = nextKeyword.getNextSibling().getNext();
+						token = nextKeyword.getNextCodeSibling().getNextCodeToken();
 					} else {
 						result.append(" !" + nextKeyword.getText() + "!");
-						token = nextKeyword.getNext();
+						token = nextKeyword.getNextCodeToken();
 					}
 					++keywordIndex;
 					continue;
@@ -257,7 +257,7 @@ public class LogicalExpression {
 				}
 			}
 			result.append(" " + token.getText());
-			token = token.getNext();
+			token = token.getNextCodeToken();
 		}
 		return result.toString().trim();
 	}
@@ -290,7 +290,7 @@ public class LogicalExpression {
 			firstToken.setWhitespace();
 
 			// NOT shall refer to the whole logical (sub-)expression; therefore, decide whether parentheses are required
-			if (firstToken.textEquals("(") && firstToken.getNextSibling() == lastToken) {
+			if (firstToken.textEquals("(") && firstToken.getNextCodeSibling() == lastToken) {
 				// the whole expression is already inside a pair(!) of parentheses; note, however, that a non-pair  
 				// such as '( a = 1 ) AND ( b = 2 )' would require insertion of parentheses: 'NOT ( ( a = 1 ) AND ( b = 2 ) )' 
 			} else if (bindingLevel != BindingLevel.COMPARISON_OR_PREDICATE) {
@@ -302,8 +302,8 @@ public class LogicalExpression {
 		
 		if (bindingLevel == BindingLevel.EQUIV) {
 			Token equivToken = keywords.get(0);
-			if (equivToken.getPrev().isKeyword("NOT"))
-				equivToken.getPrev().removeFromCommand();
+			if (equivToken.getPrevCodeToken().isKeyword("NOT"))
+				equivToken.getPrevCodeToken().removeFromCommand();
 			else
 				insertNotBefore(equivToken, false);
 
@@ -336,12 +336,13 @@ public class LogicalExpression {
 			// BindingLevel.COMPARISON_OR_PREDICATE
 		} else if (relExprType == RelationalExpressionType.COMPARISON) {
 			Token compOp = keywords.get(0);
-			if (convertAbapFalseAndAbapTrue && compOp.textEquals("=") && compOp.getNext().textEqualsAny(ABAP.ABAP_FALSE, ABAP.ABAP_TRUE))
-				compOp.getNext().setText(compOp.getNext().textEquals(ABAP.ABAP_FALSE) ? ABAP.ABAP_TRUE : ABAP.ABAP_FALSE, false);
+			Token nextCode = compOp.getNextCodeToken();
+			if (convertAbapFalseAndAbapTrue && compOp.textEquals("=") && nextCode.textEqualsAny(ABAP.ABAP_FALSE, ABAP.ABAP_TRUE))
+				nextCode.setText(nextCode.textEquals(ABAP.ABAP_FALSE) ? ABAP.ABAP_TRUE : ABAP.ABAP_FALSE, false);
 			else if (compOp.isAnyComparisonOperator("IN", "BETWEEN")) {
-				if (compOp.getPrev().isKeyword("NOT")) {
-					compOp.copyWhitespaceFrom(compOp.getPrev());
-					compOp.getPrev().removeFromCommand();
+				Token prevCode = compOp.getPrevCodeToken();
+				if (prevCode.isKeyword("NOT")) {
+					prevCode.removeFromCommand();
 				} else {
 					Token notToken = Token.createForAbap(compOp.lineBreaks, compOp.spacesLeft, "NOT", TokenType.KEYWORD, compOp.sourceLineNum);
 					compOp.insertLeftSibling(notToken, false);
@@ -357,17 +358,18 @@ public class LogicalExpression {
 
 		} else if (relExprType == RelationalExpressionType.PREDICATE_EXPRESSION) {
 			Token isToken = keywords.get(0);
-			if (isToken.getNext().isKeyword("NOT")) {
-				isToken.getNext().removeFromCommand();
+			Token nextCode = isToken.getNextCodeToken();
+			if (nextCode.isKeyword("NOT")) {
+				nextCode.removeFromCommand();
 			} else {
-				insertNotBefore(isToken.getNext(), false);
+				insertNotBefore(nextCode, false);
 			}
 			
 		} else if (relExprType == RelationalExpressionType.PREDICATE_FUNCTION) {
 			Token functionCall = keywords.get(0);
-			if (functionCall != firstToken && functionCall.getPrev().isKeyword("NOT")) {
+			if (functionCall != firstToken && functionCall.getPrevCodeToken().isKeyword("NOT")) {
 				// this branch is probably impossible to reach, because code like "NOT line_exists( ... )" would be handled above with BindingLevel.NOT
-				removeLeadingNot(functionCall.getPrev());
+				removeLeadingNot(functionCall.getPrevCodeToken());
 			} else {
 				insertNotBefore(functionCall, true);
 			}
@@ -401,7 +403,7 @@ public class LogicalExpression {
 			// EQUIV is negated with NOT EQUIV and vice versa, so inner expressions always remain unchanged
 			negatedComplexity = currentComplexity;
 			Token equivToken = keywords.get(0);
-			if (equivToken.getPrev().isKeyword("NOT")) {
+			if (equivToken.getPrevCodeToken().isKeyword("NOT")) {
 				currentComplexity += COMPLEXITY_OF_INNER_NOT;
 			} else {
 				negatedComplexity += COMPLEXITY_OF_INNER_NOT;
@@ -422,16 +424,16 @@ public class LogicalExpression {
 			// BindingLevel.COMPARISON_OR_PREDICATE
 		} else if (relExprType == RelationalExpressionType.COMPARISON) {
 			Token compOp = keywords.get(0);
-			if (convertAbapFalseAndAbapTrue && compOp.textEquals("=") && compOp.getNext().textEquals(ABAP.ABAP_FALSE)) {
+			if (convertAbapFalseAndAbapTrue && compOp.textEquals("=") && compOp.getNextCodeToken().textEquals(ABAP.ABAP_FALSE)) {
 				currentComplexity += COMPLEXITY_OF_EQ_FALSE;
 				negatedComplexity += COMPLEXITY_OF_EQ_TRUE;
 
-			} else if (convertAbapFalseAndAbapTrue && compOp.textEquals("=") && compOp.getNext().textEquals(ABAP.ABAP_TRUE)) {
+			} else if (convertAbapFalseAndAbapTrue && compOp.textEquals("=") && compOp.getNextCodeToken().textEquals(ABAP.ABAP_TRUE)) {
 				currentComplexity += COMPLEXITY_OF_EQ_TRUE;
 				negatedComplexity += COMPLEXITY_OF_EQ_FALSE;
 				
 			} else if (compOp.isAnyComparisonOperator("IN", "BETWEEN")) {
-				if (compOp.getPrev().isKeyword("NOT")) {
+				if (compOp.getPrevCodeToken().isKeyword("NOT")) {
 					currentComplexity += COMPLEXITY_OF_INNER_NOT;
 				} else {
 					negatedComplexity += COMPLEXITY_OF_INNER_NOT;
@@ -451,7 +453,7 @@ public class LogicalExpression {
 		} else if (relExprType == RelationalExpressionType.PREDICATE_EXPRESSION) {
 			negatedComplexity = currentComplexity;
 			Token isToken = keywords.get(0);
-			if (isToken.getNext().isKeyword("NOT")) {
+			if (isToken.getNextCodeToken().isKeyword("NOT")) {
 				currentComplexity += COMPLEXITY_OF_INNER_NOT;
 			} else {
 				negatedComplexity += COMPLEXITY_OF_INNER_NOT;
@@ -460,7 +462,7 @@ public class LogicalExpression {
 		} else if (relExprType == RelationalExpressionType.PREDICATE_FUNCTION) {
 			negatedComplexity = currentComplexity;
 			Token functionCall = keywords.get(0);
-			if (functionCall != firstToken && functionCall.getPrev().isKeyword("NOT")) {
+			if (functionCall != firstToken && functionCall.getPrevCodeToken().isKeyword("NOT")) {
 				// this branch is probably impossible to reach, because code like "NOT line_exists( ... )" would be handled above with BindingLevel.NOT
 				currentComplexity += COMPLEXITY_OF_INNER_NOT;
 			} else {
@@ -544,7 +546,7 @@ public class LogicalExpression {
 		// the existing NOT is removed and only afterwards, parentheses are introduced
 		LogicalExpression adjustLogExp = this;
 		while (adjustLogExp != null && adjustLogExp.firstToken == notToken) {
-			adjustLogExp.firstToken = notToken.getNext();
+			adjustLogExp.firstToken = notToken.getNextCodeToken();
 			adjustLogExp = adjustLogExp.parentExpression; 
 		}
 
@@ -584,12 +586,12 @@ public class LogicalExpression {
 
 				tree.add(TreeAlignColumnType.OPEN_BRACKET_FOR_REL, isInParentheses ? firstToken : null);
 				if (relExprType == RelationalExpressionType.PREDICATE_FUNCTION)
-					tree.add(TreeAlignColumnType.REL_FUNCTION, getFirstTokenExceptOpeningParenthesis().getNextWhileComment(),
-							getLastTokenExceptClosingParenthesis().getPrevWhileComment());
+					tree.add(TreeAlignColumnType.REL_FUNCTION, getFirstTokenExceptOpeningParenthesis(),
+							getLastTokenExceptClosingParenthesis());
 				else {
-					tree.add(TreeAlignColumnType.REL_TERM1, getFirstTokenExceptOpeningParenthesis().getNextWhileComment(), keywords.get(0).getPrevNonCommentToken());
+					tree.add(TreeAlignColumnType.REL_TERM1, getFirstTokenExceptOpeningParenthesis(), keywords.get(0).getPrevCodeToken());
 					tree.add(TreeAlignColumnType.REL_OPERATOR, keywords.get(0));
-					tree.add(TreeAlignColumnType.REL_TERM2, keywords.get(0).getNextNonCommentToken(), getLastTokenExceptClosingParenthesis().getPrevWhileComment());
+					tree.add(TreeAlignColumnType.REL_TERM2, keywords.get(0).getNextCodeToken(), getLastTokenExceptClosingParenthesis());
 				}
 				tree.add(TreeAlignColumnType.CLOSE_BRACKET_FOR_REL, isInParentheses ? lastToken : null);
 

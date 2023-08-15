@@ -331,4 +331,84 @@ class LogicalOperatorPositionTest extends RuleTestBase {
 		
 		testRule();
 	}
+
+	@Test
+	void testCheckWithComments() {
+		buildSrc("    CHECK a IS INITIAL AND");
+		buildSrc("          \" comment 1");
+		buildSrc("      abs( lv_value ) > abs( lv_other_value ) AND \" comment 2");
+		buildSrc("          \" comment 3");
+		buildSrc("*         comment 4");
+		buildSrc("      b <> c.");
+		buildSrc("");
+		buildSrc("    CHECK sy-subrc = 0 AND");
+		buildSrc("         ( lv_any = 1 OR \" comment");
+		buildSrc("            lv_other = 2 ). \" comment");
+		buildSrc("");
+		buildSrc("    CHECK ( <ls_any>-comp = abap_true AND");
+		buildSrc("           <ls_any>-other_comp = abap_true ) OR");
+		buildSrc("          \" comment");
+		buildSrc("          ( <ls_any>-comp = abap_false AND");
+		buildSrc("                <ls_any>-other_comp = abap_false AND \" comment");
+		buildSrc("                <ls_any>-third_comp = 1");
+		buildSrc("          \" another comment");
+		buildSrc("              ).");
+		buildSrc("");
+		buildSrc("    CHECK \" comment");
+		buildSrc("         ( <ls_any>-comp = abap_false AND");
+		buildSrc("         <ls_any>-other_comp = abap_true ) OR");
+		buildSrc("          \" other comment");
+		buildSrc("*           third comment");
+		buildSrc("         ( <ls_any>-comp = abap_true AND");
+		buildSrc("         <ls_any>-other_comp = abap_false ).");
+
+		buildExp("    CHECK     a               IS INITIAL");
+		buildExp("          \" comment 1");
+		buildExp("          AND abs( lv_value )  > abs( lv_other_value ) \" comment 2");
+		buildExp("          \" comment 3");
+		buildExp("*         comment 4");
+		buildExp("          AND b               <> c.");
+		buildExp("");
+		buildExp("    CHECK     sy-subrc = 0");
+		buildExp("          AND (    lv_any   = 1 \" comment");
+		buildExp("                OR lv_other = 2 ). \" comment");
+		buildExp("");
+		buildExp("    CHECK    (     <ls_any>-comp       = abap_true");
+		buildExp("               AND <ls_any>-other_comp = abap_true )");
+		buildExp("          \" comment");
+		buildExp("          OR (     <ls_any>-comp       = abap_false");
+		buildExp("               AND <ls_any>-other_comp = abap_false \" comment");
+		buildExp("               AND <ls_any>-third_comp = 1");
+		buildExp("          \" another comment");
+		buildExp("             ).");
+		buildExp("");
+		buildExp("    CHECK \" comment");
+		buildExp("             (     <ls_any>-comp       = abap_false");
+		buildExp("               AND <ls_any>-other_comp = abap_true )");
+		buildExp("          \" other comment");
+		buildExp("*           third comment");
+		buildExp("          OR (     <ls_any>-comp       = abap_true");
+		buildExp("               AND <ls_any>-other_comp = abap_false ).");
+
+		testRule();
+	}
+
+	@Test
+	void testLoopWithComments() {
+		buildSrc("    LOOP AT mt_any ASSIGNING <ls_any>");
+		buildSrc("         WHERE comp1 = 1 AND");
+		buildSrc("           component2 = 2 AND");
+		buildSrc("*          comp3 = 3 AND");
+		buildSrc("           comp4 = 4.");
+		buildSrc("    ENDLOOP.");
+
+		buildExp("    LOOP AT mt_any ASSIGNING <ls_any>");
+		buildExp("         WHERE     comp1      = 1");
+		buildExp("               AND component2 = 2");
+		buildExp("*          comp3 = 3 AND");
+		buildExp("               AND comp4      = 4.");
+		buildExp("    ENDLOOP.");
+
+		testRule();
+	}
 }

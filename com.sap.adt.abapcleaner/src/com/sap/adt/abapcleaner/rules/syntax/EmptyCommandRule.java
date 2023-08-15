@@ -91,10 +91,12 @@ public class EmptyCommandRule extends RuleForCommands {
 		if (firstComment != null && firstComment.isCommentAfterCode() && firstToken.lineBreaks == 0) {
 			Command prevCommand = command.getPrev();
 			if (prevCommand != null && !prevCommand.getLastToken().isComment()) {
-				firstComment.copyWhitespaceFrom(firstToken);
-				firstComment.ensureWhitespace(); // at least one space
+				int newLineBreaks = firstToken.lineBreaks;
+				int newSpacesLeft = firstToken.spacesLeft;
 				firstComment.removeFromCommand();
 				firstToken.setWhitespace(1, command.getIndent());
+				firstComment.setWhitespace(newLineBreaks, newSpacesLeft);
+				firstComment.ensureWhitespace(); // at least one space
 				prevCommand.getLastToken().insertRightSibling(firstComment);
 			}
 		}

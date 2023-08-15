@@ -34,23 +34,29 @@ public abstract class AssertEqualsRuleBase extends RuleForCommands {
 		Token paramToken = token.getLastTokenDeep(true, TokenSearch.ASTERISK, paramName);
 		Token assignmentOp = paramToken.getNext();
 		Token boolValue = assignmentOp.getNext();
+		Token next = boolValue.getNext();
 
 		// change assert method
 		assertCall.setText(getStaticAssertClassCall(newMethodName), true);
 
-		// move following Token (i.e. the line-end comment, the next parameter, or the closing parenthesis) to the position of paramToken
-		// or to the previous line, if it is a line-end comment and the Token before paramToken is NOT a comment (neither line-end nor full-line),
-		Token next = boolValue.getNext();
-		if (next.isCommentAfterCode() && paramToken.lineBreaks > 0 && !paramToken.getPrev().isComment())
-			next.setWhitespace(); // after removing the "(paramToken) = ..." Tokens, this will be at the end of the previous line
-		else
-			next.copyWhitespaceFrom(paramToken);
+		// prepare to move the following Token (i.e. the line-end comment, the next parameter, or the closing parenthesis) 
+		// to the position of paramToken - or to the previous line, if it is a line-end comment
+		boolean paramContinuedLine = (paramToken.lineBreaks == 0);
+		boolean nextContinuedLine = (next.lineBreaks == 0);
 		boolean mayRemoveClosingBracket = (boolValue.getNextCodeSibling() == null);
 
 		// remove the "(paramName) = ..." assignment
 		paramToken.removeFromCommand();
 		assignmentOp.removeFromCommand();
 		boolValue.removeFromCommand();
+
+		// move the following Token (see above)
+		if (paramContinuedLine) {
+			next.copyWhitespaceFrom(paramToken);
+		} else if (next.isComment() && nextContinuedLine && !next.getPrev().isComment()) {
+			// move the line-end comment behind the previous line
+			next.setWhitespace();
+		}		
 
 		if (performAdditionalCleanUp(assertCall))
 			mayRemoveClosingBracket = true;
