@@ -12,7 +12,7 @@ Removes multiple spaces from empty parentheses and adds missing spaces between p
 
 * \[X\] Remove multiple spaces from empty parentheses
 * \[X\] Add space between parentheses and character literals
-* \[ \] Add space in condensed cases with single character literal: ...\('...'\)
+* \[X\] Add space in condensed cases with single character literal: ...\('...'\)
 
 ## Examples
 
@@ -71,7 +71,7 @@ Resulting code:
                              iv_other_param = VALUE #( ) ).
 
     " these cases are syntactically correct even without spaces:
-    any_method('text field literal').
+    any_method( 'text field literal' ).
     any_method( 'other literal' ).
     any_method( 'third literal' ).
 
@@ -85,9 +85,9 @@ Resulting code:
                          ( CONV #( '22.22' ) )
                          ( CONV #( '33.33' ) ) ).
 
-    lt_amount = VALUE #( ( CONV #('11.11') )
-                         ( CONV #('22.22') )
-                         ( CONV #('33.33') ) ).
+    lt_amount = VALUE #( ( CONV #( '11.11' ) )
+                         ( CONV #( '22.22' ) )
+                         ( CONV #( '33.33' ) ) ).
 
     " introducing spaces here would be a syntax error:
     CALL METHOD lo_instance->('METHOD_NAME').
@@ -95,7 +95,7 @@ Resulting code:
     lr_data_ref->('COMPONENT_NAME') = 1.
 
     " the first two cases are executable but create a syntax warning without a space after the opening (
-    other_method(`text string literal`).
+    other_method( `text string literal` ).
     other_method( `other literal` ).
     other_method( `third literal` ).
 

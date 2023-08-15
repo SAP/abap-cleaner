@@ -6,7 +6,20 @@ as well as bugfixes of reported issues, i.e. anything that enhances or changes t
 For a complete list of changes (including documentation, tests, refactoring etc.), please refer to 
 the list of [commits](../../../commits/main).
 
+## 2023-08-15 (version 1.5.2)
+
+**Thanks** a lot to [**openPhiL**](https://github.com/openPhiL), [**thebestabapdeveloper**](https://github.com/thebestabapdeveloper) 
+and [**ConjuringCoffee**](https://github.com/ConjuringCoffee) for the bug reports behind these fixes!
+
+* Fixed rule '**Make implicit type explicit**' for obsolete DATA ... OCCURS ([#89](../../../issues/89))
+* Fixed rule '**Move AND/OR etc. from line end to next line start**' for comments at line end ([#88](../../../issues/88))
+* Fixed rule '**Delete unused variables**' to skip methods with test seams or test injection ([#87](../../../issues/87))
+* Changed default configuration of rule '**Standardize spaces next to parentheses**', option '**Add space in condensed cases ...**' (now active by default)
+
 ## 2023-07-31 (version 1.5.1)
+
+Great **thanks** to [**alexlukas**](https://github.com/alexlukas) and [**ConjuringCoffee**](https://github.com/ConjuringCoffee) 
+for their ideas and bug reports!
 
 * Enhanced online **documentation** with **screenshots**
 * Enhanced rule '**Align declarations**' with option for '**Maximum line length**' ([#77](../../../issues/77))
