@@ -330,6 +330,9 @@ public abstract class RuleForDeclarations extends Rule {
 					token = token.getNextCodeSibling();
 					isBoundStructuredData = true;
 					
+					if (token.isKeyword("ENUM"))
+						token = token.getNextCodeSibling();
+					
 				} else if (blockLevel > 0) { 	
 					break;
 				}
@@ -525,14 +528,17 @@ public abstract class RuleForDeclarations extends Rule {
 				boolean isUsageInSelfAssignment = !isAssignment && !isFieldSymbol && AbapCult.stringEquals(objectName, assignedToVar, true);
 				localVariables.addUsage(token, objectName, isAssignment, isUsageInSelfAssignment, false, writesToReferencedMemory);
 				
-				// in "var+offset(length)", "offset" may also be an identifier
-				if (readPos < tokenText.length() && tokenText.charAt(readPos) == ABAP.SUBSTRING_OFFSET) {
-					objectName = ABAP.readTillEndOfVariableName(tokenText, readPos + 1, false);
-					if (!StringUtil.isNullOrEmpty(objectName)) {
-						localVariables.addUsage(token, objectName);
-						readPos += objectName.length();
-					} else {
-						readPos = tokenText.indexOf(ABAP.SUBSTRING_LENGTH_OPEN, readPos);
+				// in "var+offset(length)" or "struc-component+offset(length), "offset" may be an identifier as well
+				if (readPos < tokenText.length()) {
+					int substringPos = tokenText.indexOf(ABAP.SUBSTRING_OFFSET, readPos);
+					if (substringPos >= readPos) {
+						objectName = ABAP.readTillEndOfVariableName(tokenText, substringPos + 1, false);
+						if (!StringUtil.isNullOrEmpty(objectName)) {
+							localVariables.addUsage(token, objectName);
+							readPos = substringPos + objectName.length();
+						} else {
+							readPos = tokenText.indexOf(ABAP.SUBSTRING_LENGTH_OPEN, substringPos);
+						}
 					}
 				}
 				

@@ -1833,4 +1833,59 @@ class UnusedVariablesTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testComponentWithOffset() {
+		buildSrc("    DATA(lv_offset) = 1.");
+		buildSrc("    DATA(lv_offset2) = 2.");
+		buildSrc("    rv_result = is_struc-component+lv_offset(1).");
+		buildSrc("    rv_result = cl_any=>mo_class_attr->mo_attr->ms_struc-component+lv_offset2(1).");
+
+		copyExpFromSrc();
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testDynamicEnumStrucAssignment() {
+		// ensure that the usage of lv_index in the dynamic assignment of an enum structure component is correctly 
+		// identified as a usage (and nothing is changed)
+		
+		buildSrc("    TYPES:");
+		buildSrc("      BEGIN OF ENUM size STRUCTURE sz,");
+		buildSrc("        small,");
+		buildSrc("        medium,");
+		buildSrc("        large,");
+		buildSrc("      END OF ENUM size STRUCTURE sz.");
+		buildSrc("");
+		buildSrc("    DATA(lv_index) = 2.");
+		buildSrc("    ASSIGN sz-(lv_index) TO FIELD-SYMBOL(<ls>).");
+		buildSrc("    WRITE / <ls>. \" MEDIUM");
+
+		copyExpFromSrc();
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testUsageAfterReturn() {
+		// ensure that a usage after the RETURN statement is correctly identified (and nothing is changed)
+		
+		buildSrc("    DATA(lv_value) = 1.");
+		buildSrc("    IF iv_increase = abap_true.");
+		buildSrc("      RETURN iv_value + lv_value.");
+		buildSrc("    ELSE.");
+		buildSrc("      RETURN iv_value.");
+		buildSrc("    ENDIF.");
+
+		copyExpFromSrc();
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }
