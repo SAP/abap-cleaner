@@ -1793,4 +1793,44 @@ class UnusedVariablesTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testTestSeamSkipped() {
+		// ensure that the variable is NOT removed if the method contains a TEST-SEAM, because a usage of the variable
+		// may be injected
+		buildSrc("  METHOD product_code.");
+		buildSrc("    DATA lv_any TYPE i.");
+		buildSrc("");
+		buildSrc("    TEST-SEAM declaration.");
+		buildSrc("    END-TEST-SEAM.");
+		buildSrc("");
+		buildSrc("    TEST-SEAM usage.");
+		buildSrc("      \" a usage of lv_any may be injected here!");
+		buildSrc("    END-TEST-SEAM.");
+		buildSrc("  ENDMETHOD.");
+
+		copyExpFromSrc();
+
+		testRule();
+	}
+
+	@Test
+	void testTestInjectionSkipped() {
+		// ensure that nothing happens if the method contains a TEST-INJECTION, because the injection for the declaration
+		// may be below the usage of the variable
+
+		buildSrc("  METHOD test_method.");
+		buildSrc("    TEST-INJECTION usage.");
+		buildSrc("      rv_result = lv_any + lv_other.");
+		buildSrc("    END-TEST-INJECTION.");
+		buildSrc("");
+		buildSrc("    TEST-INJECTION declaration.");
+		buildSrc("      DATA lv_other TYPE i.");
+		buildSrc("    END-TEST-INJECTION.");
+		buildSrc("  ENDMETHOD.");
+
+		copyExpFromSrc();
+
+		testRule();
+	}
 }
