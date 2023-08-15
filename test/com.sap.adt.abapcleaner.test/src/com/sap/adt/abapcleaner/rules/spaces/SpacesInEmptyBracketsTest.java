@@ -19,7 +19,7 @@ class SpacesInEmptyBracketsTest extends RuleTestBase {
 		// setup default test configuration (may be modified in the individual test methods)
 		rule.configRemoveMultiSpaceIfEmpty.setValue(true);
 		rule.configSeparateFromCharLiterals.setValue(true);
-		rule.configSeparateCondensedCases.setValue(false);
+		rule.configSeparateCondensedCases.setValue(true);
 	}
 	
 	@Test
@@ -222,6 +222,8 @@ class SpacesInEmptyBracketsTest extends RuleTestBase {
 
 	@Test
 	void testKeepCondensedCases() {
+		rule.configSeparateCondensedCases.setValue(false);
+
 		buildSrc("    any_method('text field literal').");
 		buildSrc("    other_method(`text string literal`).");
 		buildSrc("");
