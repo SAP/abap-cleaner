@@ -79,7 +79,7 @@ public class SpacesInEmptyBracketsRule extends RuleForTokens {
 
 	final ConfigBoolValue configRemoveMultiSpaceIfEmpty = new ConfigBoolValue(this, "RemoveMultiSpaceIfEmpty", "Remove multiple spaces from empty parentheses", true);
 	final ConfigBoolValue configSeparateFromCharLiterals = new ConfigBoolValue(this, "SeparateFromCharLiterals", "Add space between parentheses and character literals", true, false, LocalDate.of(2023, 5, 30));
-	final ConfigBoolValue configSeparateCondensedCases = new ConfigBoolValue(this, "SeparateCondensedCases", "Add space in condensed cases with single character literal: ...('...')", false, false, LocalDate.of(2023, 5, 30));
+	final ConfigBoolValue configSeparateCondensedCases = new ConfigBoolValue(this, "SeparateCondensedCases", "Add space in condensed cases with single character literal: ...('...')", true, false, LocalDate.of(2023, 5, 30));
 
 	private final ConfigValue[] configValues = new ConfigValue[] { configRemoveMultiSpaceIfEmpty, configSeparateFromCharLiterals, configSeparateCondensedCases };
 
