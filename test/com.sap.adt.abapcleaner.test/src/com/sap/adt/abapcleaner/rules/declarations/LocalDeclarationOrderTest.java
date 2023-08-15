@@ -1235,10 +1235,9 @@ public class LocalDeclarationOrderTest extends RuleTestBase {
 
 	@Test
 	void testTestSeamSkipped() {
-		// ensure that nothing happens if the method contains a TEST-SEAM, because we are not sure what the test injection
-		// does with the declarations and usages
+		// ensure that nothing happens if a (product code) method contains a TEST-SEAM, 
+		// because we are not sure what the test injection does with the declarations and usages
 		
-		buildSrc("  METHOD product_code.");
 		buildSrc("    TEST-SEAM declaration.");
 		buildSrc("      DATA lv_any TYPE i.");
 		buildSrc("    END-TEST-SEAM.");
@@ -1246,19 +1245,19 @@ public class LocalDeclarationOrderTest extends RuleTestBase {
 		buildSrc("    TEST-SEAM usage.");
 		buildSrc("      \" a usage of lv_any may be injected here");
 		buildSrc("    END-TEST-SEAM.");
-		buildSrc("  ENDMETHOD.");
 
 		copyExpFromSrc();
+
+		putAnyMethodAroundSrcAndExp();
 
 		testRule();
 	}
 
 	@Test
 	void testTestInjectionSkipped() {
-		// ensure that nothing happens if the method contains a TEST-INJECTION, because variables declared inside an injection 
-		// must NOT be moved away
+		// ensure that nothing happens if a (test) method contains a TEST-INJECTION,   
+		// because variables declared inside an injection must NOT be moved away
 
-		buildSrc("  METHOD test_method.");
 		buildSrc("    TEST-INJECTION usage.");
 		buildSrc("      rv_result = lv_any + lv_other.");
 		buildSrc("    END-TEST-INJECTION.");
@@ -1266,9 +1265,26 @@ public class LocalDeclarationOrderTest extends RuleTestBase {
 		buildSrc("    TEST-INJECTION declaration.");
 		buildSrc("      DATA lv_other TYPE i.");
 		buildSrc("    END-TEST-INJECTION.");
-		buildSrc("  ENDMETHOD.");
 
 		copyExpFromSrc();
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testAbapDocCommentKeptWithVariable() {
+		// ensure that no line break is introduced between the ABAP Doc "! comment and the variable, 
+		// although a comment directly after the METHOD command may look like an overall comment  
+		buildSrc("    \"! comment on variable");
+		buildSrc("    DATA lv_any TYPE i.");
+		buildSrc("");
+		buildSrc("    rv_result = lv_any.");
+
+		copyExpFromSrc();
+
+		putAnyMethodAroundSrcAndExp();
 
 		testRule();
 	}

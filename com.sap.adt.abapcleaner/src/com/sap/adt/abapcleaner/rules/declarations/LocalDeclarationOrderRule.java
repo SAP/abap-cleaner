@@ -328,9 +328,12 @@ public class LocalDeclarationOrderRule extends RuleForDeclarations {
 			if (command == startCommand)
 				return command;
 
-			// at the very beginning of a method, consider comments to belong to the method (not the declaration)
-			if (command.getFirstTokenLineBreaks() == 1 && command.getPrev() != null && command.getPrev().isMethodFunctionFormOrEventBlockStart()) 
+			// at the very beginning of a method, consider comments to belong to the method (not the declaration), 
+			// except for ABAP Doc comments
+			if (command.getFirstTokenLineBreaks() == 1 && !command.isAbapDoc()
+					&& command.getPrev() != null && command.getPrev().isMethodFunctionFormOrEventBlockStart()) {
 				return startCommand;
+			}
 			
 			// if below the startCommand, there are empty lines or further comment lines before the next non-declaration 
 			// command, include the comment in the section
