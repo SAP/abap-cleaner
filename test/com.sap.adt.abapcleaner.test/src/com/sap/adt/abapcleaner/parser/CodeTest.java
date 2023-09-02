@@ -1081,4 +1081,26 @@ public class CodeTest extends CodeTestBase {
 		
 		testParseCode();
 	}
+
+	@Test
+	void testDefineWithClassDefinition() {
+		// ensure that CLASS can be nested in DEFINE: CLASS is an optional level closer in the context of a REPORT, 
+		// but does NOT close a level in this case
+		
+		buildSrc("DEFINE any_macro.");
+		buildSrc("  \" comment");
+		buildSrc("  CLASS &1 DEFINITION FOR TESTING INHERITING FROM cx_static_check.");
+		buildSrc("  ENDCLASS.");
+		buildSrc("END-OF-DEFINITION.");
+		buildSrc("");
+		buildSrc("DEFINE other_macro.");
+		buildSrc("  CLASS &1 DEFINITION FOR TESTING INHERITING FROM cx_static_check.");
+		buildSrc("  ENDCLASS.");
+		buildSrc("");
+		buildSrc("  CLASS &1 IMPLEMENTATION.");
+		buildSrc("  ENDCLASS.");
+		buildSrc("END-OF-DEFINITION.");
+		
+		testParseCode();
+	}
 }

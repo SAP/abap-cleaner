@@ -319,14 +319,19 @@ public class Command {
 			openers.put(key, opener);
 		}
 
-		final String getErrorMessageForMissingOpener() {
-			StringBuilder openersList = new StringBuilder();
+		final String getOpenersList() { return getOpenersList("/"); }
+		final String getOpenersList(String separator) {
+			StringBuilder result = new StringBuilder();
 			for (Map.Entry<String, LevelOpener> kvp : openers.entrySet()) {
-				if (openersList.length() > 0)
-					openersList.append("/");
-				openersList.append(kvp.getValue().text);
+				if (result.length() > 0)
+					result.append("/");
+				result.append(kvp.getValue().text);
 			}
-			return text + " found, but no corresponding " + openersList;
+			return result.toString();
+		}
+		
+		final boolean isCloserFor(LevelOpener levelOpener) {
+			return getOpeners().containsKey(getLevelCloserKey(levelOpener.text));
 		}
 	}
 
@@ -521,15 +526,34 @@ public class Command {
 
 		newCommand.initialBlockLevel = initialBlockLevel + blockLevelDiff; 
 
-		if (getOpensLevel() && !newCommand.getClosesLevel()) {
-			addChild(newCommand);
-		} else if (!getOpensLevel() && newCommand.getClosesLevel()) {
-			if (parent != null)
-				parent.addSibling(newCommand);
-			else if (newCommand.usedLevelCloser.requiresOpener)
-				throw new UnexpectedSyntaxException(this, newCommand.usedLevelCloser.getErrorMessageForMissingOpener());
-			else
+		if (getOpensLevel()) {
+			if (!newCommand.getClosesLevel()) {
+				addChild(newCommand);
+			} else if (newCommand.usedLevelCloser.isCloserFor(usedLevelOpener)) {
+				// newCommand directly closes this Command
+				addSibling(newCommand);
+			} else if (newCommand.usedLevelCloser.requiresOpener) {
+				throw new UnexpectedSyntaxException(this,
+						"expected " + usedLevelOpener.getClosersList() + ", but found " + newCommand.usedLevelCloser.text + ". " + 
+						"Opening command (line " + Cult.format(this.sourceLineNumStart) + "): " + this.toStringForErrorMessage());
+			} else {
+				// remove an optional level closer that does not apply in this case, e.g. 'DEFINE any_macro. CLASS &1 DEFINITION.'
 				newCommand.usedLevelCloser = null;
+				addChild(newCommand);
+			}
+
+		} else if (newCommand.getClosesLevel()) {
+			if (parent != null && newCommand.usedLevelCloser.isCloserFor(parent.usedLevelOpener)) {
+				parent.addSibling(newCommand);
+			} else if (newCommand.usedLevelCloser.requiresOpener) {
+				throw new UnexpectedSyntaxException(this, 
+						newCommand.usedLevelCloser.text + " found in line " + Cult.format(newCommand.sourceLineNumStart) + 
+						", but no corresponding " + newCommand.usedLevelCloser.getOpenersList());
+			} else {
+				newCommand.usedLevelCloser = null;
+				addSibling(newCommand);
+			}
+
 		} else {
 			addSibling(newCommand);
 		}
@@ -557,14 +581,6 @@ public class Command {
 	}
 
 	private void addSibling(Command newCommand) throws UnexpectedSyntaxException {
-		if (newCommand.getClosesLevel()) {
-			if (!newCommand.usedLevelCloser.getOpeners().containsKey(getLevelCloserKey(usedLevelOpener.text))) {
-				throw new UnexpectedSyntaxException(this,
-						"expected " + usedLevelOpener.getClosersList() + ", but found " + newCommand.usedLevelCloser.text + ". " + 
-						"Opening command (line " + Cult.format(this.sourceLineNumStart) + "): " + this.toStringForErrorMessage());
-			}
-		}
-
 		newCommand.parent = parent;
 		newCommand.prevSibling = this;
 
