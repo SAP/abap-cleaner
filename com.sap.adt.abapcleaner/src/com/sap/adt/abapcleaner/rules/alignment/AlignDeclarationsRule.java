@@ -439,7 +439,7 @@ public class AlignDeclarationsRule extends AlignDeclarationSectionRuleBase {
 				}
 			} else {
 				// skip Commands that are whole comment lines 
-				while (command.isCommentLine() && command != endCommand)
+				while (command != null && command.isCommentLine() && command != endCommand)
 					command = command.getNext();
 				if (command == endCommand)
 					break;
