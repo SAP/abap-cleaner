@@ -26,6 +26,9 @@ public final class ABAP {
    public static final String ABAP_FALSE = "abap_false";
    public static final String ABAP_SPACE = "space";
 
+   public final static String TEXT_SYMBOL_PREFIX = "TEXT-";
+   public final static int TEXT_SYMBOL_ID_LENGTH = 3;
+
    public static final String SY_PREFIX = "sy-";
    public static final String SYST_PREFIX = "syst-";
    
@@ -189,7 +192,7 @@ public final class ABAP {
 	// cp. https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/abenabap_loops.htm
    public final static String[] loopKeywords = new String[] { "LOOP", "DO", "WHILE", "SELECT", "PROVIDE" }; 
    public final static String[] loopEndKeywords = new String[] { "ENDLOOP", "ENDDO", "ENDWHILE", "ENDSELECT", "ENDPROVIDE" };
-
+   
    // -------------------------------------------------------------------------
    // helper methods for optional / lazy instantiation 
 
@@ -969,5 +972,9 @@ public final class ABAP {
 	public static String toTextStringLiteral(String innerText) {
 		String textDelimited = innerText.replaceAll(QUOT_MARK2_STRING, QUOT_MARK2_STRING + QUOT_MARK2_STRING);
 		return QUOT_MARK2_STRING + textDelimited + QUOT_MARK2_STRING;
+	}
+	
+	public static boolean mayBeTextSymbol(String tokenText) {
+		return (tokenText.length() == TEXT_SYMBOL_PREFIX.length() + TEXT_SYMBOL_ID_LENGTH) && AbapCult.stringEquals(tokenText.substring(0, TEXT_SYMBOL_PREFIX.length()), TEXT_SYMBOL_PREFIX, true);
 	}
 }

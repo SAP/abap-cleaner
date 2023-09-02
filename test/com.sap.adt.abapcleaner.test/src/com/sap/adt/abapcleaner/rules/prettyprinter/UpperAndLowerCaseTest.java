@@ -1249,4 +1249,53 @@ class UpperAndLowerCaseTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testTextSymbolsWithLettersToLower() {
+		// expect text symbols to get an upper case keyword 'TEXT' and a lower case id '001', 'a01', 'a_2' etc.
+
+		buildSrc("  MESSAGE text-001 type 'E'.");
+		buildSrc("  MESSAGE text-A01 type 'E'.");
+		buildSrc("  MESSAGE text-A_2 type 'E'.");
+		buildSrc("");
+		buildSrc("  write TEXT-001.");
+		buildSrc("  write TEXT-a01.");
+		buildSrc("  write TEXT-a_2.");
+
+		buildExp("  MESSAGE TEXT-001 TYPE 'E'.");
+		buildExp("  MESSAGE TEXT-a01 TYPE 'E'.");
+		buildExp("  MESSAGE TEXT-a_2 TYPE 'E'.");
+		buildExp("");
+		buildExp("  WRITE TEXT-001.");
+		buildExp("  WRITE TEXT-a01.");
+		buildExp("  WRITE TEXT-a_2.");
+
+		testRule();
+	}
+
+	@Test
+	void testTextSymbolsWithLettersToUpper() {
+		// expect text symbols to get a lower case keyword 'text' and an upper case id '001', 'A01', 'A_2' etc.
+
+		rule.configImplementationKeywordStyle.setEnumValue(CaseStyle.LOWER_CASE);
+		rule.configImplementationIdentifierStyle.setEnumValue(CaseStyle.UPPER_CASE);
+
+		buildSrc("  MESSAGE text-001 type 'E'.");
+		buildSrc("  MESSAGE text-A01 type 'E'.");
+		buildSrc("  MESSAGE text-A_2 type 'E'.");
+		buildSrc("");
+		buildSrc("  write TEXT-001.");
+		buildSrc("  write TEXT-a01.");
+		buildSrc("  write TEXT-a_2.");
+
+		buildExp("  message text-001 type 'E'.");
+		buildExp("  message text-A01 type 'E'.");
+		buildExp("  message text-A_2 type 'E'.");
+		buildExp("");
+		buildExp("  write text-001.");
+		buildExp("  write text-A01.");
+		buildExp("  write text-A_2.");
+
+		testRule();
+	}
 }

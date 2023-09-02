@@ -253,7 +253,10 @@ public class UpperAndLowerCaseRule extends RuleForCommands {
 			String text = token.getText();
 			String changedText = null;
 			
-			if ((token.type == TokenType.KEYWORD || token.isTextualComparisonOp()) && keywordStyle != CaseStyle.UNCHANGED) {
+			if (token.isTextSymbol()) {
+				changedText = changeTextSymbol(text, keywordStyle, identifierStyle);
+				
+			} else if ((token.type == TokenType.KEYWORD || token.isTextualComparisonOp()) && keywordStyle != CaseStyle.UNCHANGED) {
 				changedText = (keywordStyle == CaseStyle.LOWER_CASE) ? AbapCult.toLower(text) : AbapCult.toUpper(text); 
 				
 			} else if (token.type == TokenType.IDENTIFIER && identifierStyle != CaseStyle.UNCHANGED) {
@@ -262,6 +265,7 @@ public class UpperAndLowerCaseRule extends RuleForCommands {
 				} else {
 					changedText = (identifierStyle == CaseStyle.LOWER_CASE) ? AbapCult.toLower(text) : AbapCult.toUpper(text);
 				}
+				
 			} else if (token.type == TokenType.PRAGMA && (pragmaStyle != CaseStyle.UNCHANGED || pragmaParameterStyle != CaseStyle.UNCHANGED)) {
 				// split the text into the pragma and its parameters, e.g. for '##SHADOW[insert]' and process both parts independently
 				String pragma = ABAP.getPragmaWithoutParameters(text);
@@ -290,6 +294,21 @@ public class UpperAndLowerCaseRule extends RuleForCommands {
 		return changedCommand;
 	}
 	
+	private String changeTextSymbol(String text, CaseStyle keywordStyle, CaseStyle identifierStyle) {
+		// text symbols such as TEXT-001 or TEXT-a01 are stored as one Token, but actually consist of 
+		// a keyword (TEXT), an operator (-) and an alphanumeric identifier (001, a01, a_2 etc.)
+		
+		String prefix = text.substring(0, ABAP.TEXT_SYMBOL_PREFIX.length());
+		if (keywordStyle != CaseStyle.UNCHANGED) 
+			prefix = (keywordStyle == CaseStyle.LOWER_CASE) ? AbapCult.toLower(prefix) : AbapCult.toUpper(prefix);
+
+		String id = text.substring(ABAP.TEXT_SYMBOL_PREFIX.length());
+		if (identifierStyle != CaseStyle.UNCHANGED) 
+			id = (identifierStyle == CaseStyle.LOWER_CASE) ? AbapCult.toLower(id) : AbapCult.toUpper(id);
+				
+		return prefix + id;
+	}
+
 	private String changeIdentifierKeepingMixedCase(String text, CaseStyle identifierStyle) {
 		// split composed identifiers "any_class=>any_structure-any_component", or "any_class=>any_method(" into multiple parts
 		// in order to apply the rule to each part; otherwise, "IF_ANY_INTERFACE~any_method" would be considered a 'mixed case'

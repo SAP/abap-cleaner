@@ -161,6 +161,8 @@ public class TokenTypeRefinerRnd implements ITokenTypeRefiner {
 					// RND Parser considers a01 to be an identifier, but ABAP cleaner regards the whole 'text'(a01) as a literal
 				} else if (token.isAnyKeyword("FIELD-SYMBOL(", "READ-ONLY")) { 
 					// keep TokenType.KEYWORD - RND parser classifies 'FIELD' as an identifier and as 'suspicious' 
+				} else if (token.isTextSymbol()) { 
+					// keep TokenType.KEYWORD, which was assigned earlier when rndToken "TEXT" was processed
 				} else if (token.type != TokenType.IDENTIFIER) {
 					token.type = TokenType.IDENTIFIER;
 				}
