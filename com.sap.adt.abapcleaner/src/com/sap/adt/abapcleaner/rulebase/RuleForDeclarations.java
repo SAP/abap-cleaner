@@ -441,7 +441,9 @@ public abstract class RuleForDeclarations extends Rule {
 		Token firstCode = command.getFirstCodeToken();
 		if (firstCode == null)
 			return;
-		boolean isAssignmentCommand = command.isAssignment();
+
+		// determine whether the Command is an assignment (without inline declaration, which will be handled below) 
+		boolean isAssignmentCommand = command.isAssignment(false);
 
 		// determine the receiving variable of an assignment, e.g. "lv_receiver" or "ls_receiver" in statements like 
 		// - "lv_receiver = ..."

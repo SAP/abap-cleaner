@@ -515,4 +515,66 @@ class FinalVariableTest extends RuleTestBase {
 
 		testRule();
 	}
+	
+	@Test
+	void testMethodCallInsideCondUnchanged() {
+		// expect FINAL to be prevented whenever a method call is used inside of a constructor expression, because some(!)
+		// of these cases cause syntax errors - e.g. for COND, it is not possible to have a method call in 
+		// both the THEN and the ELSE clause 
+		
+		buildSrc("    DATA(lv_data_1) = get_any_integer( ).");
+		buildSrc("    DATA(lv_data_2) = COND i( WHEN lv_condition = abap_true THEN 1 ELSE 2 ).");
+		buildSrc("    DATA(lv_data_3) = get_any_integer( ) + get_any_integer( ) * COND i( WHEN lv_condition = abap_true THEN 1 ELSE 2 ).");
+		buildSrc("");
+		buildSrc("    DATA(lv_data_4) = COND i( WHEN lv_condition = abap_true THEN get_any_integer( ) ELSE 2 ).");
+		buildSrc("    DATA(lv_data_5) = COND i( WHEN lv_condition = abap_true THEN 1 ELSE get_any_integer( ) ).");
+		buildSrc("    DATA(lv_data_6) = COND i( WHEN lv_condition = abap_true THEN get_any_integer( ) ELSE 2 ) + get_any_integer( ).");
+		buildSrc("    DATA(lv_data_7) = COND i( WHEN lv_condition = abap_true THEN 1 ELSE get_any_integer( ) ) + get_any_integer( ).");
+		buildSrc("    DATA(lv_data_8) = COND i( WHEN lv_condition = abap_true THEN get_any_integer( ) ELSE get_any_integer( ) ).");
+
+		buildExp("    FINAL(lv_data_1) = get_any_integer( ).");
+		buildExp("    FINAL(lv_data_2) = COND i( WHEN lv_condition = abap_true THEN 1 ELSE 2 ).");
+		buildExp("    FINAL(lv_data_3) = get_any_integer( ) + get_any_integer( ) * COND i( WHEN lv_condition = abap_true THEN 1 ELSE 2 ).");
+		buildExp("");
+		buildExp("    DATA(lv_data_4) = COND i( WHEN lv_condition = abap_true THEN get_any_integer( ) ELSE 2 ).");
+		buildExp("    DATA(lv_data_5) = COND i( WHEN lv_condition = abap_true THEN 1 ELSE get_any_integer( ) ).");
+		buildExp("    DATA(lv_data_6) = COND i( WHEN lv_condition = abap_true THEN get_any_integer( ) ELSE 2 ) + get_any_integer( ).");
+		buildExp("    DATA(lv_data_7) = COND i( WHEN lv_condition = abap_true THEN 1 ELSE get_any_integer( ) ) + get_any_integer( ).");
+		buildExp("    DATA(lv_data_8) = COND i( WHEN lv_condition = abap_true THEN get_any_integer( ) ELSE get_any_integer( ) ).");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+	
+	@Test
+	void testMethodCallInsideValueUnchanged() {
+		// expect FINAL to be prevented whenever a method call is used inside of a constructor expression, because some(!)
+		// of these cases cause syntax errors - e.g. for VALUE, a method call is only possible on the last component in the code
+		// (regardless of the sequence of components in the structure definition)
+		
+		buildSrc("    DATA(ls_struc_1) = VALUE ty_s_any( comp1 = 1");
+		buildSrc("                                       comp2 = 2 ).");
+		buildSrc("    DATA(ls_struc_2) = VALUE ty_s_any( comp1 = 1");
+		buildSrc("                                       comp2 = VALUE #( comp3 = 'abc' ) ).");
+		buildSrc("");
+		buildSrc("    DATA(ls_struc_3) = VALUE ty_s_any( comp1 = get_any_integer( )");
+		buildSrc("                                       comp2 = 1 ).");
+		buildSrc("    DATA(ls_struc_4) = VALUE ty_s_any( comp1 = 1");
+		buildSrc("                                       comp2 = VALUE #( comp3 = get_string( ) ) ).");
+
+		buildExp("    FINAL(ls_struc_1) = VALUE ty_s_any( comp1 = 1");
+		buildExp("                                        comp2 = 2 ).");
+		buildExp("    FINAL(ls_struc_2) = VALUE ty_s_any( comp1 = 1");
+		buildExp("                                        comp2 = VALUE #( comp3 = 'abc' ) ).");
+		buildExp("");
+		buildExp("    DATA(ls_struc_3) = VALUE ty_s_any( comp1 = get_any_integer( )");
+		buildExp("                                       comp2 = 1 ).");
+		buildExp("    DATA(ls_struc_4) = VALUE ty_s_any( comp1 = 1");
+		buildExp("                                       comp2 = VALUE #( comp3 = get_string( ) ) ).");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }

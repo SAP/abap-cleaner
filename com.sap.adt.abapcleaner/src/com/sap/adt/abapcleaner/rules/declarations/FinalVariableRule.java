@@ -85,6 +85,11 @@ public class FinalVariableRule extends RuleForDeclarations {
 			+ LINE_SEP + "    \" similarly, FINAL is never introduced if a data reference is created somewhere:"
 			+ LINE_SEP + "    DATA(lt_any_table) = get_table( )." 
 			+ LINE_SEP + "    any_method( ir_struc = REF #( lt_any_table[ 1 ] ) )."
+			+ LINE_SEP + ""
+			+ LINE_SEP + "    \" FINAL is not introduced if method calls are found inside of constructor expressions,"
+			+ LINE_SEP + "    \" because some of these cases would create syntax errors with FINAL:"
+			+ LINE_SEP + "    DATA(ls_struc) = VALUE ty_s_any_struc( comp1 = get_any_value( )" 
+			+ LINE_SEP + "                                           comp2 = 'literal' )."
 			+ LINE_SEP + "  ENDMETHOD."
 			+ LINE_SEP + "ENDCLASS."; 
    }
@@ -123,6 +128,9 @@ public class FinalVariableRule extends RuleForDeclarations {
 				continue;
 			
 			Command command = identifier.getParentCommand();
+			if (isCommandBlocked(command))
+				continue;
+			
 			Token firstCode = command.getFirstCodeToken();
 			if (firstCode != null && firstCode.matchesOnSiblings(true, "OPEN", "CURSOR")) {
 				// skip this Command
@@ -130,7 +138,11 @@ public class FinalVariableRule extends RuleForDeclarations {
 				// do NOT introduce @FINAL if the INTO clause is followed by another (mainquery) clause, because that could 
 				// lead to a syntax error; cp. documentation on ABAP SQL strict modes 
 				// https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/index.htm?file=abenabap_sql_strict_modes.htm
-			} else if (!isCommandBlocked(command)) {
+			} else if (command.isAssignment(true) && command.containsMethodCallInsideConstructorExp()) {
+				// some cases of method calls inside of a constructor expression produce a syntax error if FINAL is used, e.g.
+				// FINAL(test_data) = VALUE ty_s_any( id = get_any_integer( ) name = 'Test' ).
+				// FINAL(lv_value) = COND i( WHEN lv_condition = abap_true THEN get_any_integer( ) ELSE get_any_integer( ) ).
+			} else {
 				String newText = dataKeyword.isKeyword("@DATA(") ? "@FINAL(" : "FINAL(";
 				dataKeyword.setText(newText, true);
 				code.addRuleUse(this, command);

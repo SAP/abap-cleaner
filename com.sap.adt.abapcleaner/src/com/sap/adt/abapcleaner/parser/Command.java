@@ -1196,10 +1196,15 @@ public class Command {
 		}
 	}
 
-	public final boolean isAssignment() {
+	public final boolean isAssignment(boolean allowInlineDeclaration) {
 		Token token = getFirstCodeToken();
-		if (token == null || !token.isIdentifier())
+		if (token == null) {
 			return false;
+		} else if (allowInlineDeclaration && token.opensInlineDeclaration()) {
+			token = token.getNextSibling();
+		} else if (!token.isIdentifier()) {
+			return false;
+		}
 		Token nextToken = token.getNextCodeToken();
 		if (nextToken.isChainColon())
 			nextToken = nextToken.getNextCodeToken();
@@ -2744,5 +2749,33 @@ public class Command {
 	
 	public final ArrayList<Command> getCommandsRelatedToPatternMatch() {
 		return null;
+	}
+	
+	public final boolean containsMethodCallInsideConstructorExp() {
+		Token token = firstToken;
+		while (token != null) {
+			if (token.isAnyKeyword(ABAP.constructorOperators)) {
+				token = token.getNextCodeSibling();
+				if (token.getOpensLevel() && !token.textEquals("(")) {
+					if (containsFunctionalMethodCallBetween(token.getFirstChild(), token.getNextCodeSibling())) {
+						return true;
+					}
+					token = token.getNextSibling();
+				}
+			}
+			token = token.getNextCodeToken();
+		}
+		return false;
+	}
+
+	public final boolean containsFunctionalMethodCallBetween(Token startToken, Token endToken) {
+		Token token = startToken;
+		while (token != null && token != endToken) {
+			if (token.startsFunctionalMethodCall(false)) {
+				return true;
+			}
+			token = token.getNextCodeToken();
+		}
+		return false;
 	}
 }

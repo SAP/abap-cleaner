@@ -1721,8 +1721,8 @@ public class Token {
 			}
 		}
 			
-		// assignments of type 'var = ...'
-		if (command.isAssignment() && nextToken.isAssignmentOperator()) {
+		// assignments of type 'var = ...' (without inline declarations)
+		if (command.isAssignment(false) && nextToken.isAssignmentOperator()) {
 			// in case of equals sign chaining 'a = b = c = 1.', move to the first receiving variable
 			Token firstReceiver = this;
 			do {
