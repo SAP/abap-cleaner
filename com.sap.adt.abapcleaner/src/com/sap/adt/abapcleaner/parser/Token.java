@@ -161,6 +161,8 @@ public class Token {
 
 	public final boolean isChainColon() { return (type == TokenType.COLON); }
 
+	public final boolean isTextSymbol() { return (type == TokenType.KEYWORD && ABAP.mayBeTextSymbol(text)); }
+	
 	final boolean getMayBeIdentifier() { return (type == TokenType.IDENTIFIER) || isKeyword() || isTextualComparisonOp(); }
 
 	public final boolean isCharacterLiteral() {
@@ -360,6 +362,10 @@ public class Token {
 		} else if (ABAP.DOT_SIGN_STRING.equals(text)) {
 			return TokenType.PERIOD;
 		
+		} else if (ABAP.mayBeTextSymbol(text)) {
+			// text symbols such as 'TEXT-001' and 'TEXT-a01' are stored as one Token of type KEYWORD and get special handling where needed
+			return TokenType.KEYWORD;  
+			
 		} else {
 			char[] textChars = text.toCharArray();
 			for (char c : textChars) {
@@ -1208,10 +1214,10 @@ public class Token {
 					&& text.charAt(text.length() - 1) == ABAP.TEXT_SYMBOL_ID_CLOSE ) {
 				
 				int literalLength = text.length() - 5;
-				return new TextBit[] {  TextBit.create(startIndex, literalLength, colType), 
-												TextBit.create(startIndex + literalLength, 1, ColorType.TOKEN_OPERATOR), 
-												TextBit.create(startIndex + literalLength + 1, 3, ColorType.NUMBER), 
-												TextBit.create(startIndex + literalLength + 4, 1, ColorType.TOKEN_OPERATOR)};
+				return new TextBit[] { TextBit.create(startIndex, literalLength, colType), 
+											  TextBit.create(startIndex + literalLength, 1, ColorType.TOKEN_OPERATOR), 
+											  TextBit.create(startIndex + literalLength + 1, 3, ColorType.NUMBER), 
+											  TextBit.create(startIndex + literalLength + 4, 1, ColorType.TOKEN_OPERATOR)};
 			} else if (!textEndsWith(")")) { // "ULINE AT 10(20)."
 				isSimpleCase = true;
 			}
@@ -1219,6 +1225,14 @@ public class Token {
 
 		if (isSimpleCase)
 			return new TextBit[] { TextBit.create(startIndex, text.length(), colType) };
+
+		if (isTextSymbol()) {
+			// text symbol IDs may be numeric (TEXT-001) or contain letters or _ (TEXT-a01, TEXT-a_2)
+			int prefixLength = ABAP.TEXT_SYMBOL_PREFIX.length();
+			ColorType idColorType = ABAP.consistsOfDigitsOnly(text.substring(prefixLength)) ? ColorType.NUMBER : ColorType.IDENTIFIER;
+			return new TextBit[] { TextBit.create(startIndex, prefixLength, ColorType.KEYWORD), 
+										  TextBit.create(startIndex + prefixLength, ABAP.TEXT_SYMBOL_ID_LENGTH, idColorType) };
+		}
 
 		ArrayList<TextBit> result = new ArrayList<TextBit>();
 		int writtenPos = 0;
