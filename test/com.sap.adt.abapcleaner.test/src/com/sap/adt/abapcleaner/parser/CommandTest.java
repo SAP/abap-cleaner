@@ -71,16 +71,20 @@ public class CommandTest {
 
 	@Test
 	void testIsAssignment() {
-		assertFalse(buildCommand("CLEAR ev_param.").isAssignment());
-		assertFalse(buildCommand(".").isAssignment());
-		assertFalse(buildCommand("any_method( iv_param = 1 ).").isAssignment());
+		assertFalse(buildCommand("CLEAR ev_param.").isAssignment(false));
+		assertFalse(buildCommand(".").isAssignment(false));
+		assertFalse(buildCommand("any_method( iv_param = 1 ).").isAssignment(false));
+		assertFalse(buildCommand("DATA(a) = 1.").isAssignment(false));
+		assertFalse(buildCommand("DATA(a) = get_value( ).").isAssignment(false));
 	
-		assertTrue(buildCommand("a = 1.").isAssignment());
-		assertTrue(buildCommand("a += 1.").isAssignment());
-		assertTrue(buildCommand("ls_struc-comp = 1.").isAssignment());
-		assertTrue(buildCommand("ls_struc-comp *= 2.").isAssignment());
-		assertTrue(buildCommand("<ls_any>-comp = 1.").isAssignment());
-		assertTrue(buildCommand("<ls_any>-comp -= 1.").isAssignment());
+		assertTrue(buildCommand("a = 1.").isAssignment(false));
+		assertTrue(buildCommand("a += 1.").isAssignment(false));
+		assertTrue(buildCommand("ls_struc-comp = 1.").isAssignment(false));
+		assertTrue(buildCommand("ls_struc-comp *= 2.").isAssignment(false));
+		assertTrue(buildCommand("<ls_any>-comp = 1.").isAssignment(false));
+		assertTrue(buildCommand("<ls_any>-comp -= 1.").isAssignment(false));
+		assertTrue(buildCommand("DATA(a) = 1.").isAssignment(true));
+		assertTrue(buildCommand("DATA(a) = get_value( ).").isAssignment(true));
 	}
 
 	@Test

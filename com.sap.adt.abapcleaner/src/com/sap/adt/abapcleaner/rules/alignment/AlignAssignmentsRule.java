@@ -117,7 +117,7 @@ public class AlignAssignmentsRule extends Rule {
 				continue;
 			}
 
-			String strucVar = command.isAssignment() ? command.getFirstToken().getStructureVariable() : null;
+			String strucVar = command.isAssignment(false) ? command.getFirstToken().getStructureVariable() : null;
 			if (!StringUtil.equalsCheckingForNull(lastStrucVar, strucVar) || (!alignAcrossEmptyLines && command.getFirstTokenLineBreaks() > 1) || sectionBroken) {
 				if (!StringUtil.isNullOrEmpty(lastStrucVar) && commandsInSection > 1) {
 					if (sectionEnd == null)
