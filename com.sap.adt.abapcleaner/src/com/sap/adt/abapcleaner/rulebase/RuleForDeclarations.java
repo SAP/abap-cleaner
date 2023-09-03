@@ -626,7 +626,7 @@ public abstract class RuleForDeclarations extends Rule {
 		Token dataType = refKeyword.getNextCodeSibling();
 		if (dataType.getOpensLevel() && dataType.hasChildren()) {
 			Token identifier = dataType.getFirstChild(); 
-			VariableInfo varInfo = localVariables.getVariableInfo(identifier);
+			VariableInfo varInfo = localVariables.getVariableInfo(identifier, false);
 			if (varInfo != null) {
 				varInfo.addReferenceByDataRef();
 			}
@@ -674,13 +674,13 @@ public abstract class RuleForDeclarations extends Rule {
 			return;
 
 		// get the VariableInfo of that identifier, if it is a local variable (in that case, it must already be known)
-		VariableInfo varInfo = localVariables.getVariableInfo(identifier);
+		VariableInfo varInfo = localVariables.getVariableInfo(identifier, false);
 		if (varInfo == null)
 			return;
 		
 		if (ABAP.isFieldSymbol(fieldSymbolOrDataRef.getText())) {
 			// enter the field-symbol to the list of field-symbols that are assigned to a memory area of the local variable
-			VariableInfo fieldSymbolInfo = localVariables.getVariableInfo(fieldSymbolOrDataRef.getText());
+			VariableInfo fieldSymbolInfo = localVariables.getVariableInfo(fieldSymbolOrDataRef.getText(), false);
 			varInfo.addAssignedFieldSymol(fieldSymbolInfo);
 
 		} else {

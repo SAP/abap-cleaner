@@ -1288,4 +1288,50 @@ public class LocalDeclarationOrderTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testTypesAndDataObjectsWithSameNames() {
+		// ensure that the types 't1', 't2' and 't3', which appear in 'descending order' t3, t2, t1, are correctly distinguished   
+		// from the data objects 't1', 't2' and 't3', which are used in 'ascending order' t1, t2, t3, so DATA t1 must be moved up 
+		
+		buildSrc("  METHOD any_method.");
+		buildSrc("    TYPES t3 TYPE SORTED   TABLE OF ty_s3 WITH KEY a b c.");
+		buildSrc("    TYPES t2 TYPE HASHED   TABLE OF ty_s2 WITH KEY a b.");
+		buildSrc("    TYPES t1 TYPE STANDARD TABLE OF ty_s1 WITH EMPTY KEY.");
+		buildSrc("");
+		buildSrc("    DATA t2 TYPE i.");
+		buildSrc("    DATA t1 TYPE i.");
+		buildSrc("    DATA t3 TYPE i.");
+		buildSrc("");
+		buildSrc("    any_method( VALUE t3( ) ).");
+		buildSrc("    any_method( VALUE t2( ) ).");
+		buildSrc("    any_method( VALUE t1( ) ).");
+		buildSrc("");
+		buildSrc("    t1 = 1.");
+		buildSrc("    t2 = 2.");
+		buildSrc("    t3 = 3.");
+		buildSrc("    rv_result = t1 + t2 + t3.");
+		buildSrc("  ENDMETHOD.");
+
+		buildExp("  METHOD any_method.");
+		buildExp("    TYPES t3 TYPE SORTED   TABLE OF ty_s3 WITH KEY a b c.");
+		buildExp("    TYPES t2 TYPE HASHED   TABLE OF ty_s2 WITH KEY a b.");
+		buildExp("    TYPES t1 TYPE STANDARD TABLE OF ty_s1 WITH EMPTY KEY.");
+		buildExp("");
+		buildExp("    DATA t1 TYPE i.");
+		buildExp("    DATA t2 TYPE i.");
+		buildExp("    DATA t3 TYPE i.");
+		buildExp("");
+		buildExp("    any_method( VALUE t3( ) ).");
+		buildExp("    any_method( VALUE t2( ) ).");
+		buildExp("    any_method( VALUE t1( ) ).");
+		buildExp("");
+		buildExp("    t1 = 1.");
+		buildExp("    t2 = 2.");
+		buildExp("    t3 = 3.");
+		buildExp("    rv_result = t1 + t2 + t3.");
+		buildExp("  ENDMETHOD.");
+
+		testRule();
+	}
 }
