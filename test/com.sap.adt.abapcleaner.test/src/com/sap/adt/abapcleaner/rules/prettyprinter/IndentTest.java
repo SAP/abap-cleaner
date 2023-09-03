@@ -823,4 +823,70 @@ class IndentTest extends RuleTestBase {
 		
 		testRule();
 	}
+
+	@Test
+	void testWithNotStartingSelectLoop() {
+		// expect the any_method call to be moved to the same indentation as WITH, because no SELECT loop is started 
+
+		buildSrc("    WITH");
+		buildSrc("      +cte1 AS ( SELECT fld1, fld2 FROM dtab1");
+		buildSrc("                   JOIN dtab2 ON dtab1~id = dtab2~id");
+		buildSrc("                   WHERE dtab1~id = @id ),");
+		buildSrc("      +cte2 AS ( SELECT COUNT(*) AS cnt FROM +cte1 )");
+		buildSrc("      SELECT * FROM +cte2");
+		buildSrc("        CROSS JOIN +cte1");
+		buildSrc("        ORDER BY fld1, fld2");
+		buildSrc("        INTO CORRESPONDING FIELDS OF TABLE @itab.");
+		buildSrc("");
+		buildSrc("      any_method( itab ).");
+
+		buildExp("    WITH");
+		buildExp("      +cte1 AS ( SELECT fld1, fld2 FROM dtab1");
+		buildExp("                   JOIN dtab2 ON dtab1~id = dtab2~id");
+		buildExp("                   WHERE dtab1~id = @id ),");
+		buildExp("      +cte2 AS ( SELECT COUNT(*) AS cnt FROM +cte1 )");
+		buildExp("      SELECT * FROM +cte2");
+		buildExp("        CROSS JOIN +cte1");
+		buildExp("        ORDER BY fld1, fld2");
+		buildExp("        INTO CORRESPONDING FIELDS OF TABLE @itab.");
+		buildExp("");
+		buildExp("    any_method( itab ).");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testWithStartingSelectLoop() {
+		// expect the any_method call to get additional indentation, because WITH starts a SELECT loop 
+
+		buildSrc("    WITH");
+		buildSrc("      +cte AS ( SELECT FROM dtab1 FIELDS f1, f2 )");
+		buildSrc("      SELECT FROM dtab2 AS b");
+		buildSrc("        INNER JOIN +cte AS a ON b~g1 = a~f1");
+		buildSrc("        FIELDS a~f2, s~g2");
+		buildSrc("        WHERE s~g1 = 'NN'");
+		buildSrc("        INTO @FINAL(wa)");
+		buildSrc("        UP TO 10 ROWS.");
+		buildSrc("");
+		buildSrc("    any_method( wa ).");
+		buildSrc("    ENDWITH.");
+
+		buildExp("    WITH");
+		buildExp("      +cte AS ( SELECT FROM dtab1 FIELDS f1, f2 )");
+		buildExp("      SELECT FROM dtab2 AS b");
+		buildExp("        INNER JOIN +cte AS a ON b~g1 = a~f1");
+		buildExp("        FIELDS a~f2, s~g2");
+		buildExp("        WHERE s~g1 = 'NN'");
+		buildExp("        INTO @FINAL(wa)");
+		buildExp("        UP TO 10 ROWS.");
+		buildExp("");
+		buildExp("      any_method( wa ).");
+		buildExp("    ENDWITH.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }

@@ -416,7 +416,9 @@ public class Command {
 		// Processing External Data 
 		
 		// ABAP SQL
-		addInnerLevelOpener("SELECT", "ENDSELECT"); // under certain conditions, SELECT has no ENDSELECT, see .finishBuild()
+		// under certain conditions, SELECT / WITH have no ENDSELECT / ENDWITH, see .finishBuild() and .opensSelectLoop()
+		addInnerLevelOpener("SELECT", "ENDSELECT"); 
+		addInnerLevelOpener("WITH", "ENDWITH");
 
 		// Native SQL
 		addInnerLevelOpener("EXEC", "ENDEXEC"); 
@@ -911,16 +913,16 @@ public class Command {
 			isClassImplementationStart = firstCode != null && firstCode.matchesOnSiblings(true, "CLASS", TokenSearch.ASTERISK, "IMPLEMENTATION");
 		}
 
-		// in a SELECT statement, keep the LevelOpener only if an ENDSELECT is required
-		if (firstCode != null && firstCode.isKeyword("SELECT")) {
-			boolean requiresEndSelect;
+		// in a SELECT or WITH statement, keep the LevelOpener only if an ENDSELECT or ENDWITH is required
+		if (firstCode != null && firstCode.isAnyKeyword("SELECT", "WITH")) {
+			boolean opensSelectLoop;
 			try {
-				requiresEndSelect = requiresEndSelect(); 
+				opensSelectLoop = opensSelectLoop(); 
 			} catch (NullPointerException ex) {
 				// unexpected syntax
-				requiresEndSelect = false;
+				opensSelectLoop = false;
 			}
-			if (!requiresEndSelect) 
+			if (!opensSelectLoop) 
 				usedLevelOpener = null;
 		}
 
@@ -1028,9 +1030,10 @@ public class Command {
 		}
 	}
 	
-	private boolean requiresEndSelect() throws NullPointerException {
+	private boolean opensSelectLoop() throws NullPointerException {
 		// determine whether a SELECT command requires an ENDSELECT and therefore opens a level
 		// see https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/index.htm?file=abapselect.htm 
+		// similarly, determine whether WITH requires ENDWITH by analyzing its main SELECT query
 		
 		// "In the following cases, the statement SELECT opens a loop that must be closed using ENDSELECT.
 		// 1. If an assignment is made to a non-table-like target range, that is, a SELECT statement without the 
@@ -1043,31 +1046,39 @@ public class Command {
 		// 2. If an assignment is made to a table-like target range, that is, a SELECT statement with the addition 
 		//    INTO|APPENDING ... TABLE, a loop closed by ENDSELECT occurs whenever the addition PACKAGE SIZE is used."
 
-		// is the result put into a table? - then ENDSELECT is only required if PACKAGE SIZE is used (case 2)
-		Token firstCode = getFirstCodeToken();
-		if (firstCode == null)
+		Token selectToken = getFirstCodeToken();
+		if (selectToken == null)
 			return false;
-		if (firstCode.matchesOnSiblings(true, TokenSearch.ASTERISK, "INTO|APPENDING", TokenSearch.makeOptional("CORRESPONDING FIELDS OF"), "TABLE")) 
-			return firstCode.matchesOnSiblings(true, TokenSearch.ASTERISK, "PACKAGE SIZE");
+
+		// for WITH commands, move to the main SELECT query (skipping parenthesized subquery SELECT clauses from table expression definitions)
+		if (selectToken.isKeyword("WITH")) {
+			selectToken = selectToken.getLastTokenOnSiblings(true, TokenSearch.ASTERISK, "SELECT");
+			if (selectToken == null)
+				return false;
+		}
+
+		// is the result put into a table? - then ENDSELECT is only required if PACKAGE SIZE is used (case 2)
+		if (selectToken.matchesOnSiblings(true, TokenSearch.ASTERISK, "INTO|APPENDING", TokenSearch.makeOptional("CORRESPONDING FIELDS OF"), "TABLE")) 
+			return selectToken.matchesOnSiblings(true, TokenSearch.ASTERISK, "PACKAGE SIZE");
 		
 		// is SELECT SINGLE used? - then ENDSELECT is not required (case 1a)
-		if (firstCode.matchesOnSiblings(true, "SELECT", "SINGLE")) 
+		if (selectToken.matchesOnSiblings(true, "SELECT", "SINGLE")) 
 			return false;
 		
 		// process case 1b
 
 		// is GROUP BY or UNION specified? - then ENDSELECT is required (case 1b.iii) 
-		if (firstCode.matchesOnSiblings(true, TokenSearch.ASTERISK, "GROUP BY"))
+		if (selectToken.matchesOnSiblings(true, TokenSearch.ASTERISK, "GROUP BY"))
 			return true;
-		if (firstCode.matchesOnSiblings(true, TokenSearch.ASTERISK, "UNION"))
+		if (selectToken.matchesOnSiblings(true, TokenSearch.ASTERISK, "UNION"))
 			return true;
 		
 		// determine start and end of the select clause
 		// (see https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/index.htm?file=abapselect_mainquery.htm)
-		Token selectClauseStart = firstCode.getNextCodeSibling();
+		Token selectClauseStart = selectToken.getNextCodeSibling();
 		Token selectClauseEnd;
 		if (selectClauseStart.isKeyword("FROM")) {
-			selectClauseStart = firstCode.getLastTokenOnSiblings(true, TokenSearch.ASTERISK, "FIELDS");
+			selectClauseStart = selectToken.getLastTokenOnSiblings(true, TokenSearch.ASTERISK, "FIELDS");
 			selectClauseStart = selectClauseStart.getNextCodeSibling();
 			// the INTO clause may come earlier than specified in the ABAP reference
 			selectClauseEnd = selectClauseStart.getLastTokenOnSiblings(true, TokenSearch.ASTERISK, "FOR ALL ENTRIES IN|WHERE|GROUP BY|HAVING|ORDER BY|%_HINTS|INTO");
@@ -2743,7 +2754,7 @@ public class Command {
 		//   return changesSyField(ABAP.SyField.SUBRC) && SyFieldAnalyzer.getSyFieldReadersFor(ABAP.SyField.SUBRC, this).size() >= 2;
 		//   - getCommandsRelatedToPatternMatch() can then return SyFieldAnalyzer.getSyFieldReadersFor(ABAP.SyField.SUBRC, this);
 		
-		return changeControl.wasRuleUsed(RuleID.ALIGN_LOGICAL_EXPRESSIONS) && this.containsCommentBetween(firstToken, null);
+		return this.getFirstToken().isAnyKeyword("WITH", "ENDWITH");
 		//return false;
 	}
 	
