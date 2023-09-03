@@ -1334,4 +1334,17 @@ public class LocalDeclarationOrderTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testMethodWithConstantsOnly() {
+		// ensure that a method that consists of CONSTANTS declarations only does not raise an exception
+		buildSrc("    CONSTANTS a TYPE i VALUE 1.");
+		buildSrc("    CONSTANTS b TYPE i VALUE 2.");
+
+		copyExpFromSrc();
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }

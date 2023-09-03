@@ -436,8 +436,7 @@ public class LocalDeclarationOrderRule extends RuleForDeclarations {
 
 			// if the section already is in the correct place, simply adjust writePos
 			writePos = section.lastCommand.getNextSibling(); 
-			if (writePos == null)
-				throw new UnexpectedSyntaxAfterChanges(this, section.lastCommand, "Expected further commands inside this block.");
+			// writePos may be null now, e.g. if the method only contains CONSTANTS declarations
 			writePosOfParent.put(parent, writePos);
 			
 			// only adjust line breaks for the next command (see below) if it is NOT a declaration
