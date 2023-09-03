@@ -2322,4 +2322,60 @@ public class Token {
 		}
 		return result;
 	}
+	
+	/**
+	 * Returns true if this Token represents a type (dtype, abap_type, enum_type, mesh_type, ref_type, struct_type, table_type),
+	 * not a data object (dobj).
+	 * This could either be in the definition with TYPES type ...,   
+	 * or when the type is used for declaring a data object (e.g. DATA ... TYPE type) or another type (e.g. TYPES ... TYPE STANDARD TABLE OF type)
+	 * or after a constructor operator (e.g. ... = VALUE type( ... )) 
+	 */
+	public boolean isTypeIdentifier() {
+		if (type != TokenType.IDENTIFIER)
+			return false;
+
+		Token prevSibling = this.getPrevCodeSibling();
+		
+		// if the identifier is preceded by keywords, determine the first of these keywords (skipping chain colons)
+		Token firstKeyword = null;
+		Token token = prevSibling;
+		while (token != null) {
+			if (token.isKeyword()) {
+				firstKeyword = token;
+			} else if (!token.isChainColon()) {
+				break;
+			}
+			token = token.getPrevCodeSibling();
+		}
+		
+		// a) definition of a type (always in a TYPES statement)
+		// TYPES [:] [BEGIN OF|BEGIN OF ENUM|BEGIN OF MESH] identifier1 ..., identifier2 ... 
+		if (parentCommand.firstCodeTokenIsKeyword("TYPES")) {
+			if (firstKeyword != null && firstKeyword.isKeyword("TYPES")) { 
+				// the Token is the identifier directly after TYPES [:] [BEGIN OF|BEGIN OF ENUM|BEGIN OF MESH] 
+				return true;
+			} else if (prevSibling != null && prevSibling.isComma()) {
+				// the Token is an identifier after a chain comma
+				return true;
+			}
+			// otherwise continue below to check for usage
+		}
+		
+		// b) usage of a type
+		// - in a constructor expression, e.g. VALUE type( ), COND type( ), or any other constructor operator
+		if (this.textEndsWith("(") && prevSibling != null && prevSibling.isAnyKeyword(ABAP.constructorOperators)) {
+			return true;
+		}
+
+		// - in a declaration, e.g. DATA dobj TYPE STANDARD TABLE OF REF TO type (including declaration of a dependent type with TYPES)
+		if (parentCommand.isDeclaration()) { // CONSTANTS, DATA, FIELD-SYMBOLS, TYPES, CLASS-DATA, STATICS
+			// the identifier represents a type if it is preceded by a sequence of keywords that starts with TYPE (NOT with LIKE)
+			return (firstKeyword != null && firstKeyword.isKeyword("TYPE"));
+		} else if (parentCommand.firstCodeTokenIsKeyword("INCLUDE")) {
+			// the identifier represents a type if it is preceded by "INCLUDE TYPE" (NOT by "INCLUDE STRUCTURE", which is followed by a data object)
+			return (firstKeyword != null && firstKeyword.matchesOnSiblings(true, "INCLUDE", "TYPE"));
+		}
+		
+		return false;
+	}
 }

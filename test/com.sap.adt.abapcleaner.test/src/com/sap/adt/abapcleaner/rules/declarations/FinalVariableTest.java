@@ -577,4 +577,41 @@ class FinalVariableTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testTypesAndDataObjectsWithSameNames() {
+		// ensure that the types 't1' and 't2' are correctly distinguished from the data objects 't1' and 't2' 
+		
+		buildSrc("  METHOD any_method.");
+		buildSrc("    TYPES t1 TYPE STANDARD TABLE OF ty_s1 WITH EMPTY KEY.");
+		buildSrc("    TYPES t2 TYPE STANDARD TABLE OF ty_s1 WITH EMPTY KEY.");
+		buildSrc("");
+		buildSrc("    DATA lt_table1 TYPE t1.");
+		buildSrc("    DATA ls_struc TYPE LINE OF t1.");
+		buildSrc("");
+		buildSrc("    DATA(t1) = VALUE t1( ).");
+		buildSrc("    DATA(t2) = VALUE t2( ).");
+		buildSrc("");
+		buildSrc("    lt_table1 = VALUE t1( ( a = 1 ) ).");
+		buildSrc("    any_method( lt_table = lt_table1 ).");
+		buildSrc("    any_method( lt_table = VALUE t2( ( a = 1 ) ) ).");
+		buildSrc("  ENDMETHOD.");
+
+		buildExp("  METHOD any_method.");
+		buildExp("    TYPES t1 TYPE STANDARD TABLE OF ty_s1 WITH EMPTY KEY.");
+		buildExp("    TYPES t2 TYPE STANDARD TABLE OF ty_s1 WITH EMPTY KEY.");
+		buildExp("");
+		buildExp("    DATA lt_table1 TYPE t1.");
+		buildExp("    DATA ls_struc TYPE LINE OF t1.");
+		buildExp("");
+		buildExp("    FINAL(t1) = VALUE t1( ).");
+		buildExp("    FINAL(t2) = VALUE t2( ).");
+		buildExp("");
+		buildExp("    lt_table1 = VALUE t1( ( a = 1 ) ).");
+		buildExp("    any_method( lt_table = lt_table1 ).");
+		buildExp("    any_method( lt_table = VALUE t2( ( a = 1 ) ) ).");
+		buildExp("  ENDMETHOD.");
+
+		testRule();
+	}
 }

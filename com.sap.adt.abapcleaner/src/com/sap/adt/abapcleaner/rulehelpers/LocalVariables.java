@@ -12,8 +12,10 @@ import com.sap.adt.abapcleaner.programbase.UnexpectedSyntaxBeforeChanges;
 import com.sap.adt.abapcleaner.rulebase.Rule;
 
 public class LocalVariables {
-   private static String getNameKey(String name) {
-      return AbapCult.toUpper(name);
+   private static String getNameKey(String name, boolean isType) {
+   	// types can use the same identifiers as data objects (e.g. "TYPES BEGIN OF group ..." and "DATA group TYPE TABLE OF group"), 
+   	// therefore we use a prefix to store types independently
+      return (isType ? "~" : "") + AbapCult.toUpper(name);
    }
 
 	public static String getObjectName(String identifier) {
@@ -82,7 +84,7 @@ public class LocalVariables {
 		// for declarations like "DATA lv_textdat1(20) TYPE c.", reduce the identifier to its first part
 		text = ABAP.readTillEndOfVariableName(text, 0, true);
 
-		String key = getNameKey(text);
+		String key = getNameKey(text, isType);
 		if (locals.containsKey(key))
 			throw new UnexpectedSyntaxBeforeChanges(rule, identifier, (isConstant ? "Constant" : "Variable") + " '" + identifier.getText() + "' seems to be declared twice!");
 
@@ -96,16 +98,16 @@ public class LocalVariables {
 		return varInfo;
 	}
 
-	public VariableInfo getVariableInfo(Token identifier) {
-		return getVariableInfo(getObjectName(identifier.getText()));
+	public VariableInfo getVariableInfo(Token identifier, boolean isType) {
+		return getVariableInfo(getObjectName(identifier.getText()), isType);
 	}
 
-	public boolean containsVariableInfo(String objectName) { 
-		return locals.containsKey(getNameKey(objectName)); 
+	public boolean containsVariableInfo(String objectName, boolean isType) { 
+		return locals.containsKey(getNameKey(objectName, isType)); 
 	}
 
-	public VariableInfo getVariableInfo(String objectName) { 
-		return locals.get(getNameKey(objectName)); 
+	public VariableInfo getVariableInfo(String objectName, boolean isType) { 
+		return locals.get(getNameKey(objectName, isType)); 
 	}
 
 	public void setNeeded(String name) {
@@ -137,7 +139,11 @@ public class LocalVariables {
 		addUsage(identifier, name, false, false, false, false);
 	}
 	public VariableInfo addUsage(Token identifier, String name, boolean isAssignment, boolean isUsageInSelfAssignment, boolean isCommentedOut, boolean writesToReferencedMemory) {
-		String key = getNameKey(getObjectName(name));
+		// determine whether the identifier represent a type (rather than a data object);  
+		// identifier is only null when this method is called from .setNeeded(), and then false is correct
+		boolean isType = (identifier != null && identifier.isTypeIdentifier());
+		
+		String key = getNameKey(getObjectName(name), isType);
 		VariableInfo varInfo = locals.get(key);
 		if (varInfo == null) 
 			return null;

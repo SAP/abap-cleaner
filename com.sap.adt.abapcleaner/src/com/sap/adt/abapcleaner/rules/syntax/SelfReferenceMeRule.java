@@ -124,7 +124,7 @@ public class SelfReferenceMeRule extends RuleForDeclarations {
 			// me-> is followed by an attribute (including cases like 'me->mo_instance->any_method(');
 			
 			// if there is a local variable with the same name as that attribute, then do NOT remove 'me->'
-			if (localVariables.containsVariableInfo(identifier)) 
+			if (localVariables.containsVariableInfo(identifier, false)) 
 				return false;
 
 			// if there is a method parameter with the same name as the attribute, do NOT remove 'me->'
