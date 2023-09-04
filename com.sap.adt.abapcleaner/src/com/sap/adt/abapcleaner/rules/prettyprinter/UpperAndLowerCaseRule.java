@@ -76,7 +76,7 @@ public class UpperAndLowerCaseRule extends RuleForCommands {
    }
 
 	private static final String[] selection = new String[] { "(unchanged)", "lower case", "upper case" };
-	final ConfigEnumValue<DeriveCaseMethod> configDeriveCaseMethod = new ConfigEnumValue<DeriveCaseMethod>(this, "DeriveCaseMethod", "Auto-determine upper/lower case", new String[] { "do not auto-determine", "derive from first statement", "derive from majority of tokens" }, DeriveCaseMethod.NONE, DeriveCaseMethod.NONE, LocalDate.of(2022, 6, 24));
+	final ConfigEnumValue<DeriveCaseMethod> configDeriveCaseMethod = new ConfigEnumValue<DeriveCaseMethod>(this, "DeriveCaseMethod", "Auto-determine upper/lower case", new String[] { "do not auto-determine", "derive from first class definition / method implementation statement", "derive from majority of tokens" }, DeriveCaseMethod.NONE, DeriveCaseMethod.NONE, LocalDate.of(2022, 6, 24));
 	final ConfigEnumValue<CaseStyle> configDefinitionKeywordStyle = new ConfigEnumValue<CaseStyle>(this, "DefinitionKeywordStyle", "Keywords in CLASS ... DEFINITION section", selection, CaseStyle.UPPER_CASE, CaseStyle.UPPER_CASE, LocalDate.of(2021, 8, 15));
 	final ConfigEnumValue<CaseStyle> configDefinitionIdentifierStyle = new ConfigEnumValue<CaseStyle>(this, "DefinitionIdentifierStyle", "Identifiers in CLASS ... DEFINITION section", selection, CaseStyle.LOWER_CASE, CaseStyle.LOWER_CASE, LocalDate.of(2021, 8, 15));
 	final ConfigEnumValue<CaseStyle> configImplementationKeywordStyle = new ConfigEnumValue<CaseStyle>(this, "ImplementationKeywordStyle", "Keywords in all other places", selection, CaseStyle.UPPER_CASE, CaseStyle.UPPER_CASE, LocalDate.of(2021, 8, 15));
@@ -133,6 +133,8 @@ public class UpperAndLowerCaseRule extends RuleForCommands {
 		int definitionIdentifierUpperMinusLower = 0;
 		int implementationKeywordUpperMinusLower = 0;
 		int implementationIdentifierUpperMinusLower = 0;
+		int implFallbackKeywordUpperMinusLower = 0;
+		int implFallbackIdentifierUpperMinusLower = 0;
 		int pragmaUpperMinusLower = 0;
 		int pragmaParameterUpperMinusLower = 0;
 
@@ -158,8 +160,18 @@ public class UpperAndLowerCaseRule extends RuleForCommands {
 				}
 				definitionStyleFound = (!considerAllTokens && definitionKeywordUpperMinusLower != 0 && definitionIdentifierUpperMinusLower != 0);
 			
+			} else if (command.isClassImplementationStart() || command.isClassEnd() && command.getPrevSibling().isClassImplementationStart()) { 
+				// SE80 puts the CLASS ... IMPLEMENTATION and ENDCLASS commands to upper case only; therefore only process them
+				// for fallback purposes if no method implementation is found
+				if (considerAllTokens || implFallbackKeywordUpperMinusLower == 0) {
+					implFallbackKeywordUpperMinusLower += countUpperMinusLower(command, TokenType.KEYWORD, considerAllTokens, false);
+				}
+				if (considerAllTokens || implFallbackIdentifierUpperMinusLower == 0) { 
+					implFallbackIdentifierUpperMinusLower += countUpperMinusLower(command, TokenType.IDENTIFIER, considerAllTokens, false);
+				}
+
 			} else { 
-				// derive settings for implementation section 
+				// derive settings for implementation sections (excluding the CLASS ... IMPLEMENTATION and ENDCLASS commands)
 				if (considerAllTokens || implementationKeywordUpperMinusLower == 0) {
 					implementationKeywordUpperMinusLower += countUpperMinusLower(command, TokenType.KEYWORD, considerAllTokens, false);
 				}
@@ -169,7 +181,7 @@ public class UpperAndLowerCaseRule extends RuleForCommands {
 				implementationStyleFound = (!considerAllTokens && implementationKeywordUpperMinusLower != 0 && implementationIdentifierUpperMinusLower != 0);
 			}
 
-			// derive settings for implementation section 
+			// derive settings for pragmas 
 			if (considerAllTokens || pragmaUpperMinusLower == 0) {
 				pragmaUpperMinusLower += countUpperMinusLower(command, TokenType.PRAGMA, considerAllTokens, false);
 			}
@@ -181,6 +193,13 @@ public class UpperAndLowerCaseRule extends RuleForCommands {
 			command = command.getNextNonCommentCommand();
 		}
 
+		// if no method implementation was found, use fallback settings for implementation sections, which were derived from the 
+		// CLASS ... IMPLEMENTATION and ENDCLASS commands themselves
+		if (implementationKeywordUpperMinusLower == 0)
+			implementationKeywordUpperMinusLower = implFallbackKeywordUpperMinusLower;
+		if (implementationIdentifierUpperMinusLower == 0)
+			implementationIdentifierUpperMinusLower = implFallbackIdentifierUpperMinusLower;
+		
 		definitionKeywordStyle = getCaseStyleFor(definitionKeywordUpperMinusLower);
 		definitionIdentifierStyle = getCaseStyleFor(definitionIdentifierUpperMinusLower);
 		implementationKeywordStyle = getCaseStyleFor(implementationKeywordUpperMinusLower);

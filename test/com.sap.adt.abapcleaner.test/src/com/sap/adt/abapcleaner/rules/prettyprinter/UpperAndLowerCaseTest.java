@@ -828,8 +828,8 @@ class UpperAndLowerCaseTest extends RuleTestBase {
 		buildSrc("      exporting !ev_result type int4 ##PRAGMA[param].");
 		buildSrc("endclass.");
 		buildSrc("");
-		buildSrc("CLASS cl_upper_and_lower_case IMPLEMENTATION.");
-		buildSrc("  method pretty_print_case.");
+		buildSrc("CLASS CL_UPPER_AND_LOWER_CASE IMPLEMENTATION.");
+		buildSrc("  METHOD pretty_print_case.");
 		buildSrc("    constants lcMixedCaseIdentifier TYPE i value 5 ##PRAGMA[param].");
 		buildSrc("");
 		buildSrc("    EV_RESULT = lcMixedCaseIdentifier ##OTHER_PRAGMA.");
@@ -898,8 +898,8 @@ class UpperAndLowerCaseTest extends RuleTestBase {
 		buildSrc("      exporting !ev_result type int4.");
 		buildSrc("endclass.");
 		buildSrc("");
-		buildSrc("class CL_UPPER_AND_LOWER_CASE IMPLEMENTATION.");
-		buildSrc("  method pretty_print_case.");
+		buildSrc("class cl_upper_and_lower_case IMPLEMENTATION.");
+		buildSrc("  method PRETTY_PRINT_CASE.");
 		buildSrc("    constants lcMixedCaseIdentifier TYPE i value 5.");
 		buildSrc("");
 		buildSrc("    EV_RESULT = lcMixedCaseIdentifier.");
@@ -934,7 +934,7 @@ class UpperAndLowerCaseTest extends RuleTestBase {
 		buildSrc("endclass.");
 		buildSrc("");
 		buildSrc("CLASS CL_UPPER_AND_LOWER_CASE IMPLEMENTATION.");
-		buildSrc("  method pretty_print_case.");
+		buildSrc("  METHOD PRETTY_PRINT_CASE.");
 		buildSrc("    constants lcMixedCaseIdentifier TYPE i value 5.");
 		buildSrc("");
 		buildSrc("    EV_RESULT = lcMixedCaseIdentifier.");
@@ -970,7 +970,7 @@ class UpperAndLowerCaseTest extends RuleTestBase {
 		buildSrc("endclass.");
 		buildSrc("");
 		buildSrc("CLASS CL_UPPER_AND_LOWER_CASE IMPLEMENTATION.");
-		buildSrc("  method pretty_print_case.");
+		buildSrc("  METHOD PRETTY_PRINT_CASE.");
 		buildSrc("    constants lcMixedCaseIdentifier TYPE i value 5.");
 		buildSrc("");
 		buildSrc("    evResult = lcMixedCaseIdentifier.");
@@ -995,6 +995,27 @@ class UpperAndLowerCaseTest extends RuleTestBase {
 	}
 
 	@Test
+	void testDeriveFromFirstImplementationEmpty() {
+		rule.configDeriveCaseMethod.setEnumValue(DeriveCaseMethod.FROM_FIRST_TOKEN);
+
+		buildSrc("class cl_upper_and_lower_case definition public.");
+		buildSrc("  public SECTION.");
+		buildSrc("endclass.");
+		buildSrc("");
+		buildSrc("CLASS cl_upper_and_lower_case implementation.");
+		buildSrc("ENDCLASS.");
+
+		buildExp("class cl_upper_and_lower_case definition public.");
+		buildExp("  public section.");
+		buildExp("endclass.");
+		buildExp("");
+		buildExp("CLASS cl_upper_and_lower_case IMPLEMENTATION.");
+		buildExp("ENDCLASS.");
+
+		testRule();
+	}
+
+	@Test
 	void testDeriveFromMajorityLowerLowerUpperLower() {
 		rule.configDeriveCaseMethod.setEnumValue(DeriveCaseMethod.FROM_MAJORITY);
 
@@ -1005,7 +1026,7 @@ class UpperAndLowerCaseTest extends RuleTestBase {
 		buildSrc("endclass.");
 		buildSrc("");
 		buildSrc("CLASS CL_UPPER_AND_LOWER_CASE IMPLEMENTATION.");
-		buildSrc("  method pretty_print_case.");
+		buildSrc("  METHOD pretty_print_case.");
 		buildSrc("    constants lcMixedCaseIdentifier TYPE i value 5 ##PRAGMA[param].");
 		buildSrc("");
 		buildSrc("    evResult = lcMixedCaseIdentifier ##OTHER_PRAGMA.");
