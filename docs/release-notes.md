@@ -6,6 +6,17 @@ as well as bugfixes of reported issues, i.e. anything that enhances or changes t
 For a complete list of changes (including documentation, tests, refactoring etc.), please refer to 
 the list of [commits](../../../commits/main).
 
+## 2023-09-04 (version 1.5.3)
+
+Many **thanks** to [**suynwa**](https://github.com/suynwa), [**ConjuringCoffee**](https://github.com/ConjuringCoffee), [**jan-jezek**](https://github.com/jan-jezek), 
+[**AlexMFrank**](https://github.com/AlexMFrank) and [**cgrail**](https://github.com/cgrail) for the reporting the bugs behind these fixes!
+
+* Fixed rule '**Indent lines**' for WITH ... ENDWITH loops ([#98](../../../issues/98))
+* Fixed rule '**Use FINAL for immutable variables**' for method calls inside of constructors expressions ([#96](../../../issues/96))
+* Fixed rule '**Convert upper and lower case**' for text symbol IDs with letters ([#95](../../../issues/95))
+* Fixed **parser** for CLASS inside of macros ([#93](../../../issues/93))
+* Fixed rule '**Convert upper and lower case**', option '**Auto-determine ...: derive from first ...**' for implementation sections ([#92](../../../issues/92))
+
 ## 2023-08-15 (version 1.5.2)
 
 **Thanks** a lot to [**openPhiL**](https://github.com/openPhiL), [**thebestabapdeveloper**](https://github.com/thebestabapdeveloper) 

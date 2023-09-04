@@ -46,6 +46,11 @@ CLASS any_class IMPLEMENTATION.
     " similarly, FINAL is never introduced if a data reference is created somewhere:
     DATA(lt_any_table) = get_table( ).
     any_method( ir_struc = REF #( lt_any_table[ 1 ] ) ).
+
+    " FINAL is not introduced if method calls are found inside of constructor expressions,
+    " because some of these cases would create syntax errors with FINAL:
+    DATA(ls_struc) = VALUE ty_s_any_struc( comp1 = get_any_value( )
+                                           comp2 = 'literal' ).
   ENDMETHOD.
 ENDCLASS.
 ```
@@ -81,6 +86,11 @@ CLASS any_class IMPLEMENTATION.
     " similarly, FINAL is never introduced if a data reference is created somewhere:
     DATA(lt_any_table) = get_table( ).
     any_method( ir_struc = REF #( lt_any_table[ 1 ] ) ).
+
+    " FINAL is not introduced if method calls are found inside of constructor expressions,
+    " because some of these cases would create syntax errors with FINAL:
+    DATA(ls_struc) = VALUE ty_s_any_struc( comp1 = get_any_value( )
+                                           comp2 = 'literal' ).
   ENDMETHOD.
 ENDCLASS.
 ```
