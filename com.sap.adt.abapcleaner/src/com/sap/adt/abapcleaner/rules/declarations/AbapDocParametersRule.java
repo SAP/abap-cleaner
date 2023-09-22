@@ -40,6 +40,9 @@ public class AbapDocParametersRule extends RuleForDeclarations {
 	public String getDescription() { return "Adds missing parameters and exceptions to existing ABAP Doc comments and updates their order."; }
 
 	@Override
+	public String getHintsAndRestrictions() { return "No ABAP Doc comments are added for exceptions of FOR TESTING methods."; }
+
+	@Override
 	public LocalDate getDateCreated() { return LocalDate.of(2023, 6, 3); }
 
 	@Override
@@ -196,7 +199,7 @@ public class AbapDocParametersRule extends RuleForDeclarations {
 				// put the next exception behind this one (even if this exception was not moved to the correct position)
 				writePos = abapDoc.getNextToken(exceptionDoc.lastToken);
 			} else if (addExceptions != AddAbapDocType.NEVER && (!abapDoc.isSynchronized() || addExceptions != AddAbapDocType.ONLY_FOR_NON_SYNCHRONIZED) 
-					 && (abapDoc.hasAnyParameterOrException() || !onlyAddToExistingDetails)) {
+					 && (abapDoc.hasAnyParameterOrException() || !onlyAddToExistingDetails) && !methodInfo.isForTesting) {
 				if (exceptionInfo.isClassBased) {
 					abapDoc.insertRaisingDocBefore(writePos, exceptionInfo.name, (addExceptions == AddAbapDocType.ALWAYS_AS_NON_SYNCHRONIZED));
 				} else {

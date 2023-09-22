@@ -833,4 +833,47 @@ public class AbapDocParametersTest extends RuleTestBase {
 
 		testRule();
 	}
+
+
+	@Test
+	void testTestMethodExceptionsNotAdded() {
+		// ensure that no ABAP Doc is added for exceptions of test methods (because it is unlikely that 
+		// documentation should be added for those); parameters can anyway never occur with FOR TESTING methods
+
+		buildSrc("  PRIVATE SECTION.");
+		buildSrc("    \"! any method");
+		buildSrc("    METHODS any_method FOR TESTING RAISING cx_any_exception\");");
+		buildSrc("                                           cx_other_exception.\");");
+
+		copyExpFromSrc();
+
+		putAnyClassDefAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testTestMethodExceptionDeletedButNotAdded() {
+		// ensure that in FOR TESTING methods, documentation for obsolete exceptions is removed, 
+		// even if no documentation is added for a missing exception (see previous test)
+		
+		buildSrc("  PRIVATE SECTION.");
+		buildSrc("    \"! any method");
+		buildSrc("    \"!");
+		buildSrc("    \"! @raising cx_any_exception   | any exception");
+		buildSrc("    \"! @raising cx_third_exception |");
+		buildSrc("    METHODS any_method FOR TESTING RAISING cx_any_exception\");");
+		buildSrc("                                           cx_other_exception.\");");
+
+		buildExp("  PRIVATE SECTION.");
+		buildExp("    \"! any method");
+		buildExp("    \"!");
+		buildExp("    \"! @raising cx_any_exception   | any exception");
+		buildExp("    METHODS any_method FOR TESTING RAISING cx_any_exception\");");
+		buildExp("                                           cx_other_exception.\");");
+
+		putAnyClassDefAroundSrcAndExp();
+
+		testRule();
+	}
 }
