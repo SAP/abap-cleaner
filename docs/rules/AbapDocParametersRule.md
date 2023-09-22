@@ -4,6 +4,8 @@
 
 Adds missing parameters and exceptions to existing ABAP Doc comments and updates their order.
 
+No ABAP Doc comments are added for exceptions of FOR TESTING methods.
+
 ## Options
 
 * Add missing parameters to ABAP Doc \[Only to non-synchronized ABAP Doc\]
