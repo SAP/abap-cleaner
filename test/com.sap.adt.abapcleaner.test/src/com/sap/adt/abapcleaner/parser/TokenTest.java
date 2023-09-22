@@ -250,6 +250,20 @@ public class TokenTest {
 	}
 	
 	@Test
+	void testColonInsideParens() {
+		String codeText = "any_method( : 1 ), 2 ).";
+		try {
+			Code.parse(null, ParseParams.createForTest(codeText, ABAP.NEWEST_RELEASE));
+			fail();
+		} catch(ParseException ex) {
+			// expected case
+			assertTrue(ex.getMessage().indexOf("Chain colons inside parentheses") >= 0);
+			assertTrue(ex.getMessage().indexOf("not supported") >= 0);
+			assertTrue(ex.getMessage().indexOf("Please rewrite") >= 0);
+		}
+	}
+	
+	@Test
 	void testGetLastTokenOfSequence() {
 		Command command = buildCommand("a = 1 + 2.");
 		
