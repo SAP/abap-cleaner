@@ -6,6 +6,19 @@ as well as bugfixes of reported issues, i.e. anything that enhances or changes t
 For a complete list of changes (including documentation, tests, refactoring etc.), please refer to 
 the list of [commits](../../../commits/main).
 
+## 2023-09-22 (version 1.5.4)
+
+**Thank you** [**MDagni**](https://github.com/MDagni), [**suynwa**](https://github.com/suynwa), 
+[**AlexMFrank**](https://github.com/AlexMFrank), [**FirdousP**](https://github.com/FirdousP)
+and [**ConjuringCoffee**](https://github.com/ConjuringCoffee) for the issues behind these improvements!
+
+* Fixed rule '**Standardize empty lines within methods**' for function modules ([#106](../../../issues/106))
+* Changed rule '**Add missing parameters to ABAP Doc**' to not create ABAP Doc lines for **test method exceptions** ([#103](../../../issues/103))
+* Updated **ABAP grammar file** to fix capitalization of CORRESPONDING ... MAPPING ... DEFAULT ([#102](../../../issues/102))
+* Added hint on restriction of rule '**Align declarations**', option '**Maximum line length**' ([#100](../../../issues/100))
+* Improved **parser error** message for **chain colon inside parentheses** ([#91](../../../issues/91))
+* Improved **documentation** for cleanup range '**Current class**' ([#62](../../../issues/62))
+
 ## 2023-09-04 (version 1.5.3)
 
 Many **thanks** to [**suynwa**](https://github.com/suynwa), [**ConjuringCoffee**](https://github.com/ConjuringCoffee), [**jan-jezek**](https://github.com/jan-jezek), 

@@ -4,6 +4,8 @@
 
 Aligns both chains and consecutive declaration lines of CONSTANTS, DATA, FIELD-SYMBOLS, and TYPES.
 
+If line length is exceeded, VALUE clauses can be moved to the next line, unless they are followed by further code or comments that must be aligned.
+
 ## References
 
 * [<-> Clean ABAP Styleguide: Don't align type clauses](https://github.com/SAP/styleguides/blob/main/clean-abap/CleanABAP.md#dont-align-type-clauses)

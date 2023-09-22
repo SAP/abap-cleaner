@@ -4,6 +4,8 @@
 
 Restricts the number of consecutive empty lines within methods, and adds an empty line between declarations and the first executable statement \(or the comments preceding it\).
 
+For function modules, additional empty lines are kept at the beginning to align with ADT and SE37 behavior.
+
 ## References
 
 * [Clean ABAP Styleguide: Add a single blank line to separate things, but not more](https://github.com/SAP/styleguides/blob/main/clean-abap/CleanABAP.md#add-a-single-blank-line-to-separate-things-but-not-more)
