@@ -132,6 +132,9 @@ public class AlignDeclarationsRule extends AlignDeclarationSectionRuleBase {
 	public String getDescription() { return "Aligns both chains and consecutive declaration lines of CONSTANTS, DATA, FIELD-SYMBOLS, and TYPES."; }
 
 	@Override
+	public String getHintsAndRestrictions() { return "If line length is exceeded, VALUE clauses can be moved to the next line, unless they are followed by further code or comments that must be aligned."; }
+
+	@Override
 	public LocalDate getDateCreated() { return LocalDate.of(2021, 1, 8); }
 
 	@Override
