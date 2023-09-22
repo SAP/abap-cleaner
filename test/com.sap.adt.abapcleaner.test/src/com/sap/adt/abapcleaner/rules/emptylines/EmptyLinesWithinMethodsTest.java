@@ -351,4 +351,100 @@ class EmptyLinesWithinMethodsTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testFunctionModuleWithParametersRemoveLine() {
+		// ensure that 3 empty lines are kept (but the 4th is removed) in function modules with parameters, 
+		// because these 3 lines are used for auto-generated comments in SE37 and reserved by ADT upon save 
+		
+		buildSrc("FUNCTION any_function");
+		buildSrc("  IMPORTING");
+		buildSrc("    VALUE(im_p1) TYPE i");
+		buildSrc("  EXPORTING");
+		buildSrc("    ex_p1 TYPE i.");
+		buildSrc("");
+		buildSrc("");
+		buildSrc("");
+		buildSrc("");
+		buildSrc("  ex_p1 = 1.");
+		buildSrc("ENDFUNCTION.");
+
+		buildExp("FUNCTION any_function");
+		buildExp("  IMPORTING");
+		buildExp("    VALUE(im_p1) TYPE i");
+		buildExp("  EXPORTING");
+		buildExp("    ex_p1 TYPE i.");
+		buildExp("");
+		buildExp("");
+		buildExp("");
+		buildExp("  ex_p1 = 1.");
+		buildExp("ENDFUNCTION.");
+
+		testRule();
+	}
+
+	@Test
+	void testFunctionModuleWithParametersKeepLines() {
+		// with 1 empty line configured for method start, ensure that 4 empty lines are kept in function modules with parameters
+		
+		rule.configMaxEmptyLinesAtMethodStart.setValue(1);
+
+		buildSrc("FUNCTION any_function");
+		buildSrc("  IMPORTING");
+		buildSrc("    VALUE(im_p1) TYPE i");
+		buildSrc("  EXPORTING");
+		buildSrc("    ex_p1 TYPE i.");
+		buildSrc("");
+		buildSrc("");
+		buildSrc("");
+		buildSrc("");
+		buildSrc("  ex_p1 = 1.");
+		buildSrc("ENDFUNCTION.");
+
+		copyExpFromSrc();
+
+		testRule();
+	}
+
+	@Test
+	void testFunctionModuleWithoutParametersRemoveLine() {
+		// ensure that 1 empty line is kept (but further lines removed) in function modules without parameters, 
+		// because this line is used for auto-generated comments in SE37 and reserved by ADT upon save 
+		
+		buildSrc("FUNCTION any_function");
+		buildSrc(" \" You can use the template 'functionModuleParameter' to add here the signature!");
+		buildSrc(".");
+		buildSrc("");
+		buildSrc("");
+		buildSrc("  \" any comment");
+		buildSrc("ENDFUNCTION.");
+
+		buildExp("FUNCTION any_function");
+		buildExp(" \" You can use the template 'functionModuleParameter' to add here the signature!");
+		buildExp(".");
+		buildExp("");
+		buildExp("  \" any comment");
+		buildExp("ENDFUNCTION.");
+
+		testRule();
+	}
+
+	@Test
+	void testFunctionModuleWithoutParametersKeepLines() {
+		// with 1 empty line configured for method start, ensure that 2 empty lines are kept in function modules without parameters
+
+		rule.configMaxEmptyLinesAtMethodStart.setValue(1);
+
+		buildSrc("FUNCTION any_function");
+		buildSrc(" \" You can use the template 'functionModuleParameter' to add here the signature!");
+		buildSrc(".");
+		buildSrc("");
+		buildSrc("");
+		buildSrc("  \" any comment");
+		buildSrc("ENDFUNCTION.");
+
+		copyExpFromSrc();
+
+		testRule();
+	}
 }

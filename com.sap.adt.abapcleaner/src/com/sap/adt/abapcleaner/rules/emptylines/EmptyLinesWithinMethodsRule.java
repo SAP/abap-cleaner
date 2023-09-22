@@ -23,6 +23,9 @@ public class EmptyLinesWithinMethodsRule extends Rule {
 	public String getDescription() { return "Restricts the number of consecutive empty lines within methods, and adds an empty line between declarations and the first executable statement (or the comments preceding it)."; }
 
 	@Override
+	public String getHintsAndRestrictions() { return "For function modules, additional empty lines are kept at the beginning to align with ADT and SE37 behavior."; }
+
+	@Override
 	public LocalDate getDateCreated() { return LocalDate.of(2020, 12, 28); }
 
 	@Override
@@ -136,6 +139,15 @@ public class EmptyLinesWithinMethodsRule extends Rule {
 		Token token = command.getFirstToken();
 		if (command.getPrev() != null && (command.getPrev().isMethodFunctionFormOrEventBlockStart() || command.isMethodFunctionOrFormEnd())) {
 			int maxLineBreak = ((command.isMethodFunctionOrFormEnd()) ? configMaxEmptyLinesAtMethodEnd.getValue() : configMaxEmptyLinesAtMethodStart.getValue()) + 1;
+			
+			// for function modules with parameters, allow 3 extra lines that are needed for additional auto-generated comment lines in SE37, 
+			// and therefore ensured when saving a function module from ADT; for function modules without parameters, 1 extra line is needed
+			if (command.getPrev().isFunctionStart()) {
+				Token functionName = command.getPrev().getFirstCodeToken().getNextCodeSibling();
+				boolean hasParameters = (functionName != null && !functionName.getNextCodeSibling().isPeriod());
+				maxLineBreak += hasParameters ? 3 : 1;
+			}
+
 			if (token != null && token.lineBreaks > maxLineBreak) {
 				token.lineBreaks = maxLineBreak;
 				code.addRuleUse(this, command, token);
