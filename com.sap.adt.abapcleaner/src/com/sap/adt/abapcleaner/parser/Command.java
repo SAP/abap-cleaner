@@ -2739,29 +2739,7 @@ public class Command {
 
 		return false;
 	}
-	/** Returns true if the Command matches a hard-coded pattern or condition.
-	 * This method can be used during development to search for examples in all sample code files. */
-	public final boolean matchesPattern() {
-      // useful snippets:
-      // - is this a certain ABAP command?
-      //   return firstCodeTokenIsKeyword("ABAP_KEYWORD");
-      // - is a certain Token found anywhere?
-      //   Token token = firstToken.getLastTokenDeep(true, TokenSearch.ASTERISK, "SEARCH_TEXT|ALTERNATIVE|...");
-      //   return (token != null && ...);
-      // - was a certain cleanup rule used?
-		//   return changeControl.wasRuleUsed(RuleID....);
-		// - is a certain system field modified with at least 2 reads on this system field in subsequent program flow?
-		//   return changesSyField(ABAP.SyField.SUBRC) && SyFieldAnalyzer.getSyFieldReadersFor(ABAP.SyField.SUBRC, this).size() >= 2;
-		//   - getCommandsRelatedToPatternMatch() can then return SyFieldAnalyzer.getSyFieldReadersFor(ABAP.SyField.SUBRC, this);
-		
-		return this.getFirstToken().isAnyKeyword("WITH", "ENDWITH");
-		//return false;
-	}
-	
-	public final ArrayList<Command> getCommandsRelatedToPatternMatch() {
-		return null;
-	}
-	
+
 	public final boolean containsMethodCallInsideConstructorExp() {
 		Token token = firstToken;
 		while (token != null) {
@@ -2789,4 +2767,33 @@ public class Command {
 		}
 		return false;
 	}
+	
+	public final boolean containsChainColonInsideParentheses() {
+		Token token = firstToken.getLastTokenDeep(true, TokenSearch.ASTERISK, ":");
+		return (token != null && token.getParent() != null);
+	}
+
+	/** Returns true if the Command matches a hard-coded pattern or condition.
+	 * This method can be used during development to search for examples in all sample code files. */
+	public final boolean matchesPattern() {
+      // useful snippets:
+      // - is this a certain ABAP command?
+      //   return firstCodeTokenIsKeyword("ABAP_KEYWORD");
+      // - is a certain Token found anywhere?
+      //   Token token = firstToken.getLastTokenDeep(true, TokenSearch.ASTERISK, "SEARCH_TEXT|ALTERNATIVE|...");
+      //   return (token != null && ...);
+      // - was a certain cleanup rule used?
+		//   return changeControl.wasRuleUsed(RuleID....);
+		// - is a certain system field modified with at least 2 reads on this system field in subsequent program flow?
+		//   return changesSyField(ABAP.SyField.SUBRC) && SyFieldAnalyzer.getSyFieldReadersFor(ABAP.SyField.SUBRC, this).size() >= 2;
+		//   - getCommandsRelatedToPatternMatch() can then return SyFieldAnalyzer.getSyFieldReadersFor(ABAP.SyField.SUBRC, this);
+		
+		return this.getFirstToken().isAnyKeyword("WITH", "ENDWITH");
+		//return false;
+	}
+	
+	public final ArrayList<Command> getCommandsRelatedToPatternMatch() {
+		return null;
+	}
+	
 }

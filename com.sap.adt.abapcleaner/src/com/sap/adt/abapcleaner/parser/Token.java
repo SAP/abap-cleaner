@@ -402,8 +402,16 @@ public class Token {
 		if (opensLevel && !newToken.closesLevel) {
 			addChild(newToken);
 		} else if (!opensLevel && newToken.closesLevel) {
-			if (parent == null)
-				throw new UnexpectedSyntaxException(this, "The Token '" + newToken.text + "' cannot be added to '" + text + "', because the latter has no parent Token.");
+			if (parent == null) {
+				String msg ;
+				if (parentCommand.containsChainColonInsideParentheses()) {
+					msg = "Chain colons inside parentheses or brackets are currently not supported by " + Program.PRODUCT_NAME + ". ";
+					msg += "Please rewrite this ABAP statement manually before running " + Program.PRODUCT_NAME + " on this code.";
+				} else {
+					msg = "The Token '" + newToken.text + "' cannot be added to '" + text + "', because the latter has no parent Token.";
+				}
+				throw new UnexpectedSyntaxException(this, msg);
+			}
 			parent.addSibling(newToken);
 		} else {
 			addSibling(newToken);
