@@ -1319,4 +1319,19 @@ class UpperAndLowerCaseTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testCorrespondingMappingDefault() {
+		// ensure DEFAULT is put to upper case, which requires a current grammar.txt PAD file
+		
+		buildSrc("    FINAL(ls_a) = VALUE any_type( a = '0' ).");
+		buildSrc("    FINAL(ls_b) = CORRESPONDING any_type( ls_a MAPPING b = default '1' ).");
+
+		buildExp("    FINAL(ls_a) = VALUE any_type( a = '0' ).");
+		buildExp("    FINAL(ls_b) = CORRESPONDING any_type( ls_a MAPPING b = DEFAULT '1' ).");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }
