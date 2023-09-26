@@ -6,6 +6,13 @@ as well as bugfixes of reported issues, i.e. anything that enhances or changes t
 For a complete list of changes (including documentation, tests, refactoring etc.), please refer to 
 the list of [commits](../../../commits/main).
 
+## 2023-09-26 (version 1.5.5)
+
+**Thanks a lot**, [**bnichell**](https://github.com/bnichell) for reporting the bug behind this release!
+
+* Added link to the recording of the **Devtoberfest session** in **README** chapter 'Demo'
+* Fixed rule '**Use FINAL for immutable variables**' for assignments to table expressions ([#112](../../../issues/112))
+
 ## 2023-09-22 (version 1.5.4)
 
 **Thank you** [**MDagni**](https://github.com/MDagni), [**suynwa**](https://github.com/suynwa), 
