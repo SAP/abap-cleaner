@@ -825,6 +825,10 @@ public class TokenTest {
 			commandText.append(commandTextWithMarkers.substring(writePos, markerPos));
 			writePos = markerPos + 1;
 			String varName = ABAP.readTillEndOfVariableName(commandTextWithMarkers, writePos, true);
+			char nextChar = commandTextWithMarkers.charAt(writePos + varName.length());
+			if (nextChar == '(' || nextChar == '[') {
+				varName += nextChar;
+			}
 			switch(commandTextWithMarkers.charAt(markerPos)) {
 				case READ_MARKER:
 					expRead.add(varName);
@@ -885,6 +889,14 @@ public class TokenTest {
 		assertAccessType("!a = 1.");
 		assertAccessType("!a = !b = !c = ?d.");
 		assertAccessType("!ls_struc = get_value( param = ?lv_value ).");
+	}
+	
+	@Test
+	void testAccessTypeAssignmentToTableExpr() {
+		assertAccessType("!lt_any[ 1 ] = ?ls_any.");
+		assertAccessType("!lt_any[ 1 ]-comp = ?ls_other[ 1 ]-comp.");
+		assertAccessType("!lt_any[ 1 ]-inner[ 2 ]-comp = 1.");
+		assertAccessType("!lt_any[ 1 ]-inner[ 2 ] = ?lt_other[ 1 ]-inner[ 3 ].");
 	}
 	
 	@Test
@@ -1351,5 +1363,30 @@ public class TokenTest {
 		assertFalse(buildCommand("TYPES dtyp LIKE LINE OF dobj.", "dobj").isTypeIdentifier());
 		assertFalse(buildCommand("FIELD-SYMBOLS <ls_any> LIKE LINE OF lt_table.", "lt_table").isTypeIdentifier());
 	}
-	
+
+	@Test
+	void testStartOfTableExpression() {
+		// if 'this' Token is not part of a table expression, 'this' should be returned 
+		assertTrue(buildCommand("* comment", 0).getStartOfTableExpression().textEquals("* comment"));
+		assertTrue(buildCommand("ASSERT a = 1.", 0).getStartOfTableExpression().textEquals("ASSERT"));
+		assertTrue(buildCommand("lv_any = 1.", 0).getStartOfTableExpression().textEquals("lv_any"));
+		
+		assertTrue(buildCommand("lt_any[ 1 ]-name = 'a'.", "]-name").getStartOfTableExpression().textEquals("lt_any["));
+		assertTrue(buildCommand("lt_any[ num = 1 ]-name = 'a'.", "]-name").getStartOfTableExpression().textEquals("lt_any["));
+		assertTrue(buildCommand("lt_any[ num = 1 ]-ref->mv_msgty = 'a'.", "]-ref->mv_msgty").getStartOfTableExpression().textEquals("lt_any["));
+		assertTrue(buildCommand("lt_any[ num = 1 ]-inner[ 2 ]-name", "]-name").getStartOfTableExpression().textEquals("lt_any["));
+	}
+
+	@Test
+	void testEndOfTableExpression() {
+		// if 'this' Token is not part of a table expression, 'this' should be returned 
+		assertTrue(buildCommand("* comment", 0).getEndOfTableExpression().textEquals("* comment"));
+		assertTrue(buildCommand("ASSERT a = 1.", 0).getEndOfTableExpression().textEquals("ASSERT"));
+		assertTrue(buildCommand("lv_any = 1.", 0).getEndOfTableExpression().textEquals("lv_any"));
+
+		assertTrue(buildCommand("lt_any[ 1 ]-name = 'a'.", 0).getEndOfTableExpression().textEquals("]-name"));
+		assertTrue(buildCommand("lt_any[ num = 1 ]-name = 'a'.", 0).getEndOfTableExpression().textEquals("]-name"));
+		assertTrue(buildCommand("lt_any[ num = 1 ]-ref->mv_msgty = 'a'.", 0).getEndOfTableExpression().textEquals("]-ref->mv_msgty"));
+		assertTrue(buildCommand("lt_any[ num = 1 ]-inner[ 2 ]-name", 0).getEndOfTableExpression().textEquals("]-name"));
+	}
 }

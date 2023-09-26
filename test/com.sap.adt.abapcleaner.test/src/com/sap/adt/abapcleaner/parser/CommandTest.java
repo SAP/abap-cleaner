@@ -71,20 +71,33 @@ public class CommandTest {
 
 	@Test
 	void testIsAssignment() {
-		assertFalse(buildCommand("CLEAR ev_param.").isAssignment(false));
-		assertFalse(buildCommand(".").isAssignment(false));
-		assertFalse(buildCommand("any_method( iv_param = 1 ).").isAssignment(false));
-		assertFalse(buildCommand("DATA(a) = 1.").isAssignment(false));
-		assertFalse(buildCommand("DATA(a) = get_value( ).").isAssignment(false));
+		assertFalse(buildCommand("CLEAR ev_param.").isAssignment(false, false));
+		assertFalse(buildCommand(".").isAssignment(false, false));
+		assertFalse(buildCommand("any_method( iv_param = 1 ).").isAssignment(false, false));
+		assertFalse(buildCommand("DATA(a) = 1.").isAssignment(false, false));
+		assertFalse(buildCommand("DATA(a) = get_value( ).").isAssignment(false, false));
 	
-		assertTrue(buildCommand("a = 1.").isAssignment(false));
-		assertTrue(buildCommand("a += 1.").isAssignment(false));
-		assertTrue(buildCommand("ls_struc-comp = 1.").isAssignment(false));
-		assertTrue(buildCommand("ls_struc-comp *= 2.").isAssignment(false));
-		assertTrue(buildCommand("<ls_any>-comp = 1.").isAssignment(false));
-		assertTrue(buildCommand("<ls_any>-comp -= 1.").isAssignment(false));
-		assertTrue(buildCommand("DATA(a) = 1.").isAssignment(true));
-		assertTrue(buildCommand("DATA(a) = get_value( ).").isAssignment(true));
+		assertTrue(buildCommand("a = 1.").isAssignment(false, false));
+		assertTrue(buildCommand("a += 1.").isAssignment(false, false));
+		assertTrue(buildCommand("ls_struc-comp = 1.").isAssignment(false, false));
+		assertTrue(buildCommand("ls_struc-comp *= 2.").isAssignment(false, false));
+		assertTrue(buildCommand("<ls_any>-comp = 1.").isAssignment(false, false));
+		assertTrue(buildCommand("<ls_any>-comp -= 1.").isAssignment(false, false));
+		assertTrue(buildCommand("DATA(a) = 1.").isAssignment(true, false));
+		assertTrue(buildCommand("DATA(a) = get_value( ).").isAssignment(true, false));
+	}
+
+	@Test
+	void testIsAssignmentToTableExpr() {
+		assertFalse(buildCommand("CLEAR ev_param.").isAssignment(false, true));
+		assertFalse(buildCommand(".").isAssignment(false, true));
+		assertFalse(buildCommand("any_method( iv_param = 1 ).").isAssignment(false, true));
+		assertFalse(buildCommand("DATA(a) = 1.").isAssignment(false, true));
+		assertFalse(buildCommand("DATA(a) = get_value( ).").isAssignment(false, true));
+	
+		assertTrue(buildCommand("lt_any[ 1 ] = ls_any.").isAssignment(false, true));
+		assertTrue(buildCommand("lt_any[ comp = 1 ]-name = 'a'.").isAssignment(false, true));
+		assertTrue(buildCommand("lt_any[ 1 ]-inner[ 2 ]-inner_inner[ 3 ]-comp = 1.").isAssignment(false, true));
 	}
 
 	@Test

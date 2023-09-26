@@ -104,6 +104,8 @@ public final class ABAP {
 	public static final String ABAP_DOC_RAISING_ANNOTATION = "@raising";
 	public static final String ABAP_DOC_EXCEPTION_ANNOTATION = "@exception";
    public static final char NAMESPACE_SIGN = '/';
+   public static final char TABLE_EXPR_BRACKET_OPEN = '[';
+   public static final char TABLE_EXPR_BRACKET_CLOSE = ']';
    public static final char PRAGMA_PARAMETER_BRACKET_OPEN = '[';
    public static final char PRAGMA_PARAMETER_BRACKET_CLOSE = ']';
 

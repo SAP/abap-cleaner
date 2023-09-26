@@ -212,8 +212,10 @@ public class Token {
 
 	public final boolean isOnlyTokenInCommand() { return isFirstTokenInCommand() && isLastTokenInCommand(); }
 
-	public final boolean opensInlineDeclaration() { return isAnyKeyword("DATA(", "FINAL(", "FIELD-SYMBOL(", "@DATA(", "@FINAL(") && next != null && next.isAttached(); }; // by contrast, 'REF data( lv_company_code )' is NOT an inline declaration, because the next Token is NOT attached!
-	
+	public final boolean opensInlineDeclaration() { return isAnyKeyword("DATA(", "FINAL(", "FIELD-SYMBOL(", "@DATA(", "@FINAL(") && next != null && next.isAttached(); } // by contrast, 'REF data( lv_company_code )' is NOT an inline declaration, because the next Token is NOT attached!
+
+	public final boolean opensTableExpression() { return opensLevel && isIdentifier() && textEndsWith("["); } 
+
 	public final boolean opensInlineDeclarationForFieldSymbol() { return isAnyKeyword("FIELD-SYMBOL(") && next != null && next.isAttached(); }; 
 	
 	public final boolean isAttached() { return lineBreaks == 0 && spacesLeft == 0; }
@@ -1680,7 +1682,7 @@ public class Token {
 		// This function is ordered by sections in:
 		// https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/index.htm?file=abenabap_statements_overview.htm
 
-		if (!isIdentifier() || this.opensLevel)
+		if (!isIdentifier() || this.opensLevel && this.textEndsWith("("))
 			return MemoryAccessType.NONE;
 		
 		Command command = getParentCommand();
@@ -1689,7 +1691,7 @@ public class Token {
 		if (prevToken != null && prevToken.isChainColon())
 			prevToken = prevToken.getPrevCodeSibling();
 		Token prevPrevToken = (prevToken == null) ? null : prevToken.getPrevCodeSibling();
-		Token nextToken = getNextCodeToken();
+		Token nextToken = getEndOfTableExpression().getNextCodeToken();
 		if (nextToken == null)
 			return MemoryAccessType.NONE;
 		if (nextToken.isChainColon())
@@ -1729,10 +1731,10 @@ public class Token {
 			}
 		}
 			
-		// assignments of type 'var = ...' (without inline declarations)
-		if (command.isAssignment(false) && nextToken.isAssignmentOperator()) {
+		// assignments of type 'var = ...' or 'itab[ ... ] = ...' (without inline declarations)
+		if (command.isAssignment(false, true) && nextToken.isAssignmentOperator()) {
 			// in case of equals sign chaining 'a = b = c = 1.', move to the first receiving variable
-			Token firstReceiver = this;
+			Token firstReceiver = this.getStartOfTableExpression();
 			do {
 				Token prevAssignmentOp = firstReceiver.getPrevCodeSibling();
 				if (prevAssignmentOp == null || !prevAssignmentOp.isAssignmentOperator())
@@ -1740,7 +1742,7 @@ public class Token {
 				Token prevIdentifier = prevAssignmentOp.getPrevCodeSibling();
 				if (prevIdentifier == null || !prevIdentifier.isIdentifier())
 					break;
-				firstReceiver = prevIdentifier;
+				firstReceiver = prevIdentifier.getStartOfTableExpression();
 			} while(true);
 			if (firstReceiver == command.getFirstCodeToken()) {
 				Token nextNext = nextToken.getNextCodeSibling();
@@ -2385,5 +2387,21 @@ public class Token {
 		}
 		
 		return false;
+	}
+	
+	public Token getStartOfTableExpression() {
+		Token token = this;
+		while (token != null && token.closesLevel && token.textStartsWith("]")) {
+			token = token.getPrevSibling();
+		}
+		return token;
+	}
+	
+	public Token getEndOfTableExpression() {
+		Token token = this;
+		while (token != null && token.opensTableExpression()) {
+			token = token.getNextSibling();
+		}
+		return token;
 	}
 }

@@ -138,7 +138,7 @@ public class FinalVariableRule extends RuleForDeclarations {
 				// do NOT introduce @FINAL if the INTO clause is followed by another (mainquery) clause, because that could 
 				// lead to a syntax error; cp. documentation on ABAP SQL strict modes 
 				// https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/index.htm?file=abenabap_sql_strict_modes.htm
-			} else if (command.isAssignment(true) && command.containsMethodCallInsideConstructorExp()) {
+			} else if (command.isAssignment(true, false) && command.containsMethodCallInsideConstructorExp()) {
 				// some cases of method calls inside of a constructor expression produce a syntax error if FINAL is used, e.g.
 				// FINAL(test_data) = VALUE ty_s_any( id = get_any_integer( ) name = 'Test' ).
 				// FINAL(lv_value) = COND i( WHEN lv_condition = abap_true THEN get_any_integer( ) ELSE get_any_integer( ) ).

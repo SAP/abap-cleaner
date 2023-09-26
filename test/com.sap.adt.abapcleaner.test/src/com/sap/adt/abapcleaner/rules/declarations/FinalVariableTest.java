@@ -614,4 +614,23 @@ class FinalVariableTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testTableExpressionInWritePos() {
+		buildSrc("    DATA(lt_a) = get_table( ).");
+		buildSrc("    DATA(lt_b) = get_table( ).");
+		buildSrc("    DATA(lt_c) = get_table( ).");
+		buildSrc("    DATA(lt_d) = get_table( ).");
+		buildSrc(".");
+		buildSrc("    lt_a[ 1 ] = is_any.");
+		buildSrc("    lt_b[ 1 ]-comp = 1.");
+		buildSrc("    lt_c[ id = 1 ]-inner_table[ 1 ]-comp = get_value( ).");
+		buildSrc("    lt_d[ 1 ]-ref->mv_attribute = 1.");
+		
+		copyExpFromSrc();
+		
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }

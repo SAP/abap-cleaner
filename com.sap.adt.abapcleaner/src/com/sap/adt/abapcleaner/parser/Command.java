@@ -1207,7 +1207,7 @@ public class Command {
 		}
 	}
 
-	public final boolean isAssignment(boolean allowInlineDeclaration) {
+	public final boolean isAssignment(boolean allowInlineDeclaration, boolean allowTableExpr) {
 		Token token = getFirstCodeToken();
 		if (token == null) {
 			return false;
@@ -1215,7 +1215,10 @@ public class Command {
 			token = token.getNextSibling();
 		} else if (!token.isIdentifier()) {
 			return false;
+		} else if (allowTableExpr && token.opensTableExpression()) {
+			token = token.getEndOfTableExpression();
 		}
+		
 		Token nextToken = token.getNextCodeToken();
 		if (nextToken.isChainColon())
 			nextToken = nextToken.getNextCodeToken();
@@ -2788,8 +2791,7 @@ public class Command {
 		//   return changesSyField(ABAP.SyField.SUBRC) && SyFieldAnalyzer.getSyFieldReadersFor(ABAP.SyField.SUBRC, this).size() >= 2;
 		//   - getCommandsRelatedToPatternMatch() can then return SyFieldAnalyzer.getSyFieldReadersFor(ABAP.SyField.SUBRC, this);
 		
-		return this.getFirstToken().isAnyKeyword("WITH", "ENDWITH");
-		//return false;
+		return false;
 	}
 	
 	public final ArrayList<Command> getCommandsRelatedToPatternMatch() {

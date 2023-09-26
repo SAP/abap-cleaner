@@ -1927,4 +1927,18 @@ class UnusedVariablesTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testAssignmentToTableExpr() {
+		buildSrc("    DATA(lt_any) = get_table( ).");
+		buildSrc("    lt_any[ 1 ]-comp = 1.");
+
+		buildExp("    \" TODO: variable is assigned but never used (ABAP cleaner)");
+		buildExp("    DATA(lt_any) = get_table( ).");
+		buildExp("    lt_any[ 1 ]-comp = 1.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }
