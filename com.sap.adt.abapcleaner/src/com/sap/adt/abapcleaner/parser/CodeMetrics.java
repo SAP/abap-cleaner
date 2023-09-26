@@ -58,7 +58,7 @@ public class CodeMetrics {
 				String firstCollocation;
 				if (commandStartsWithKeyword)
 					firstCollocation = collocations[0];
-				else if (command.isAssignment(true))
+				else if (command.isAssignment(true, true))
 					firstCollocation = "(assignment)";
 				else if (command.isFunctionalCallOrCallChain())
 					firstCollocation = "(functional call)";

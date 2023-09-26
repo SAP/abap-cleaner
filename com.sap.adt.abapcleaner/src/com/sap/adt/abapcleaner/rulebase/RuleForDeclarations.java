@@ -443,7 +443,7 @@ public abstract class RuleForDeclarations extends Rule {
 			return;
 
 		// determine whether the Command is an assignment (without inline declaration, which will be handled below) 
-		boolean isAssignmentCommand = command.isAssignment(false);
+		boolean isAssignmentCommand = command.isAssignment(false, true);
 
 		// determine the receiving variable of an assignment, e.g. "lv_receiver" or "ls_receiver" in statements like 
 		// - "lv_receiver = ..."
@@ -567,6 +567,12 @@ public abstract class RuleForDeclarations extends Rule {
 		} else if (tokenText.charAt(readPosAfterObjName) == ABAP.COMPONENT_SELECTOR && readPosAfterObjName + 1 < tokenText.length() 
 				&& ABAP.isCharAllowedForVariableNames(tokenText.charAt(readPosAfterObjName + 1), true, false)) {
 			// tokenText defines a component of object name, e.g. "struc-component" - which also is an access to the memory represented by the variable
+			return true;
+			
+		} else if (tokenText.charAt(readPosAfterObjName) == ABAP.TABLE_EXPR_BRACKET_OPEN) {
+			// tokenText starts a table expression, e.g. "lt_any[ 1 ]" or "lt_any[ id = 1 ]-comp" or "lt_any[ 1 ]-inner[ 2 ]-comp";
+			// which means an access to the memory represented by the variable; this is even considered true for cases of 
+			// "lt_any[ 1 ]-oref->mv_attribute = 1."
 			return true;
 			
 		} else {
