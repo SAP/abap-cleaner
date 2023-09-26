@@ -46,6 +46,11 @@ and **configure** options and thresholds for these rules.
 Your team may align on a common configuration and create a **team profile** from it.
 
 
+## Demo
+
+For a demo of what ABAP cleaner offers, how it is installed, used and configured, you can watch this session on YouTube: 
+[How to clean your ABAP code in seconds with ABAP cleaner](https://www.youtube.com/watch?v=0mp0FuJV5_k).
+
 ## How ABAP Cleaner is Used
 
 ### Automated or Interactive Cleanup from ADT
