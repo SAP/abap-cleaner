@@ -186,56 +186,42 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		}
 
 		// check if single or multi file clean up
-		if (commandLineArgs.sourceFiles != null && commandLineArgs.sourceFiles.length > 0) {
-		  cleanMultiAutomatically(commandLineArgs, out, profile);
+		if (commandLineArgs.sourcePaths != null && commandLineArgs.sourcePaths.length > 0) {
+			cleanMultiAutomatically(commandLineArgs, out, profile);
 		} else {
-		  cleanSingleSourceAutomatically(commandLineArgs, commandLineArgs.sourceCode, out, profile);
+			cleanSingleSourceAutomatically(commandLineArgs, commandLineArgs.sourceCode, out, profile);
 		}
 	}
 	
-  private static void cleanMultiAutomatically(CommandLineArgs commandLineArgs, PrintStream out,
-      Profile profile) {
-    
-    Persistency persistency = Persistency.get();
-    for (String sourceFile : commandLineArgs.sourceFiles) {
-      String sourceCode = persistency.readAllTextFromFile(sourceFile);
-      
-      CleanupResult result = cleanAutomatically(sourceCode, commandLineArgs.abapRelease, commandLineArgs.cleanupRange, profile, commandLineArgs.showStats);
-      if (result == null) {
-        out.println("Cleanup for file " + sourceFile +" cancelled.");
-        continue;
-      } else if (result.hasErrorMessage()) {
-        out.println("Errors during clean-up of file: " + sourceFile);
-        out.println(result.errorMessage);
-        continue;
-      } 
+	private static void cleanMultiAutomatically(CommandLineArgs commandLineArgs, PrintStream out,
+			Profile profile) {
+		Persistency persistency = Persistency.get();
+		int baseSourcePathLength = commandLineArgs.sourceDir.length();
+	  	for (String sourcePath : commandLineArgs.sourcePaths) {
+			String sourceCode = persistency.readAllTextFromFile(sourcePath);
 
-      // the output is either the whole code document or the cleanup result of the line selection 
-      String output = null;
-      if (result.hasCleanedCode()) {
-        if (commandLineArgs.partialResult && result.hasLineSelection()) {
-          output = result.getSelectedText(); 
-        } else {
-          output = result.getCleanedCode();
-        }
-      }
-      
-      // write the output to the command line or to the specified file
-      if (output != null) {
-        if (commandLineArgs.showStats) 
-          out.println(result.getStatsSummary());
-        if (commandLineArgs.showUsedRules) 
-          out.print(result.getRuleStats());
-        if (commandLineArgs.showStats || commandLineArgs.showUsedRules) 
-          out.println();
+			CleanupResult result = cleanAutomatically(sourceCode, commandLineArgs.abapRelease, commandLineArgs.cleanupRange, profile, commandLineArgs.showStats);
+		  	if (result == null) {
+				out.println("Cleanup for file " + sourcePath +" cancelled.");
+				continue;
+		  	} else if (result.hasErrorMessage()) {
+		  		out.println("Errors during clean-up of file: " + sourcePath);
+		  		out.println(result.errorMessage);
+		  		continue;
+		  	}
 
-        persistency.writeAllTextToFile(sourceFile, output);
-      }      
-    }
-  }
+		  	// calculate target file location
+		  	String relativeSourcePath = sourcePath.substring(baseSourcePathLength);
+			if (relativeSourcePath.charAt(0) == Persistency.getDirectorySeparatorChar()) {
+				relativeSourcePath = relativeSourcePath.substring(1);
+			}
+			
+			writeCleanUpResult(commandLineArgs, out, result, persistency.combinePaths(commandLineArgs.targetDir, relativeSourcePath));
+	  	}
+	}
 
-  private static void cleanSingleSourceAutomatically(CommandLineArgs commandLineArgs, String sourceCode,
-  		PrintStream out, Profile profile) {
+	private static void cleanSingleSourceAutomatically(CommandLineArgs commandLineArgs, String sourceCode,
+			PrintStream out, Profile profile) {
 		CleanupResult result = cleanAutomatically(commandLineArgs.sourceCode, commandLineArgs.abapRelease, commandLineArgs.cleanupRange, profile, commandLineArgs.showStats);
 		if (result == null) {
 			out.println("Cleanup cancelled.");
@@ -243,35 +229,39 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		} else if (result.hasErrorMessage()) {
 			out.println(result.errorMessage);
 			return;
-		} 
-
-		// the output is either the whole code document or the cleanup result of the line selection 
-		String output = null;
-		if (result.hasCleanedCode()) {
-			if (commandLineArgs.partialResult && result.hasLineSelection()) {
-				output = result.getSelectedText(); 
-			} else {
-				output = result.getCleanedCode();
-			}
 		}
 		
-		// write the output to the command line or to the specified file
-		if (output != null) {
-			if (commandLineArgs.showStats) 
-				out.println(result.getStatsSummary());
-			if (commandLineArgs.showUsedRules) 
-				out.print(result.getRuleStats());
-			if (commandLineArgs.showStats || commandLineArgs.showUsedRules) 
-				out.println();
+		writeCleanUpResult(commandLineArgs, out, result, commandLineArgs.targetPath);
+	}
 
-			if (commandLineArgs.writesResultCodeToOutput()) {
-				out.print(output);
-			} else {
-				Persistency persistency = Persistency.get(); 
-				if (commandLineArgs.overwrite || !persistency.fileExists(commandLineArgs.targetPath)) {
-					persistency.ensureDirectoryExistsForPath(commandLineArgs.targetPath);
-					persistency.writeAllTextToFile(commandLineArgs.targetPath, output);
-				}
+	private static void writeCleanUpResult(CommandLineArgs commandLineArgs, PrintStream out,
+	        CleanupResult result, String targetPath) {
+	  	// the output is either the whole code document or the cleanup result of the line selection 
+	  	String output = null;
+	  	if (result.hasCleanedCode()) {
+		  	if (commandLineArgs.partialResult && result.hasLineSelection()) {
+			  	output = result.getSelectedText(); 
+		  	} else {
+			  	output = result.getCleanedCode();
+		  	}
+	  	}
+		if (output == null) {
+			return;
+		}
+		if (commandLineArgs.showStats) 
+			out.println(result.getStatsSummary());
+		if (commandLineArgs.showUsedRules) 
+			out.print(result.getRuleStats());
+		if (commandLineArgs.showStats || commandLineArgs.showUsedRules) 
+			out.println();
+
+		if (commandLineArgs.writesResultCodeToOutput()) {
+			out.print(output);
+		} else {
+			Persistency persistency = Persistency.get(); 
+			if (commandLineArgs.overwrite || !persistency.fileExists(targetPath)) {
+				persistency.ensureDirectoryExistsForPath(targetPath);
+				persistency.writeAllTextToFile(targetPath, output);
 			}
 		}
 	}
