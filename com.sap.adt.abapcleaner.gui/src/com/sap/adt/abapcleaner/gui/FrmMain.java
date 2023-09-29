@@ -185,7 +185,57 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 			}
 		}
 
-		// perform the cleanup
+		// check if single or multi file clean up
+		if (commandLineArgs.sourceFiles != null && commandLineArgs.sourceFiles.length > 0) {
+		  cleanMultiAutomatically(commandLineArgs, out, profile);
+		} else {
+		  cleanSingleSourceAutomatically(commandLineArgs, commandLineArgs.sourceCode, out, profile);
+		}
+	}
+	
+  private static void cleanMultiAutomatically(CommandLineArgs commandLineArgs, PrintStream out,
+      Profile profile) {
+    
+    Persistency persistency = Persistency.get();
+    for (String sourceFile : commandLineArgs.sourceFiles) {
+      String sourceCode = persistency.readAllTextFromFile(sourceFile);
+      
+      CleanupResult result = cleanAutomatically(sourceCode, commandLineArgs.abapRelease, commandLineArgs.cleanupRange, profile, commandLineArgs.showStats);
+      if (result == null) {
+        out.println("Cleanup for file " + sourceFile +" cancelled.");
+        continue;
+      } else if (result.hasErrorMessage()) {
+        out.println("Errors during clean-up of file: " + sourceFile);
+        out.println(result.errorMessage);
+        continue;
+      } 
+
+      // the output is either the whole code document or the cleanup result of the line selection 
+      String output = null;
+      if (result.hasCleanedCode()) {
+        if (commandLineArgs.partialResult && result.hasLineSelection()) {
+          output = result.getSelectedText(); 
+        } else {
+          output = result.getCleanedCode();
+        }
+      }
+      
+      // write the output to the command line or to the specified file
+      if (output != null) {
+        if (commandLineArgs.showStats) 
+          out.println(result.getStatsSummary());
+        if (commandLineArgs.showUsedRules) 
+          out.print(result.getRuleStats());
+        if (commandLineArgs.showStats || commandLineArgs.showUsedRules) 
+          out.println();
+
+        persistency.writeAllTextToFile(sourceFile, output);
+      }      
+    }
+  }
+
+  private static void cleanSingleSourceAutomatically(CommandLineArgs commandLineArgs, String sourceCode,
+  		PrintStream out, Profile profile) {
 		CleanupResult result = cleanAutomatically(commandLineArgs.sourceCode, commandLineArgs.abapRelease, commandLineArgs.cleanupRange, profile, commandLineArgs.showStats);
 		if (result == null) {
 			out.println("Cleanup cancelled.");
