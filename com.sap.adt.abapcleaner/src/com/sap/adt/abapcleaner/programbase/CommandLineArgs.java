@@ -6,6 +6,8 @@ import com.sap.adt.abapcleaner.parser.CleanupRange;
 public class CommandLineArgs {
 	private static final String LINE_SEP = System.lineSeparator();
 
+	private static final String OPT_SOURCE_FOLDER = "--sourcefolder";
+	private static final String OPT_FILE_FILTER = "--filepattern";
 	private static final String OPT_SOURCE_FILE = "--sourcefile";
 	private static final String OPT_SOURCE_CODE = "--source";
 	private static final String OPT_LINE_RANGE = "--linerange";
@@ -18,7 +20,7 @@ public class CommandLineArgs {
 	private static final String OPT_STATS = "--stats";
 	private static final String OPT_USED_RULES = "--usedrules";
 
-	private static final String[] allOptions = new String[] { OPT_SOURCE_FILE, OPT_SOURCE_CODE, OPT_LINE_RANGE, OPT_PROFILE, OPT_PROFILE_DATA, OPT_RELEASE, OPT_TARGET_FILE, OPT_OVERWRITE, OPT_PARTIAL_RESULT, OPT_STATS, OPT_USED_RULES };
+	private static final String[] allOptions = new String[] { OPT_FILE_FILTER, OPT_SOURCE_FOLDER, OPT_SOURCE_FILE, OPT_SOURCE_CODE, OPT_LINE_RANGE, OPT_PROFILE, OPT_PROFILE_DATA, OPT_RELEASE, OPT_TARGET_FILE, OPT_OVERWRITE, OPT_PARTIAL_RESULT, OPT_STATS, OPT_USED_RULES };
 
 	private static final String EXECUTABLE_NAME = ".\\abap-cleanerc.exe"; 
 	private static final String OPT_HELP_WINDOWS = "/?";
@@ -29,7 +31,7 @@ public class CommandLineArgs {
 	private static final int OPTIONS_INDENT = 4;
 	private static final int OPTIONS_LINE_PREFIX_LENGTH = 20; // must be at least the length of the longest OPT_ + 1
 
-	private static final String[] optionsRequiringNextArg = new String[] { OPT_SOURCE_FILE, OPT_SOURCE_CODE, OPT_LINE_RANGE, OPT_RELEASE, OPT_PROFILE, OPT_PROFILE_DATA, OPT_TARGET_FILE };
+	private static final String[] optionsRequiringNextArg = new String[] { OPT_FILE_FILTER, OPT_SOURCE_FOLDER, OPT_SOURCE_FILE, OPT_SOURCE_CODE, OPT_LINE_RANGE, OPT_RELEASE, OPT_PROFILE, OPT_PROFILE_DATA, OPT_TARGET_FILE };
 
 	public static String[] getAllOptions() { return allOptions; }
 	
@@ -40,6 +42,9 @@ public class CommandLineArgs {
 		final String LINE_SEP = System.lineSeparator();
 		
 		String sourceCode = null;
+		String[] sourceFiles = null;
+		String sourceFolder = null;
+		String fileFilter = null;
 		CleanupRange cleanupRange = null;
 		String profileData = null;
 		String abapRelease = null;
@@ -68,6 +73,8 @@ public class CommandLineArgs {
 			if (arg.equals(OPT_SOURCE_FILE) || arg.equals(OPT_SOURCE_CODE)) {
 				if (sourceCode != null) {
 					errors.append("Source code supplied twice; please use " + OPT_SOURCE_FILE + " or " + OPT_SOURCE_CODE + " only once.").append(LINE_SEP);
+				} else if (sourceFolder != null) {
+					errors.append("Source folder already supplied; please use " + OPT_SOURCE_FILE + " or " + OPT_SOURCE_CODE + " or " + OPT_SOURCE_CODE + " only once.").append(LINE_SEP);
 				} else if (arg.equals(OPT_SOURCE_CODE)) {
 					sourceCode = nextArg;
 				} else if (persistency.fileExists(nextArg)) {
@@ -75,7 +82,14 @@ public class CommandLineArgs {
 				} else {
 					errors.append("File not found: " + nextArg).append(LINE_SEP);
 				}
-					
+
+			} else if (arg.equals(OPT_SOURCE_FOLDER)) {
+			  if (!persistency.directoryExists(nextArg)) {
+				errors.append("Source directory " + nextArg + " does not exist!");
+			  } else {
+				sourceFolder = nextArg;
+			  }
+
 			} else if (arg.equals(OPT_LINE_RANGE)) {
 				String lineRange = nextArg;
 				int sepPos = lineRange.indexOf(LINE_RANGE_SEP);
@@ -119,6 +133,9 @@ public class CommandLineArgs {
 			} else if (arg.equals(OPT_HELP_WINDOWS) || arg.equals(OPT_HELP_LINUX)) {
 				showHelp = true;
 				
+			} else if (arg.equals(OPT_FILE_FILTER)) {
+				fileFilter = nextArg;
+				
 			} else {
 				errors.append("Unknown option: " + arg).append(LINE_SEP);
 			}
@@ -128,11 +145,15 @@ public class CommandLineArgs {
 				++i;
 		}
 		
+		if (!StringUtil.isNullOrEmpty(sourceFolder)) {
+			sourceFiles = persistency.getFilesInDirectory(sourceFolder, StringUtil.isNullOrEmpty(fileFilter) ? "*.abap" : fileFilter, true);
+		}
+		
 		if (!overwrite && !StringUtil.isNullOrEmpty(targetPath) && persistency.fileExists(targetPath)) {
 			errors.append("Target file already exists; please use " + OPT_OVERWRITE + " to allow overwriting: " + targetPath).append(LINE_SEP);
 		}
 		
-		return new CommandLineArgs(sourceCode, cleanupRange, profileData, abapRelease, targetPath, overwrite, partialResult, showStats, showUsedRules, errors.toString(), showHelp);
+		return new CommandLineArgs(sourceCode, cleanupRange, profileData, abapRelease, targetPath, sourceFiles, overwrite, partialResult, showStats, showUsedRules, errors.toString(), showHelp);
 	}
 
 	public static String getHelp(Persistency persistency) {
@@ -215,6 +236,7 @@ public class CommandLineArgs {
 	// -------------------------------------------------------------------------
 
 	public final String sourceCode;
+	public final String[] sourceFiles;
 	public final CleanupRange cleanupRange;
 	public final String profileData;
 	public final String abapRelease;
@@ -230,8 +252,9 @@ public class CommandLineArgs {
 
 	public boolean hasErrors() { return !StringUtil.isNullOrEmpty(errors); }
 	
-	private CommandLineArgs(String sourceCode, CleanupRange cleanupRange, String profileData, String abapRelease, String targetPath, boolean overwrite, boolean partialResult, boolean showStats, boolean showUsedRules, String errors, boolean showHelp) {
+	private CommandLineArgs(String sourceCode, CleanupRange cleanupRange, String profileData, String abapRelease, String targetPath, String[] sourceFiles, boolean overwrite, boolean partialResult, boolean showStats, boolean showUsedRules, String errors, boolean showHelp) {
 		this.sourceCode = sourceCode;
+		this.sourceFiles = sourceFiles;
 		this.cleanupRange = cleanupRange;
 		this.profileData = profileData;
 		this.abapRelease = abapRelease;
