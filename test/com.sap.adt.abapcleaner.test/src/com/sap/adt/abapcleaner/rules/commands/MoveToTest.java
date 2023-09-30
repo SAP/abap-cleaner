@@ -96,18 +96,6 @@ class MoveToTest extends RuleTestBase {
 	}
 	
 	@Test
-	void testLateChainUnchanged() {
-		buildSrc("    MOVE 1 TO : ev_result_a, ev_result_b.");
-		buildSrc("    MOVE 'text' TO: ev_text, ev_other_text.");
-
-		copyExpFromSrc();
-
-		putAnyMethodAroundSrcAndExp();
-		
-		testRule();
-	}
-
-	@Test
 	void testSimpleChainChanged() {
 		buildSrc("    MOVE:");
 		buildSrc("      1 TO ev_value,");
@@ -123,6 +111,53 @@ class MoveToTest extends RuleTestBase {
 		buildExp("    \" comment");
 		buildExp("    ev_data = EXACT #( iv_data ).");
 		buildExp("    eo_instance ?= io_instance.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testComplexChainChanged() {
+		buildSrc("    MOVE 1 TO: lv_a, lv_b, lv_c.");
+		buildSrc("    MOVE 'text' TO: ev_text, ev_other_text.");
+		buildSrc("    MOVE get_value( ) TO: lv_first, lv_second.");
+
+		buildExp("    lv_a = 1.");
+		buildExp("    lv_b = 1.");
+		buildExp("    lv_c = 1.");
+		buildExp("    ev_text = 'text'.");
+		buildExp("    ev_other_text = 'text'.");
+		buildExp("    lv_first = get_value( ).");
+		buildExp("    lv_second = get_value( ).");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testChainOfOneChanged() {
+		buildSrc("    MOVE: 1 TO ev_value.");
+		buildSrc("    MOVE: \" comment");
+		buildSrc("      2 TO ev_value_2.");
+
+		buildExp("    ev_value = 1.");
+		buildExp("    \" comment");
+		buildExp("    ev_value_2 = 2.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testComplexChainOfOneChanged() {
+		buildSrc("    MOVE 1 TO : lv_a.");
+		buildSrc("    MOVE get_value( ) TO : lv_first.");
+
+		buildExp("    lv_a = 1.");
+		buildExp("    lv_first = get_value( ).");
 
 		putAnyMethodAroundSrcAndExp();
 
@@ -154,6 +189,21 @@ class MoveToTest extends RuleTestBase {
 		buildSrc("      \" comment");
 		buildSrc("      EXACT iv_data TO ev_data,");
 		buildSrc("      io_instance ?TO eo_instance.");
+
+		copyExpFromSrc();
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testChainOfOneUnchanged() {
+		rule.configProcessChains.setValue(false);
+
+		buildSrc("    MOVE: 1 TO ev_value.");
+		buildSrc("    MOVE: \" comment");
+		buildSrc("      2 TO ev_value_2.");
 
 		copyExpFromSrc();
 

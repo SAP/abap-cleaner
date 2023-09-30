@@ -2093,6 +2093,12 @@ public class Token {
 		if (firstToken.isKeyword("MOVE") && prevToken.isAnyKeyword("TO", "?TO")) {
 			// MOVE {[EXACT] source  TO destination} | {source ?TO destination}. 
 			return MemoryAccessType.WRITE;
+		} else if (firstToken.isKeyword("MOVE") && (prevToken.isChainColon() || prevToken.isComma())) {
+			// MOVE [EXACT] source TO: destination1, destination2, ...
+			Token chainColon = command.getFirstToken().getLastTokenOnSiblings(true, TokenSearch.ASTERISK, "TO", ":");
+			if (chainColon != null) {
+				return MemoryAccessType.WRITE;
+			}
 		} else if (firstToken.isKeyword("PACK") && prevToken.isKeyword("TO")) {
 			// PACK source TO destination. 
 			return MemoryAccessType.WRITE;
