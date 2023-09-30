@@ -116,6 +116,15 @@ public class TokenTypeRefinerRnd implements ITokenTypeRefiner {
 
 			refine(command, token, rndToken);
 
+			// skip the "!" escape character for identifiers such as !min, !its_table and !ls_struc-component, because the 
+			// RND token simply omits the "!". The escape char is typically found in method declarations, including with 
+			// the keywords !VALUE(...) and !REFERENCE(...), but could be used as the first character of any identifier 
+			// (including method names) 
+			if (textOffset == 0 && token.getTextLength() > 1 && token.textStartsWith("!") && !StringUtil.startsWith(rndToken.m_lexem, "!", false)
+					 && (rndToken.m_category == Category.CAT_IDENTIFIER || rndToken.m_category == Category.CAT_KEYWORD)) {
+				++textOffset;
+			}
+			
 			// move to the next ABAP cleaner Token, or advance the textOffset of the current Token if it contains multiple RND tokens  
 			int lexemLength = rndToken.m_lexem.length();
 			if (textOffset == 0 && token.getTextLength() == lexemLength && token.text.equals(rndToken.m_lexem)) {
@@ -128,17 +137,6 @@ public class TokenTypeRefinerRnd implements ITokenTypeRefiner {
 					token = token.getNext();
 					textOffset = 0;
 				}
-			} else if (textOffset == 0 && rndToken.m_category == Category.CAT_IDENTIFIER  
-					&& token.getTextLength() == 1 + lexemLength && token.text.equals("!" + rndToken.m_lexem)) {
-				// in method declarations, parameter names like "!its_table" are entered to rndToken.m_lexem as "its_table"; 
-				// this is also possible for !VALUE(...) and !REFERENCE(...), where "VALUE" has Category.CAT_KEYWORD
-				token = token.getNext();
-				textOffset = 0; // pro forma
-			} else if (textOffset == 0 && rndToken.m_category == Category.CAT_KEYWORD 
-					&& token.getTextLength() == 1 + lexemLength + 1 && token.text.equals("!" + rndToken.m_lexem + "(")) {
-				// the above case is also possible for !VALUE(...) and !REFERENCE(...), RND has the lexem "VALUE" or "REFERENCE"  
-				// with Category.CAT_KEYWORD, while the ABAP cleaner Token text is "!VALUE(" or "!REFERENCE(" 
-				textOffset += 1 + lexemLength; // skip the "!" and "VALUE" or "REFERENCE", and next, expect an RND token for "("  
 			} else {
 				throw new ParseException(command.getParentCode(), command.getSourceLineNumStart(), "code mismatch with RND Parser output");
 			}

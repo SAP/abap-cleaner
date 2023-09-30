@@ -599,6 +599,18 @@ public class CodeTest extends CodeTestBase {
 	}
 
 	@Test
+	void testEscapeCharWithVariousIdentifiers() {
+		// ensure that matching between RND Parser tokens and ABAP cleaner tokens works without error  
+		// if the "!" escape char is used for structures, components, parameters, and method names 
+		
+		buildSrc("  !lv_value = !ls_struc-comp + !lt_table[ !comp = !lv_value ]-num + !get_value( !iv_param = !lv_any ).");
+		
+		putAnyClassDefAroundSrc();
+		
+		testParseCode();
+	}
+
+	@Test
 	void testIntLiteralWithPlus() {
 		buildSrc("    ev_value = +1.");
 		
