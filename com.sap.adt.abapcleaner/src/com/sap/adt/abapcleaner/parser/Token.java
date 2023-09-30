@@ -1993,6 +1993,12 @@ public class Token {
 		} else if (firstToken.matchesOnSiblings(true, "MODIFY", "ENTITY|ENTITIES") && prevToken.isAnyKeyword("RESULT", "FAILED", "MAPPED", "REPORTED")) {
 			// MODIFY ENTITY, ENTITIES ...  [FAILED failed_resp] [REPORTED reported_resp]
 			return MemoryAccessType.WRITE;
+		} else if (firstToken.matchesOnSiblings(true, "MODIFY", "ENTITY|ENTITIES") && prevToken.isAnyKeyword("FROM", "WITH")) {
+			// MODIFY ENTITY, ENTITIES ...  FROM fields_tab / AUTO FILL CID WITH fields_tab /  
+			// [AUTO FILL CID] FIELDS ( comp1 comp2 ... ) WITH fields_tab / [AUTO FILL CID] SET FIELDS WITH fields_tab:
+			// A syntax check on static read-only fields is not possible for all variants, therefore using READ_WRITE to prevent 
+			// introduction of FINAL for the fields_tab
+			return MemoryAccessType.READ_WRITE;
 		} else if (firstToken.matchesOnSiblings(true, "READ", "ENTITY|ENTITIES") && prevToken.isAnyKeyword("RESULT", "FAILED", "REPORTED")) {
 			// READ ENTITY, ENTITIES ... [FAILED failed_resp] [REPORTED reported_resp]
 			return MemoryAccessType.WRITE;

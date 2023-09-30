@@ -633,4 +633,28 @@ class FinalVariableTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testModifyEntityFieldsTabUnchanged() {
+		// expect all three DATA(lt_...) to remain unchanged, because they are used as fields tables, 
+		// and a syntax check on static read-only fields is not possible with all variants 
+		
+		buildSrc("    get_rap_data( IMPORTING et_create_root  = DATA(lt_create_root_data)");
+		buildSrc("                            et_create_child = DATA(lt_create_child_data)");
+		buildSrc("                            et_update       = DATA(lt_update_data) ).");
+		buildSrc("");
+		buildSrc("    MODIFY ENTITY any_entity");
+		buildSrc("        CREATE SET FIELDS ##SETFIELDS_OK");
+		buildSrc("               WITH lt_create_root_data");
+		buildSrc("        CREATE BY \\_child SET FIELDS WITH lt_create_child_data");
+		buildSrc("        UPDATE SET FIELDS WITH lt_update_data");
+		buildSrc("          FAILED   FINAL(failed)");
+		buildSrc("          REPORTED FINAL(reported).");
+
+		copyExpFromSrc();
+		
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }
