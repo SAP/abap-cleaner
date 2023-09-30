@@ -5,7 +5,7 @@ import java.time.LocalDate;
 import com.sap.adt.abapcleaner.parser.*;
 import com.sap.adt.abapcleaner.programbase.*;
 import com.sap.adt.abapcleaner.rulebase.*;
-
+import com.sap.adt.abapcleaner.rules.declarations.ChainOfOneRule;
 import com.sap.adt.abapcleaner.rules.declarations.ChainRule;
 
 public class MoveToRule extends RuleForCommands {
@@ -34,7 +34,7 @@ public class MoveToRule extends RuleForCommands {
 	@Override
 	public RuleReference[] getReferences() { return references; }
 
-	public RuleID[] getDependentRules() { return new RuleID[] { RuleID.ALIGN_ASSIGNMENTS }; }
+	public RuleID[] getDependentRules() { return new RuleID[] { RuleID.UPPER_AND_LOWER_CASE, RuleID.ALIGN_ASSIGNMENTS }; }
 
 	@Override
 	public boolean isEssential() { return true; }
@@ -85,20 +85,49 @@ public class MoveToRule extends RuleForCommands {
 	   if (!command.containsChainColon()) {
 	   	return executeOnNonChain(code, command);
 	   
-	   } else if (configProcessChains.getValue() && command.isSimpleChain()) {
+	   } else if (configProcessChains.getValue() && command.containsChainColon()) {
 	   	// check whether all parts of the chain match the expected pattern
-	   	Token checkToken = command.getFirstToken().getNextCodeSibling().getNextCodeSibling();
-	   	while (checkToken != null) {
-	   		Token lastToken = checkToken.getLastTokenOnSiblings(true, TokenSearch.makeOptional("EXACT"), TokenSearch.ANY_TERM, "TO|?TO", TokenSearch.ANY_IDENTIFIER, ".|,");
-	   		if (lastToken == null || !lastToken.isCommaOrPeriod())
+	   	boolean isChainOfOne = true;
+	   	if (command.isSimpleChain()) {
+	   		// expect "MOVE: [EXACT] <term1> TO <identifier1>, [EXACT] <term2> TO <identifier2>, ..."
+		   	Token checkToken = command.getFirstToken().getNextCodeSibling().getNextCodeSibling();
+		   	while (checkToken != null) {
+		   		Token lastToken = checkToken.getLastTokenOnSiblings(true, TokenSearch.makeOptional("EXACT"), TokenSearch.ANY_TERM, "TO|?TO", TokenSearch.ANY_IDENTIFIER, ".|,");
+		   		if (lastToken == null || !lastToken.isCommaOrPeriod())
+		   			return false;
+		   		if (lastToken.isComma())
+		   			isChainOfOne = false;
+		   		checkToken = lastToken.getNextCodeSibling();
+		   	}
+	   	} else {
+	   		// expect "MOVE [EXACT] <term1> TO: <identifier1>, <identifier2>, ...."
+	   		Token chainColon = command.getFirstToken().getLastTokenOnSiblings(true, "MOVE", TokenSearch.makeOptional("EXACT"), TokenSearch.ANY_TERM, "TO|?TO", ":");
+	   		if (chainColon == null)
 	   			return false;
-	   		checkToken = lastToken.getNextCodeSibling();
+	   		Token checkToken = chainColon;
+	   		while (checkToken != null) {
+	   			checkToken = checkToken.getNextCodeSibling();
+	   			if (checkToken == null)
+	   				break;
+	   			if (!checkToken.isIdentifier())
+	   				return false;
+	   			checkToken = checkToken.getNextCodeSibling();
+	   			if (checkToken == null || !checkToken.isCommaOrPeriod())
+	   				return false;
+	   			if (checkToken.isComma())
+	   				isChainOfOne = false;
+	   		}
 	   	}
 	   	
 	   	// unchain MOVE: into multiple commands
 	   	Command prevCommand = command.getPrev();
 	   	Command endCommand = command.getNext();
-	   	boolean unchained = ((ChainRule)parentProfile.getRule(RuleID.DECLARATION_CHAIN)).executeOn(code, command, false);
+	   	boolean unchained;
+	   	if (isChainOfOne) {
+	   		unchained = ((ChainOfOneRule)parentProfile.getRule(RuleID.CHAIN_OF_ONE)).executeOn(code, command, false);
+	   	} else {
+		   	unchained = ((ChainRule)parentProfile.getRule(RuleID.DECLARATION_CHAIN)).executeOn(code, command, false);
+	   	}
 	   	if (!unchained)
 	   		return false;
 

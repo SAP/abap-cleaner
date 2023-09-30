@@ -98,9 +98,14 @@ public class ChainOfOneRule extends RuleForCommands {
 		} else {
 			execute = command.isDeclaration() || command.isDeclarationInclude() ? configExecuteOnLocalDeclarations.getValue() : configExecuteOnNonDeclarations.getValue();
 		}
-		if (!execute)
+		if (execute) {
+			return executeOn(code, command, true);
+		} else { 
 			return false;
-		
+		}
+	}
+	
+	public boolean executeOn(Code code, Command command, boolean addRuleUse) throws UnexpectedSyntaxAfterChanges {
 		// ensure this is a "chain of one", i.e. there is no comma in the command; 
 		// we expect the chain sign to be top-level (i.e. not inside parentheses etc.); this is ensured by Token.addNext()
 		Token chainSign = command.getFirstToken().getLastTokenOnSiblings(true, TokenSearch.ASTERISK, ABAP.COLON_SIGN_STRING);
@@ -148,7 +153,7 @@ public class ChainOfOneRule extends RuleForCommands {
 		if (wasColonAfterInitialKeywords) {
 			// move comment lines (or an initial line-end comment behind the keyword or the chain sign) into a new command
 			ArrayList<Command> newCommentCommands = command.splitOutCommentLinesAfter(prevNonComment); 
-			if (!newCommentCommands.isEmpty()) 
+			if (!newCommentCommands.isEmpty() && addRuleUse) 
 				code.addRuleUses(this, newCommentCommands);
 			// remove the line break before the next token
 			if (nextNonComment.lineBreaks > 0) // even if the next Token is "BEGIN OF", because a single "TYPES: BEGIN OF." command will be followed by more "TYPES ..." commands 

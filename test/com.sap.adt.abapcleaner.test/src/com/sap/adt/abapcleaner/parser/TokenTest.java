@@ -1087,6 +1087,7 @@ public class TokenTest {
 	@Test
 	void testAccessTypeObsoleteAssignments() {
 		assertAccessType("MOVE EXACT ?source TO !destination.");
+		assertAccessType("MOVE ?source TO: !destination1, !destination2, !destination3.");
 		assertAccessType("PACK ?source TO !destination.");
 	}
 
