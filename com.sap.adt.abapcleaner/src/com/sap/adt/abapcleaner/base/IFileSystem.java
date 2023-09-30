@@ -9,6 +9,9 @@ public interface IFileSystem {
 	public byte[] readAllBytesFromFile(String path);
 	public boolean writeAllBytesToFile(String path, byte[] data);
 	public boolean appendToFile(String path, byte[] data);
+	
+	// Path
+	public String getAbsolutePath(String path);
 
 	// Directory
 	public boolean directoryExists(String dir);

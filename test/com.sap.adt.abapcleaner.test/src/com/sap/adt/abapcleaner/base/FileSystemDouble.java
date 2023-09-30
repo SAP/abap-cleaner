@@ -202,4 +202,12 @@ public class FileSystemDouble implements IFileSystem {
 		}
 		return true;
 	}
+
+	@Override
+	public String getAbsolutePath(String path) {
+		// TODO: better mocking required??
+		return path;
+	}
+	
+	
 }

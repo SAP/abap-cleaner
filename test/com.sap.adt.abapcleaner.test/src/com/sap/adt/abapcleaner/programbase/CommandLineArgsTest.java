@@ -112,6 +112,36 @@ public class CommandLineArgsTest {
 	}
 	
 	@Test
+	void testCreateFromSourceDir() {
+		persistency.prepareFile("src", "any_source.abap", anySourceCode);
+		
+		CommandLineArgs args = CommandLineArgs.create(persistency, new String[] {
+				"--sourcedir", "src",
+				"--recursive",
+				"--overwrite"} );
+
+		assertEquals(1, args.sourcePaths.length);
+		assertTrue(args.overwrite);
+	}
+
+	@Test
+	void testCreateFromSourceDirWithTargetdir() {
+		persistency.prepareFile("src", "any_source.txt", anySourceCode);
+		persistency.prepareFile("src", "any_source2.abap", anySourceCode);
+		
+		CommandLineArgs args = CommandLineArgs.create(persistency, new String[] {
+				"--sourcedir", "src",
+				"--targetdir", "src",
+				"--filepattern", "*.txt",
+				"--recursive",
+				"--overwrite" } );
+
+		assertEquals(1, args.sourcePaths.length);
+		assertTrue(args.overwrite);
+		assertFalse(args.hasErrors());
+	}
+	
+	@Test
 	void testCreateWithProfileDataAndLineRangeStartOnly() {
 		CommandLineArgs args = CommandLineArgs.create(persistency, new String[] {  
 				"--source", anySourceCode, 
@@ -190,6 +220,50 @@ public class CommandLineArgsTest {
 
 		assertErrorsContain(args, "Target file already exists");
 		assertErrorsContain(args, "--overwrite");
+	}
+	
+	@Test
+	void testCreateErrorSourceDirOverwriteMissing() {
+		persistency.prepareFile("src", "any_source.abap", anySourceCode);
+		
+		CommandLineArgs args = CommandLineArgs.create(persistency, new String[] {
+				"--sourcedir", "src" } );
+
+		assertErrorsContain(args, "Source file src\\any_source.abap already exists");
+		assertErrorsContain(args, "--overwrite");
+	}
+
+	@Test
+	void testCreateErrorSourceDirNotExisting() {
+		CommandLineArgs args = CommandLineArgs.create(persistency, new String[] {
+				"--sourcedir", "src" } );
+		
+		assertErrorsContain(args, "Source directory src does not exist!");
+	}
+	
+	@Test
+	void testCreateErrorNoFilesInSourceDir() {
+		persistency.prepareDirectory("src");
+		
+		CommandLineArgs args = CommandLineArgs.create(persistency, new String[] {
+				"--sourcedir", "src" } );
+		
+		assertErrorsContain(args, "No matching files found");
+	}
+	
+	@Test
+	void testCreateErrorSourceDirWithInvalidOptions() {
+		persistency.prepareDirectory("src");
+		
+		CommandLineArgs args = CommandLineArgs.create(persistency, new String[] {
+				"--sourcedir", "src", 
+				"--linerange", "10-20", 
+				"--targetfile", "any_target_file.txt", 
+				"--partialresult" } );
+
+		assertErrorsContain(args, "Invalid combination: --linerange");
+		assertErrorsContain(args, "Invalid combination: --targetfile");
+		assertErrorsContain(args, "Invalid combination: --partialresult");
 	}
 	
 	@Test
