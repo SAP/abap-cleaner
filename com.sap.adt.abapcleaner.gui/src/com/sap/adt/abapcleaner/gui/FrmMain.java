@@ -201,7 +201,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 
 			CleanupResult result = cleanAutomatically(sourceCode, commandLineArgs.abapRelease, commandLineArgs.cleanupRange, profile, commandLineArgs.showStats);
 		  	if (result == null) {
-				out.println("Cleanup for file " + sourcePath +" cancelled.");
+				out.println("Cleanup for file " + sourcePath + " cancelled.");
 				continue;
 		  	} else if (result.hasErrorMessage()) {
 		  		out.println("Errors during clean-up of file: " + sourcePath);
