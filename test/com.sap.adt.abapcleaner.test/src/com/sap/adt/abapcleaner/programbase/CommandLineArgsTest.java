@@ -229,7 +229,7 @@ public class CommandLineArgsTest {
 		CommandLineArgs args = CommandLineArgs.create(persistency, new String[] {
 				"--sourcedir", "src" } );
 
-		assertErrorsContain(args, "Source file src\\any_source.abap already exists");
+		assertErrorsContain(args, "Source file src" + PersistencyDouble.getDirectorySeparatorChar() + "any_source.abap already exists");
 		assertErrorsContain(args, "--overwrite");
 	}
 
