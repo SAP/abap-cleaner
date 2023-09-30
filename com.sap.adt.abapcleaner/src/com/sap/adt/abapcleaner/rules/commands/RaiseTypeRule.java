@@ -32,6 +32,9 @@ public class RaiseTypeRule extends RuleForCommands {
 	public String getDescription() { return "Replaces the TYPE section of RAISE EXCEPTION TYPE ... and RAISE SHORTDUMP TYPE ... with a NEW constructor call."; }
 
 	@Override
+	public String getHintsAndRestrictions() { return "This rule requires a NetWeaver version >= 7.52."; }
+
+	@Override
 	public LocalDate getDateCreated() { return LocalDate.of(2022, 10, 27); }
 
 	@Override

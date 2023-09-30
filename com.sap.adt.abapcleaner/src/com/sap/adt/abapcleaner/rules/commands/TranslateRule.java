@@ -51,6 +51,8 @@ public class TranslateRule extends RuleForCommands {
 	@Override
 	public RuleID[] getDependentRules() { return new RuleID[] { RuleID.UPPER_AND_LOWER_CASE, RuleID.ALIGN_ASSIGNMENTS, RuleID.ALIGN_PARAMETERS } ; }
 
+	// getRequiredAbapRelease() not required, as these built-in functions were introduced with ABAP release 7.02 (= 7.0, EhP2) 
+	
 	@Override
 	public boolean isEssential() { return true; }
 

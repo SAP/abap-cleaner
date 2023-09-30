@@ -2,6 +2,7 @@ package com.sap.adt.abapcleaner.rules.commands;
 
 import java.time.LocalDate;
 
+import com.sap.adt.abapcleaner.base.ABAP;
 import com.sap.adt.abapcleaner.parser.*;
 import com.sap.adt.abapcleaner.programbase.UnexpectedSyntaxAfterChanges;
 import com.sap.adt.abapcleaner.rulebase.*;
@@ -26,6 +27,9 @@ public class CreateObjectRule extends RuleForCommands {
 	public String getDescription() { return "Transforms CREATE OBJECT statements into functional style using NEW."; }
 
 	@Override
+	public String getHintsAndRestrictions() { return "This rule requires a NetWeaver version >= 7.40."; }
+
+	@Override
 	public LocalDate getDateCreated() { return LocalDate.of(2020, 12, 28); }
 
 	@Override
@@ -33,6 +37,12 @@ public class CreateObjectRule extends RuleForCommands {
 
 	@Override
 	public RuleID[] getDependentRules() { return new RuleID[] { RuleID.UPPER_AND_LOWER_CASE } ; }
+
+	@Override
+	public int getRequiredAbapRelease() {
+		// the NEW instance operator was not yet available in release 7.31
+		return ABAP.REQUIRED_RELEASE_740; 
+	}  
 
 	@Override
 	public boolean isEssential() { return true; }

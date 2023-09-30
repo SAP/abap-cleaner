@@ -44,6 +44,8 @@ public class ValueStatementRule extends RuleForTokens {
 	@Override
 	public RuleReference[] getReferences() { return references; }
 
+	// getRequiredAbapRelease() not required, as 'shortening' was immediately available with the VALUE constructor operator in ABAP release 7.40 
+	
 	@Override
    public String getExample() {
       return "" 
