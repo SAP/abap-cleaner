@@ -391,6 +391,7 @@ public class PersistencyTest {
 		assertEquals("dir" + DIR_SEP + "subdir", persistency.combinePaths("dir", "subdir"));
 		assertEquals("dir" + DIR_SEP + "subdir", persistency.combinePaths("dir" + DIR_SEP, "subdir"));
 		assertEquals("dir" + DIR_SEP + "subdir", persistency.combinePaths("", "dir", "", "subdir"));
+		assertEquals("dir" + DIR_SEP + "subdir", persistency.combinePaths("dir", DIR_SEP + "subdir"));
 		assertEquals("dir" + DIR_SEP + "subdir" + DIR_SEP + "file.txt", persistency.combinePaths("dir", "subdir", "file.txt"));
 	}
 	

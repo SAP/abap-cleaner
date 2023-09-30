@@ -185,11 +185,10 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 			}
 		}
 
-		// check if single or multi file clean up
-		if (commandLineArgs.sourcePaths != null && commandLineArgs.sourcePaths.length > 0) {
-			cleanMultiAutomatically(commandLineArgs, out, profile);
-		} else {
+		if (commandLineArgs.isInSingleSourceMode()) {
 			cleanSingleSourceAutomatically(commandLineArgs, commandLineArgs.sourceCode, out, profile);
+		} else {
+			cleanMultiAutomatically(commandLineArgs, out, profile);
 		}
 	}
 	
@@ -210,13 +209,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		  		continue;
 		  	}
 
-		  	// calculate target file location
-		  	String relativeSourcePath = sourcePath.substring(baseSourcePathLength);
-			if (relativeSourcePath.charAt(0) == Persistency.getDirectorySeparatorChar()) {
-				relativeSourcePath = relativeSourcePath.substring(1);
-			}
-			
-			writeCleanUpResult(commandLineArgs, out, result, persistency.combinePaths(commandLineArgs.targetDir, relativeSourcePath));
+			writeCleanUpResult(commandLineArgs, out, result, persistency.combinePaths(commandLineArgs.targetDir, sourcePath.substring(baseSourcePathLength)));
 	  	}
 	}
 

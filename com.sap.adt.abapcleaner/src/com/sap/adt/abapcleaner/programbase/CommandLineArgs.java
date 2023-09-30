@@ -12,6 +12,7 @@ public class CommandLineArgs {
 	private static final String OPT_TARGET_FILE = "--targetfile";
 
 	private static final String OPT_SOURCE_DIR = "--sourcedir";
+	private static final String OPT_RECURSIVE = "--recursive";
 	private static final String OPT_TARGET_DIR = "--targetdir";
 	private static final String OPT_FILE_FILTER = "--filepattern";
 
@@ -23,7 +24,7 @@ public class CommandLineArgs {
 	private static final String OPT_STATS = "--stats";
 	private static final String OPT_USED_RULES = "--usedrules";
 
-	private static final String[] allOptions = new String[] { OPT_SOURCE_FILE, OPT_SOURCE_CODE, OPT_LINE_RANGE, OPT_TARGET_FILE, OPT_SOURCE_DIR, OPT_TARGET_DIR, OPT_FILE_FILTER, OPT_PROFILE, OPT_PROFILE_DATA, OPT_RELEASE, OPT_OVERWRITE, OPT_PARTIAL_RESULT, OPT_STATS, OPT_USED_RULES };
+	private static final String[] allOptions = new String[] { OPT_SOURCE_FILE, OPT_SOURCE_CODE, OPT_LINE_RANGE, OPT_TARGET_FILE, OPT_SOURCE_DIR, OPT_RECURSIVE, OPT_TARGET_DIR, OPT_FILE_FILTER, OPT_PROFILE, OPT_PROFILE_DATA, OPT_RELEASE, OPT_OVERWRITE, OPT_PARTIAL_RESULT, OPT_STATS, OPT_USED_RULES };
 
 	private static final String EXECUTABLE_NAME = ".\\abap-cleanerc.exe"; 
 	private static final String OPT_HELP_WINDOWS = "/?";
@@ -52,6 +53,7 @@ public class CommandLineArgs {
 		CleanupRange cleanupRange = null;
 
 		String[] sourcePaths = null;
+		boolean recursive = false;
 		String sourceDir = null;
 		String targetDir = null;
 		String fileFilter = null;
@@ -94,11 +96,14 @@ public class CommandLineArgs {
 				if (!persistency.directoryExists(nextArg)) {
 					errors.append("Source directory " + nextArg + " does not exist!");
 				} else {
-					sourceDir = nextArg;
+					sourceDir = persistency.getAbsolutePath(nextArg);
 				}
-			  
+
+			} else if (arg.equals(OPT_RECURSIVE)) {
+				recursive = true;
+
 			} else if (arg.equals(OPT_TARGET_DIR)) {
-				targetDir = nextArg;
+				targetDir = persistency.getAbsolutePath(nextArg);
 
 			} else if (arg.equals(OPT_LINE_RANGE)) {
 				String lineRange = nextArg;
@@ -110,7 +115,7 @@ public class CommandLineArgs {
 				} else {
 					cleanupRange = CleanupRange.create(startLine, endLine, true);
 				}
-				
+
 			} else if (arg.equals(OPT_PROFILE) || arg.equals(OPT_PROFILE_DATA)) {
 				if (profileData != null) {
 					errors.append("Profile supplied twice; please use " + OPT_PROFILE + " or " + OPT_PROFILE_DATA + " only once.").append(LINE_SEP);
@@ -121,7 +126,7 @@ public class CommandLineArgs {
 				} else {
 					errors.append("File not found: " + nextArg).append(LINE_SEP);
 				}
-				
+
 			} else if (arg.equals(OPT_RELEASE)) {
 				abapRelease = nextArg;
 
@@ -161,33 +166,29 @@ public class CommandLineArgs {
 		
 		if (!StringUtil.isNullOrEmpty(sourceDir)) {
 			if (StringUtil.isNullOrEmpty(targetDir)) {
-				errors.append("Incomplete option: " + OPT_TARGET_DIR + " is required if the option " + OPT_SOURCE_DIR + " is provided").append(LINE_SEP);
-			} else {
-				if (cleanupRange != null)
-					errors.append(String.format(INVALID_OPTION_COMBO_FORMAT, OPT_LINE_RANGE, OPT_SOURCE_DIR)).append(LINE_SEP);
-				if (targetPath != null)
-					errors.append(String.format(INVALID_OPTION_COMBO_FORMAT, OPT_TARGET_FILE, OPT_SOURCE_DIR)).append(LINE_SEP);
-				if (partialResult) 
-					errors.append(String.format(INVALID_OPTION_COMBO_FORMAT, OPT_PARTIAL_RESULT, OPT_SOURCE_DIR)).append(LINE_SEP);
+				targetDir = sourceDir;
+			}
+			if (cleanupRange != null)
+				errors.append(String.format(INVALID_OPTION_COMBO_FORMAT, OPT_LINE_RANGE, OPT_SOURCE_DIR)).append(LINE_SEP);
+			if (targetPath != null)
+				errors.append(String.format(INVALID_OPTION_COMBO_FORMAT, OPT_TARGET_FILE, OPT_SOURCE_DIR)).append(LINE_SEP);
+			if (partialResult) 
+				errors.append(String.format(INVALID_OPTION_COMBO_FORMAT, OPT_PARTIAL_RESULT, OPT_SOURCE_DIR)).append(LINE_SEP);
 				
-				sourcePaths = persistency.getFilesInDirectory(sourceDir, StringUtil.isNullOrEmpty(fileFilter) ? DEFAULT_ABAP_FILE_PATTERN : fileFilter, true);
-				if (sourcePaths == null || sourcePaths.length == 0)
-					errors.append("No matching files found in given source directory: " + sourceDir).append(LINE_SEP);
+			sourcePaths = persistency.getFilesInDirectory(sourceDir, StringUtil.isNullOrEmpty(fileFilter) ? DEFAULT_ABAP_FILE_PATTERN : fileFilter, recursive);
+			if (sourcePaths == null || sourcePaths.length == 0) {
+				errors.append("No matching files found in given source directory: " + sourceDir).append(LINE_SEP);
 			}
 		}
 		
 		if (!overwrite) {
 			if (!StringUtil.isNullOrEmpty(targetPath) && persistency.fileExists(targetPath)) {
 				errors.append("Target file already exists; please use " + OPT_OVERWRITE + " to allow overwriting: " + targetPath).append(LINE_SEP);
-			} else if (!StringUtil.isNullOrEmpty(targetDir) && persistency.directoryExists(targetDir)) {
+			} else if (!StringUtil.isNullOrEmpty(targetDir) && persistency.directoryExists(targetDir) && sourcePaths != null) {
 				// check if there is a source file that already exists in the target directory
 				for (String sourcePath : sourcePaths) {
-					String relativeSourcePath = sourcePath.substring(sourceDir.length());
-					if (relativeSourcePath.charAt(0) == Persistency.getDirectorySeparatorChar()) {
-						relativeSourcePath = relativeSourcePath.substring(1);
-					}
-					if (persistency.fileExists(persistency.combinePaths(targetDir, relativeSourcePath))) {
-						errors.append("A source file already exists in the specified target directory; please use " + OPT_OVERWRITE + " to allow overwriting: " + targetDir).append(LINE_SEP);
+					if (persistency.fileExists(persistency.combinePaths(targetDir, sourcePath.substring(sourceDir.length())))) {
+						errors.append("Source file " + sourcePath + " already exists in the target directory; please use " + OPT_OVERWRITE + " to allow overwriting: " + targetDir).append(LINE_SEP);
 						break;
 					}
 				}
@@ -209,7 +210,8 @@ public class CommandLineArgs {
 		String spacePrefix = StringUtil.repeatChar(' ', usagePrefix.length());
 		sb.append(usagePrefix);
 		sb.append(" { " + OPT_SOURCE_DIR + " sourcedir");
-		sb.append(" [" + OPT_FILE_FILTER + " filepattern] }");
+		sb.append(" [" + OPT_FILE_FILTER + " filepattern]");
+		sb.append(" [" + OPT_RECURSIVE + "]}");
 		sb.append(" / { {" + OPT_SOURCE_FILE + " sourcefile");
 		sb.append(" / " + OPT_SOURCE_CODE + " sourcecode }");
 		sb.append(" [" + OPT_LINE_RANGE + " linerange] }");
@@ -248,6 +250,7 @@ public class CommandLineArgs {
 		sb.append(getOptionHelp(OPT_SOURCE_DIR, "Folder that contains ABAP source files (default file pattern is \"*.abap\")"));
 		sb.append(getOptionHelp(null, "Please use either " + OPT_SOURCE_FILE + " or " + OPT_SOURCE_CODE + " or " + OPT_SOURCE_DIR + "."));
 		sb.append(getOptionHelp(OPT_FILE_FILTER, "File pattern to look for (only relevant when " + OPT_SOURCE_DIR + " has been supplied)"));
+		sb.append(getOptionHelp(OPT_RECURSIVE, "Searches provided source directory recursively for ABAP files"));
 		sb.append(getOptionHelp(OPT_LINE_RANGE, "Single line range for partial cleanup, e.g. " + LINE_RANGE_EXAMPLE));
 		sb.append(getOptionHelp(null, "Without this option, the cleanup will be applied to the whole code document."));
 		sb.append(LINE_SEP);
@@ -260,7 +263,8 @@ public class CommandLineArgs {
 		sb.append(LINE_SEP);
 		sb.append(getOptionHelp(OPT_TARGET_FILE, "Target file name to which the cleanup result will be saved."));
 		sb.append(getOptionHelp(null, "Without this option, the cleanup result will be written to the standard output."));
-		sb.append(getOptionHelp(OPT_TARGET_DIR, "Target directory, required if option " + OPT_SOURCE_DIR + " was supplied"));
+		sb.append(getOptionHelp(OPT_TARGET_DIR, "Target directory name to which the cleanup files will be saved"));
+		sb.append(getOptionHelp(null, "If not supplied, " + OPT_SOURCE_DIR + " will be the target diretory" ));
 		sb.append(getOptionHelp(OPT_OVERWRITE, "Overwrite target file if it already exists."));
 		sb.append(getOptionHelp(null, "Without this option, an error will be raised if the target file already exists."));
 		sb.append(getOptionHelp(OPT_PARTIAL_RESULT, "Restrict output to the cleanup result of the " + OPT_LINE_RANGE + " (if supplied)."));
@@ -303,9 +307,9 @@ public class CommandLineArgs {
 	public final String errors;
 	public final boolean showHelp;
 	
-	public boolean writesResultCodeToOutput() { return processSingleFile() && StringUtil.isNullOrEmpty(targetPath); }
+	public boolean writesResultCodeToOutput() { return isInSingleSourceMode() && StringUtil.isNullOrEmpty(targetPath); }
 	
-	public boolean processSingleFile() { return sourceDir == null; }
+	public boolean isInSingleSourceMode() { return sourceDir == null; }
 
 	public boolean hasErrors() { return !StringUtil.isNullOrEmpty(errors); }
 	

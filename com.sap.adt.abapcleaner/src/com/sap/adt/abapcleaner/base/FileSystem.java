@@ -13,10 +13,16 @@ public class FileSystem implements IFileSystem {
 		return new FileSystem();
 	}
 
-	// -------------------------------------------------------------------------
-   // File
+	@Override
+	public String getAbsolutePath(String path) {
+		return new File(path).getAbsolutePath();
+	}
 
-   @Override
+	// -------------------------------------------------------------------------
+	// File
+
+
+	@Override
 	public boolean fileExists(String path) {
 		return (new File(path)).isFile();
 	}
