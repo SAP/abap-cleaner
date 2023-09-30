@@ -195,6 +195,14 @@ public class TokenTest {
 	}
 	
 	@Test
+	void testTokenTypeIdentifierWithExclamationMark() {
+		// e.g. "DATA: !min TYPE i, !max TYPE i. !min = !max."
+		assertEquals(TokenType.IDENTIFIER, Token.createForAbap(0, 1, "!min", 1).type);
+		assertEquals(TokenType.IDENTIFIER, Token.createForAbap(0, 1, "!ls_any-comp", 1).type);
+		assertEquals(TokenType.IDENTIFIER, Token.createForAbap(0, 1, "!any_method(", 1).type);
+	}
+	
+	@Test
 	void testAddNextErr() {
 		Command command = buildCommand("a = 1.");
 		Token newToken = Token.createForAbap(0, 1, "\" comment", TokenType.COMMENT, 1);
