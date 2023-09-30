@@ -2,12 +2,76 @@ package com.sap.adt.abapcleaner.rules.commands;
 
 import org.junit.jupiter.api.Test;
 
+import com.sap.adt.abapcleaner.base.ABAP;
 import com.sap.adt.abapcleaner.rulebase.RuleID;
 import com.sap.adt.abapcleaner.rulebase.RuleTestBase;
 
 class CreateObjectTest extends RuleTestBase {
 	CreateObjectTest() {
 		super(RuleID.CREATE_OBJECT);
+	}
+	
+	@Test
+	void testOldAbapRelease() {
+		// ensure that NEW is NOT introduced if the code must compile against an ABAP Release prior to 7.40, 
+		// see https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/index.htm?file=abennews-740-expressions.htm
+		
+		setAbapReleaseOfCode("731");
+		
+		buildSrc("    CREATE OBJECT lx_message.");
+		buildSrc("    CREATE OBJECT lo_instance TYPE cl_any_class.");
+		buildSrc("    CREATE OBJECT mo_instance TYPE cl_any_class");
+		buildSrc("      EXPORTING");
+		buildSrc("        io_parent         = me");
+		buildSrc("        io_msg_handler    = mo_msg_handler.");
+
+		copyExpFromSrc();
+
+		putAnyMethodAroundSrcAndExp();
+		
+		testRule();
+	}
+	
+	@Test
+	void testUnknownAbapRelease() {
+		// ensure that NEW is NOT introduced if the code must compile against an unknown ("fallback") ABAP Release, 
+		// which triggers a NumberFormatException in Rule.isCleanupAllowedFor
+		 
+		setAbapReleaseOfCode(ABAP.FALLBACK_RELEASE); 
+		
+		buildSrc("    CREATE OBJECT lx_message.");
+		buildSrc("    CREATE OBJECT lo_instance TYPE cl_any_class.");
+		buildSrc("    CREATE OBJECT mo_instance TYPE cl_any_class");
+		buildSrc("      EXPORTING");
+		buildSrc("        io_parent         = me");
+		buildSrc("        io_msg_handler    = mo_msg_handler.");
+
+		copyExpFromSrc();
+
+		putAnyMethodAroundSrcAndExp();
+		
+		testRule();
+	}
+	
+	@Test
+	void testReleaseRestriction() {
+		// ensure that NEW is NOT introduced if the user applies an ABAP release restriction < 7.40
+		// (even if the code itself is compiled against the newest release)
+		
+		setReleaseRestrictionFromUI(731);
+		
+		buildSrc("    CREATE OBJECT lx_message.");
+		buildSrc("    CREATE OBJECT lo_instance TYPE cl_any_class.");
+		buildSrc("    CREATE OBJECT mo_instance TYPE cl_any_class");
+		buildSrc("      EXPORTING");
+		buildSrc("        io_parent         = me");
+		buildSrc("        io_msg_handler    = mo_msg_handler.");
+
+		copyExpFromSrc();
+
+		putAnyMethodAroundSrcAndExp();
+		
+		testRule();
 	}
 	
 	@Test

@@ -148,6 +148,9 @@ public final class ABAP {
    /** represents the ABAP Release 7.0, EhP2, in which pragmas were introduced
     * see https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/index.htm?file=abennews-71-pragmas.htm */
    public static final int REQUIRED_RELEASE_702 = 702;
+   /** represents the ABAP Release 7.40, in which e.g. the NEW operator was introduced, 
+    * see https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/index.htm?file=abennews-740-expressions.htm */
+   public static final int REQUIRED_RELEASE_740 = 740;
    /** represents the ABAP Release 7.52, in which e.g. RAISE EXCEPTION NEW ... (instead of TYPE ...) was introduced, 
     * see https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/index.htm?file=abennews-752-expressions.htm */
    public static final int REQUIRED_RELEASE_752 = 752;
@@ -161,7 +164,7 @@ public final class ABAP {
    // constants for the ABAP release restriction from the UI; converted with ABAP.getReleaseRestrictionNumber() and ABAP.getReleaseRestrictionName() 
    /** expresses that changes must be restricted to the syntax which was available up to a specific ABAP release
     * (see <a href="https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/index.htm?file=abennews-75.htm">ABAP Release News</a>) */
-   public final static String[] RELEASE_RESTRICTION_NAMES = new String[] { "7.50", "7.51", "7.52", "7.53", "7.54", "7.55", "7.56", "7.57", "7.58" };
+   public final static String[] RELEASE_RESTRICTION_NAMES = new String[] { "7.02", "7.03", "7.31", "7.40", "7.41", "7.42", "7.50", "7.51", "7.52", "7.53", "7.54", "7.55", "7.56", "7.57", "7.58" };
    /** expresses that all syntax available in the latest ABAP release can be used without restriction */
    public final static String NO_RELEASE_RESTRICTION_NAME = "Latest";
    /** expresses that all syntax available in the latest ABAP release can be used without restriction */
