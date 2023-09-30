@@ -192,10 +192,10 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		}
 	}
 	
-	private static void cleanMultiAutomatically(CommandLineArgs commandLineArgs, PrintStream out,
-			Profile profile) {
+	private static void cleanMultiAutomatically(CommandLineArgs commandLineArgs, PrintStream out, Profile profile) {
 		Persistency persistency = Persistency.get();
 		int baseSourcePathLength = commandLineArgs.sourceDir.length();
+		
 	  	for (String sourcePath : commandLineArgs.sourcePaths) {
 			String sourceCode = persistency.readAllTextFromFile(sourcePath);
 
@@ -209,12 +209,12 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		  		continue;
 		  	}
 
-			writeCleanUpResult(commandLineArgs, out, result, persistency.combinePaths(commandLineArgs.targetDir, sourcePath.substring(baseSourcePathLength)));
+		  	String sourceFolderFile = sourcePath.substring(baseSourcePathLength);
+			writeCleanUpResult(commandLineArgs, out, result, sourceFolderFile, persistency.combinePaths(commandLineArgs.targetDir, sourceFolderFile));
 	  	}
 	}
 
-	private static void cleanSingleSourceAutomatically(CommandLineArgs commandLineArgs, String sourceCode,
-			PrintStream out, Profile profile) {
+	private static void cleanSingleSourceAutomatically(CommandLineArgs commandLineArgs, String sourceCode, PrintStream out, Profile profile) {
 		CleanupResult result = cleanAutomatically(commandLineArgs.sourceCode, commandLineArgs.abapRelease, commandLineArgs.cleanupRange, profile, commandLineArgs.showStats);
 		if (result == null) {
 			out.println("Cleanup cancelled.");
@@ -224,12 +224,11 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 			return;
 		}
 		
-		writeCleanUpResult(commandLineArgs, out, result, commandLineArgs.targetPath);
+		writeCleanUpResult(commandLineArgs, out, result, null, commandLineArgs.targetPath);
 	}
 
-	private static void writeCleanUpResult(CommandLineArgs commandLineArgs, PrintStream out,
-	        CleanupResult result, String targetPath) {
-	  	// the output is either the whole code document or the cleanup result of the line selection 
+	private static void writeCleanUpResult(CommandLineArgs commandLineArgs, PrintStream out, CleanupResult result, String sourceFolderFile, String targetPath) {
+	  	// the main output is either the whole code document or the cleanup result of the line selection 
 	  	String output = null;
 	  	if (result.hasCleanedCode()) {
 		  	if (commandLineArgs.partialResult && result.hasLineSelection()) {
@@ -241,19 +240,30 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		if (output == null) {
 			return;
 		}
-		if (commandLineArgs.showStats) 
-			out.println(result.getStatsSummary());
-		if (commandLineArgs.showUsedRules) 
-			out.print(result.getRuleStats());
-		if (commandLineArgs.showStats || commandLineArgs.showUsedRules) 
-			out.println();
 
+		// write statistics and/or used cleanup rules, if requested
+		if (commandLineArgs.showStats || commandLineArgs.showUsedRules) {
+			// in case of multiple files, start with the current folder and file
+			if (!StringUtil.isNullOrEmpty(sourceFolderFile))
+				out.println(sourceFolderFile);
+			
+			if (commandLineArgs.showStats) 
+				out.println(result.getStatsSummary());
+			if (commandLineArgs.showUsedRules) 
+				out.print(result.getRuleStats());
+
+			out.println();
+		}
+		
 		if (commandLineArgs.writesResultCodeToOutput()) {
 			out.print(output);
 		} else {
 			Persistency persistency = Persistency.get(); 
 			if (commandLineArgs.overwrite || !persistency.fileExists(targetPath)) {
 				persistency.ensureDirectoryExistsForPath(targetPath);
+				// for abapGit, ensure a final line separator
+				if (output.length() > 0 && ABAP.LINE_SEPARATOR.indexOf(output.charAt(output.length() - 1)) < 0)
+					output += ABAP.LINE_SEPARATOR;
 				persistency.writeAllTextToFile(targetPath, output);
 			}
 		}
