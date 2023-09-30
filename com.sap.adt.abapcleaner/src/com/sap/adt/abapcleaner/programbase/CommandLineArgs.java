@@ -206,15 +206,16 @@ public class CommandLineArgs {
 		String profileExtension = persistency.getExtension(FileType.PROFILE_TEXT);
 
 		StringBuilder sb = new StringBuilder();
-		String usagePrefix = "Usage: " + EXECUTABLE_NAME; 
+
+		String usagePrefix = "    " + EXECUTABLE_NAME; 
 		String spacePrefix = StringUtil.repeatChar(' ', usagePrefix.length());
+
+		sb.append("Usage for single file:");
+		sb.append(LINE_SEP);
 		sb.append(usagePrefix);
-		sb.append(" { " + OPT_SOURCE_DIR + " sourcedir");
-		sb.append(" [" + OPT_FILE_FILTER + " filepattern]");
-		sb.append(" [" + OPT_RECURSIVE + "]}");
-		sb.append(" / { {" + OPT_SOURCE_FILE + " sourcefile");
+		sb.append(" {" + OPT_SOURCE_FILE + " sourcefile");
 		sb.append(" / " + OPT_SOURCE_CODE + " sourcecode }");
-		sb.append(" [" + OPT_LINE_RANGE + " linerange] }");
+		sb.append(" [" + OPT_LINE_RANGE + " linerange]");
 		sb.append(LINE_SEP);
 		sb.append(spacePrefix);
 		sb.append(" [{ " + OPT_PROFILE + " profile");
@@ -222,8 +223,7 @@ public class CommandLineArgs {
 		sb.append(" [" + OPT_RELEASE + " release]");
 		sb.append(LINE_SEP);
 		sb.append(spacePrefix);
-		sb.append(" [{" + OPT_TARGET_FILE + " targetfile");
-		sb.append(" / " + OPT_TARGET_DIR + " targetdir}");
+		sb.append(" [" + OPT_TARGET_FILE + " targetfile");
 		sb.append(" [" + OPT_OVERWRITE + "]]");
 		sb.append(" [" + OPT_PARTIAL_RESULT + "]");
 		sb.append(LINE_SEP);
@@ -232,7 +232,9 @@ public class CommandLineArgs {
 		sb.append(" [" + OPT_USED_RULES + "]");
 		sb.append(LINE_SEP + LINE_SEP);
 
-		sb.append("Example: " + EXECUTABLE_NAME);
+		sb.append("Example for single file:");
+		sb.append(LINE_SEP);
+		sb.append(usagePrefix);
 		sb.append(" " + OPT_SOURCE_FILE + " \"CL_ANY_CLASS.txt\"");
 		sb.append(" " + OPT_LINE_RANGE + " " + LINE_RANGE_EXAMPLE);
 		sb.append(" " + OPT_PROFILE + " \"" + "team profile" + profileExtension + "\"");
@@ -243,16 +245,50 @@ public class CommandLineArgs {
 		sb.append(" " + OPT_USED_RULES);
 		sb.append(LINE_SEP + LINE_SEP);
 
+		sb.append("Usage for multiple files:");
+		sb.append(LINE_SEP);
+		sb.append(usagePrefix);
+		sb.append(" " + OPT_SOURCE_DIR + " sourcedir");
+		sb.append(" [" + OPT_FILE_FILTER + " filepattern]");
+		sb.append(" [" + OPT_RECURSIVE + "]");
+		sb.append(LINE_SEP);
+		sb.append(spacePrefix);
+		sb.append(" [{ " + OPT_PROFILE + " profile");
+		sb.append(" / " + OPT_PROFILE_DATA + " profiledata }]");
+		sb.append(" [" + OPT_RELEASE + " release]");
+		sb.append(LINE_SEP);
+		sb.append(spacePrefix);
+		sb.append(" [" + OPT_TARGET_DIR + " targetdir");
+		sb.append(" [" + OPT_OVERWRITE + "]]");
+		sb.append(LINE_SEP);
+		sb.append(spacePrefix);
+		sb.append(" [" + OPT_STATS + "]");
+		sb.append(" [" + OPT_USED_RULES + "]");
+		sb.append(LINE_SEP + LINE_SEP);
+
+		sb.append("Example for multiple files:");
+		sb.append(LINE_SEP);
+		sb.append(usagePrefix);
+		sb.append(" " + OPT_SOURCE_DIR + " \"C:\\temp\\source\"");
+		sb.append(" " + OPT_FILE_FILTER + " \"*.txt\"");
+		sb.append(" " + OPT_RECURSIVE);
+		sb.append(" " + OPT_PROFILE + " \"" + "team profile" + profileExtension + "\"");
+		sb.append(" " + OPT_RELEASE + " \"757\"");
+		sb.append(" " + OPT_TARGET_DIR + " \"C:\\temp\\target\"");
+		sb.append(" " + OPT_OVERWRITE);
+		sb.append(LINE_SEP + LINE_SEP);
+
 		sb.append("Options: ");
 		sb.append(LINE_SEP);
 		sb.append(getOptionHelp(OPT_SOURCE_FILE, "File name of an ABAP source file which is input to the cleanup."));
 		sb.append(getOptionHelp(OPT_SOURCE_CODE, "ABAP source code which is input to the cleanup."));
-		sb.append(getOptionHelp(OPT_SOURCE_DIR, "Folder that contains ABAP source files (default file pattern is \"*.abap\")"));
 		sb.append(getOptionHelp(null, "Please use either " + OPT_SOURCE_FILE + " or " + OPT_SOURCE_CODE + " or " + OPT_SOURCE_DIR + "."));
-		sb.append(getOptionHelp(OPT_FILE_FILTER, "File pattern to look for (only relevant when " + OPT_SOURCE_DIR + " has been supplied)"));
-		sb.append(getOptionHelp(OPT_RECURSIVE, "Searches provided source directory recursively for ABAP files"));
 		sb.append(getOptionHelp(OPT_LINE_RANGE, "Single line range for partial cleanup, e.g. " + LINE_RANGE_EXAMPLE));
 		sb.append(getOptionHelp(null, "Without this option, the cleanup will be applied to the whole code document."));
+		sb.append(LINE_SEP);
+		sb.append(getOptionHelp(OPT_SOURCE_DIR, "Folder that contains ABAP source files (default file pattern is \"*.abap\")"));
+		sb.append(getOptionHelp(OPT_FILE_FILTER, "File pattern to look for (only relevant when " + OPT_SOURCE_DIR + " has been supplied)"));
+		sb.append(getOptionHelp(OPT_RECURSIVE, "Searches provided source directory recursively for ABAP files"));
 		sb.append(LINE_SEP);
 		sb.append(getOptionHelp(OPT_PROFILE, "File name of the cleanup profile to be used (extension " + profileExtension + ")."));
 		sb.append(getOptionHelp(null, "From the UI, you may use button 'Export...' from the profiles editor to create the file."));
