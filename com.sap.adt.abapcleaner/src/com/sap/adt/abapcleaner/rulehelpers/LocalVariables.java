@@ -6,6 +6,7 @@ import java.util.HashSet;
 
 import com.sap.adt.abapcleaner.base.ABAP;
 import com.sap.adt.abapcleaner.base.AbapCult;
+import com.sap.adt.abapcleaner.base.StringUtil;
 import com.sap.adt.abapcleaner.parser.Command;
 import com.sap.adt.abapcleaner.parser.Token;
 import com.sap.adt.abapcleaner.programbase.UnexpectedSyntaxBeforeChanges;
@@ -19,15 +20,14 @@ public class LocalVariables {
    }
 
 	public static String getObjectName(String identifier) {
-		// remove the @ used in SQL statements
-		if (AbapCult.stringStartsWith(identifier, "@"))
-			identifier = identifier.substring(1);
+		// remove the @ used in SQL statements, or the ! used for escaping identifiers
+		int start = AbapCult.stringStartsWithAny(identifier, "@", ABAP.OPERAND_ESCAPE_CHAR_STRING) ? 1 : 0;
 
 		// reduce the identifier to its first part, i.e.
 		// - get the structure variable in cases of "structure-component",
 		// - get the identifier of the instance in cases of "instance_var->member_var",
 		// - remove substring information like lv_date+4(2)
-		identifier = ABAP.readTillEndOfVariableName(identifier, 0, true);
+		identifier = ABAP.readTillEndOfVariableName(identifier, start, true);
 		return identifier;
 	}
 
@@ -81,8 +81,11 @@ public class LocalVariables {
 
 		String text = identifier.getText();
 
-		// for declarations like "DATA lv_textdat1(20) TYPE c.", reduce the identifier to its first part
-		text = ABAP.readTillEndOfVariableName(text, 0, true);
+		// skip the ! escape character
+		int start = StringUtil.startsWith(text, ABAP.OPERAND_ESCAPE_CHAR_STRING, false) ? 1 : 0;
+
+		// for declarations like "DATA lv_textdat1(20) TYPE c.", reduce the identifier to its first part;
+		text = ABAP.readTillEndOfVariableName(text, start, true);
 
 		String key = getNameKey(text, isType);
 		if (locals.containsKey(key))

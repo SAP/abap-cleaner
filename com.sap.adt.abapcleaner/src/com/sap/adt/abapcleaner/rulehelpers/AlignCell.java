@@ -64,8 +64,10 @@ public abstract class AlignCell {
 	final boolean startsWithSameObjectAs(AlignCell other) {
 		Token tokenA = getFirstToken();
 		Token tokenB = other.getFirstToken();
-		String tokenAObject = ABAP.readTillEndOfVariableName(tokenA.getText(), 0, true);
-		String tokenBObject = ABAP.readTillEndOfVariableName(tokenB.getText(), 0, true);
+		int startA = StringUtil.startsWith(tokenA.getText(), ABAP.OPERAND_ESCAPE_CHAR_STRING, false) ? 1 : 0;
+		int startB = StringUtil.startsWith(tokenB.getText(), ABAP.OPERAND_ESCAPE_CHAR_STRING, false) ? 1 : 0;
+		String tokenAObject = ABAP.readTillEndOfVariableName(tokenA.getText(), startA, true);
+		String tokenBObject = ABAP.readTillEndOfVariableName(tokenB.getText(), startB, true);
 		return AbapCult.stringEquals(tokenAObject, tokenBObject, true);
 	}
 

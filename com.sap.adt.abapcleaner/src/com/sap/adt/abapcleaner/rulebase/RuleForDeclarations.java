@@ -485,8 +485,8 @@ public abstract class RuleForDeclarations extends Rule {
 				String tokenText = token.getText();
 				int readPos = 0; 
 
-				// remove the @ used in SQL statements
-				if (AbapCult.stringStartsWith(tokenText, "@"))
+				// remove the @ used in SQL statements, or the ! used for escaping identifiers
+				if (AbapCult.stringStartsWithAny(tokenText, "@", ABAP.OPERAND_ESCAPE_CHAR_STRING))
 					++readPos;
 
 				// reduce the identifier to its first part, i.e.
@@ -547,8 +547,9 @@ public abstract class RuleForDeclarations extends Rule {
 				// in "var+offset(length)", "length" may also be an identifier
 				if (readPos > 0 && readPos < tokenText.length() && tokenText.charAt(readPos) == ABAP.SUBSTRING_LENGTH_OPEN) {
 					objectName = ABAP.readTillEndOfVariableName(tokenText, readPos + 1, false);
-					if (!StringUtil.isNullOrEmpty(objectName)) 
+					if (!StringUtil.isNullOrEmpty(objectName)) {
 						localVariables.addUsage(token, objectName);
+					}
 				}
 			}
 			token = token.getNextCodeToken();

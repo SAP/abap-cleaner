@@ -1347,4 +1347,24 @@ public class LocalDeclarationOrderTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testIdentifiersWithEscapeChar() {
+		// ensure that identifiers with the ! escape char are correctly processed 
+		
+		buildSrc("    DATA !c TYPE char10.");
+		buildSrc("    DATA !b TYPE char5.");
+		buildSrc("    DATA !a TYPE ty_s_struc.");
+		buildSrc("    !a-component = !b+2(2) + !c.");
+
+		buildExp("    DATA !a TYPE ty_s_struc.");
+		buildExp("    DATA !b TYPE char5.");
+		buildExp("    DATA !c TYPE char10.");
+		buildExp("");
+		buildExp("    !a-component = !b+2(2) + !c.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }

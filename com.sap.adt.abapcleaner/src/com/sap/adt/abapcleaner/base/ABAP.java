@@ -823,6 +823,13 @@ public final class ABAP {
 		return (pos == name.length()) && namespaceLength == 0;
 	}
 	
+	/**
+	 * identifies the end of a variable name and returns the variable name; expects start position to be behind any @ or ! escape char
+	 * @param line - a code line in which the variable name is found
+	 * @param start - the start position, which is expected to be behind any @ or ! escape character
+	 * @param allowFieldSymbols - true if field symbols are allowed as variables
+	 * @return - the variable name that was identified, or null if start position exceeded line length
+	 */
 	public static String readTillEndOfVariableName(String line, int start, boolean allowFieldSymbols) {
 		if (line == null)
 			return null;
