@@ -86,9 +86,11 @@ If you need to restrict code changes performed by the cleanup rules to the synta
 cleanup rules that introduce calculation assignment operators such as ```+=``` will be automatically skipped. 
 Changes to this setting trigger a reprocessing of the current cleanup. 
 
-When called from inside ADT, ABAP cleaner automatically determines the ABAP release of the current code document
+When called from inside ADT, ABAP cleaner automatically determines the ABAP release of the current system 
 and restricts rules to this release; with the setting on the UI, this can be restricted even further. 
+The ABAP release of the current system is shown in the window title:
 
+![ABAP cleaner main window - ABAP release in title](images/main-window_title.png "ABAP cleaner main window - ABAP release in title")
 
 ## Display Settings
 

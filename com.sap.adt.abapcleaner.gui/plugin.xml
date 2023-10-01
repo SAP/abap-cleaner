@@ -19,7 +19,7 @@
             categoryId="com.sap.adt.tools.abapsource.ui.source.category"
             description="preview the cleanup result on the ABAP cleaner UI in read-only mode, without locking or changing the code object"
             id="com.sap.adt.abapcleaner.cleanup.readonly"
-            name="Preview as Read-Only With ABAP Cleaner...">
+            name="Show Read-Only Preview With ABAP Cleaner...">
       </command>
    </extension>
    <extension
