@@ -138,7 +138,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 
 			if (commandLineArgs == null) {
 				// start the interactive (stand-alone) UI 
-				cleanInteractively(null, ABAP.NEWEST_RELEASE, null, false, null, null);
+				cleanInteractively(null, ABAP.NEWEST_RELEASE, null, false, null, null, false);
 
 			} else {
 				if (commandLineArgs.hasErrors()) {
@@ -303,7 +303,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		}
 	}
 	
-	public static CleanupResult cleanInteractively(String sourceCode, String abapRelease, CleanupRange cleanupRange, boolean isPlugin, String sourcePageTitle, CodeDisplayColors codeDisplayColors) {
+	public static CleanupResult cleanInteractively(String sourceCode, String abapRelease, CleanupRange cleanupRange, boolean isPlugin, String sourcePageTitle, CodeDisplayColors codeDisplayColors, boolean readOnly) {
 		initialize();
 		
 		Persistency persistency = Persistency.get();
@@ -313,7 +313,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 
 		FrmMain window = new FrmMain();
 		window.codeDisplayColors = (codeDisplayColors != null) ? codeDisplayColors : CodeDisplayColors.createDefault();
-		window.open(isPlugin, sourcePageTitle, sourceCode, abapRelease, cleanupRange);
+		window.open(isPlugin, sourcePageTitle, sourceCode, abapRelease, cleanupRange, readOnly);
 
 		if (window.resultCode != null)
 			return window.resultCode.toCleanupResult(); 
@@ -340,7 +340,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 	/**
 	 * @wbp.parser.entryPoint
 	 */
-	public void open(boolean isPlugin, String sourcePageTitle, String sourceCode, String abapRelease, CleanupRange cleanupRange) {
+	public void open(boolean isPlugin, String sourcePageTitle, String sourceCode, String abapRelease, CleanupRange cleanupRange, boolean readOnly) {
 		this.isPlugin = isPlugin;
 		
 		Display display = Display.getDefault();
@@ -370,6 +370,14 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 			mmuCodeClearDisplay.dispose();
 			mmuCodeSeparator.dispose();
 			mmuCodeExit.dispose();
+			
+			if (readOnly) {
+				mmuCodeApplyAndClose.dispose();
+				mmuCodeCancel.setText(getMenuItemTextWithAccelerator("&Close Read-Only Preview", SWT.ESC));
+				btnApplyAndClose.dispose();
+				btnCancel.setText("Close Read-Only Preview");
+				btnCancel.requestLayout();
+			}
 		} else {
 			mmuCodeCancel.dispose();
 			mmuCodeApplyAndClose.dispose();
@@ -1418,22 +1426,36 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		}
 		
 		// show result
-		shell.setText(Program.PRODUCT_NAME + " - " + sourceName);
+		String abapReleaseInfo = getReleaseInfo(newAbapRelease);
+		shell.setText(Program.PRODUCT_NAME + " - " + sourceName + abapReleaseInfo);
 		codeDisplay.setInfo(sourceName, sourcePath, sourceCode, abapRelease, curProfile.getSingleActiveRule());
 		codeDisplay.refreshCode(result.getResultingCode(), result.getResultingDiffDoc(), topLineIndex, curLineIndex, selectionStartLine);
-		if (Program.showDevFeatures())
-			shell.setText(Program.PRODUCT_NAME + " - " + sourceName + " - " + result.getCalculationTimeInfo());
-
+		if (Program.showDevFeatures()) {
+			shell.setText(Program.PRODUCT_NAME + " - " + sourceName + abapReleaseInfo + " - " + result.getCalculationTimeInfo());
+		}
 		// remember the resulting Code instance; the CleanupResult will only be created from it when the window is closed 
 		resultCode = result.getResultingCode(); 
 
 		if (result.getLogSummary() != null) { // even with result.getSuccess() == true, there may be warnings in the log
-			if (showMessages) // TODO: otherwise, display it on a Label? (for 'Watch and Modify Clipboard' function)
+			if (showMessages) { // TODO: otherwise, display it on a Label? (for 'Watch and Modify Clipboard' function)
 				Message.show(result.getLogSummary());
+			}
 		}
 		return true;
 	}
 
+	private String getReleaseInfo(String abapRelease) {
+		if (StringUtil.isNullOrEmpty(abapRelease)) 
+			return "";
+		
+		// convert "757" into "7.57"
+		String abapReleaseDisplay = abapRelease;
+		if (ABAP.consistsOfDigitsOnly(abapRelease) && abapRelease.length() == 3) 
+			abapReleaseDisplay = abapRelease.substring(0, 1) + "." + abapRelease.substring(1);	
+
+		return " (ABAP " + abapReleaseDisplay + ")";
+	}
+	
 	private Task runJobWithProgressUiIfNeeded(BackgroundJob job) {
 		return runJobWithProgressUiIfNeeded(job, Job.CODE_LENGTH_TO_SHOW_PROGRESS_FORM);
 	}

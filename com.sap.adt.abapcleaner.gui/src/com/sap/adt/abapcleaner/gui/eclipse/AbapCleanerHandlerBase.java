@@ -48,9 +48,11 @@ import com.sap.rnd.rndrt.IPadFileResolver;
 public abstract class AbapCleanerHandlerBase extends AbstractAdtEditorHandler {
 
 	private boolean interactive;
+	private boolean readOnly;
 
-	protected AbapCleanerHandlerBase(boolean interactive) {
+	protected AbapCleanerHandlerBase(boolean interactive, boolean readOnly) {
 		this.interactive = interactive;
+		this.readOnly = readOnly;
 	}
 
 	@Override
@@ -68,7 +70,7 @@ public abstract class AbapCleanerHandlerBase extends AbstractAdtEditorHandler {
 			// get the ADT source page and file and check whether editing is allowed
 			IAbapSourcePage adtSourcePage = getAdtSourcePage(HandlerUtil.getActiveEditor(event));
 			IFile file = ((IFileEditorInput) adtSourcePage.getEditorInput()).getFile();
-			if (!adtSourcePage.validateEdit(file)) {
+			if (!readOnly && !adtSourcePage.validateEdit(file)) {
 				return null;
 			}
 			
@@ -93,7 +95,7 @@ public abstract class AbapCleanerHandlerBase extends AbstractAdtEditorHandler {
 			if (interactive) {
 	         // get ADT color settings to make code in the ABAP cleaner UI appear similar to code in ADT
 				CodeDisplayColors codeDisplayColors = createCodeDisplayColors(); 
-				result = FrmMain.cleanInteractively(oldSource, abapRelease, cleanupRange, true, adtSourcePage.getTitle(), codeDisplayColors);
+				result = FrmMain.cleanInteractively(oldSource, abapRelease, cleanupRange, true, adtSourcePage.getTitle(), codeDisplayColors, readOnly);
 			} else {
 				result = FrmMain.cleanAutomatically(oldSource, abapRelease, cleanupRange, null, false);
 			}
@@ -101,7 +103,7 @@ public abstract class AbapCleanerHandlerBase extends AbstractAdtEditorHandler {
 			if (result == null) 
 				return null;
 
-			if (result.hasCleanedCode())
+			if (result.hasCleanedCode() && !readOnly)
 				replaceTextInDocument(document, adtSourcePage, oldSource, result.cleanedCode, new CleanupResultWrapper(result));
 			else if (result.hasErrorMessage()) 
 				MessageDialog.openError(adtSourcePage.getSite().getShell(), Program.PRODUCT_NAME, result.errorMessage);

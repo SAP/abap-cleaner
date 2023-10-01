@@ -15,6 +15,12 @@
             id="com.sap.adt.abapcleaner.cleanup.interactive"
             name="Clean Up With Interactive ABAP Cleaner...">
       </command>
+      <command
+            categoryId="com.sap.adt.tools.abapsource.ui.source.category"
+            description="preview the cleanup result on the ABAP cleaner UI in read-only mode, without locking or changing the code object"
+            id="com.sap.adt.abapcleaner.cleanup.readonly"
+            name="Preview as Read-Only With ABAP Cleaner...">
+      </command>
    </extension>
    <extension
          point="org.eclipse.ui.menus">
@@ -48,6 +54,23 @@
                      variable="activePart">
                   <test
                         args="com.sap.adt.abapcleaner.cleanup.interactive"
+                        forcePluginActivation="true"
+                        property="com.sap.adt.tools.abapsource.ui.editormenu.shouldShowContextMenu"
+                        value="true">
+                  </test>
+               </with>
+            </visibleWhen>
+         </command>
+         <command
+               commandId="com.sap.adt.abapcleaner.cleanup.readonly"
+               icon="resources/CommandIcon.png"
+               style="push">
+            <visibleWhen
+                  checkEnabled="false">
+               <with
+                     variable="activePart">
+                  <test
+                        args="com.sap.adt.abapcleaner.cleanup.readonly"
                         forcePluginActivation="true"
                         property="com.sap.adt.tools.abapsource.ui.editormenu.shouldShowContextMenu"
                         value="true">
@@ -91,6 +114,22 @@
             </with>
          </activeWhen>
       </handler>
+      <handler
+            class="com.sap.adt.abapcleaner.gui.eclipse.AbapCleanerHandlerReadOnly"
+            commandId="com.sap.adt.abapcleaner.cleanup.readonly">
+         <activeWhen>
+            <with
+                  variable="activeContexts">
+               <iterate
+                     ifEmpty="false"
+                     operator="or">
+                  <equals
+                        value="com.sap.adt.tools.abapsource.ui.abapCode">
+                  </equals>
+               </iterate>
+            </with>
+         </activeWhen>
+      </handler>
    </extension>
    <extension
          point="org.eclipse.ui.bindings">
@@ -105,6 +144,12 @@
             contextId="com.sap.adt.tools.abapsource.ui.abapCode"
             schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
             sequence="M1+M2+4">
+      </key>
+      <key
+            commandId="com.sap.adt.abapcleaner.cleanup.readonly"
+            contextId="com.sap.adt.tools.abapsource.ui.abapCode"
+            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
+            sequence="M1+M2+5">
       </key>
    </extension>
    <extension
