@@ -2,11 +2,29 @@
 
 ## Cleaning code from ADT with the ABAP cleaner plug-in 
 
+### Automated cleanup 
+
+To clean ABAP code **automatically** with a single keystroke, 
+
+1. **Select** any amount of **ABAP code** in the current code editor in ADT - 
+   or alternatively, do NOT select any code to apply cleanup to the current method or declaration section. 
+2. **Press *Ctrl + 4*** or select menu 'Source Code / Clean Up With **Automated** ABAP Cleaner'. 
+   The cleanup will be done automatically, using the profile and cleanup range that was last selected 
+   when you used the interactive ABAP cleaner UI (see below). 
+
+   ![ABAP cleaner usage - automated cleanup](images/usage_automated.png "ABAP cleaner usage - automated cleanup")
+
+If you clean a selection of code, ABAP cleaner will expand your selection to whole ABAP statements. 
+With the plug-in, you are not required to select complete code blocks 
+(e.g., you may select an ```IF``` without its corresponding ```ENDIF```). 
+
+### Interactive cleanup 
+
 To clean ABAP code **interactively**, 
 
 1. **Select** any amount of **ABAP code** in the current code editor in ADT - 
    or alternatively, do NOT select any code to apply cleanup to the current method or declaration section. 
-2. **Press *Ctrl + Shift + 4*** or select menu 'Source Code / Clean Up With Interactive ABAP Cleaner...'. 
+2. **Press *Ctrl + Shift + 4*** or select menu 'Source Code / Clean Up With **Interactive** ABAP Cleaner...'. 
    This will open the ABAP cleaner UI to compare the original and the cleaned code. 
 
    ![ABAP cleaner usage - interactive cleanup](images/usage_menu-interactive.png "ABAP cleaner usage - interactive cleanup")
@@ -24,19 +42,18 @@ To clean ABAP code **interactively**,
 4. **Press *Ctrl + Enter*** or click 'Apply and Close' to apply the result and return to the ADT editor; 
    to discard the changes, press **Esc** or click 'Cancel'. 
 
-To clean ABAP code **automatically** with a single keystroke, 
+### Read-only preview without locking or changing code 
 
-1. **Select** any amount of **ABAP code** in the current code editor in ADT - 
-   or alternatively, do NOT select any code to apply cleanup to the current method or declaration section. 
-2. **Press *Ctrl + 4*** or select menu 'Source Code / Clean Up With Automated ABAP Cleaner'. 
-   The cleanup will be done automatically, using the profile and cleanup range that was last selected 
-   when you used the interactive ABAP cleaner UI (see above). 
+If you only want a **preview** of the cleaned code, **without locking or changing** the code 
+(e.g. because the object is locked by another person, or you do not have development authorization in the current system), 
 
-   ![ABAP cleaner usage - automated cleanup](images/usage_automated.png "ABAP cleaner usage - automated cleanup")
+1. **Select** any amount of **ABAP code** in the current code editor in ADT.
+2. **Press *Ctrl + Shift + 5*** or select menu 'Source Code / Show **Read-Only Preview** With ABAP Cleaner...': 
 
-If you clean a selection of code, ABAP cleaner will expand your selection to whole ABAP statements. 
-With the plug-in, you are not required to select complete code blocks 
-(e.g., you may select an ```IF``` without its corresponding ```ENDIF```). 
+   ![ABAP cleaner usage - show read-only preview](images/usage_menu-preview.png "ABAP cleaner usage - show read-only preview")
+
+This opens the interactive ABAP cleaner UI as described above, but the code will not be locked or changed. 
+Nevertheless, changes to ABAP cleaner settings (selected profile, activated rules and options etc.) will be kept. 
 
 
 ## Cleaning code with the stand-alone ABAP cleaner app
@@ -78,22 +95,37 @@ clipboard content into your IDE.
 ## Calling ABAP cleaner from the command line
 
 To integrate ABAP cleaner in other processes, you may call the "abap-cleaner**c**.exe" of the stand-alone version 
-from the command line with the following arguments:
+from the command line with the following arguments for cleaning either a single file or multiple files in a directory:
 
 ```
-Usage: .\abap-cleanerc.exe { --sourcefile sourcefile / --source sourcecode } [--linerange linerange]
-                           [{ --profile profile / --profiledata profiledata }] [--release release]
-                           [--targetfile targetfile [--overwrite]] [--partialresult]
-                           [--stats] [--usedrules]
+Usage for single file:
+    .\abap-cleanerc.exe {--sourcefile sourcefile / --source sourcecode } [--linerange linerange]
+                        [{ --profile profile / --profiledata profiledata }] [--release release]
+                        [--targetfile targetfile [--overwrite]] [--partialresult]
+                        [--stats] [--usedrules]
 
-Example: .\abap-cleanerc.exe --sourcefile "CL_ANY_CLASS.txt" --linerange "20-35" --profile "team profile.cfj" --release "757" --targetfile "result\CL_ANY_CLASS.txt" --overwrite --stats --usedrules
+Example for single file:
+    .\abap-cleanerc.exe --sourcefile "CL_ANY_CLASS.txt" --linerange "20-35" --profile "team profile.cfj" --release "757" --targetfile "result\CL_ANY_CLASS.txt" --overwrite --stats --usedrules
 
-Options: 
+Usage for multiple files:
+    .\abap-cleanerc.exe --sourcedir sourcedir [--filepattern filepattern] [--recursive]
+                        [{ --profile profile / --profiledata profiledata }] [--release release]
+                        [--targetdir targetdir [--overwrite]]
+                        [--stats] [--usedrules]
+
+Example for multiple files:
+    .\abap-cleanerc.exe --sourcedir "C:\temp\source" --filepattern "*.txt" --recursive --profile "team profile.cfj" --release "757" --targetdir "C:\temp\target" --overwrite
+
+Options:
     --sourcefile        File name of an ABAP source file which is input to the cleanup.
     --source            ABAP source code which is input to the cleanup.
-                        Please use either --sourcefile or --source.
+                        Please use either --sourcefile or --source or --sourcedir.
     --linerange         Single line range for partial cleanup, e.g. "20-35"
                         Without this option, the cleanup will be applied to the whole code document.
+
+    --sourcedir         Folder that contains ABAP source files (default file pattern is "*.abap")
+    --filepattern       File pattern to look for (only relevant when --sourcedir has been supplied)
+    --recursive         Searches provided source directory recursively for ABAP files
 
     --profile           File name of the cleanup profile to be used (extension .cfj).
                         From the UI, you may use button 'Export...' from the profiles editor to create the file.
@@ -104,6 +136,8 @@ Options:
 
     --targetfile        Target file name to which the cleanup result will be saved.
                         Without this option, the cleanup result will be written to the standard output.
+    --targetdir         Target directory name to which the cleanup files will be saved
+                        If not supplied, --sourcedir will be the target diretory
     --overwrite         Overwrite target file if it already exists.
                         Without this option, an error will be raised if the target file already exists.
     --partialresult     Restrict output to the cleanup result of the --linerange (if supplied).
