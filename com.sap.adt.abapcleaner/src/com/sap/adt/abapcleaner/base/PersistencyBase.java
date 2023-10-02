@@ -3,8 +3,6 @@ package com.sap.adt.abapcleaner.base;
 import java.io.File;
 import java.nio.charset.Charset;
 
-import com.sap.adt.abapcleaner.programbase.Persistency;
-
 /**
  * Provides methods to persist data on the local file system, encapsulating java.io.File.
  */
