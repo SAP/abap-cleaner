@@ -4,6 +4,8 @@
 
 Replaces the TYPE section of RAISE EXCEPTION TYPE ... and RAISE SHORTDUMP TYPE ... with a NEW constructor call.
 
+This rule requires a NetWeaver version >= 7.52.
+
 ## References
 
 * [Clean ABAP Styleguide: Prefer RAISE EXCEPTION NEW to RAISE EXCEPTION TYPE](https://github.com/SAP/styleguides/blob/main/clean-abap/CleanABAP.md#prefer-raise-exception-new-to-raise-exception-type)

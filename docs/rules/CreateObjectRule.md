@@ -4,6 +4,8 @@
 
 Transforms CREATE OBJECT statements into functional style using NEW.
 
+This rule requires a NetWeaver version >= 7.40.
+
 ## References
 
 * [Clean ABAP Styleguide: Prefer NEW to CREATE OBJECT](https://github.com/SAP/styleguides/blob/main/clean-abap/CleanABAP.md#prefer-new-to-create-object)

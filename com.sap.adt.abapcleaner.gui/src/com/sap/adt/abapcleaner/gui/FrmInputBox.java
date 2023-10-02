@@ -55,9 +55,9 @@ public class FrmInputBox{
    }
 
 	protected void createContents() {
-		shell = new Shell(SWT.APPLICATION_MODAL | SWT.BORDER | SWT.TITLE | SWT.CLOSE);
-		shell.setMinimumSize(new Point(450, 130));
-		shell.setSize(450, 130);
+		shell = new Shell(SWT.APPLICATION_MODAL | SWT.BORDER | SWT.CLOSE | SWT.RESIZE | SWT.TITLE);
+		shell.setMinimumSize(new Point(450, 140));
+		shell.setSize(450, 140);
 		shell.setImage(SWTResourceManager.getImage(FrmInputBox.class, "/ShellImage.png"));
 		shell.setText("Input Box");
 		GridLayout gl_shell = new GridLayout(1, false);

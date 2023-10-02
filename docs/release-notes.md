@@ -6,6 +6,24 @@ as well as bugfixes of reported issues, i.e. anything that enhances or changes t
 For a complete list of changes (including documentation, tests, refactoring etc.), please refer to 
 the list of [commits](../../../commits/main).
 
+## 2023-10-02 (version 1.6.0)
+
+**Great thanks** to [**stockbal**](https://github.com/stockbal) for the first Open-Source code contribution to ABAP cleaner!, 
+as well as [**ZEAL-IT**](https://github.com/ZEAL-IT), [**oscardelama**](https://github.com/oscardelama), 
+[**b4loghpeter**](https://github.com/b4loghpeter), [**DirkBor**](https://github.com/DirkBor), 
+[**m-badura**](https://github.com/m-badura) and [**vonglan**](https://github.com/vonglan) 
+for their ideas and bug reports!
+
+* Added new **command line options** for cleaning **multiple files** from one ```--sourcedir``` ([#118](../../../issues/118))
+* Added menu item to '**Show Read-Only Preview** With ABAP Cleaner...' without locking ([#114](../../../issues/114))
+* Added **documentation** on why ABAP cleaner has no **pragmas and pseudo-comments** ([#121](../../../issues/121))
+* Added info on **ABAP release** of current system in **window title** of interactive UI
+* Fixed **command line** cleanup adding **LF at end** of file ([#124](../../../issues/124))
+* Fixed rule '**Replace obsolete MOVE ... TO with =**' for **chains** of one and late chains ([#120](../../../issues/120))
+* Fixed rule '**Replace CREATE OBJECT with NEW constructor**' to require ABAP release **7.40** ([#119](../../../issues/119))
+* Fixed rule '**Use FINAL for immutable variables**' for MODIFY ENTITY with **fields tables** ([#117](../../../issues/117))
+* Fixed **parser** for escape char ! with composed identifiers ([#115](../../../issues/115))
+
 ## 2023-09-26 (version 1.5.5)
 
 **Thanks a lot**, [**bnichell**](https://github.com/bnichell) for reporting the bug behind this release!
