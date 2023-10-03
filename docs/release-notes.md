@@ -76,7 +76,7 @@ for their ideas and bug reports!
 * Fixed rule '**Align parameters and components**' for **table expressions** chained with ```][``` ([#75](../../../issues/75))
 * Fixed parser for **```ULINE AT /pos(len)```** ([#80](../../../issues/80))
 
-## 2023-07-05 (version 1.5)
+## 2023-07-05 (version 1.5.0)
 
 Many **thanks** to [**se38**](https://github.com/se38), [**ConjuringCoffee**](https://github.com/ConjuringCoffee)
 and [**richardbruenning**](https://github.com/richardbruenning) for the ideas and bug reports behind these improvements!

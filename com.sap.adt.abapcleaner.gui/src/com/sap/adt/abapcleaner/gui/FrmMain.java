@@ -178,7 +178,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 			profile = Profile.createDefault();
 		} else {
 			try (ISettingsReader reader = TextSettingsReader.createFromString(commandLineArgs.profileData, Program.TECHNICAL_VERSION)) {
-				profile = Profile.createFromSettings(reader);
+				profile = Profile.createFromSettings(reader, "");
 			} catch(IOException ex) {
 				out.println(ex.getMessage());
 				return;
@@ -324,7 +324,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 	}
 
 	private static Profile getMostRecentlyUsedProfile(MainSettings settings) {
-		ArrayList<Profile> profiles = Profile.loadProfiles(settings.profilesDirectory);
+		ArrayList<Profile> profiles = Profile.loadProfiles(settings.profilesDirectory, settings.readOnlyProfileDirs);
 		for (Profile profile : profiles) {
 			if (profile.toString().equals(settings.curProfileName)) 
 				return profile;
@@ -1639,7 +1639,10 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 	}
 
 	private void refreshProfileList(String profileNameToSelect, boolean suppressReprocessingIfFound) {
-		profiles = Profile.loadProfiles(settings == null ? null : settings.profilesDirectory);
+		if (settings == null)
+			profiles = Profile.loadProfiles(null, null);
+		else
+			profiles = Profile.loadProfiles(settings.profilesDirectory, settings.readOnlyProfileDirs);
 		
 		cboProfile.removeAll();
 

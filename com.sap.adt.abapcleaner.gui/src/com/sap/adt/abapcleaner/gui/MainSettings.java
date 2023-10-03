@@ -1,6 +1,7 @@
 package com.sap.adt.abapcleaner.gui;
 
 import java.io.IOException;
+import java.util.ArrayList;
 
 import com.sap.adt.abapcleaner.base.ABAP;
 import com.sap.adt.abapcleaner.base.ISettingsReader;
@@ -12,6 +13,7 @@ import com.sap.adt.abapcleaner.programbase.FileType;
 import com.sap.adt.abapcleaner.programbase.Persistency;
 import com.sap.adt.abapcleaner.programbase.Program;
 import com.sap.adt.abapcleaner.rulebase.Profile;
+import com.sap.adt.abapcleaner.rulebase.ProfileDir;
 import com.sap.adt.abapcleaner.rulebase.RuleID;
 
 public class MainSettings {
@@ -55,6 +57,9 @@ public class MainSettings {
 
 	private static final String KEY_ESSENTIAL_PROFILE_CREATED = "wasEssentialProfileCreated";
 	private static final String KEY_PROFILES_DIRECTORY = "profilesDirectory";
+	private static final String KEY_READ_ONLY_PROFILE_DIR_COUNT = "readOnlyProfileDirCount";
+	private static final String KEY_READ_ONLY_PROFILE_NAME_ = "readOnlyProfileName";
+	private static final String KEY_READ_ONLY_PROFILE_DIR_ = "readOnlyProfileDir";
 	
 	// -------------------------------------------------------------------------
 
@@ -92,9 +97,10 @@ public class MainSettings {
 	String profilesHighlightItem;
 	boolean profilesHighlightDeclarationKeywords;
 	boolean profilesHighlightWritePositions;
-
+	
 	boolean wasEssentialProfileCreated;
 	String profilesDirectory;
+	ArrayList<ProfileDir> readOnlyProfileDirs = new ArrayList<>();
 	
 	int getShellRight() { return shellLeft + shellWidth; }
 	int getShellBottom() { return shellTop + shellHeight; }
@@ -156,6 +162,14 @@ public class MainSettings {
 		writer.write(KEY_PROFILES_HIGHLIGHT_DECLARATION_KEYWORDS, profilesHighlightDeclarationKeywords);
 		
 		writer.write(KEY_CLEANUP_RANGE_EXPAND_MODE, cleanupRangeExpandMode.getValue());
+		
+		writer.write(KEY_READ_ONLY_PROFILE_DIR_COUNT, readOnlyProfileDirs.size());
+		for (int i = 0; i < readOnlyProfileDirs.size(); ++i) {
+			String indexSuffix = String.valueOf(i);
+			ProfileDir profileDir = readOnlyProfileDirs.get(i);
+			writer.write(KEY_READ_ONLY_PROFILE_NAME_ + indexSuffix, profileDir.shortName);
+			writer.write(KEY_READ_ONLY_PROFILE_DIR_ + indexSuffix, profileDir.readOnlyDir);
+		}
 	}
 
 	void load() {
@@ -268,6 +282,17 @@ public class MainSettings {
 		} else {
 			cleanupRangeExpandMode = CleanupRangeExpandMode.getDefault();
 		}
+		
+		readOnlyProfileDirs.clear();		
+		if (reader.getFileVersion() >= 23) {
+			int readOnlyProfileDirCount = reader.readInt32(KEY_READ_ONLY_PROFILE_DIR_COUNT);
+			for (int i = 0; i < readOnlyProfileDirCount ; ++i) {
+				String indexSuffix = String.valueOf(i);
+				String shortName = reader.readString(KEY_READ_ONLY_PROFILE_NAME_ + indexSuffix);
+				String readOnlyDir = reader.readString(KEY_READ_ONLY_PROFILE_DIR_ + indexSuffix);
+				readOnlyProfileDirs.add(new ProfileDir(shortName, readOnlyDir));
+			}
+		}
 	}
 
 	void setDefault() {
@@ -310,6 +335,7 @@ public class MainSettings {
 		
 		wasEssentialProfileCreated = false;
 		profilesDirectory = "";
+		readOnlyProfileDirs.clear();		
 	}
 
 	boolean areShellBoundsSpecified() { 
