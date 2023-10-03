@@ -12,7 +12,8 @@ public class Profile {
 	public static final int REQUIRED_VERSION = 1;
 	public static final String DEFAULT_NAME = "default";
 	public static final String ESSENTIAL_NAME = "essential";
-
+	public static final String READ_ONLY_INFIX = ": ";
+	
 	private static final String KEY_RULE_COUNT = "ruleCount";
 	private static final String KEY_AUTO_ACTIVATE_NEW_FEATURES = "autoActivateNewFeatures";
 	private static final String KEY_RULES = "rules";
@@ -27,14 +28,14 @@ public class Profile {
 		}
 	}
 
-	public static ArrayList<Profile> loadProfiles(String directory) {
-		Persistency persistency = Persistency.get(); 
-		String[] paths = getLoadPaths(directory);
+	public static ArrayList<Profile> loadProfiles(String ownProfileDir, ArrayList<ProfileDir> readOnlyProfileDirs) {
 		ArrayList<Profile> profiles = new ArrayList<Profile>();
-		for (String path : paths) {
-			try (ISettingsReader reader = TextSettingsReader.createFromFile(persistency, path, Program.TECHNICAL_VERSION)) {
-				profiles.add(Profile.createFromSettings(reader));
-			} catch (IOException e) {
+		if (ownProfileDir != null) {
+			addProfilesFromDir(profiles, ownProfileDir, "");
+		}
+		if (readOnlyProfileDirs != null) {
+			for (ProfileDir profileDir : readOnlyProfileDirs) {
+				addProfilesFromDir(profiles, profileDir.readOnlyDir, profileDir.shortName + READ_ONLY_INFIX);
 			}
 		}
 
@@ -48,6 +49,26 @@ public class Profile {
 		return profiles;
 	}
 
+	public static void updateReadOnlyProfiles(ArrayList<Profile> profiles, ArrayList<ProfileDir> readOnlyProfileDirs) {
+		profiles.removeIf(p -> p.isReadOnly);
+		for (ProfileDir profileDir : readOnlyProfileDirs) {
+			addProfilesFromDir(profiles, profileDir.readOnlyDir, profileDir.shortName + READ_ONLY_INFIX);
+		}
+	}
+
+	private static void addProfilesFromDir(ArrayList<Profile> profiles, String dir, String namePrefix) {
+		Persistency persistency = Persistency.get(); 
+		if (!persistency.directoryExists(dir))
+			return;
+		String[] paths = getLoadPaths(dir);
+		for (String path : paths) {
+			try (ISettingsReader reader = TextSettingsReader.createFromFile(persistency, path, Program.TECHNICAL_VERSION)) {
+				profiles.add(Profile.createFromSettings(reader, namePrefix));
+			} catch (IOException e) {
+			}
+		}
+	}
+	
 	public static boolean addAndSaveEssentialProfile(String directory) {
 		if (getNumberOfSavedProfiles(directory) == 0) {
 			// on first startup, i.e. when the profiles folder is completely empty, leave creation to Profile.loadProfiles()
@@ -84,6 +105,7 @@ public class Profile {
 	// -------------------------------------------------------------------------
 	
 	public String name;
+	public boolean isReadOnly;
 	
 	/** <p>determines handling of new features, i.e. a) new Rules, or b) new configuration options added later to existing Rules:<p> 
 	 * <ul><li>true = new Rules will automatically be activated, and new configuration options will be set to their 
@@ -119,11 +141,12 @@ public class Profile {
 
 	// -------------------------------------------------------------------------
 
-	public static Profile createFromSettings(ISettingsReader reader) throws IOException {
-		return new Profile(reader);
+	public static Profile createFromSettings(ISettingsReader reader, String namePrefix) throws IOException {
+		return new Profile(reader, namePrefix);
 	}
-	private Profile(ISettingsReader reader) throws IOException {
-		name = reader.getFileNameWithoutExtension();
+	private Profile(ISettingsReader reader, String namePrefix) throws IOException {
+		name = namePrefix + reader.getFileNameWithoutExtension();
+		isReadOnly = !StringUtil.isNullOrEmpty(namePrefix);
 		// path = reader.path;
 		initializeRules();
 		load(reader);
@@ -143,6 +166,7 @@ public class Profile {
 	}
 	private Profile(String name) {
 		this.name = name;
+		this.isReadOnly = false;
 		this.autoActivateNewFeatures = AUTO_ACTIVATE_NEW_FEATURES_DEFAULT;
 		initializeRules();
 	}
@@ -152,6 +176,7 @@ public class Profile {
 	}
 	private Profile(String name, Profile model) {
 		this.name = name;
+		this.isReadOnly = false;
 		this.autoActivateNewFeatures = model.autoActivateNewFeatures;
 		
 		initializeRules();
@@ -356,5 +381,14 @@ public class Profile {
 			}
 		}
 		return activeRule;
+	}
+	
+	/**
+	 * returns the profile name without the prefix that was added if the profile belongs to a read-only (team) profile directory
+	 * @return
+	 */
+	public String getNameWithoutPrefix() {
+		int infixPos = name.indexOf(READ_ONLY_INFIX);
+		return (infixPos < 0) ? name : name.substring(infixPos + READ_ONLY_INFIX.length());
 	}
 }

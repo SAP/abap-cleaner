@@ -29,6 +29,11 @@ class ProfileTest {
 	
 	private String profilesDir;
 	private String anyDir;
+
+	private final String teamNameA = "team A";
+	private final String teamNameB = "team B";
+	private String readOnlyDirA;
+	private String readOnlyDirB;
 	
 	@BeforeEach
 	void setUp() throws Exception {
@@ -42,7 +47,10 @@ class ProfileTest {
 		persistency.prepareDirectory(profilesDir);
 
 		anyDir = persistency.combinePaths(persistency.getWorkDir(), "any_dir");
+		readOnlyDirA = persistency.combinePaths(persistency.getWorkDir(), "folder A");
+		readOnlyDirB = persistency.combinePaths(persistency.getWorkDir(), "folder B");
 		
+		persistency.prepareDirectory(anyDir);
 		profile = Profile.createDefault();
 	}
 
@@ -241,7 +249,7 @@ class ProfileTest {
 		
 		Profile profile2 = null;
 		try (ISettingsReader reader = TextSettingsReader.createFromFile(persistency, anyPath, Program.TECHNICAL_VERSION)) {
-			profile2 = Profile.createFromSettings(reader);
+			profile2 = Profile.createFromSettings(reader, "");
 		} catch (IOException e) {
 			fail(e.getMessage());
 		}
@@ -390,6 +398,19 @@ class ProfileTest {
 	private boolean profilesContain(ArrayList<Profile> profiles, String expName) {
 		for (Profile profile : profiles) {
 			if (profile.name.equals(expName)) {
+				assertEquals(expName, profile.getNameWithoutPrefix());
+				return true;
+			}
+		}
+		return false;
+	}
+
+	private boolean profilesContain(ArrayList<Profile> profiles, String expTeamName, String expFileName) {
+		String expName = expTeamName + Profile.READ_ONLY_INFIX + expFileName;
+		for (Profile profile : profiles) {
+			if (profile.name.equals(expName)) {
+				// also check the "name without prefix"
+				assertEquals(expFileName, profile.getNameWithoutPrefix());
 				return true;
 			}
 		}
@@ -399,22 +420,78 @@ class ProfileTest {
 	@Test
 	void testLoadProfiles() {
 		prepareProfiles(profilesDir);
+		prepareProfiles(readOnlyDirA, true);
+		prepareProfiles(readOnlyDirB, false);
+		
+		// create read-only (team) profile dirs and fill them with more profiles
+		ArrayList<ProfileDir> readOnlyProfileDirs = new ArrayList<>();
+		readOnlyProfileDirs.add(new ProfileDir(teamNameA, readOnlyDirA));
+		readOnlyProfileDirs.add(new ProfileDir(teamNameB, readOnlyDirB));
 
-		// ensure that all three profiles are loaded
-		ArrayList<Profile> profiles = Profile.loadProfiles(profilesDir);
-		assertEquals(3, profiles.size());
+		// ensure that all 8 profiles are loaded, including from the read-only folders
+		ArrayList<Profile> profiles = Profile.loadProfiles(profilesDir, readOnlyProfileDirs);
+		assertEquals(8, profiles.size());
 		assertTrue(profilesContain(profiles, Profile.DEFAULT_NAME));
 		assertTrue(profilesContain(profiles, Profile.ESSENTIAL_NAME));
 		assertTrue(profilesContain(profiles, anyProfileName));
+		assertTrue(profilesContain(profiles, teamNameA, Profile.DEFAULT_NAME));
+		assertTrue(profilesContain(profiles, teamNameA, Profile.ESSENTIAL_NAME));
+		assertTrue(profilesContain(profiles, teamNameA, anyProfileName));
+		assertTrue(profilesContain(profiles, teamNameB, Profile.DEFAULT_NAME));
+		assertTrue(profilesContain(profiles, teamNameB, anyProfileName));
 
 		// ensure that in an empty directory, the 'default' and 'essential' profiles are created
-		profiles = Profile.loadProfiles(anyDir);
+		profiles = Profile.loadProfiles(anyDir, null);
 		assertEquals(2, profiles.size());
 		assertTrue(profilesContain(profiles, Profile.DEFAULT_NAME));
 		assertTrue(profilesContain(profiles, Profile.ESSENTIAL_NAME));
 		assertFalse(profilesContain(profiles, anyProfileName));
 	}
 	
+	@Test 
+	void testUpdateReadOnlyProfiles() {
+		prepareProfiles(profilesDir);
+		prepareProfiles(readOnlyDirA, true);
+		prepareProfiles(readOnlyDirB, false);
+		
+		ArrayList<ProfileDir> readOnlyProfileDirs = new ArrayList<>();
+		readOnlyProfileDirs.add(new ProfileDir(teamNameA, readOnlyDirA));
+
+		// load "own" profiles and profiles from the read-only folder of team A
+		ArrayList<Profile> profiles = Profile.loadProfiles(profilesDir, readOnlyProfileDirs);
+		
+		// now update the profile list, with different read-only profile dirs (team A removed, team B added)
+		ArrayList<ProfileDir> newReadOnlyProfileDirs = new ArrayList<>();
+		newReadOnlyProfileDirs.add(new ProfileDir(teamNameB, readOnlyDirB));
+		Profile.updateReadOnlyProfiles(profiles, newReadOnlyProfileDirs);
+
+		// ensure that now 5 profiles are loaded, including from the read-only folder of team B (but not team A)
+		assertEquals(5, profiles.size());
+		assertTrue(profilesContain(profiles, Profile.DEFAULT_NAME));
+		assertTrue(profilesContain(profiles, Profile.ESSENTIAL_NAME));
+		assertTrue(profilesContain(profiles, anyProfileName));
+		assertTrue(profilesContain(profiles, teamNameB, Profile.DEFAULT_NAME));
+		assertTrue(profilesContain(profiles, teamNameB, anyProfileName));
+	}
+	
+	@Test 
+	void testUnknownReadOnlyFolder() {
+		prepareProfiles(profilesDir);
+		prepareProfiles(readOnlyDirA, true);
+		
+		ArrayList<ProfileDir> readOnlyProfileDirs = new ArrayList<>();
+		readOnlyProfileDirs.add(new ProfileDir(teamNameB, readOnlyDirB));
+
+		// load "own" profiles and profiles from a read-only folder which does not exist
+		ArrayList<Profile> profiles = Profile.loadProfiles(profilesDir, readOnlyProfileDirs);
+		
+		// ensure that 3 profiles are loaded
+		assertEquals(3, profiles.size());
+		assertTrue(profilesContain(profiles, Profile.DEFAULT_NAME));
+		assertTrue(profilesContain(profiles, Profile.ESSENTIAL_NAME));
+		assertTrue(profilesContain(profiles, anyProfileName));
+	}
+
 	@Test
 	void testAddAndSaveEssentialProfile() throws IOException {
 		// ensure that on an empty directory, nothing is added
@@ -465,5 +542,4 @@ class ProfileTest {
 		assertEquals(3, Profile.getNumberOfSavedProfiles(null));
 		assertEquals(3, Profile.getNumberOfSavedProfiles(profilesDir));
 	}
-
 }

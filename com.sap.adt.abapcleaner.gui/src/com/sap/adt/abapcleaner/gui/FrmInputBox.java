@@ -19,7 +19,7 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.graphics.Point;
 
-public class FrmInputBox{
+public class FrmInputBox {
    private final String invalidChars;
    private boolean restrictToValidFileNameChars;
    private String result;
@@ -56,8 +56,8 @@ public class FrmInputBox{
 
 	protected void createContents() {
 		shell = new Shell(SWT.APPLICATION_MODAL | SWT.BORDER | SWT.CLOSE | SWT.RESIZE | SWT.TITLE);
-		shell.setMinimumSize(new Point(450, 140));
-		shell.setSize(450, 140);
+		shell.setMinimumSize(new Point(450, 130));
+		shell.setSize(450, 130);
 		shell.setImage(SWTResourceManager.getImage(FrmInputBox.class, "/ShellImage.png"));
 		shell.setText("Input Box");
 		GridLayout gl_shell = new GridLayout(1, false);
@@ -75,6 +75,9 @@ public class FrmInputBox{
 				txtResultKeyPressed(e);
 			}
 		});
+		
+		Composite cpsGrabVerticalSpace = new Composite(shell, SWT.NONE);
+		cpsGrabVerticalSpace.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1));
 
 		Composite cpsButtons = new Composite(shell, SWT.NONE);
 		cpsButtons.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
@@ -98,6 +101,7 @@ public class FrmInputBox{
 		btnCancel.setText("&Cancel");
 		
 		Button btnOK = new Button(cpsButtons, SWT.NONE);
+		btnOK.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false, 1, 1));
 		btnOK.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {

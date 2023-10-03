@@ -73,6 +73,8 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
    private Shell shell;
 	private Table chkRules;
 	private List lstProfiles;
+   private Button btnDeleteProfile;
+	private Button btnRenameProfile;
    private Button btnImportProfile;
    private Button btnExportProfile;
    private Button btnExportAllProfiles;
@@ -190,7 +192,7 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 	      setBackground(btnImportProfile, importExportBackground);
 	      setBackground(btnExportProfile, importExportBackground);
 	      setBackground(btnExportAllProfiles, importExportBackground);
-	      setBackground(btnChangeProfilesFolder, highlightItem.highlightFeatureOf(2023, 3, 9) ? newConfigBackground : normalImportExportBackground);
+	      setBackground(btnChangeProfilesFolder, highlightItem.highlightFeatureOf(2023, 10, 3) ? newConfigBackground : normalImportExportBackground); // first highlight on (2023, 3, 9)
 	
 	      setBackground(lblFilter, highlightItem.highlightFeatureOf(2023, 3, 9) ? newConfigBackground : normalLblFilterBackground);
 	      
@@ -280,7 +282,7 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 		this.defaultRuleID = settings.profilesLastRuleID;
 		
       // load profiles 
-      ArrayList<Profile> profiles = Profile.loadProfiles(settings.profilesDirectory);
+      ArrayList<Profile> profiles = Profile.loadProfiles(settings.profilesDirectory, settings.readOnlyProfileDirs);
       this.profiles = profiles;
 
       // remember the profile names when opening FrmProfiles
@@ -344,7 +346,9 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 	      }
 	      // save profiles in case they were changed
 	      for (Profile profile : profiles) {
-	      	profile.save(settings.profilesDirectory);
+	      	if (!profile.isReadOnly) {
+	      		profile.save(settings.profilesDirectory);
+	      	}
 	      }
       }
       return new EditProfilesResult(resultSave, resultProfileName);
@@ -378,7 +382,7 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 		lblProfiles.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
 		lblProfiles.setText("Profiles");
 		
-		lstProfiles = new List(cpsProfilesAndRules, SWT.BORDER);
+		lstProfiles = new List(cpsProfilesAndRules, SWT.BORDER | SWT.V_SCROLL);
 		lstProfiles.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
@@ -411,7 +415,7 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 		});
 		btnCopyProfile.setText("Copy");
 		
-		Button btnDeleteProfile = new Button(pnlProfileButtons, SWT.NONE);
+		btnDeleteProfile = new Button(pnlProfileButtons, SWT.NONE);
 		btnDeleteProfile.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
@@ -420,7 +424,7 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 		});
 		btnDeleteProfile.setText("Delete");
 		
-		Button btnRenameProfile = new Button(pnlProfileButtons, SWT.NONE);
+		btnRenameProfile = new Button(pnlProfileButtons, SWT.NONE);
 		btnRenameProfile.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
@@ -448,20 +452,24 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 		btnExportProfile.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-		   	if (curProfile != null)
+		   	if (curProfile != null) {
 		   		exportProfiles(new Profile[] { curProfile } );
+		   	}
 			}
 		});
 		btnExportProfile.setText("Export...");
 		
 		btnExportAllProfiles = new Button(pngProfileImportExport, SWT.NONE);
-		btnExportAllProfiles.setToolTipText("export all profiles to a different folder");
+		btnExportAllProfiles.setToolTipText("export all profiles (excluding profiles from read-only folders) to a different folder");
 		btnExportAllProfiles.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-		   	if (profiles.size() > 0) {
-		   		Profile[] profileArray = new Profile[profiles.size()];
-		   		exportProfiles(profiles.toArray(profileArray));
+				// only export profiles from the own directory, not from the read-only (team) profile directories 
+	   		ArrayList<Profile> ownProfiles = new ArrayList<>(profiles);
+	   		ownProfiles.removeIf(p -> p.isReadOnly);
+		   	if (ownProfiles.size() > 0) {
+		   		Profile[] profileArray = new Profile[ownProfiles.size()];
+		   		exportProfiles(ownProfiles.toArray(profileArray));
 		   	}
 			}
 		});
@@ -471,11 +479,11 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 		btnChangeProfilesFolder.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				changeProfilesFolder();	
+				changeProfileDirs();	
 			}
 		});
-		btnChangeProfilesFolder.setToolTipText("change the folder in which profiles are stored");
-		btnChangeProfilesFolder.setText("Folder...");
+		btnChangeProfilesFolder.setToolTipText("change the folders in which own and team profiles are stored");
+		btnChangeProfilesFolder.setText("Folders...");
 		
 		lblRules = new Label(cpsProfilesAndRules, SWT.NONE);
 		GridData gd_lblRules = new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1);
@@ -666,8 +674,7 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 		lblRuleDescriptionTitle.setText("Description:");
 		
 		pnlRuleDescription = new Composite(pnlRule, SWT.NONE);
-		GridData gd_pnlRuleDescription = new GridData(SWT.FILL, SWT.TOP, false, false, 1, 1);
-		pnlRuleDescription.setLayoutData(gd_pnlRuleDescription);
+		pnlRuleDescription.setLayoutData(new GridData(SWT.FILL, SWT.TOP, false, false, 1, 1));
 		GridLayout gl_pnlRuleDescription = new GridLayout(1, false);
 		gl_pnlRuleDescription.marginHeight = 0;
 		gl_pnlRuleDescription.verticalSpacing = 2;
@@ -960,6 +967,17 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
       if (profile == null) 
          return;
 
+      // (de)activate features for profiles from own / read-only directories 
+      boolean isWriteable = !profile.isReadOnly;
+      btnDeleteProfile.setEnabled(isWriteable);
+      btnRenameProfile.setEnabled(isWriteable);
+      chkAutoActivateNewFeatures.setEnabled(isWriteable);
+      btnActivateAllRules.setEnabled(isWriteable);
+      btnActivateDefaultRules.setEnabled(isWriteable);
+      btnActivateEssentialRules.setEnabled(isWriteable);
+      btnDeactivateAllRules.setEnabled(isWriteable);
+      btnDefaultOptions.setEnabled(isWriteable);
+      
       chkAutoActivateNewFeatures.setSelection(profile.autoActivateNewFeatures);
       
       ProfileHighlightItem highlightItem = getHighlightItem();
@@ -995,7 +1013,7 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
       chkRules.removeAll();
       chkRules.setItemCount(ruleCount + ruleGroupCount);
       itemsInChkRules = new Object[ruleCount + ruleGroupCount];
-      
+
       // build chkRules and itemsInChkRules
       int itemIndex = 0;
       TableItem curItem = null;
@@ -1141,6 +1159,8 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 		gl_pnlRuleOptions.verticalSpacing = 3;
 		pnlRuleOptions.setLayout(gl_pnlRuleOptions);
 
+		boolean isProfileWritable = !rule.parentProfile.isReadOnly;
+		
       for (ConfigValue configValue : configValues) {
          ConfigControl configControl;
          if (configValue instanceof ConfigBoolValue) {
@@ -1161,7 +1181,7 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
          } else {
            throw new IndexOutOfBoundsException("unknown ConfigControl");
          }
-      	configControl.setEnabled(rule.isConfigValueEnabled(configValue));
+      	configControl.setEnabled(isProfileWritable && rule.isConfigValueEnabled(configValue));
          configControls.add(configControl);
          Control[] controls = configControl.getControls();
          for (int column = 0; column < controls.length; ++column) 
@@ -1288,7 +1308,7 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
       
       if (curRule != null && configControls != null) {
 	      for (ConfigControl configControl : configControls) {
-	      	configControl.setEnabled(curRule.isConfigValueEnabled(configControl.getConfigValue()));
+	      	configControl.setEnabled(!curRule.parentProfile.isReadOnly && curRule.isConfigValueEnabled(configControl.getConfigValue()));
 	      }
       }
       
@@ -1346,7 +1366,7 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 
    private void createProfile() {
       FrmInputBox inputBox = new FrmInputBox();
-      String name = inputBox.open("", "Profile name:", true);
+      String name = inputBox.open("", "New profile name:", true);
       if (StringUtil.isNullOrEmpty(name))
          return;
       if (findProfile(name) != null) {
@@ -1359,7 +1379,8 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 
    private void copyProfile() {
       FrmInputBox inputBox = new FrmInputBox();
-      String name = inputBox.open((curProfile != null && curProfile.name != null) ? curProfile.name : "", "Profile name:", true);
+      String oldName = (curProfile == null) ? "" : curProfile.getNameWithoutPrefix();
+      String name = inputBox.open(oldName, "New profile name:", true);
       if (StringUtil.isNullOrEmpty(name))
          return;
       if (findProfile(name) != null) {
@@ -1387,7 +1408,7 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 
    private void renameProfile() {
       FrmInputBox inputBox = new FrmInputBox();
-      String newName = inputBox.open(curProfile.name, "Profile name:", true);
+      String newName = inputBox.open(curProfile.name, "New profile name:", true);
       if (StringUtil.isNullOrEmpty(newName))
          return;
       if (findProfile(newName) != null) {
@@ -1477,7 +1498,7 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 			
 			Profile importedProfile = null;
 			try (ISettingsReader reader = TextSettingsReader.createFromFile(persistency, importPath, Program.TECHNICAL_VERSION)) {
-				importedProfile = Profile.createFromSettings(reader);
+				importedProfile = Profile.createFromSettings(reader, "");
 			} catch (IOException ex) {
 	   		Message.show(ex.getMessage());
 				continue;
@@ -1539,7 +1560,7 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 		dirDialog.setFilterPath(filterPath);
 		String text;
 		if (profiles.length == 1)
-			text = "Select Destination Folder for Profile '" + profiles[0].name + "'";
+			text = "Select Destination Folder for Profile '" + profiles[0].getNameWithoutPrefix() + "'";
 		else
 			text = "Select Destination Folder for " + Cult.format(profiles.length) + " Profiles";
 		dirDialog.setText(text);
@@ -1560,11 +1581,12 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 		StringBuilder sbExisting = new StringBuilder();
 		int existingCount = 0;
 		for (Profile profile : profiles) {
-			String path = persistency.combinePaths(dir, profile.name + extension);
+			String name = profile.getNameWithoutPrefix();
+			String path = persistency.combinePaths(dir, name + extension);
 			if (persistency.fileExists(path)) {
 				if (sbExisting.length() > 0)
 					sbExisting.append(", ");
-				sbExisting.append(profile.name);
+				sbExisting.append(name);
 				++existingCount;
 			}
 		}
@@ -1590,12 +1612,14 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 		String firstSuccessProfileName = null;
 		int exportCount = 0;
 		for (Profile profile : profiles) {
-			String path = persistency.combinePaths(dir, profile.name + extension);
+			String name = profile.getNameWithoutPrefix();
+			String path = persistency.combinePaths(dir, name + extension);
 			try (ISettingsWriter writer = TextSettingsWriter.createForFile(persistency, path, Program.TECHNICAL_VERSION, Profile.REQUIRED_VERSION)) {
 	   		profile.save(writer);
 	   		++exportCount;
-	   		if (exportCount == 1)
-	   			firstSuccessProfileName = profile.name;
+	   		if (exportCount == 1) {
+	   			firstSuccessProfileName = name;
+	   		}
 	   	} catch (IOException ex) {
 	   		Message.show(ex.getMessage());
 	   	}
@@ -1628,51 +1652,50 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
       if (suspendItemCheck > 0)
          return;
 
+      boolean profileIsReadOnly = (curProfile != null) && curProfile.isReadOnly;
+      
       ++suspendItemCheck;
       try {
          boolean activate = chkRules.getItem(index).getChecked(); 
 	      ProfileHighlightItem highlightItem = getHighlightItem();
          if (itemsInChkRules[index] instanceof Rule) {
          	Rule rule = (Rule)itemsInChkRules[index];
-            rule.isActive = activate;
-            if (highlighter != null) {
-            	highlighter.setRuleHighlight(rule, index, highlightItem);
-            }
-            
-            int groupIndex = findRuleGroupIndex(rule.getGroupID());
-            if (groupIndex >= 0 && groupIndex < itemsInChkRules.length) {
-            	// determine whether any of the visible(!) rules of this group is active
-	            RuleGroup group = (RuleGroup)itemsInChkRules[groupIndex];
-	            boolean isAnyRuleInGroupActive = false; // group.isAnyRuleActive() may include filtered-out rules
-	            for (int i = 0; i < chkRules.getItemCount(); ++i) {
-	               if (itemsInChkRules[i] instanceof Rule) {
-	               	Rule ruleInGroup = (Rule)itemsInChkRules[i];
-	                  if (ruleInGroup.getGroupID() == group.iD && ruleInGroup.isActive) {
-	                  	isAnyRuleInGroupActive = true;
-	                  	break;
-	                  }
-	               }
+
+         	if (profileIsReadOnly) {
+            	// revert any (un)checking if the profile is read-only
+         		if (activate != rule.isActive) {
+         			Message.show("Profile '" + curProfile.name + "' is read-only!\r\nYou can create a copy of it in your own profile folder in order to change its configuration.");
+         			chkRules.getItem(index).setChecked(rule.isActive);
+         			chkRules.redraw();
+         		}
+         	} else { 
+	         	rule.isActive = activate;
+	            if (highlighter != null) {
+	            	highlighter.setRuleHighlight(rule, index, highlightItem);
 	            }
-	            // check the group item accordingly
-	            TableItem groupItem = chkRules.getItem(groupIndex);
-	            if (groupItem.getChecked() != isAnyRuleInGroupActive)
-	            	groupItem.setChecked(isAnyRuleInGroupActive);
-            }
+	            updateRuleGroupChecked(rule.getGroupID());
+         	}
          } else {
-         	// check or uncheck all visible(!) rules in this group 
-            RuleGroup group = (RuleGroup)itemsInChkRules[index];
-            for (int i = 0; i < chkRules.getItemCount(); ++i) {
-               if (itemsInChkRules[i] instanceof Rule) {
-               	Rule rule = (Rule)itemsInChkRules[i];
-                  if (rule.getGroupID() == group.iD && rule.isActive != activate) {
-                     rule.isActive = activate;
-                     if (highlighter != null) {
-                     	highlighter.setRuleHighlight(rule, i, highlightItem);
-                     }
-                     chkRules.getItem(i).setChecked(activate);
-                  }
-               }
-            }
+	         RuleGroup group = (RuleGroup)itemsInChkRules[index];
+
+         	if (profileIsReadOnly) {
+   	         // revert any (un)checking if the profile is read-only
+	            updateRuleGroupChecked(group.iD);
+         	} else {
+		      	// check or uncheck all visible(!) rules in this group 
+		         for (int i = 0; i < chkRules.getItemCount(); ++i) {
+		            if (itemsInChkRules[i] instanceof Rule) {
+		            	Rule rule = (Rule)itemsInChkRules[i];
+		               if (rule.getGroupID() == group.iD && rule.isActive != activate) {
+		                  rule.isActive = activate;
+		                  if (highlighter != null) {
+		                  	highlighter.setRuleHighlight(rule, i, highlightItem);
+		                  }
+		                  chkRules.getItem(i).setChecked(activate);
+		               }
+		            }
+		         }
+         	}
          }
       } catch (java.lang.Exception ex) {
       }
@@ -1680,6 +1703,29 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
       refreshActiveRuleCount();
    }
 
+   private void updateRuleGroupChecked(RuleGroupID ruleGroupID) {
+      int groupIndex = findRuleGroupIndex(ruleGroupID);
+      if (groupIndex >= 0 && groupIndex < itemsInChkRules.length) {
+      	// determine whether any of the visible(!) rules of this group is active
+         RuleGroup group = (RuleGroup)itemsInChkRules[groupIndex];
+         boolean isAnyRuleInGroupActive = false; // group.isAnyRuleActive() may include filtered-out rules
+         for (int i = 0; i < chkRules.getItemCount(); ++i) {
+            if (itemsInChkRules[i] instanceof Rule) {
+            	Rule ruleInGroup = (Rule)itemsInChkRules[i];
+               if (ruleInGroup.getGroupID() == group.iD && ruleInGroup.isActive) {
+               	isAnyRuleInGroupActive = true;
+               	break;
+               }
+            }
+         }
+         // check the group item accordingly
+         TableItem groupItem = chkRules.getItem(groupIndex);
+         if (groupItem.getChecked() != isAnyRuleInGroupActive) {
+         	groupItem.setChecked(isAnyRuleInGroupActive);
+         }
+      }
+   }
+   
    private void hideForm(boolean resultSave) {
    	this.resultSave = resultSave;
 		
@@ -1724,90 +1770,19 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 		return true;
 	}
 
-   private void changeProfilesFolder() {
-   	final String title = "Change Profiles Folder";
-   	final String twoLineSeps = System.lineSeparator() + System.lineSeparator();
+   private void changeProfileDirs() {
+   	String curProfileName = (curProfile == null) ? null : curProfile.name;
    	
-   	// prepare dialog
-   	Persistency persistency = Persistency.get();
-		DirectoryDialog dirDialog = new DirectoryDialog(shell);
-		String oldDir;
-		if (StringUtil.isNullOrEmpty(settings.profilesDirectory)) {
-			oldDir = persistency.getDirectoryName(persistency.getSavePath(FileType.PROFILE_TEXT, Profile.DEFAULT_NAME));
-		} else {
-			oldDir = settings.profilesDirectory;
-		}
-		dirDialog.setFilterPath(oldDir);
-		dirDialog.setText(title);
+   	new FrmProfileDirs(settings).open();
 
-   	// display dialog for selection of new profiles folder
-		String newDir = dirDialog.open();
-		if (newDir == null || newDir.length() == 0) {
-			return;
-		} else if (persistency.addDirSep(oldDir).equals(persistency.addDirSep(newDir))) {
-			// same folder was selected
-			return;
+		// after returning from FrmProfileDirs, ensure FrmProfiles appears in the foreground, 
+		// even if another window was meanwhile activated and is higher in the Z order
+		if (!shell.getMinimized()) {
+			shell.forceActive();
 		}
 
-		// determine destination path
-		newDir = persistency.addDirSep(newDir);
-
-		// determine files that would be overwritten when moving profiles to the new folder
-		String[] oldPaths = Profile.getLoadPaths(oldDir);
-		StringBuilder sbExisting = new StringBuilder();
-		int existingCount = 0;
-		for (String oldPath : oldPaths) {
-			String file = persistency.getFileName(oldPath);
-			String newPath = persistency.combinePaths(newDir, file);
-			if (persistency.fileExists(newPath)) {
-				if (sbExisting.length() > 0)
-					sbExisting.append(", ");
-				sbExisting.append(persistency.getFileNameWithoutExtension(newPath));
-				++existingCount;
-			}
-		}
-
-		// ask whether existing files in the new folder shall be overwritten
-		if (existingCount > 0) {
-			String overwriteTitle = (existingCount == 1) ? "Overwrite file?" : "Overwrite " + Cult.format(existingCount) + " files?";  
-			String existingInfo = (existingCount == 1) ? "the existing file" : Cult.format(existingCount) + " existing files";
-			String msg = "Moving profiles to the new folder would overwrite " + existingInfo + " '" + sbExisting.toString() + "'." + twoLineSeps + "Continue?";
-			if (Message.show(msg, overwriteTitle, SWT.YES | SWT.NO | SWT.CANCEL | SWT.ICON_QUESTION) != SWT.YES) {
-				Message.show("Action cancelled; keeping current profiles folder '" + oldDir + "'.", title);
-				return;
-			}
-		}
-		
-		// move profiles
-		int moveCount = 0;
-		int notMovedCount = 0;
-		for (String oldPath : oldPaths) {
-			String file = persistency.getFileName(oldPath);
-			String newPath = persistency.combinePaths(newDir, file);
-			if (persistency.moveFile(oldPath, newPath, true)) {
-				++moveCount;
-			} else {
-				++notMovedCount;
-			}
-		} 
-
-		// if no profile could be moved, do not change the directory
-		if (moveCount == 0 && oldPaths.length > 0) {
-			Message.show("Existing profile(s) could not be moved to the new folder; keeping current folder '" + oldDir + "'.", title);
-			return;	
-		}
-
-		// change the profiles directory in the settings and save, so this change is persisted even if FrmProfiles is closed with the Cancel button
-		settings.profilesDirectory = newDir;
-		settings.save();
-		
-		// show result message
-		String result; 
-		result = "Profiles Folder was changed from '" + oldDir + "' to '" + newDir + "'." + twoLineSeps;
-		result += (moveCount == 1) ? "1 profile was moved to the new folder." : Cult.format(moveCount) + " profiles were moved to the new folder.";
-		if (notMovedCount > 0) {
-			result += twoLineSeps + Cult.format(notMovedCount) + " profile(s) kept in the old folder, as they could not be moved.";
-		}
-		Message.show(result, title);
+		// update the profiles from read-only directories (all other would have been moved along with the own profile directory) 
+		Profile.updateReadOnlyProfiles(profiles, settings.readOnlyProfileDirs);
+		refreshProfileList(curProfileName);
    }
 }
