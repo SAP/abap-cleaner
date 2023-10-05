@@ -14,6 +14,8 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.FileDialog;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.List;
+import org.eclipse.swt.widgets.Menu;
+import org.eclipse.swt.widgets.MenuItem;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableItem;
@@ -294,6 +296,9 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 		Display display = Display.getDefault();
 		createContents();
 
+		createPopupMenuFor(lblRuleName, null, "Copy Rule Name to Clipboard");
+		createPopupMenuFor(lblRuleDescription, lblRuleHintsAndRestrictions, "Copy Rule Description to Clipboard");
+
       lblRuleSources = new Label[] { lblRuleSource0, lblRuleSource1, lblRuleSource2, lblRuleSource3 };
       lblRuleChapters = new Label[] { lblRuleChapter0, lblRuleChapter1, lblRuleChapter2, lblRuleChapter3 };
       ruleChapterLink = new String[lblRuleChapters.length];
@@ -354,6 +359,27 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
       return new EditProfilesResult(resultSave, resultProfileName);
 	}
 
+	private void createPopupMenuFor(Label lbl, Label lbl2, String menuText) {
+      Menu mnuPopup = new Menu(shell, SWT.POP_UP);
+      MenuItem mnuCopyLblTextToClip = new MenuItem(mnuPopup, SWT.NONE);
+      mnuCopyLblTextToClip.setText(menuText);
+      mnuCopyLblTextToClip.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				if (lbl == null || lbl.isDisposed())
+					return;
+				String lblText = lbl.getText();
+				if (lbl2 != null && !StringUtil.isNullOrEmpty(lbl2.getText()))
+					lblText += " " + lbl2.getText();
+				SystemClipboard.setText(lblText);
+			}
+      });
+      lbl.setMenu(mnuPopup);
+      if (lbl2 != null) {
+         lbl2.setMenu(mnuPopup);
+      }
+	}
+	
 	/**
 	 * Create contents of the window.
 	 */
@@ -556,6 +582,18 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 		
 		CheckboxTableViewer checkboxTableViewer = CheckboxTableViewer.newCheckList(cpsProfilesAndRules, SWT.BORDER | SWT.FULL_SELECTION);
 		chkRules = checkboxTableViewer.getTable();
+		chkRules.addKeyListener(new KeyAdapter() {
+			@Override
+			public void keyPressed(KeyEvent e) {
+				boolean controlPressed = ((e.stateMask & SWT.CONTROL) != 0);
+				if (controlPressed && e.keyCode == 'c') {
+					int index = chkRules.getSelectionIndex();
+					if (index >= 0) {
+						SystemClipboard.setText(chkRules.getItem(index).getText());
+					}
+				}
+			}
+		});
 		chkRules.addSelectionListener(new SelectionAdapter() {
 			private int lastIndex;
 			@Override
@@ -652,22 +690,22 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 			}
 		});
 		btnDeactivateAllRules.setText("None");
-		
+
 		pnlRule = new Composite(shell, SWT.NONE);
 		pnlRule.setLayout(new GridLayout(2, false));
 		GridData gd_composite_1 = new GridData(SWT.FILL, SWT.FILL, true, false, 1, 1);
-		gd_composite_1.widthHint = 65;
+		gd_composite_1.widthHint = 65; 
 		pnlRule.setLayoutData(gd_composite_1);
 		
 		Label lblRule = new Label(pnlRule, SWT.NONE);
 		lblRule.setLayoutData(new GridData(SWT.LEFT, SWT.TOP, false, false, 1, 1));
 		lblRule.setBounds(0, 0, 55, 15);
-
+		
 		lblRuleName = new Label(pnlRule, SWT.NONE);
 		lblRuleName.setFont(SWTResourceManager.getFont("Segoe UI", 12, SWT.BOLD));
-		lblRuleName.setLayoutData(new GridData(SWT.LEFT, SWT.TOP, false, false, 1, 1));
+		lblRuleName.setLayoutData(new GridData(SWT.LEFT, SWT.TOP, true, false, 1, 1));
 		lblRuleName.setText(".");
-		
+      
 		Label lblRuleDescriptionTitle = new Label(pnlRule, SWT.NONE);
 		lblRuleDescriptionTitle.setFont(SWTResourceManager.getFont("Segoe UI", 9, SWT.BOLD));
 		lblRuleDescriptionTitle.setLayoutData(new GridData(SWT.RIGHT, SWT.TOP, false, false, 1, 1));
