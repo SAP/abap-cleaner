@@ -61,7 +61,7 @@ public class EmptyLinesWithinMethodsRule extends Rule {
    }
 
 	final ConfigIntValue configMaxEmptyLinesAtMethodStart = new ConfigIntValue(this, "MaxEmptyLinesAtMethodStart", "Max. empty lines at method start:", "", 0, 0, 20);
-	final ConfigIntValue configMaxEmptyLinesWithinMethods = new ConfigIntValue(this, "MaxEmptyLinesWithinMethods", "Max. empty lines within methods:", "", 1, 1, 20);
+	final ConfigIntValue configMaxEmptyLinesWithinMethods = new ConfigIntValue(this, "MaxEmptyLinesWithinMethods", "Max. empty lines within methods:", "", 0, 1, 20);
 	final ConfigIntValue configMaxEmptyLinesAtMethodEnd = new ConfigIntValue(this, "MaxEmptyLinesAtMethodEnd", "Max. empty lines at method end:", "", 0, 0, 20);
 	final ConfigBoolValue configEmptyLineAboveFirstExecutable = new ConfigBoolValue(this, "EmptyLineAboveFirstExecutable", "Insert empty line between declarations and first executable statement", true, false, LocalDate.of(2022, 5, 21));
 
