@@ -125,7 +125,7 @@ public class FrmProfileDirs {
 		lblReadOnlyDirInfo.setText("You can specify up to 3 (typically synchronized) folders with team profiles which are used read-only.");
 		
 		Label lblShortNameInfo = new Label(shell, SWT.NONE);
-		lblShortNameInfo.setText("Please provide a short name for each folder (e.g. \"Team A\") for display in the profile list.");
+		lblShortNameInfo.setText("Please provide a short name for each folder (e.g. \"team A\") for display in the profile list.");
 		
 		Composite cpsReadOnlyDirs = new Composite(shell, SWT.NONE);
 		GridData gd_cpsReadOnlyDirs = new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1);
