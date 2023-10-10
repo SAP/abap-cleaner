@@ -15,6 +15,7 @@ Converts CHECK that is found outside of loops \(LOOP, DO, WHILE\) to IF NOT ... 
 * Keep CHECK statement: \[after declarations\]
 * Negate logical expressions with NOT \( ... \): \[if multiple inner negations \(IS NOT, <>, ...\) can be avoided\]
 * \[X\] Convert abap\_false <-> abap\_true \(assuming abap\_undefined is never used\)
+* \[X\] Allow CHECK after ASSERT, BREAK-POINT and LOG-POINT
 
 ## Examples
 
@@ -48,6 +49,21 @@ Converts CHECK that is found outside of loops \(LOOP, DO, WHILE\) to IF NOT ... 
     " CHECKs inside the method
     CHECK line_exists( its_table[ 0 ] ) 
        OR lines( its_table ) > 2  AND line_exists( its_table[ 1 ] ).
+  ENDMETHOD.
+
+
+  METHOD check_after_checkpoints.
+    " various checkpoints
+    BREAK-POINT.
+    LOG-POINT ID any_id.
+    ASSERT iv_value > 0.
+
+    CHECK its_table IS NOT INITIAL.
+
+    DATA lv_any_value TYPE i.
+
+    CLEAR ev_success.
+    CHECK its_table IS NOT INITIAL.
   ENDMETHOD.
 ```
 
@@ -84,6 +100,23 @@ Resulting code:
     " CHECKs inside the method
     IF NOT (    line_exists( its_table[ 0 ] )
              OR lines( its_table ) > 2 AND line_exists( its_table[ 1 ] ) ).
+      RETURN.
+    ENDIF.
+  ENDMETHOD.
+
+
+  METHOD check_after_checkpoints.
+    " various checkpoints
+    BREAK-POINT.
+    LOG-POINT ID any_id.
+    ASSERT iv_value > 0.
+
+    CHECK its_table IS NOT INITIAL.
+
+    DATA lv_any_value TYPE i.
+
+    CLEAR ev_success.
+    IF its_table IS INITIAL.
       RETURN.
     ENDIF.
   ENDMETHOD.

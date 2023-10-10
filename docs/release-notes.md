@@ -6,6 +6,24 @@ as well as bugfixes of reported issues, i.e. anything that enhances or changes t
 For a complete list of changes (including documentation, tests, refactoring etc.), please refer to 
 the list of [commits](../../../commits/main).
 
+## 2023-10-10 (version 1.7.0)
+
+**Thank you** very much [**blackfish5**](https://github.com/blackfish5), [**bastianStr**](https://github.com/bastianStr), 
+[**Kronrir**](https://github.com/Kronrir), [**JoachimRees**](https://github.com/JoachimRees), [**stockbal**](https://github.com/stockbal) 
+and [**ConjuringCoffee**](https://github.com/ConjuringCoffee) for your contributions, ideas and bug reports that led to these improvements! 
+
+* Added support for additional, synchronized, **read-only [team profile folders](profiles.md#sharing-and-synchronizing-profiles-with-colleagues)** ([#28](../../../issues/28))
+* **Profiles editor**: Added context menu and shortcut to **copy rule name and description** to the clipboard ([#130](../../../issues/130))
+* Enhanced rule '**Convert CHECK outside loop ...**' with option to '**Allow CHECK after ASSERT ...**' ([#135](../../../issues/135))
+* Enhanced rule '**Standardize empty lines within methods**' to allow setting **0 empty lines** within methods ([#131](../../../issues/131))
+* Added **documentation** on [how to **synchronize team profiles**](profiles.md#sharing-and-synchronizing-profiles-with-colleagues) ([#28](../../../issues/28))
+* Added **documentation** for [**GitHub Actions workflow usage**](usage.md#github-actions-workflow-usage) ([#127](../../../issues/127))
+* Added **info on code signing** in [installation instructions](../README.md#requirements-and-installation) ([#34](../../../issues/34))
+* Added link to **blog post** on [**ABAP Tools for Clean ABAP**](https://blogs.sap.com/2023/10/09/abap-tools-for-clean-abap/)
+* Fixed rule '**Align declarations**' for table types with **complex key definitions** ([#129](../../../issues/129))
+* Fixed **Parser** for **SELECT** with **aggregate functions** inside parentheses ([#134](../../../issues/134))
+* Fixed **Parser** to accept **chain colon inside of brackets** for chains of one ([#133](../../../issues/133))
+
 ## 2023-10-02 (version 1.6.0)
 
 **Great thanks** to [**stockbal**](https://github.com/stockbal) for the first Open-Source code contribution to ABAP cleaner!, 
