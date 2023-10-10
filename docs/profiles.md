@@ -126,6 +126,9 @@ Note, however, that ABAP cleaner defaults are only used when creating a _new_ pr
 button described above). By contrast, an already existing profile will not be affected by later changes to the 
 ABAP cleaner defaults. 
 
+More information on how the Clean ABAP style guide, code pal for ABAP, and ABAP cleaner relate to each other 
+can be found in the blog post on [ABAP Tools for Clean ABAP](https://blogs.sap.com/2023/10/09/abap-tools-for-clean-abap/).
+
 
 ### Examples
 
