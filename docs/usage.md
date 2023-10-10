@@ -147,4 +147,53 @@ Options:
     --usedrules         Write list of used rules to standard output.
 ```
 
+### GitHub Actions workflow usage 
+
+Here is an example of how the command line options could be used in a GitHub Actions workflow 
+[/.github/workflows/clean-up.yml](https://github.com/stockbal/abap-cleanup-test/blob/main/.github/workflows/clean-up.yml) 
+that is triggered whenever someone pushes a change to the main branch of the GitHub repository, and then 
+1. automatically downloads the latest version of ABAP cleaner, 
+2. runs ABAP cleaner on all \*.abap files inside the \/src folder and all its subfolders, 
+   using the ABAP cleaner profile ```cleaner-profile.cfj``` and restricting cleanup to the ABAP syntax of release 7.50, 
+3. commits the changes:
+
+```yaml
+name: Clean Up ABAP Files
+
+on:
+  push:
+   branches: ["main"]
+  # pull_request:
+  #   branches: ["main"]
+
+  workflow_dispatch:
+
+jobs:
+  Code-Cleanup:
+    runs-on: ubuntu-latest
+
+    steps:
+      - run: git config --global core.autocrlf true
+
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Download ABAP Cleaner (latest version)
+        run: |
+          mkdir .cleanup
+          cd .cleanup
+          wget -q -c https://github.com/SAP/abap-cleaner/releases/latest/download/com.sap.adt.abapcleaner.app-linux.gtk.x86_64.tar.gz -O - | tar -xz
+          cd ..
+
+      - name: Clean-up files in /src
+        run: ./.cleanup/abapcleaner/abap-cleaner --sourcedir src --recursive --overwrite --profile cleaner-profile.cfj --release 750 --stats --usedrules
+
+      - name: Commit changes
+        uses: EndBug/add-and-commit@v9
+        with:
+          default_author: github_actions
+          message: "style: code cleanup with ABAP cleaner"
+          add: "src"
+```
+
 **Continue reading**: [Main window](main-window.md)
