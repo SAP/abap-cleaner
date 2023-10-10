@@ -145,6 +145,7 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
       private final Color normalHighlightBackground;
       private final Color normalPasteExampleBackground;
       private final Color normalImportExportBackground;
+      private final Color normalProfilesFolderBackground;
       private final Color normalLblFilterBackground;
       private final Color normalActivateBackground;
       private final Color normalHighlightDeclarationsBackground;
@@ -165,6 +166,7 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
          normalHighlightBackground = lblHighlight.getBackground();
          normalPasteExampleBackground = btnPasteExample.getBackground();
          normalImportExportBackground = btnImportProfile.getBackground();
+         normalProfilesFolderBackground = btnChangeProfilesFolder.getBackground();
          normalLblFilterBackground = lblFilter.getBackground();
          normalActivateBackground = btnActivateDefaultRules.getBackground();
          normalHighlightDeclarationsBackground = chkHighlightDeclarationKeywords.getBackground();
@@ -194,7 +196,7 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 	      setBackground(btnImportProfile, importExportBackground);
 	      setBackground(btnExportProfile, importExportBackground);
 	      setBackground(btnExportAllProfiles, importExportBackground);
-	      setBackground(btnChangeProfilesFolder, highlightItem.highlightFeatureOf(2023, 10, 3) ? newConfigBackground : normalImportExportBackground); // first highlight on (2023, 3, 9)
+	      setBackground(btnChangeProfilesFolder, highlightItem.highlightFeatureOf(2023, 10, 3) ? newConfigBackground : normalProfilesFolderBackground); // first highlight on (2023, 3, 9)
 	
 	      setBackground(lblFilter, highlightItem.highlightFeatureOf(2023, 3, 9) ? newConfigBackground : normalLblFilterBackground);
 	      

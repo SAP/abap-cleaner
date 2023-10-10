@@ -29,12 +29,25 @@ All profiles can be deleted (except the last remaining one).
 For instance, you may want to configure a standard profile in which all rules are activated that you agree to use, 
 and several special profiles for specific cleanup tasks, in which only one or very few rules are activated. 
 
-To pass on profiles to colleagues, you may use the '**Export...**' or '**Export All...**' buttons 
+### Sharing and synchronizing profiles with colleagues
+
+To **quickly pass on profiles** to colleagues, you may use the '**Export...**' or '**Export All...**' buttons 
 and send the exported .cfj file(s) to your colleagues, who could then '**Import...**' them. 
-To change the local profiles folder (e.g. to a synchronized folder), click '**Folder...**' and select the new folder. 
-Existing profiles will be moved to the newly selected folder. 
-Direct access to the local profiles folder (by default, %APPDATA%\SAP\ABAP cleaner\user\profiles)
-is possible from the [main screen](main-window.md) with the menu 'Help / Open Profiles Folder'.
+Direct access to the local profiles folder is possible from the [main screen](main-window.md) 
+with the menu 'Help / Open Profiles Folder'.
+
+If your team wants to share and **continually synchronize profiles**, 
+* your team architect or lead developer may configure a profile as needed 
+  and use the '**Export...**' button to store it on a synchronized folder (e.g. on OneDrive). 
+* Team members can then use the  '**Folders...**' button to add this synchronized folder 
+  as an additional read-only source of **Team Profiles**: 
+
+  ![ABAP cleaner profiles and rules - profile folders](images/profiles_profile-folders.png "ABAP cleaner profiles and rules - profile folders")
+
+  Team profiles then appear as 'team A: default' etc. in the profile list and can be selected and used, but not modified.
+
+* After changing the configuration of a profile, the team architect or lead developer can simply export it again, 
+  overwriting it in the synchronized folder and thus updating it for everyone.
 
 
 ### Profile settings
