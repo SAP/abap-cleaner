@@ -392,8 +392,10 @@ public class Token {
 		if (newToken == null || parentCommand == null || next != null || newToken.prev != null)
 			throw new NullPointerException("newToken");
 
-		if (parent != null && newToken.isChainColon()) 
-			throw new UnexpectedSyntaxException(this, "Unsupported syntax: Chain colon ':' inside parentheses ( ... ) or brackets [ ... ] cannot be processed by " + Program.PRODUCT_NAME + ". Please refactor this command first.");
+		// the following check is deactivated, because a colon inside of parentheses or brackets can be accepted, 
+		// as long as parentheses are NOT closed twice (which is checked below with 'if (parent == null)') 
+		// if (parent != null && newToken.isChainColon()) 
+		// 	throw new UnexpectedSyntaxException(this, "Unsupported syntax: Chain colon ':' inside parentheses ( ... ) or brackets [ ... ] cannot be processed by " + Program.PRODUCT_NAME + ". Please refactor this command first.");
 		
 		newToken.parentCommand = parentCommand;
 		parentCommand.addToken(newToken);
