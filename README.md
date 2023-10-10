@@ -93,7 +93,7 @@ To install and use the **ABAP cleaner plug-in for ABAP Development Tools** (ADT)
    using an Eclipse installation that is [compatible with ADT](https://tools.hana.ondemand.com/).
 2. Start ADT, select menu 'Help / Install New Software...', 
    copy the link https://sap.github.io/abap-cleaner/updatesite to the 'Work with' field, press Enter 
-   and follow the installation steps, confirming to install ABAP cleaner. ([Known issues](docs/installation-issues.md))
+   and follow the installation steps, confirming to install ABAP cleaner (content is currently unsigned). ([Known issues](docs/installation-issues.md))
 
    ![ABAP cleaner plug-in for ABAP Development Tools - installation](docs/images/adt-installation.png "ABAP cleaner plug-in for ABAP Development Tools - installation")
 
