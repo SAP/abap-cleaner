@@ -681,9 +681,9 @@ class AlignDeclarationsTest extends RuleTestBase {
 	}
 
 	@Test
-	void testTableDeclarationWithKey() {
-		// ensure that table declarations with "WITH ... KEY ..." sections are not aligned (except for very simply cases 
-		// with just one component), because they usually should not be put on a single line
+	void testTableDeclarationWithKeyOf3Components() {
+		// ensure that in table declarations with more than one component in the "WITH" section, 
+		// the "WITH ..." part is kept unchanged, but everything else is aligned
 		
 		buildSrc("    DATA:");
 		buildSrc("      lt_item     TYPE ty_tt_item,");
@@ -691,7 +691,37 @@ class AlignDeclarationsTest extends RuleTestBase {
 		buildSrc("                            WITH NON-UNIQUE KEY comp1 comp2 comp3,");
 		buildSrc("      lv_index         TYPE i.");
 
-		copyExpFromSrc();
+		buildExp("    DATA:");
+		buildExp("      lt_item    TYPE ty_tt_item,");
+		buildExp("      lts_buffer TYPE SORTED TABLE OF ty_s_buffer");
+		buildExp("                            WITH NON-UNIQUE KEY comp1 comp2 comp3,");
+		buildExp("      lv_index   TYPE i.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testTableDeclarationWithMultiKey() {
+		// ensure that in table declarations with multiple "WITH ... KEY ..." sections, the "WITH ..." part is kept unchanged, 
+		// but everything else is aligned
+		
+		buildSrc("    DATA:");
+		buildSrc("      lt_item     TYPE ty_tt_item,");
+		buildSrc("      lts_buffer      TYPE SORTED TABLE OF ty_s_buffer");
+		buildSrc("                    WITH NON-UNIQUE KEY comp1 comp2 comp3");
+		buildSrc("                    WITH UNIQUE KEY key_name COMPONENTS comp1 comp2");
+		buildSrc("                                                        comp3 comp4,");
+		buildSrc("      lv_index         TYPE i.");
+
+		buildExp("    DATA:");
+		buildExp("      lt_item    TYPE ty_tt_item,");
+		buildExp("      lts_buffer TYPE SORTED TABLE OF ty_s_buffer");
+		buildExp("                    WITH NON-UNIQUE KEY comp1 comp2 comp3");
+		buildExp("                    WITH UNIQUE KEY key_name COMPONENTS comp1 comp2");
+		buildExp("                                                        comp3 comp4,");
+		buildExp("      lv_index   TYPE i.");
 		
 		putAnyMethodAroundSrcAndExp();
 
@@ -1556,4 +1586,5 @@ class AlignDeclarationsTest extends RuleTestBase {
 
 		testRule();
 	}
+
 }
