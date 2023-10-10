@@ -95,12 +95,14 @@ The rules are grouped into several sections
 ('EMPTY LINES, SPACES, DECLARATIONS, SYNTAX, COMMANDS, PRETTY PRINTER, ALIGNMENT'); 
 you may (de)activate the section headers to (de)activate all rules in this section, 
 or use the buttons '**Activate: All / Default / Essential / None**' below the list. 
-Here, '**Activate: Default**' will activate all rules that are active by ABAP cleaner defaults (which is true for 
-most rules), while '**Activate: Essential**' will only activate rules that are explicitly demanded by the 
+Here, '**Default**' will activate all rules that are active by ABAP cleaner defaults (which is true for 
+most rules), while '**Essential**' will only activate rules that are explicitly demanded by the 
 [Clean ABAP Styleguide](https://github.com/SAP/styleguides/blob/main/clean-abap/CleanABAP.md).
 
-Click on one rule in the list to see a 'Description', 'References', 'Options', 
-and 'Examples' for this rule on the right-hand side of the window. 
+Click on one rule in the list to see a **Description**, **References**, **Options**, 
+and **Examples** for this rule on the right-hand side of the window. 
+If needed, you may use _Ctrl+C_ to copy the name of the current rule from the rule list to the clipboard. 
+Alternatively, you may right-click the rule name or description on the right-hand side. 
 
 ### References
 
