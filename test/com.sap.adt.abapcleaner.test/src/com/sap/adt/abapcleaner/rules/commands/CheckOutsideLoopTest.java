@@ -21,6 +21,7 @@ class CheckOutsideLoopTest extends RuleTestBase {
 		rule.configKeepCondition.setEnumValue(KeepCheckOutsideLoopCondition.KEEP_AFTER_DECLARATIONS);
 		rule.configNegationStyle.setEnumValue(NegationStyle.AVOID_INNER_NEGATIONS);
 		rule.configConvertAbapFalseAndAbapTrue.setValue(true);
+		rule.configAllowCheckAfterCheckpoints.setValue(true);
 	}
 	
 	@Test
@@ -36,6 +37,59 @@ class CheckOutsideLoopTest extends RuleTestBase {
 		buildSrc("      AND is_struc-third_flag  = abap_true.");
 
 		copyExpFromSrc();
+
+		putAnyMethodAroundSrcAndExp();
+		
+		testRule();
+	}
+	
+	@Test
+	void testCheckAfterCheckPointsKept() {
+		rule.configKeepCondition.setEnumValue(KeepCheckOutsideLoopCondition.KEEP_AT_METHOD_START);
+		rule.configAllowCheckAfterCheckpoints.setValue(true);
+		
+		buildSrc("    ASSERT its_table IS NOT INITIAL.");
+		buildSrc("    LOG-POINT ID any_id.");
+		buildSrc("    BREAK-POINT.");
+		buildSrc("    CHECK its_table IS NOT INITIAL.");
+
+		copyExpFromSrc();
+
+		putAnyMethodAroundSrcAndExp();
+		
+		testRule();
+	}
+	
+	@Test
+	void testCheckAfterLogPointChanged() {
+		rule.configKeepCondition.setEnumValue(KeepCheckOutsideLoopCondition.KEEP_AT_METHOD_START);
+		rule.configAllowCheckAfterCheckpoints.setValue(false);
+		
+		buildSrc("    LOG-POINT ID any_id.");
+		buildSrc("    CHECK its_table IS NOT INITIAL.");
+
+		buildExp("    LOG-POINT ID any_id.");
+		buildExp("    IF its_table IS INITIAL.");
+		buildExp("      RETURN.");
+		buildExp("    ENDIF.");
+
+		putAnyMethodAroundSrcAndExp();
+		
+		testRule();
+	}
+	
+	@Test
+	void testCheckAfterAssertChanged() {
+		rule.configKeepCondition.setEnumValue(KeepCheckOutsideLoopCondition.KEEP_AT_METHOD_START);
+		rule.configAllowCheckAfterCheckpoints.setValue(false);
+		
+		buildSrc("    ASSERT iv_value > 0.");
+		buildSrc("    CHECK its_table IS NOT INITIAL.");
+
+		buildExp("    ASSERT iv_value > 0.");
+		buildExp("    IF its_table IS INITIAL.");
+		buildExp("      RETURN.");
+		buildExp("    ENDIF.");
 
 		putAnyMethodAroundSrcAndExp();
 		
@@ -98,6 +152,27 @@ class CheckOutsideLoopTest extends RuleTestBase {
 	}
 	
 	@Test
+	void testCheckAfterClearAndCheckpointsKept() {
+		rule.configKeepCondition.setEnumValue(KeepCheckOutsideLoopCondition.KEEP_AFTER_DECLARATIONS_AND_CLEAR);
+
+		buildSrc("    FIELD-SYMBOLS <ls_struc> LIKE LINE OF its_table.");
+		buildSrc("    CLEAR ev_success.");
+		buildSrc("");
+		buildSrc("    BREAK-POINT.");
+		buildSrc("    LOG-POINT ID any_id.");
+		buildSrc("    ASSERT its_table IS NOT INITIAL.");
+		buildSrc("");
+		buildSrc("    \" CHECKs only preceded by declarations and CLEAR");
+		buildSrc("    CHECK ( c IS NOT SUPPLIED OR b IS INITIAL ) AND ( d IS SUPPLIED OR b IS NOT INITIAL ).");
+
+		copyExpFromSrc();
+
+		putAnyMethodAroundSrcAndExp();
+		
+		testRule();
+	}
+	
+	@Test
 	void testCheckAfterClearChanged() {
 		rule.configKeepCondition.setEnumValue(KeepCheckOutsideLoopCondition.KEEP_AFTER_DECLARATIONS);
 
@@ -110,6 +185,28 @@ class CheckOutsideLoopTest extends RuleTestBase {
 		buildExp("    CLEAR ev_success.");
 		buildExp("");
 		buildExp("    IF ( c IS SUPPLIED AND b IS NOT INITIAL ) OR ( d IS NOT SUPPLIED AND b IS INITIAL ).");
+		buildExp("      RETURN.");
+		buildExp("    ENDIF.");
+
+		putAnyMethodAroundSrcAndExp();
+		
+		testRule();
+	}
+	
+	@Test
+	void testCheckAfterBreakPointChanged() {
+		rule.configKeepCondition.setEnumValue(KeepCheckOutsideLoopCondition.KEEP_AFTER_DECLARATIONS);
+		rule.configAllowCheckAfterCheckpoints.setValue(false);
+		
+		buildSrc("    FIELD-SYMBOLS <ls_struc> LIKE LINE OF its_table.");
+		buildSrc("");
+		buildSrc("    BREAK-POINT ID any_id.");
+		buildSrc("    CHECK b IS NOT INITIAL.");
+
+		buildExp("    FIELD-SYMBOLS <ls_struc> LIKE LINE OF its_table.");
+		buildExp("");
+		buildExp("    BREAK-POINT ID any_id.");
+		buildExp("    IF b IS INITIAL.");
 		buildExp("      RETURN.");
 		buildExp("    ENDIF.");
 

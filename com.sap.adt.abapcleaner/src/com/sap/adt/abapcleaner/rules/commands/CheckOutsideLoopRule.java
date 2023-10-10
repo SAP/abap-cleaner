@@ -70,12 +70,28 @@ public class CheckOutsideLoopRule extends CheckStatementRuleBase {
 			+ LINE_SEP + "    \" CHECKs inside the method" 
 			+ LINE_SEP + "    CHECK line_exists( its_table[ 0 ] ) " 
 			+ LINE_SEP + "       OR lines( its_table ) > 2  AND line_exists( its_table[ 1 ] )." 
+			+ LINE_SEP + "  ENDMETHOD."
+			+ LINE_SEP 
+			+ LINE_SEP 
+			+ LINE_SEP + "  METHOD check_after_checkpoints." 
+			+ LINE_SEP + "    \" various checkpoints" 
+			+ LINE_SEP + "    BREAK-POINT." 
+			+ LINE_SEP + "    LOG-POINT ID any_id." 
+			+ LINE_SEP + "    ASSERT iv_value > 0." 
+			+ LINE_SEP 
+			+ LINE_SEP + "    CHECK its_table IS NOT INITIAL." 
+			+ LINE_SEP 
+			+ LINE_SEP + "    DATA lv_any_value TYPE i." 
+			+ LINE_SEP 
+			+ LINE_SEP + "    CLEAR ev_success." 
+			+ LINE_SEP + "    CHECK its_table IS NOT INITIAL." 
 			+ LINE_SEP + "  ENDMETHOD.";
    }
 
    final ConfigEnumValue<KeepCheckOutsideLoopCondition> configKeepCondition = new ConfigEnumValue<KeepCheckOutsideLoopCondition>(this, "KeepCondition", "Keep CHECK statement:", new String[] { "never", "at method start", "after declarations", "after declarations and CLEAR statements" }, KeepCheckOutsideLoopCondition.KEEP_AFTER_DECLARATIONS);
+	final ConfigBoolValue configAllowCheckAfterCheckpoints = new ConfigBoolValue(this, "AllowCheckAfterCheckpoints", "Allow CHECK after ASSERT, BREAK-POINT and LOG-POINT", true, false, LocalDate.of(2023, 10, 10));
    
-	private final ConfigValue[] configValues = new ConfigValue[] { configKeepCondition, configNegationStyle, configConvertAbapFalseAndAbapTrue };
+	private final ConfigValue[] configValues = new ConfigValue[] { configKeepCondition, configNegationStyle, configConvertAbapFalseAndAbapTrue, configAllowCheckAfterCheckpoints };
 
 	@Override
 	public ConfigValue[] getConfigValues() { return configValues; }
@@ -94,6 +110,7 @@ public class CheckOutsideLoopRule extends CheckStatementRuleBase {
 		KeepCheckOutsideLoopCondition convertUpTo = KeepCheckOutsideLoopCondition.NEVER; // tells which condition(s) would still be satisfied at the position of the current Command
 		NegationStyle negationStyle = NegationStyle.forValue(configNegationStyle.getValue());
 		boolean convertAbapFalseAndAbapTrue = configConvertAbapFalseAndAbapTrue.getValue();
+		boolean allowCheckAfterCheckpoints = configAllowCheckAfterCheckpoints.getValue();
 		boolean isInsideMethod = false; 
 		
 		Command command = code.firstCommand;
@@ -111,6 +128,8 @@ public class CheckOutsideLoopRule extends CheckStatementRuleBase {
 				convertUpTo = KeepCheckOutsideLoopCondition.KEEP_AT_METHOD_START;
 			} else if (command.firstCodeTokenIsKeyword("CLEAR")) {
 				convertUpTo = KeepCheckOutsideLoopCondition.KEEP_AFTER_DECLARATIONS;
+			} else if (allowCheckAfterCheckpoints && command.firstCodeTokenIsAnyKeyword("ASSERT", "BREAK-POINT", "LOG-POINT")) {
+				// keep convertUpTo unchanged
 			} else if (!command.firstCodeTokenIsKeyword("CHECK") && !command.isCommentLine()) {
 				convertUpTo = KeepCheckOutsideLoopCondition.KEEP_AFTER_DECLARATIONS_AND_CLEAR;
 			}
