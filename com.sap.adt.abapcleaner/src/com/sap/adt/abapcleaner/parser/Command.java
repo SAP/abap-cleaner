@@ -1098,7 +1098,7 @@ public class Command {
 		// - SELECT DISTINCT (column) FROM spfli WHERE ...
 		// (see https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/index.htm?file=abapselect_list.htm)
 		Token selectListStart = selectClauseStart;
-		if (selectListStart.textStartsWith("("))
+		if (selectListStart.textStartsWith("(") && selectListStart.getNext().isAttached())
 			return true;
 
 		// loop over the columns in the select list. Examples showing the [select list] in brackets:
@@ -1113,8 +1113,23 @@ public class Command {
 		while (token != null && token != selectClauseEnd) {
 			// if any of the columns in the select clause is NOT an aggregate function, ENDSELECT is required
 			// (do not use token.isAnyKeyword() here, since some aggregate functions may not be classified correctly)
-			if (!token.textEqualsAny(aggregateFunctions))
+			boolean aggregateFunctionFound = false;
+			if (token.textEquals("(")) {
+				// consider arithmetic expressions such as '( SUM( amt1 ) + SUM( amt2 ) ) AS amt_sum'
+				Token test = token.getNextCodeToken();
+				while (test != token.getNextSibling()) {
+					if (test.textEqualsAny(aggregateFunctions)) {
+						aggregateFunctionFound = true;
+						break;
+					}
+					test = test.getNextCodeToken();
+				}
+			} else {
+				aggregateFunctionFound = token.textEqualsAny(aggregateFunctions); 
+			}
+			if (!aggregateFunctionFound) { 
 				return true;
+			}
 
 			// move behind the closing parenthesis ")" of the aggregate function; even "COUNT(*)" is tokenized into 3 Tokens
 			token = token.getNextCodeSibling().getNextCodeSibling();

@@ -1110,6 +1110,7 @@ public class CommandTest {
 		assertFalse(buildCommand("SELECT FROM dtab FIELDS fld1, MIN( price ) AS min_price, MAX( price ) AS max_price GROUP BY fld1 INTO TABLE @DATA(result).").getOpensLevel());
 		assertFalse(buildCommand("SELECT FROM dtab FIELDS COUNT( CASE WHEN num1 < 4 THEN 'X' WHEN num1 BETWEEN 4 AND 7 THEN 'Y' END ) AS cnt, COUNT(*) AS cntstar INTO TABLE @DATA(result).").getOpensLevel());
 		assertFalse(buildCommand("SELECT FROM dtab FIELDS COUNT(*) INTO (@DATA(avg)).").getOpensLevel());
+		assertFalse(buildCommand("SELECT ( SUM( amt1 ) + SUM( amt2 ) ) AS amt_sum FROM any_table INTO @DATA(lt_amount).").getOpensLevel());
 	}
 
 	@Test
