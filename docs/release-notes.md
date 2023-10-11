@@ -6,6 +6,12 @@ as well as bugfixes of reported issues, i.e. anything that enhances or changes t
 For a complete list of changes (including documentation, tests, refactoring etc.), please refer to 
 the list of [commits](../../../commits/main).
 
+## 2023-10-10 (version 1.7.1)
+
+Many **thanks** to [**Lightirius**](https://github.com/Lightirius) for reporting this bug so quickly!
+
+* Fixed missing custom profiles ([#138](../../../issues/138))
+
 ## 2023-10-10 (version 1.7.0)
 
 **Thank you** very much [**blackfish5**](https://github.com/blackfish5), [**bastianStr**](https://github.com/bastianStr), 
