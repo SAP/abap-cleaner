@@ -448,6 +448,20 @@ class ProfileTest {
 		assertFalse(profilesContain(profiles, anyProfileName));
 	}
 	
+	@Test
+	void testLoadProfilesWithEmptySettings() {
+		prepareProfiles(profilesDir);
+		
+		// ensure that all 3 profiles are loaded from the default directory, even if the ownProfileDir 
+		// from MainSettings.profilesDirectory is "" (because it was never explicitly set)
+		String emptyProfilesDir = "";
+		ArrayList<Profile> profiles = Profile.loadProfiles(emptyProfilesDir, null);
+		assertEquals(3, profiles.size());
+		assertTrue(profilesContain(profiles, Profile.DEFAULT_NAME));
+		assertTrue(profilesContain(profiles, Profile.ESSENTIAL_NAME));
+		assertTrue(profilesContain(profiles, anyProfileName));
+	}
+	
 	@Test 
 	void testUpdateReadOnlyProfiles() {
 		prepareProfiles(profilesDir);
