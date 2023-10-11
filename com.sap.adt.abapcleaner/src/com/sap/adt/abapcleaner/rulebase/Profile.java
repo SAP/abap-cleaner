@@ -58,8 +58,6 @@ public class Profile {
 
 	private static void addProfilesFromDir(ArrayList<Profile> profiles, String dir, String namePrefix) {
 		Persistency persistency = Persistency.get(); 
-		if (!persistency.directoryExists(dir))
-			return;
 		String[] paths = getLoadPaths(dir);
 		for (String path : paths) {
 			try (ISettingsReader reader = TextSettingsReader.createFromFile(persistency, path, Program.TECHNICAL_VERSION)) {
