@@ -464,7 +464,9 @@ public class CommandTest {
 	@Test 
 	void testFinishBuildDefLocalFriends() {
 		assertFalse(buildCommand("CLASS cl_any DEFINITION DEFERRED.").getOpensLevel());
+		assertFalse(buildCommand("CLASS: cl_any DEFINITION DEFERRED.").getOpensLevel());
 		assertFalse(buildCommand("CLASS cl_any DEFINITION LOCAL FRIENDS cl_other.").getOpensLevel());
+		assertFalse(buildCommand("CLASS : cl_any DEFINITION LOCAL FRIENDS cl_other.").getOpensLevel());
 	}
 	
 	@Test 

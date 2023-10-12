@@ -901,8 +901,8 @@ public class Command {
 		// correct pseudo CLASS opener
 		Token firstCode = getFirstCodeToken();
 		if (isClassStart() && firstCode != null) {
-			if (firstCode.matchesOnSiblings(true, "CLASS", TokenSearch.ANY_IDENTIFIER, "DEFINITION", "DEFERRED")
-					|| firstCode.matchesOnSiblings(true, "CLASS", TokenSearch.ANY_IDENTIFIER, "DEFINITION", "LOCAL", "FRIENDS")) {
+			if (firstCode.matchesOnSiblings(true, "CLASS", TokenSearch.makeOptional(":"), TokenSearch.ANY_IDENTIFIER, "DEFINITION", "DEFERRED")
+					|| firstCode.matchesOnSiblings(true, "CLASS", TokenSearch.makeOptional(":"), TokenSearch.ANY_IDENTIFIER, "DEFINITION", "LOCAL", "FRIENDS")) {
 				usedLevelOpener = null;
 				firstToken.setOpensLevel(false);
 			}
