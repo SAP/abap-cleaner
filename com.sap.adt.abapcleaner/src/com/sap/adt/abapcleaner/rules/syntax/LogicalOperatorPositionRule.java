@@ -104,7 +104,7 @@ public class LogicalOperatorPositionRule extends RuleForLogicalExpressions {
 
 		// if the keyword is at line end, move it in front of the logical expression
 		Token logExpStart = keyword.getNextCodeToken();
-		if (moveKeyword && keyword != command.getFirstToken() && keyword.lineBreaks == 0 && logExpStart.lineBreaks > 0) {
+		if (moveKeyword && keyword != command.getFirstToken() && keyword.lineBreaks == 0 && logExpStart.lineBreaks > 0 && !keyword.getOpensLevel()) {   
 			// determine the minimum start index of the logical expression; note that this is not necessarily the start index
 			// of the first line in a case like "WHERE
 			//      status = 1

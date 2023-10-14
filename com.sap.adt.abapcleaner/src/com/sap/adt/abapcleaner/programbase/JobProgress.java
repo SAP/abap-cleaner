@@ -6,18 +6,20 @@ public class JobProgress {
 	private final String sourceName;
 	private final TaskType task;
 	private final double progressRatio;
+	private final int bulkFileIndex;
 	private final int bulkFileCount;
-	private final int bulkFileNum;
+	private final int stressTestIndex;
+	private final int stressTestCount;
 
 	public final int getProgressPercentage() { return (int) (progressRatio * 100.0 + 0.5); }
 
 	public final String getTitle() {
 		if (StringUtil.isNullOrEmpty(sourceName))
 			return "Progress";
-		else if (bulkFileCount > 1)
-			return "Processing " + Cult.format(bulkFileNum) + " / " + Cult.format(bulkFileCount) + ": " + sourceName;
-		else
-			return "Processing " + sourceName;
+		
+		String bulkFileProgress = (bulkFileCount < 2) ? "" : Cult.format(bulkFileIndex + 1) + " / " + Cult.format(bulkFileCount) + ": "; 
+		String stressTestProgress = (stressTestCount == 0) ? "" : ": " + Cult.format(stressTestIndex + 1) + " / " + Cult.format(stressTestCount);
+		return "Processing " + bulkFileProgress + sourceName + stressTestProgress;
 	}
 
 	public final int getPercentageOf(TaskType task) {
@@ -30,13 +32,15 @@ public class JobProgress {
 	}
 
 	JobProgress(String fileName, TaskType task, double progressRatio) {
-		this(fileName, task, progressRatio, 0, 0);
+		this(fileName, task, progressRatio, 0, 0, 0, 0);
 	}
-	JobProgress(String fileName, TaskType task, double progressRatio, int bulkFileCount, int bulkFileNum) {
+	JobProgress(String fileName, TaskType task, double progressRatio, int bulkFileIndex, int bulkFileCount, int stressTestIndex, int stressTestCount) {
 		sourceName = fileName;
 		this.task = task;
 		this.progressRatio = progressRatio;
+		this.bulkFileIndex = bulkFileIndex;
 		this.bulkFileCount = bulkFileCount;
-		this.bulkFileNum = bulkFileNum;
+		this.stressTestIndex = stressTestIndex;
+		this.stressTestCount = stressTestCount;
 	}
 }

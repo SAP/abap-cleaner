@@ -13,8 +13,8 @@ public class JobProgressTest {
 		jobProgress = new JobProgress("abc", TaskType.PARSER, 0.2);
 		assertEquals("Processing abc", jobProgress.getTitle());
 
-		jobProgress = new JobProgress("abc", TaskType.PARSER, 0.2, 100, 1);
-		assertEquals("Processing 1 / 100: abc", jobProgress.getTitle());
+		jobProgress = new JobProgress("abc", TaskType.PARSER, 0.2, 0, 100, 42, 64);
+		assertEquals("Processing 1 / 100: abc: 43 / 64", jobProgress.getTitle());
 	}
 	
 	@Test

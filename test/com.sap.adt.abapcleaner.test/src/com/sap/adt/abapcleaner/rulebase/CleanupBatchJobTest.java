@@ -7,6 +7,8 @@ import org.junit.jupiter.api.Test;
 
 import com.sap.adt.abapcleaner.base.ABAP;
 import com.sap.adt.abapcleaner.parser.ParseParams;
+import com.sap.adt.abapcleaner.parser.StressTestParams;
+import com.sap.adt.abapcleaner.parser.StressTestType;
 import com.sap.adt.abapcleaner.programbase.JobDouble;
 import com.sap.adt.abapcleaner.programbase.Program;
 import com.sap.adt.abapcleaner.programbase.Task;
@@ -15,6 +17,7 @@ public class CleanupBatchJobTest {
 	private static final String LINE_SEP = ABAP.LINE_SEPARATOR;
 
 	private CleanupParams cleanupParams;
+	private StressTestParams stressTestParams;
 	private CleanupBatchJob batchJob;
 
 	@BeforeEach
@@ -27,6 +30,26 @@ public class CleanupBatchJobTest {
 		cleanupParams = includeCleanup ? CleanupParams.createForProfile(profile, true) : CleanupParams.createForParseOnly();
 		batchJob = new CleanupBatchJob(cleanupParams);
 		batchJob.initialize();
+	}
+	
+	void createJobWithStressTest() {
+		Profile profile = Profile.createDefault();
+		cleanupParams = CleanupParams.createForProfile(profile, true);
+		stressTestParams = StressTestParams.create(0, 3, StressTestType.getAll());
+		assertEquals(16, stressTestParams.getCount());
+		batchJob = new CleanupBatchJob(cleanupParams, stressTestParams);
+		batchJob.initialize();
+	}
+	
+	@Test
+	void testInfoWithCleanupAndStressTest() {
+		createJobWithStressTest();
+		assertTrue(batchJob.getDescription().length() > 0);
+		assertTrue(batchJob.getTitle("info").length() > 0);
+		assertEquals(cleanupParams, batchJob.getCleanupParams());
+		assertEquals(stressTestParams, batchJob.getStressTestParams());
+		assertEquals(null, batchJob.getSummary());
+		assertEquals(null, batchJob.getDetails());
 	}
 	
 	@Test
@@ -54,7 +77,7 @@ public class CleanupBatchJobTest {
 		JobDouble jobDouble = new JobDouble(0); 
 		ParseParams parseParams = ParseParams.createForWholeCode(sourceName, sourceCode, ABAP.NEWEST_RELEASE); 
 		Task task = Task.createForBatch(jobDouble, parseParams, 0, 2);
-		task.run(batchJob.getCleanupParams(), true);
+		task.run(null, batchJob.getCleanupParams(), true);
 
 		batchJob.addTaskResult(sourceCode, sourceName, task);
 	}

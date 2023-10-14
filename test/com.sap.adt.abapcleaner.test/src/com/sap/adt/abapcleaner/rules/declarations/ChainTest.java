@@ -371,4 +371,18 @@ class ChainTest extends RuleTestBase {
 
 		testRule();
 	}
+	
+	@Test
+	void testDeleteIndexColonComment() {
+		buildSrc("  DELETE itab INDEX \" comment");
+		buildSrc("                   : 1, 2.");
+
+		buildExp("  DELETE itab INDEX \" comment");
+		buildExp("                       1.");
+		buildExp("  DELETE itab INDEX \" comment");
+		buildExp("                       2.");
+
+		testRule();
+	}
+
 }

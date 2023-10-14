@@ -111,13 +111,13 @@ public class AddToEtcRule extends RuleForCommands {
 		Token keyword1 = firstToken;
 		Term term;
 		try {
-			term = Term.createArithmetic(keyword1.getNext());
+			term = Term.createArithmetic(keyword1.getNextCodeToken());
 		} catch (UnexpectedSyntaxException ex) {
 			throw new UnexpectedSyntaxBeforeChanges(this, ex);
 		}
 		int termPos = term.firstToken.getStartIndexInLine();
-		Token keyword2 = term.getNext();
-		Token destVariable = keyword2.getNext();
+		Token keyword2 = term.getNextCodeToken();
+		Token destVariable = keyword2.getNextCodeToken();
 		int sourceLineNum = keyword1.sourceLineNum;
 
 		// insert destination variable before keyword1 ("ADD", "SUBTRACT")
@@ -151,13 +151,16 @@ public class AddToEtcRule extends RuleForCommands {
 		Token firstToken = command.getFirstToken();
 		if (!firstToken.matchesOnSiblings(true, keyword1Text, TokenSearch.ANY_IDENTIFIER, keyword2Text, TokenSearch.ANY_ARITHMETIC_EXPRESSION, "."))
 			return false;
-
+		// do not allow a comment after the first keyword (or otherwise, the comment would have to be moved up into an own Command)  
+		if (!firstToken.getNext().isIdentifier())
+			return false;
+		
 		Token keyword1 = firstToken;
-		Token destVariable = keyword1.getNext();
-		Token keyword2 = destVariable.getNext();
+		Token destVariable = keyword1.getNextCodeToken();
+		Token keyword2 = destVariable.getNextCodeToken();
 		Term term;
 		try {
-			term = Term.createArithmetic(keyword2.getNext());
+			term = Term.createArithmetic(keyword2.getNextCodeToken());
 		} catch (UnexpectedSyntaxException ex) {
 			throw new UnexpectedSyntaxBeforeChanges(this, ex);
 		}

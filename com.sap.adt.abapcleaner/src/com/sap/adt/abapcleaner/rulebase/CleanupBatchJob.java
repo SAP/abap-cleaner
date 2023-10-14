@@ -1,14 +1,23 @@
 package com.sap.adt.abapcleaner.rulebase;
 
+import com.sap.adt.abapcleaner.parser.StressTestParams;
 import com.sap.adt.abapcleaner.programbase.IBatchJob;
 import com.sap.adt.abapcleaner.programbase.Task;
 
 public class CleanupBatchJob implements IBatchJob {
 	private final CleanupParams cleanupParams;
+	private final StressTestParams stressTestParams;
 	private final CleanupMetrics batchCleanupMetrics;
 
 	public CleanupBatchJob(CleanupParams cleanupParams) {
 		this.cleanupParams = cleanupParams;
+		this.stressTestParams = null;
+		this.batchCleanupMetrics = new CleanupMetrics(cleanupParams);
+	}
+	
+	public CleanupBatchJob(CleanupParams cleanupParams, StressTestParams stressTestParams) {
+		this.cleanupParams = cleanupParams;
+		this.stressTestParams = stressTestParams;
 		this.batchCleanupMetrics = new CleanupMetrics(cleanupParams);
 	}
 	
@@ -25,6 +34,11 @@ public class CleanupBatchJob implements IBatchJob {
 			return "Parser result for " + codeFileInfo;
 	 }
 
+
+	@Override
+	public StressTestParams getStressTestParams() { 
+		return stressTestParams; 
+	}
 
 	@Override
 	public CleanupParams getCleanupParams() { 

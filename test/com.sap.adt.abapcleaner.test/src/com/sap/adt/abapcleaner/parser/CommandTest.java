@@ -1432,5 +1432,46 @@ public class CommandTest {
 		assertChangesTFillOrTLeng(false, "DELETE lt_table from 10.");
 		assertChangesTFillOrTLeng(false, "ls_line = lt_table[ 1 ].");
 	}
-	
+
+	private void assertStressTestToken(String codeText, int tokenIndex, StressTestType stressTestType, String expCodeText) throws IntegrityBrokenException {
+		Command command = buildCommand(codeText);
+		boolean changed = command.insertStressTestTokenAt(tokenIndex, stressTestType);
+		assertTrue(changed);
+		assertEquals(expCodeText, command.toString());
+	}
+
+	private void assertNoStressTestToken(String codeText, int tokenIndex, StressTestType stressTestType) throws IntegrityBrokenException {
+		Command command = buildCommand(codeText);
+		boolean changed = command.insertStressTestTokenAt(tokenIndex, stressTestType);
+		assertFalse(changed);
+	}
+
+	@Test
+	void testInsertStressTestToken() throws IntegrityBrokenException {
+		assertStressTestToken("DATA lv_any TYPE i.", 0, StressTestType.LINE_END_COMMENT, "DATA \" test\r\n     lv_any TYPE i.");
+		assertStressTestToken("DATA lv_any TYPE i.", 0, StressTestType.COMMENT_LINE, "DATA\r\n* test\r\n     lv_any TYPE i.");
+		assertStressTestToken("DATA lv_any TYPE i.", 0, StressTestType.COLON, "DATA: lv_any TYPE i.");
+		assertStressTestToken("DATA lv_any TYPE i.", 0, StressTestType.PRAGMA, "DATA ##PRAGMA lv_any TYPE i.");
+
+		assertStressTestToken("DATA: lv_any TYPE i.", 0, StressTestType.COLON, "DATA:: lv_any TYPE i.");
+		assertStressTestToken("DATA: lv_any TYPE i.", 1, StressTestType.COLON, "DATA: lv_any: TYPE i.");
+		assertStressTestToken("DATA: lv_any TYPE i.", 2, StressTestType.COLON, "DATA: lv_any TYPE: i.");
+		assertStressTestToken("DATA: lv_any TYPE i.", 3, StressTestType.COLON, "DATA: lv_any TYPE i:.");
+
+		assertStressTestToken("any_method( ).", 0, StressTestType.COLON, "any_method(: ).");
+		assertStressTestToken("any_method( param = 1 ).", 0, StressTestType.COLON, "any_method(: param = 1 ).");
+		assertStressTestToken("any_method( param = 1 ).", 0, StressTestType.PRAGMA, "any_method( ##PRAGMA param = 1 ).");
+		assertStressTestToken("any_method( param = 1 ).", 3, StressTestType.PRAGMA, "any_method( param = 1 ##PRAGMA ).");
+
+		assertStressTestToken("DELETE FROM dtab WHERE id < 10.", 1, StressTestType.COLON, "DELETE FROM: dtab WHERE id < 10.");
+
+		assertNoStressTestToken("DATA lv_any TYPE i. \" comment", 4, StressTestType.LINE_END_COMMENT);
+		assertNoStressTestToken("DATA lv_any TYPE i. \" comment", 4, StressTestType.COMMENT_LINE);
+		assertNoStressTestToken("SELECT * FROM any_table INTO TABLE @DATA(lv_any).", 0, StressTestType.COLON);
+		assertNoStressTestToken("DATA: lv_any TYPE i.", 4, StressTestType.COLON);
+		assertNoStressTestToken("DATA lv_any TYPE i.", 4, StressTestType.PRAGMA);
+		
+		buildCommand("EXEC SQL." + SEP + " SQL." + SEP + "ENDEXEC.");
+		assertFalse(commands[1].insertStressTestTokenAt(0, StressTestType.COLON));
+	}
 }

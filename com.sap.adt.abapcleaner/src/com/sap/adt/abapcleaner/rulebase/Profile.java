@@ -205,8 +205,9 @@ public class Profile {
 			rulesToExecuteCount = rules.length;
 		else {
 			for (Rule rule : rules) {
-				if (rule.isActive)
+				if (rule.isActive) {
 					++rulesToExecuteCount;
+				}
 			}
 		}
 

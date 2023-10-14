@@ -263,6 +263,21 @@ class LogicalOperatorPositionTest extends RuleTestBase {
 		testRule();
 	}
 
+
+	@Test
+	void testKeepXsdBoolWithComment() {
+		// ensure that unlike "WHERE" or "UNTIL", the rule does NOT try to move "xsdbool(" to the next line
+		// because it opens a level and therefore can't be moved easily
+		buildSrc("    lv_any = xsdbool( \" comment");
+		buildSrc("               lv_any < lv_other ).");
+
+		copyExpFromSrc();
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
 	@Test
 	void testMoveBoolOpsKeepingKeyword() {
 		rule.configMoveKeyword.setValue(false);

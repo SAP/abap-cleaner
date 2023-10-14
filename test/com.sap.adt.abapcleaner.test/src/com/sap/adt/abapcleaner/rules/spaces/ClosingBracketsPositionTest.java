@@ -89,7 +89,8 @@ class ClosingBracketsPositionTest extends RuleTestBase {
 		buildSrc("    any_operation( iv_param = 1 \" comment");
 		buildSrc("                 ). \"#EC NEEDED");
 
-		copyExpFromSrc();
+		buildExp("    any_operation( iv_param = 1 ) \" comment");
+		buildExp("                 . \"#EC NEEDED");
 		
 		putAnyMethodAroundSrcAndExp();
 		
@@ -103,7 +104,8 @@ class ClosingBracketsPositionTest extends RuleTestBase {
 		buildSrc("    any_operation( iv_param = 1 \"#EC NEEDED");
 		buildSrc("                 ). \" comment");
 
-		copyExpFromSrc();
+		buildExp("    any_operation( iv_param = 1 ) \"#EC NEEDED");
+		buildExp("                 . \" comment");
 		
 		putAnyMethodAroundSrcAndExp();
 		
@@ -157,6 +159,19 @@ class ClosingBracketsPositionTest extends RuleTestBase {
 
 		buildExp("    any_method( EXPORTING iv_param1 = lv_value1");
 		buildExp("                IMPORTING ev_param2 = lv_param2 ) ##NEEDED. \" comment; conflicting comment");
+
+		testRule();
+	}
+
+	@Test
+	void testArithmeticExpr() {
+		buildSrc("    a = ( 1 + 2 \" comment");
+		buildSrc("        ) * (");
+		buildSrc("        3 + 4 ).");
+
+		buildExp("    a = ( 1 + 2 ) \" comment");
+		buildExp("        * (");
+		buildExp("        3 + 4 ).");
 
 		testRule();
 	}

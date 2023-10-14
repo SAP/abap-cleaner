@@ -512,4 +512,16 @@ class CalculationAssignmentTest extends RuleTestBase {
 		
 		testRule();
 	}
+
+	@Test
+	void testSimplifyParenthesisWithComment() {
+		// ensure that the superfluous parenthesis is removed correctly even with a comment in it
+		buildSrc("      lv_any = lv_any * ( \" comment");
+		buildSrc("                          -1 ).");
+
+		buildExp("      lv_any *= \" comment");
+		buildExp("                  -1.");
+
+		testRule();
+	}
 }

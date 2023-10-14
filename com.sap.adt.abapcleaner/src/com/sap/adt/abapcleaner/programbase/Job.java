@@ -17,6 +17,7 @@ public class Job implements ICancelable {
 	private final String batchDir;
 	private final String[] batchPaths;
 	// - for both single file and batch processing:
+	private final StressTestParams stressTestParams;
 	private final CleanupParams cleanupParams;
 
 	public final int getCodeTextLength() { return (parseParams == null) ? 0 : parseParams.codeText.length(); }
@@ -47,7 +48,7 @@ public class Job implements ICancelable {
 	public final JobProgress getInitialProgress() {
 		String sourceName = (parseParams == null) ? "" : parseParams.sourceName;
 		int bulkFileCount = (batchPaths == null) ? 0 : batchPaths.length;
-		return new JobProgress(sourceName, TaskType.NONE, 0.0, bulkFileCount, 0);
+		return new JobProgress(sourceName, TaskType.NONE, 0.0, 0, bulkFileCount, 0, 0);
 	}
 
 	public static Job createForSingleCodeDocument(ParseParams parseParams, CleanupParams cleanupParams) {
@@ -68,6 +69,7 @@ public class Job implements ICancelable {
 	 */
 	protected Job(ParseParams parseParams, CleanupParams cleanupParams) {
 		this.parseParams = parseParams;
+		this.stressTestParams = null; 
 		this.cleanupParams = cleanupParams;
 		
 		batchJob = null;
@@ -80,6 +82,7 @@ public class Job implements ICancelable {
 	 */
 	protected Job(IBatchJob batchJob, String batchDir, String[] batchPaths) {
 		this.parseParams = null;
+		this.stressTestParams = batchJob.getStressTestParams();
 		this.cleanupParams = batchJob.getCleanupParams();
 
 		this.batchJob = batchJob;
@@ -106,7 +109,7 @@ public class Job implements ICancelable {
 
 	private Task runSingleCodeDocument() {
 		Task task = createTask(parseParams);
-		task.run(cleanupParams);
+		task.run(stressTestParams, cleanupParams);
 		task.readAndFlushLog();
 		wasCancelled = task.wasCancelled();
 		return task;
@@ -131,7 +134,7 @@ public class Job implements ICancelable {
 			String sourceName = StringUtil.removeSuffix(path.substring(batchDir.length()), extension, true);
 
 			Task task = createTask(ParseParams.createForWholeCode(sourceName, sourceCode, ABAP.NEWEST_RELEASE), batchPathIndex, batchPaths.length);
-			task.run(batchJob.getCleanupParams(), true);
+			task.run(batchJob.getStressTestParams(), batchJob.getCleanupParams(), true);
 			task.readAndFlushLog();
 			if (task.wasCancelled()) {
 				wasCancelled = true; 

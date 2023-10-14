@@ -31,6 +31,7 @@ public class AbapKeywordFreqBatchJobTest {
 		createJob(true);
 		assertTrue(batchJob.getDescription().length() > 0);
 		assertTrue(batchJob.getTitle("info").length() > 0);
+		assertNull(batchJob.getStressTestParams());
 		assertEquals(null, batchJob.getCleanupParams());
 	}
 	
@@ -39,7 +40,7 @@ public class AbapKeywordFreqBatchJobTest {
 		JobDouble jobDouble = new JobDouble(0); 
 		ParseParams parseParams = ParseParams.createForWholeCode(sourceName, sourceCode, ABAP.NEWEST_RELEASE); 
 		Task task = Task.createForBatch(jobDouble, parseParams, 0, 2);
-		task.run(batchJob.getCleanupParams(), true);
+		task.run(null, batchJob.getCleanupParams(), true);
 
 		batchJob.addTaskResult(sourceCode, sourceName, task);
 	}

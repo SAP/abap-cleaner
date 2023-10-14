@@ -2,6 +2,9 @@ package com.sap.adt.abapcleaner.programbase;
 
 import java.time.*;
 
+import com.sap.adt.abapcleaner.base.Cult;
+import com.sap.adt.abapcleaner.base.StringUtil;
+
 /** 
  * <p>Base class for all exceptions to be caught and logged in the error {@link Log}, 
  * possibly after being enriched with the current {@link Rule} and rethrown.</p>
@@ -19,7 +22,7 @@ public abstract class ExceptionBase extends Throwable { // make this a checked e
    final LocalDateTime raiseTime;
    final String sourceName;
    final int sourceLineNum;
-
+   
    protected ExceptionBase(ExceptionSeverity severity, String sourceName, int sourceLineNum, String message) {
       super(message);
       this.raiseTime = LocalDateTime.now();
@@ -29,6 +32,20 @@ public abstract class ExceptionBase extends Throwable { // make this a checked e
    }
 
    public final void addToLog() {
-      Program.getLog().add(this);
+      Program.getLog().add(this, null);
+   }
+
+   public final void addToLog(String addMessage) {
+      Program.getLog().add(this, addMessage);
+   }
+   
+   public final String getLineAndMessage(String addMessage) {
+		String result = "";
+		if (sourceLineNum > 0)
+			result = "line " + Cult.format(sourceLineNum) + ": ";
+		result += getMessage();
+		if (!StringUtil.isNullOrEmpty(addMessage))
+			result += addMessage;
+		return result;
    }
 }

@@ -298,7 +298,6 @@ class ChainOfOneTest extends RuleTestBase {
 		
 		testRule();
 	}
-	
 
 	@Test
 	void testKeepColonInTypesEndOfAfterInclude() {
@@ -320,7 +319,6 @@ class ChainOfOneTest extends RuleTestBase {
 
 		testRule();
 	}
-	
 
 	@Test
 	void testKeepColonInTypesBeginOfBeforeInclude() {
@@ -339,6 +337,42 @@ class ChainOfOneTest extends RuleTestBase {
 		copyExpFromSrc();
 
 		putAnyClassDefAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testColonAfterCommentWithEmptyTry() {
+		buildSrc("      TRY.");
+		buildSrc("        CATCH \" comment");
+		buildSrc("             : cx_any.");
+		buildSrc("      ENDTRY.");
+
+		buildExp("      TRY.");
+		buildExp("        \" comment");
+		buildExp("        CATCH cx_any.");
+		buildExp("      ENDTRY.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testColonAfterComment() {
+		buildSrc("      TRY.");
+		buildSrc("          any_method( ).");
+		buildSrc("        CATCH \" comment");
+		buildSrc("             : cx_any.");
+		buildSrc("      ENDTRY.");
+
+		buildExp("      TRY.");
+		buildExp("          any_method( ).");
+		buildExp("        \" comment");
+		buildExp("        CATCH cx_any.");
+		buildExp("      ENDTRY.");
+
+		putAnyMethodAroundSrcAndExp();
 
 		testRule();
 	}
