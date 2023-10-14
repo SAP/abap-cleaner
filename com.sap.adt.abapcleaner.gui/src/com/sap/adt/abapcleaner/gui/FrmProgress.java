@@ -15,7 +15,7 @@ import org.eclipse.swt.events.SelectionEvent;
 import com.sap.adt.abapcleaner.programbase.*;
 
 public class FrmProgress {
-   private static final int UPDATE_INTERVAL_MS = 100;
+   private static final int UPDATE_INTERVAL_MS = 50;
 
    private BackgroundJob job;
 	private boolean result;

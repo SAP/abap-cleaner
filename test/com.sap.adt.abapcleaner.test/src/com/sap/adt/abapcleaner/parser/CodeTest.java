@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 
 import com.sap.adt.abapcleaner.base.ABAP;
 import com.sap.adt.abapcleaner.base.Language;
+import com.sap.adt.abapcleaner.base.StringUtil;
 import com.sap.adt.abapcleaner.programbase.IntegrityBrokenException;
 import com.sap.adt.abapcleaner.programbase.ParseException;
 import com.sap.adt.abapcleaner.programbase.TaskType;
@@ -1115,4 +1116,28 @@ public class CodeTest extends CodeTestBase {
 		
 		testParseCode();
 	}
+	
+	@Test
+	void testInsertStressTestToken() throws IntegrityBrokenException {
+		buildSrc("CLASS any_class IMPLEMENTATION.");
+		buildSrc("  METHOD any_method.");
+		buildSrc("    DATA lv_any TYPE i.");
+		buildSrc("  ENDMETHOD.");
+		buildSrc("ENDCLASS.");
+		
+		Code code = testParseCode();
+		boolean found = code.insertStressTestTokentAt(2, StressTestType.COLON);
+		
+		assertTrue(found);
+		String[] lines = StringUtil.split(code.toString(), ABAP.LINE_SEPARATOR, true);
+		assertEquals("CLASS any_class IMPLEMENTATION:.", lines[0]);
+		assertEquals("  METHOD any_method.", lines[1]);
+		assertEquals("    DATA lv_any TYPE: i.", lines[2]);
+		assertEquals("  ENDMETHOD.", lines[3]);
+		assertEquals("ENDCLASS.", lines[4]);
+		
+		found = code.insertStressTestTokentAt(10, StressTestType.COMMENT_LINE);
+		assertFalse(found);
+	}
+
 }

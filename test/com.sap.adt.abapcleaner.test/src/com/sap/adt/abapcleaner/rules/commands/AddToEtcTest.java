@@ -329,4 +329,201 @@ class AddToEtcTest extends RuleTestBase {
 		
 		testRule();
 	}
+
+	@Test
+	void testCommentAfterAddOrSubtract() {
+		// ensure referential integrity is not broken (regardless of layout)
+
+		buildSrc("    ADD \" comment");
+		buildSrc("       1 TO lv_value.");
+		buildSrc("    SUBTRACT \" comment");
+		buildSrc("       1 FROM cv_date.");
+
+		buildExp("    lv_value += \" comment");
+		buildExp("       1.");
+		buildExp("    cv_date -= \" comment");
+		buildExp("       1.");
+
+		testRule();
+	}
+
+	@Test
+	void testCommentAfterMultiplyOrDivide() {
+		// ensure the Commands are unchanged - otherwise, the comment would have to be moved up to an own command
+
+		buildSrc("    MULTIPLY \" comment");
+		buildSrc("       iv_value BY 2.");
+		buildSrc("    DIVIDE \" comment");
+		buildSrc("       iv_value BY 2.");
+
+		copyExpFromSrc();
+
+		testRule();
+	}
+
+	@Test
+	void testCommentAfterTerm() {
+		// ensure referential integrity is not broken (regardless of layout)
+
+		buildSrc("    ADD 1 \" comment");
+		buildSrc("       TO lv_value.");
+		buildSrc("    SUBTRACT 1 \" comment");
+		buildSrc("       FROM cv_date.");
+		buildSrc("    MULTIPLY iv_value \" comment");
+		buildSrc("       BY 2.");
+		buildSrc("    DIVIDE iv_value \" comment");
+		buildSrc("       BY 2.");
+
+		buildExp("    lv_value += 1 \" comment");
+		buildExp("       .");
+		buildExp("    cv_date -= 1 \" comment");
+		buildExp("       .");
+		buildExp("    iv_value \" comment");
+		buildExp("       *= 2.");
+		buildExp("    iv_value \" comment");
+		buildExp("       /= 2.");
+
+		testRule();
+	}
+
+	@Test
+	void testCommentAfterSecondKeyword() {
+		// ensure referential integrity is not broken (regardless of layout)
+
+		buildSrc("    ADD 1 TO \" comment");
+		buildSrc("       lv_value.");
+		buildSrc("    SUBTRACT 1 FROM \" comment");
+		buildSrc("       cv_date.");
+		buildSrc("    MULTIPLY iv_value BY \" comment");
+		buildSrc("       2.");
+		buildSrc("    DIVIDE iv_value BY \" comment");
+		buildSrc("       2.");
+
+		buildExp("    lv_value += 1 \" comment");
+		buildExp("       .");
+		buildExp("    cv_date -= 1 \" comment");
+		buildExp("       .");
+		buildExp("    iv_value *= \" comment");
+		buildExp("       2.");
+		buildExp("    iv_value /= \" comment");
+		buildExp("       2.");
+
+		testRule();
+	}
+
+	@Test
+	void testCommentAfterDestVariable() {
+		// ensure referential integrity is not broken (regardless of layout)
+
+		buildSrc("    ADD 1 TO lv_value \" comment");
+		buildSrc("      .");
+		buildSrc("    SUBTRACT 1 FROM cv_date \" comment");
+		buildSrc("      .");
+		buildSrc("    MULTIPLY iv_value BY 2 \" comment");
+		buildSrc("      .");
+		buildSrc("    DIVIDE iv_value BY 2 \" comment");
+		buildSrc("      .");
+
+		buildExp("    lv_value += 1 \" comment");
+		buildExp("      .");
+		buildExp("    cv_date -= 1 \" comment");
+		buildExp("      .");
+		buildExp("    iv_value *= 2 \" comment");
+		buildExp("      .");
+		buildExp("    iv_value /= 2 \" comment");
+		buildExp("      .");
+
+		testRule();
+	}
+
+	@Test
+	void testCommentsAfter() {
+		// ensure referential integrity is not broken (regardless of layout)
+
+		buildSrc("    ADD \" comment");
+		buildSrc("       1 \" comment");
+		buildSrc("        TO \" comment");
+		buildSrc("        lv_value.");
+		buildSrc("    SUBTRACT \" comment");
+		buildSrc("       1 \" comment");
+		buildSrc("        FROM \" comment");
+		buildSrc("        cv_date.");
+		buildSrc("    MULTIPLY iv_value \" comment");
+		buildSrc("        BY \" comment");
+		buildSrc("        2.");
+		buildSrc("    DIVIDE iv_value \" comment");
+		buildSrc("        BY \" comment");
+		buildSrc("        2.");
+
+		buildExp("    lv_value += \" comment");
+		buildExp("       1 \" comment");
+		buildExp("        \" comment");
+		buildExp("        .");
+		buildExp("    cv_date -= \" comment");
+		buildExp("       1 \" comment");
+		buildExp("        \" comment");
+		buildExp("        .");
+		buildExp("    iv_value \" comment");
+		buildExp("        *= \" comment");
+		buildExp("        2.");
+		buildExp("    iv_value \" comment");
+		buildExp("        /= \" comment");
+		buildExp("        2.");
+
+		testRule();
+	}
+
+	@Test
+	void testCommentAfterPeriod() {
+		// ensure referential integrity is not broken (regardless of layout)
+
+		buildSrc("    ADD 1 TO lv_value. \" comment");
+		buildSrc("    SUBTRACT 1 FROM cv_date. \" comment");
+		buildSrc("    MULTIPLY iv_value BY 2. \" comment");
+		buildSrc("    DIVIDE iv_value BY 2. \" comment");
+
+		buildExp("    lv_value += 1. \" comment");
+		buildExp("    cv_date -= 1. \" comment");
+		buildExp("    iv_value *= 2. \" comment");
+		buildExp("    iv_value /= 2. \" comment");
+
+		testRule();
+	}
+
+	@Test
+	void testCommentsEverywhere() {
+		// ensure referential integrity is not broken (regardless of layout)
+
+		buildSrc("    ADD \" comment");
+		buildSrc("        1 \" comment");
+		buildSrc("        TO \" comment");
+		buildSrc("        lv_value. \" comment");
+		buildSrc("    SUBTRACT \" comment");
+		buildSrc("        1 \" comment");
+		buildSrc("        FROM \" comment");
+		buildSrc("        cv_date. \" comment");
+		buildSrc("    MULTIPLY iv_value \" comment");
+		buildSrc("        BY \" comment");
+		buildSrc("        2. \" comment");
+		buildSrc("    DIVIDE iv_value \" comment");
+		buildSrc("        BY \" comment");
+		buildSrc("        2. \" comment");
+
+		buildExp("    lv_value += \" comment");
+		buildExp("        1 \" comment");
+		buildExp("        \" comment");
+		buildExp("        . \" comment");
+		buildExp("    cv_date -= \" comment");
+		buildExp("        1 \" comment");
+		buildExp("        \" comment");
+		buildExp("        . \" comment");
+		buildExp("    iv_value \" comment");
+		buildExp("        *= \" comment");
+		buildExp("        2. \" comment");
+		buildExp("    iv_value \" comment");
+		buildExp("        /= \" comment");
+		buildExp("        2. \" comment");
+
+		testRule();
+	}
 }

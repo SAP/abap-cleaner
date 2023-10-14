@@ -154,12 +154,12 @@ public class MoveToRule extends RuleForCommands {
 
 		// determine involved tokens: MOVE, EXACT, (term), TO or ?TO, (destination variable)
 		Token moveToken = firstToken;
-		Token termStart = moveToken.getNext();
+		Token termStart = moveToken.getNextCodeToken();
 
 		Token exactToken = null;
 		if (termStart.isKeyword("EXACT")) {
 			exactToken = termStart;
-			termStart = exactToken.getNext();
+			termStart = exactToken.getNextCodeToken();
 		} 
 
 		Term term;
@@ -170,8 +170,8 @@ public class MoveToRule extends RuleForCommands {
 		}
 		int termPos = term.firstToken.getStartIndexInLine();
 		
-		Token toToken = term.getNext();
-		Token destVariable = toToken.getNext();
+		Token toToken = term.getNextCodeToken();
+		Token destVariable = toToken.getNextCodeToken();
 
 		// insert the destination variable and the assignment operator ("=" or "?=") before "MOVE"
 		destVariable.removeFromCommand();

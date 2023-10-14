@@ -2,6 +2,7 @@ package com.sap.adt.abapcleaner.gui;
 
 import java.io.IOException;
 import java.io.PrintStream;
+import java.time.LocalDateTime;
 import java.util.*;
 import org.eclipse.wb.swt.SWTResourceManager;
 import org.eclipse.core.runtime.Platform;
@@ -724,7 +725,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 				testDirectory(new CleanupBatchJob(CleanupParams.createForProfile(curProfile, false, ABAP.NO_RELEASE_RESTRICTION)));
 			}
 		});
-		mmuExtrasTestActiveRulesOnFolder .setText("Test Active Rules on All Files in &Folder...");
+		mmuExtrasTestActiveRulesOnFolder.setText("Test Active Rules on All Files in &Folder...");
 
 		MenuItem mmuExtrasTestAllRulesOnFolder = new MenuItem(menuExtras, SWT.NONE);
 		mmuExtrasTestAllRulesOnFolder.addSelectionListener(new SelectionAdapter() {
@@ -734,6 +735,48 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 			}
 		});
 		mmuExtrasTestAllRulesOnFolder.setText("Test All Rules on All Files in &Folder...");
+
+		MenuItem mmuExtrasStressTestAllRulesOnFolder = new MenuItem(menuExtras, SWT.CASCADE);
+		mmuExtrasStressTestAllRulesOnFolder.setText("Stress-Test All Rules on All Files in Folder...");
+
+		Menu menuExtrasStressTestAllRulesOnFolder = new Menu(shell, SWT.DROP_DOWN);
+		mmuExtrasStressTestAllRulesOnFolder.setMenu(menuExtrasStressTestAllRulesOnFolder);
+		
+		MenuItem mmuExtrasStressTestAllRulesOnFolder4 = new MenuItem(menuExtrasStressTestAllRulesOnFolder, SWT.PUSH);
+		mmuExtrasStressTestAllRulesOnFolder4.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				testDirectory(new CleanupBatchJob(CleanupParams.createForProfile(curProfile, true, ABAP.NO_RELEASE_RESTRICTION), StressTestParams.create(0, 3, StressTestType.getAll())));
+			}
+		});
+		mmuExtrasStressTestAllRulesOnFolder4.setText("Insert Comment/Pragma/Colon After Token 0..3");
+
+		MenuItem mmuExtrasStressTestAllRulesOnFolder8 = new MenuItem(menuExtrasStressTestAllRulesOnFolder, SWT.PUSH);
+		mmuExtrasStressTestAllRulesOnFolder8.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				testDirectory(new CleanupBatchJob(CleanupParams.createForProfile(curProfile, true, ABAP.NO_RELEASE_RESTRICTION), StressTestParams.create(0, 7, StressTestType.getAll())));
+			}
+		});
+		mmuExtrasStressTestAllRulesOnFolder8.setText("Insert Comment/Pragma/Colon After Token 0..7");
+
+		MenuItem mmuExtrasStressTestAllRulesOnFolder16 = new MenuItem(menuExtrasStressTestAllRulesOnFolder, SWT.PUSH);
+		mmuExtrasStressTestAllRulesOnFolder16.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				testDirectory(new CleanupBatchJob(CleanupParams.createForProfile(curProfile, true, ABAP.NO_RELEASE_RESTRICTION), StressTestParams.create(0, 15, StressTestType.getAll())));
+			}
+		});
+		mmuExtrasStressTestAllRulesOnFolder16.setText("Insert Comment/Pragma/Colon After Token 0..15");
+
+		MenuItem mmuExtrasStressTestAllRulesOnFolder32 = new MenuItem(menuExtrasStressTestAllRulesOnFolder, SWT.PUSH);
+		mmuExtrasStressTestAllRulesOnFolder32.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				testDirectory(new CleanupBatchJob(CleanupParams.createForProfile(curProfile, true, ABAP.NO_RELEASE_RESTRICTION), StressTestParams.create(0, 31, StressTestType.getAll())));
+			}
+		});
+		mmuExtrasStressTestAllRulesOnFolder32.setText("Insert Comment/Pragma/Colon After Token 0..31");
 
 		new MenuItem(menuExtras, SWT.SEPARATOR);
 
@@ -1548,8 +1591,19 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		frmProgress.open(job);
 		detailedResult.append(job.getBatchDetails());
 
-		SystemClipboard.setText(detailedResult.toString());
-		String summary = job.getBatchSummary() + System.lineSeparator() + "Details were copied to the clipboard.";
+		Persistency persistency = Persistency.get();
+		String fileName = Program.PRODUCT_NAME + " testDirectory " + Cult.getReverseDateTime(LocalDateTime.now(), true) + ".txt";
+		String path = persistency.combinePaths(persistency.getTempDir(), fileName);
+		persistency.writeAllTextToFile(path, detailedResult.toString());
+
+		String clipInfo = "Details were saved to '" + path + "'";
+		try {
+			SystemClipboard.setText(detailedResult.toString());
+			clipInfo += " and copied to the clipboard.";
+		} catch(IllegalStateException ex) { 
+			// cannot open system clipboard
+		}
+		String summary = job.getBatchSummary() + System.lineSeparator() + clipInfo;
 		Message.show(summary, title);
 	}
 

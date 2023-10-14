@@ -6,6 +6,7 @@ import com.sap.adt.abapcleaner.programbase.*;
 import com.sap.adt.abapcleaner.rulebase.Rule;
 import com.sap.adt.abapcleaner.rulebase.RuleID;
 
+import java.security.InvalidParameterException;
 import java.util.*;
 
 /**
@@ -884,6 +885,12 @@ public class Token {
 		
 		int oldStartIndex = moveFollowingLinesRight ? getStartIndexInLine() : 0; // save performance if information is not needed below
 
+		// ensure newToken is not placed behind a comment
+		if (prev != null && prev.isComment() && newToken.lineBreaks == 0 && lineBreaks > 0) {
+			newToken.copyWhitespaceFrom(this);
+			this.setWhitespace();
+		}
+		
 		++parentCommand.tokenCount;
 
 		newToken.parentCommand = parentCommand;
@@ -917,6 +924,22 @@ public class Token {
 			parentCommand.testReferentialIntegrity(true);
 		
 		return newToken;
+	}
+
+	/**
+	 * inserts the supplied Token as the next sibling, or first child after this Token
+	 * 
+	 * @param newToken
+	 * @throws IntegrityBrokenException 
+	 */
+	public final Token insertNext(Token newToken) throws IntegrityBrokenException {
+		if (!opensLevel) {
+			return insertRightSibling(newToken, false);
+		} else if (hasChildren()) {
+			return firstChild.insertLeftSibling(newToken);
+		} else {
+			return insertFirstChild(newToken);
+		}
 	}
 
 	/**
@@ -1753,8 +1776,10 @@ public class Token {
 				else 
 					return MemoryAccessType.WRITE;
 			}
-		} else if (prevToken == null) { 
-			// avoid having to check prevToken == null in the rest of the method
+		} 
+
+		// avoid having to check prevToken == null in the rest of the method
+		if (prevToken == null) { 
 			return MemoryAccessType.NONE;
 		}
 
@@ -2418,4 +2443,93 @@ public class Token {
 		}
 		return token;
 	}
+	
+	public boolean canInsertStressTestTokenAfter(StressTestType stressTestType) {
+		// nothing can be inserted between attached tokens like DATA(lv_any) or lv_text+5(lv_length)
+		if (next != null && next.isAttached() && !next.isCommaOrPeriod() && !next.isChainColon())
+			return false;
+
+		switch(stressTestType) {
+			case LINE_END_COMMENT:
+				return !isComment() && (next == null || !next.isCommentAfterCode());
+
+			case COMMENT_LINE:
+				return (next != null) && !next.isCommentAfterCode();
+			
+			case PRAGMA:
+				return !isComment() && !isPeriod();
+
+			case COLON:
+				return !isComment() && !isPeriod() && (next != null);
+
+			default:
+				throw new InvalidParameterException();
+		}
+		
+	}
+	
+	public boolean insertStressTestTokenAfter(StressTestType stressTestType) throws IntegrityBrokenException {
+		if (!canInsertStressTestTokenAfter(stressTestType))
+			return false;
+		
+		Token newToken;
+		boolean isNewComment = false;
+		switch(stressTestType) {
+			case LINE_END_COMMENT:
+				newToken = Token.createForAbap(0, 1, ABAP.COMMENT_SIGN_STRING + " test", sourceLineNum);
+				isNewComment = true;
+				break;
+			case COMMENT_LINE:
+				newToken = Token.createForAbap(1, 0, ABAP.LINE_COMMENT_SIGN_STRING + " test", sourceLineNum);
+				isNewComment = true;
+				break;
+			case PRAGMA:
+				newToken = Token.createForAbap(0, 1, ABAP.PRAGMA_SIGN + "PRAGMA", sourceLineNum); 
+				break;
+			case COLON:
+				newToken = Token.createForAbap(0, 0, ABAP.COLON_SIGN_STRING, sourceLineNum); 
+				break;
+			default:
+				throw new InvalidParameterException();
+		}
+												 
+		if (isNewComment && next != null && next.lineBreaks == 0)
+			next.setWhitespace(1, next.getStartIndexInLine());
+
+		if (opensLevel) {
+			if (firstChild == null) {
+				insertFirstChild(newToken);
+			} else {
+				firstChild.insertLeftSibling(newToken);
+			}
+		} else if (next == null || next.closesLevel) {
+			insertRightSibling(newToken);
+		} else {
+			next.insertLeftSibling(newToken);
+		}
+		return true;
+	}
+
+	private Token insertFirstChild(Token newToken) throws IntegrityBrokenException {
+		if (firstChild != null)
+			throw new IntegrityBrokenException(this, "child token already exists");
+		
+		newToken.parentCommand = parentCommand;
+		newToken.parent = this;
+		newToken.prev = this;
+		newToken.next = next;
+		newToken.prevSibling = null;
+		newToken.nextSibling = null;
+
+		if (next != null) 
+			next.prev = newToken;
+		next = newToken;
+		firstChild = newToken;
+		lastChild = newToken;
+
+		parentCommand.onTokenInserted(newToken);
+		parentCommand.testReferentialIntegrity(true);
+		return newToken;
+	}
+
 }

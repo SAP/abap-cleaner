@@ -1941,4 +1941,27 @@ class UnusedVariablesTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testCommentLineAndLevelCloserBeforeData() {
+		// ensure that the comment is put in a valid place, esp. that it is not inserted as the left 'sibling' 
+		// of the closing parenthesis 
+
+		buildSrc("    LOOP AT get_data(");
+		buildSrc("* comment");
+		buildSrc("                      ) INTO DATA(ls_any).");
+		buildSrc("");
+		buildSrc("    ENDLOOP.");
+
+		buildExp("    \" TODO: variable is assigned but never used (ABAP cleaner)");
+		buildExp("    LOOP AT get_data(");
+		buildExp("* comment");
+		buildExp("                      ) INTO DATA(ls_any).");
+		buildExp("");
+		buildExp("    ENDLOOP.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }

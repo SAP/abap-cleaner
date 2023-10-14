@@ -191,6 +191,8 @@ public class PragmaPositionRule extends Rule {
 			}
 			if ((next.isCommaOrPeriod() || next.isChainColon()) && next.isLastTokenInLineExceptComment()) {
 				return false;
+			} else if (next.isCommentAfterCode()) {
+				return false;
 			} else {
 				return moveToLineEnd(token);
 			}
@@ -242,7 +244,7 @@ public class PragmaPositionRule extends Rule {
 			return false;
 		token.removeFromCommand();
 		token.setWhitespace();
-		insertAfter.insertRightSibling(token);
+		insertAfter.insertNext(token);
 		return true;
 	}
 

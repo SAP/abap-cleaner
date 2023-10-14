@@ -151,8 +151,9 @@ public class LogicalExpression {
 					break;
 				token = token.getNextCodeSibling();
 			}
-			if (start != end)
+			if (start != end) {
 				addInnerExpression(start, end.getPrevCodeToken());
+			}
 			relExprType = RelationalExpressionType.NONE;
 
 		} else {

@@ -211,4 +211,29 @@ class MoveToTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testComments() {
+		// ensure referential integrity is not broken (regardless of layout)
+
+		buildSrc("    MOVE \" comment");
+		buildSrc("         1 TO lv_any.");
+		buildSrc("    MOVE 1 \" comment");
+		buildSrc("         TO lv_any.");
+		buildSrc("    MOVE 1 TO \" comment");
+		buildSrc("         lv_any.");
+		buildSrc("    MOVE 1 TO lv_any \" comment");
+		buildSrc("        .");
+
+		buildExp("    lv_any = \" comment");
+		buildExp("         1.");
+		buildExp("    lv_any = 1 \" comment");
+		buildExp("         .");
+		buildExp("    lv_any = 1 \" comment");
+		buildExp("         .");
+		buildExp("    lv_any = 1 \" comment");
+		buildExp("        .");
+
+		testRule();
+	}
 }

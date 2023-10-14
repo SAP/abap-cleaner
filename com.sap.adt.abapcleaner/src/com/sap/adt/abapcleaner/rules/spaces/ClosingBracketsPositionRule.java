@@ -85,17 +85,17 @@ public class ClosingBracketsPositionRule extends RuleForCommands {
 				continue;
 			}
 
-			Token lineEndToken = token;
-			while (lineEndToken.getNext() != null && lineEndToken.getNext().lineBreaks == 0) {
-				lineEndToken = lineEndToken.getNext();
-			}
-
-			if (token.getPrev().isCommentAfterCode() && lineEndToken.isCommentAfterCode()
-					&& (token.getPrev().isPseudoComment() || lineEndToken.isPseudoComment())) {
-				// merging comments is NOT possible if the second one is a pseudo-comment "#EC ...;
-				// if the first one is, we could merge with a space as a separator (see below), but we rather don't do this
-				token = token.getNext();
-				continue;
+			// if the next token is a line-end comment, set 'comment2' 
+			Token comment2 = null;
+			if (token.getNext() != null && token.getNext().lineBreaks == 0 && token.getNext().isComment()) {
+				comment2 = token.getNext();
+				if (token.getPrev().isCommentAfterCode() && comment2.isCommentAfterCode()
+						&& (token.getPrev().isPseudoComment() || comment2.isPseudoComment())) {
+					// merging comments is NOT possible if the second one is a pseudo-comment "#EC ...;
+					// if the first one is, we could merge with a space as a separator (see below), but we rather don't do this
+					token = token.getNext();
+					continue;
+				}
 			}
 			
 			// move the next token to the bracket's current position; however, move the final line-end comment up with the period // TODO: possibly depending on line length?
@@ -118,18 +118,18 @@ public class ClosingBracketsPositionRule extends RuleForCommands {
 			if (token.getPrev().isCommentAfterCode()) {
 				// the line-end comment changes its level (and therefore its siblings) when a bracket is moved up,
 				// therefore remove and insert the comment, NOT the bracket (otherwise, referential integrity is broken)
-				Token prev = token.getPrev();
-				boolean prevIsPseudoComment = prev.isPseudoComment();
-				int newSpacesLeft = Math.max(prev.spacesLeft - token.spacesLeft - token.getTextLength(), 1);
-				prev.removeFromCommand();
-				prev.spacesLeft = newSpacesLeft;
-				if (lineEndToken.isComment()) {
-					// merge comments
-					String commentWithoutSign = StringUtil.trimStart(lineEndToken.getText().substring(ABAP.COMMENT_SIGN_STRING.length()));
-					String separator = prevIsPseudoComment ? " " : "; ";
-					lineEndToken.setText(StringUtil.trimEnd(prev.getText()) + separator + commentWithoutSign, false);
+				Token comment = token.getPrev();
+				boolean prevIsPseudoComment = comment.isPseudoComment();
+				int newSpacesLeft = Math.max(comment.spacesLeft - token.spacesLeft - token.getTextLength(), 1);
+				comment.removeFromCommand();
+				comment.spacesLeft = newSpacesLeft;
+				if (comment2 == null) {
+					token.insertRightSibling(comment);
 				} else {
-					lineEndToken.insertRightSibling(prev);
+					// merge comments
+					String commentWithoutSign = StringUtil.trimStart(comment2.getText().substring(ABAP.COMMENT_SIGN_STRING.length()));
+					String separator = prevIsPseudoComment ? " " : "; ";
+					comment2.setText(StringUtil.trimEnd(comment.getText()) + separator + commentWithoutSign, false);
 				}
 			}
 			// pragmas must be moved behind closing brackets (but stay in front of the period), e.g. "IMPORTING ev_param2 = lv_param2 ) ##NEEDED."

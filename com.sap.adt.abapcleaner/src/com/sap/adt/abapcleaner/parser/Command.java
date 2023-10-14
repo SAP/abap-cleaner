@@ -1251,7 +1251,7 @@ public class Command {
 			} catch (ParseException e) {
 				throw new UnexpectedSyntaxAfterChanges(null, commentLine, "parse error splitting out leading comment line");
 			}
-			insertLeftSibling(newCommand);
+			insertPrev(newCommand);
 			if (!newCommand.isAsteriskCommentLine())
 				newCommand.firstToken.spacesLeft = newCommand.getIndent();
 			splitOut = true;
@@ -1289,7 +1289,7 @@ public class Command {
 				throw new UnexpectedSyntaxAfterChanges(null, useOriginalCommand, "parse error in extracted comment");
 			}
 
-			insertLeftSibling(newCommentCommand);
+			insertPrev(newCommentCommand);
 			if (firstToken.lineBreaks > 1)
 				firstToken.lineBreaks = 1;
 
@@ -1429,6 +1429,26 @@ public class Command {
 	}
 
 	/**
+	 * inserts the supplied Command as the previous Command; if this Command closes a level, the new Command is inserted
+	 * as the last child of the previous sibling
+	 * 
+	 * @param newCommand
+	 */
+	public final void insertPrev(Command newCommand) throws IntegrityBrokenException {
+		if (!getClosesLevel()) {
+			insertLeftSibling(newCommand);
+		} else if (prevSibling.hasChildren()) {
+			prevSibling.lastChild.insertRightSibling(newCommand);
+		} else {
+			try {
+				prevSibling.insertFirstChild(newCommand);
+			} catch (UnexpectedSyntaxException e) {
+				throw new IntegrityBrokenException(newCommand, e.getMessage());
+			}
+		}
+	}
+
+	/**
 	 * inserts the supplied Command (including its possible children) as a sibling before this Command
 	 * 
 	 * @param newCommand
@@ -1438,6 +1458,8 @@ public class Command {
 			throw new NullPointerException("newCommand");
 		if (newCommand.hasChildren())
 			throw new IntegrityBrokenException(this, "Inserting a sibling which has child commands is not supported!");
+		if (getClosesLevel())
+			throw new IntegrityBrokenException(this, "cannot insert a left sibling to a command that closes a level");
 
 		++parentCode.commandCount;
 
@@ -1612,6 +1634,10 @@ public class Command {
 			throw new UnexpectedSyntaxException(this, "the token instance '" + token.text + "' is not part of this command!");
 
 		Token firstInLine = token.getFirstTokenInLine();
+		// in rare cases, move further lines up, e.g. three lines "LOOP AT get_data(", "* comment", ") INTO DATA(ls_any)."
+		while ((firstInLine.closesLevel() || firstInLine.isCommentLine()) && firstInLine.getPrev() != null) {
+			firstInLine = firstInLine.getPrev().getFirstTokenInLine();
+		}
 		String insertText = ABAP.COMMENT_SIGN_STRING + " " + commentText.trim();
 		Token newComment = Token.create(firstInLine.lineBreaks, firstInLine.spacesLeft, insertText, firstInLine.sourceLineNum, language);
 		firstInLine.lineBreaks = 1;
@@ -2791,6 +2817,37 @@ public class Command {
 		return (token != null && token.getParent() != null);
 	}
 
+	public final boolean insertStressTestTokenAt(int tokenIndex, StressTestType stressTestType) throws IntegrityBrokenException {
+		if (!isAbap())
+			return false;
+
+		// if chain colon shall be inserted, this can be done
+		// - anywhere if no chain colon exists in the Command (thus creating a "chain of one"), or otherwise
+		// - somewhere after an existing one chain colon (so the new chain colon has no effect on the chain)
+		// - but never in ABAP SQL Commands like SELECT, UPDATE, WITH etc. (in which "," has a different meaning)
+		Token token = firstToken;
+		if (stressTestType == StressTestType.COLON) {
+			if (isAbapSqlOperation() && !firstCodeTokenIsAnyKeyword("INSERT", "DELETE", "MODIFY"))
+				return false;
+			token = token.getLastTokenDeep(true, TokenSearch.ASTERISK, ":");
+			if (token == null) {
+				token = firstToken;
+			}
+		}
+		
+		int index = 0;
+		while (token != null) {
+			boolean canInsert = token.canInsertStressTestTokenAfter(stressTestType); 
+			if (canInsert) {
+				if (index >= tokenIndex && token.insertStressTestTokenAfter(stressTestType)) 
+					return true;
+				++index;
+			}
+			token = token.getNext();
+		}
+		return false;
+	}
+	
 	/** Returns true if the Command matches a hard-coded pattern or condition.
 	 * This method can be used during development to search for examples in all sample code files. */
 	public final boolean matchesPattern() {

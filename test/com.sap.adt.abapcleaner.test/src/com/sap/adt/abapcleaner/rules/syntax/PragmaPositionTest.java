@@ -367,4 +367,43 @@ public class PragmaPositionTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testTwoPragmasAndCommentAtLineEnd() {
+		// ensure that the test terminates
+		
+		buildSrc("    a ##PRAGMA1 ##PRAGMA2 = \" comment");
+		buildSrc("        1.");
+
+		buildExp("    a = ##PRAGMA1 ##PRAGMA2 \" comment");
+		buildExp("        1.");
+
+		testRule();
+	}
+
+	@Test
+	void testLevelOpenerAtLineEnd() {
+		// ensure that the pragma is added as the (first) child of the level opening Token at line end
+		buildSrc("    DATA(lv_any) ##NEEDED = get_value(");
+		buildSrc("        iv_param = 1 ).");
+		buildSrc("    DATA(lv_any) ##NEEDED = get_value(");
+		buildSrc("        ).");
+		buildSrc("    DATA(lv_any) ##NEEDED = get_value( \" comment");
+		buildSrc("        iv_param = 1 ).");
+		buildSrc("    DATA(lv_any) ##NEEDED = get_value( \" comment");
+		buildSrc("        ).");
+
+		buildExp("    DATA(lv_any) = get_value( ##NEEDED");
+		buildExp("        iv_param = 1 ).");
+		buildExp("    DATA(lv_any) = get_value( ##NEEDED");
+		buildExp("        ).");
+		buildExp("    DATA(lv_any) = get_value( ##NEEDED \" comment");
+		buildExp("        iv_param = 1 ).");
+		buildExp("    DATA(lv_any) = get_value( ##NEEDED \" comment");
+		buildExp("        ).");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }

@@ -7,6 +7,8 @@ import org.junit.jupiter.api.Test;
 
 import com.sap.adt.abapcleaner.base.ABAP;
 import com.sap.adt.abapcleaner.parser.ParseParams;
+import com.sap.adt.abapcleaner.parser.StressTestParams;
+import com.sap.adt.abapcleaner.parser.StressTestType;
 import com.sap.adt.abapcleaner.programbase.JobDouble;
 import com.sap.adt.abapcleaner.programbase.Program;
 import com.sap.adt.abapcleaner.programbase.Task;
@@ -24,11 +26,16 @@ public class TaskTest {
 	}
 
 	Task runTask(int callsUntilCancellationPending, String code) {
+		return runTask(callsUntilCancellationPending, code, false);
+	}
+	
+	Task runTask(int callsUntilCancellationPending, String code, boolean withStressTest) {
 		String sourceCode = "method any_method." + LINE_SEP + code + LINE_SEP + "endmethod.";
 		JobDouble jobDouble = new JobDouble(callsUntilCancellationPending); 
-		ParseParams parseParams = ParseParams.createForWholeCode("anyName", sourceCode, ABAP.NEWEST_RELEASE); 
+		ParseParams parseParams = ParseParams.createForWholeCode("anyName", sourceCode, ABAP.NEWEST_RELEASE);
+		StressTestParams stressTestParams = withStressTest ? StressTestParams.create(3, 5, StressTestType.getAll()) : null;
 		Task task = Task.createForBatch(jobDouble, parseParams, 0, 2);
-		task.run(cleanupParams, true);
+		task.run(stressTestParams, cleanupParams, true);
 		return task;
 	}
 	
@@ -134,4 +141,42 @@ public class TaskTest {
 
 		assertFalse(task.getSuccess());
 	}
+
+	@Test
+	void testCleanupWithStressTest() {
+		Task task = runTask(0, "do 5 times." + LINE_SEP + "a += 1." + LINE_SEP + "enddo.", true);
+		
+		assertFalse(task.wasCancelled());
+		assertNotNull(task.getResultingCode());
+		assertNull(task.getResultingDiffDoc());
+		assertEquals(null, task.getParseCheckErrorsInTestMode());
+		
+		assertEquals(5, task.getLineCountInCleanupRange());
+		assertTrue(task.getAppliedRuleCount() >= 0);
+		assertEquals(0, task.getChangedLineCount());
+
+		assertEquals(null, task.getParseError());
+		assertEquals(null, task.getCleanupError());
+		assertEquals(null, task.getCompareError());
+		assertEquals(null, task.getIntegrityTestError());
+		assertEquals("", task.getErrorMessage());
+		
+		assertTrue(task.getParseTimeMs() >= 0);
+		assertTrue(task.getCleanupTimeMs() >= 0);
+		// ignore compare time
+		assertTrue(task.getIntegrityTestTimeMs() >= 0);
+
+		assertTrue(task.getParseSuccess());
+		assertTrue(task.getCleanupSuccess(false));
+		assertTrue(task.getCleanupSuccess(true));
+		assertTrue(task.getCompareSuccess());
+		assertTrue(task.getIntegrityTestSuccess());
+		assertTrue(task.getSuccess());
+		
+		assertNull(task.getLogSummary());
+		assertNull(task.getLogText());
+		
+		assertTrue(task.getCalculationTimeInfo().length() > 0);
+	}
+
 }

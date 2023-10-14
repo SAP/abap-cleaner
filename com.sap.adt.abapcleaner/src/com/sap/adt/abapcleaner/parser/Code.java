@@ -596,5 +596,17 @@ public class Code {
 			command = command.getNext();
 		}
 		return null;
+	} 
+
+	public final boolean insertStressTestTokentAt(int tokenIndex, StressTestType stressTestType) throws IntegrityBrokenException {
+		Command command = firstCommand;
+		boolean found = false;
+		while (command != null) {
+			if (command.insertStressTestTokenAt(tokenIndex, stressTestType)) {
+				found = true;
+			}
+			command = command.getNext();
+		}
+		return found;
 	}
 }

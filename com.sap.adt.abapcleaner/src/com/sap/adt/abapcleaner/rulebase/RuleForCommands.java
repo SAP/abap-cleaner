@@ -33,8 +33,9 @@ public abstract class RuleForCommands extends Rule {
 			
 			if (!isCommandBlocked(command) && (!skipInsideBeginOf || blockLevel == 0)) {
 				try {
-					if (executeOn(code, command, releaseRestriction))
+					if (executeOn(code, command, releaseRestriction)) {
 						code.addRuleUse(this, command);
+					}
 				} catch (UnexpectedSyntaxBeforeChanges ex) {
 					// log the error and continue with next command
 					ex.addToLog();

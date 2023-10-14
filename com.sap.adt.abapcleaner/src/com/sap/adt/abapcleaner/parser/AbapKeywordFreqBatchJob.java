@@ -23,6 +23,11 @@ public class AbapKeywordFreqBatchJob implements IBatchJob {
 	}
 
 	@Override
+	public StressTestParams getStressTestParams() { 
+		return null; 
+	}
+
+	@Override
 	public CleanupParams getCleanupParams() { 
 		return null; 
 	}
@@ -56,4 +61,5 @@ public class AbapKeywordFreqBatchJob implements IBatchJob {
 	public String getDetails() { 
 		return codeMetrics.getKeywordMetricsDetails(); 
 	}
+
 }

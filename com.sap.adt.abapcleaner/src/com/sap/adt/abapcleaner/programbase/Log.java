@@ -22,12 +22,19 @@ public class Log {
 		this.path = path;
 	}
 
-	final void add(ExceptionBase ex) {
+	final void add(ExceptionBase ex, String addMessage) {
+		// do NOT log unexpected syntax before changes, because this may simply be caused by a comment in an unsupported place,  
+		// e.g. at the beginning of a Term
+		if (ex instanceof UnexpectedSyntaxBeforeChanges)
+			return;
+		
 		text.append(Cult.getReverseDateTime(ex.raiseTime, true));
 		text.append(" " + ex.sourceName);
 		// the Rule name is already provided in ex.getMessage()
 		text.append(", line " + Cult.format(ex.sourceLineNum));
 		text.append(": " + ex.getMessage());
+		if (!StringUtil.isNullOrEmpty(addMessage))
+			text.append(addMessage);
 		text.append(System.lineSeparator());
 		++countOfSeverities[ex.severity.getValue()];
 		++entryCount;

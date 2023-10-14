@@ -194,4 +194,35 @@ class CreateObjectTest extends RuleTestBase {
 		testRule();
 	}
 
+
+	@Test
+	void testCommentAfterIdentifierOrType() {
+		// ensure integrity is not broken if a comment is in a weird place
+		
+		buildSrc("    CREATE OBJECT lo_instance \" comment");
+		buildSrc("       TYPE cl_any.");
+		buildSrc("    CREATE OBJECT lo_instance \" comment");
+		buildSrc("       TYPE cl_any");
+		buildSrc("         EXPORTING iv_any = 1.");
+		buildSrc("");
+		buildSrc("    CREATE OBJECT lo_instance TYPE \" comment");
+		buildSrc("       cl_any.");
+		buildSrc("    CREATE OBJECT lo_instance TYPE \" comment");
+		buildSrc("       cl_any");
+		buildSrc("         EXPORTING iv_any = 1.");
+
+		buildExp("    lo_instance \" comment");
+		buildExp("       = NEW cl_any( ).");
+		buildExp("    lo_instance \" comment");
+		buildExp("       = NEW cl_any(");
+		buildExp("           iv_any = 1 ).");
+		buildExp("");
+		buildExp("    lo_instance = NEW \" comment");
+		buildExp("       cl_any( ).");
+		buildExp("    lo_instance = NEW \" comment");
+		buildExp("       cl_any(");
+		buildExp("           iv_any = 1 ).");
+
+		testRule();
+	}
 }

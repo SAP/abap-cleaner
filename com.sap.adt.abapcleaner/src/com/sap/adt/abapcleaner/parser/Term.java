@@ -156,8 +156,9 @@ public class Term {
 		} else {
 			while (token.getOpensLevel()) {
 				token = token.getNextSibling();
-				if (!token.isClosingParenthesisOrBracket() && !token.isIdentifier() && !token.textEquals("]["))
+				if (!token.isClosingParenthesisOrBracket() && !token.isIdentifier() && !token.textEquals("][")) {
 					throw new UnexpectedSyntaxException(token, "Expected an identifier or a closing bracket, but found " + token.getTypeAndTextForErrorMessage() + "!");
+				}
 			}
 		}
 
@@ -180,8 +181,9 @@ public class Term {
 
 		lastToken = token;
 
-		if (lastToken.hasChildren())
+		if (lastToken.hasChildren()) {
 			throw new UnexpectedSyntaxException(lastToken, "Token '" + lastToken.text + "' unexpected as last token of a Term, since it has child tokens!");
+		}
 	}
 
 	private Term(Token firstToken, Token lastToken) throws UnexpectedSyntaxException {
@@ -195,9 +197,10 @@ public class Term {
 		Token token = this.firstToken;
 		while (token != this.lastToken) {
 			token = token.getNextSibling();
-			if (token == null)
+			if (token == null) {
 				throw new UnexpectedSyntaxException(this.lastToken,
 						"The first and last Token of a Term must be siblings, but '" + this.firstToken.text + "' and '" + this.lastToken.text + "' are not.");
+			}
 		}
 	}
 
@@ -222,6 +225,14 @@ public class Term {
 	}
 
 	public final void removeFromCommand(boolean skipReferentialIntegrityTest) throws IntegrityBrokenException {
+		// prevent the next Token in the line from being moved up to the previous line, esp. if the previous line ends 
+		// with a comment; if the to-be-removed Token is afterwards moved to a different place, its new lineBreaks / spacesLeft
+		// must therefore be set only AFTER calling .removeFromCommand()
+		Token next = getNext();
+		if (firstToken.lineBreaks > 0 && next != null && next.lineBreaks == 0) {
+			next.copyWhitespaceFrom(firstToken);
+		}
+
 		Command parentCommand = getParentCommand();
 		if (parentCommand.firstToken == firstToken)
 			parentCommand.firstToken = getNext();

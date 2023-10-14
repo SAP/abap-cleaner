@@ -249,10 +249,11 @@ public class CalculationAssignmentRule extends RuleForCommands {
 		if (isEnclosedInParens && minusSign == null) {
 			try {
 				// determine the first inner term, e.g. "-1", "lts_table[ 1 ]", "CONV i( -1 )"
-				Term firstInnerTerm = Term.createSimple(term.firstToken.getFirstChild());
+				Term firstInnerTerm = Term.createSimple(term.firstToken.getFirstChild().getThisOrNextCodeToken());
 				// remove parentheses if no other term follows
-				if (firstInnerTerm.lastToken.getNextCodeSibling() == null) 
+				if (firstInnerTerm.lastToken.getNextCodeSibling() == null) {
 					term.firstToken.removeParentheses();
+				}
 			} catch (IntegrityBrokenException | UnexpectedSyntaxException e) {
 				throw new UnexpectedSyntaxAfterChanges(this, command, e.getMessage());
 			}

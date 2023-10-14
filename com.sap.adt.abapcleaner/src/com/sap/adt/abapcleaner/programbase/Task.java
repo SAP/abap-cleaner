@@ -13,6 +13,8 @@ public class Task implements IProgress {
 
 	private final int batchIndex;
 	private final int batchCount;
+	private int stressTestIndex;
+	private int stressTestCount;
 
 	private TaskType lastReportedTask = TaskType.NONE;
 	private int lastReportedPercentage = -1;
@@ -114,12 +116,39 @@ public class Task implements IProgress {
 		this.parseParams = parseParams;
 		this.batchIndex = batchIndex;
 		this.batchCount = batchCount;
+		this.stressTestIndex = 0;
+		this.stressTestCount = 0;
 	}
 
-	final void run(CleanupParams cleanupParams) {
-		run(cleanupParams, false);
+	final void run(StressTestParams stressTestParams, CleanupParams cleanupParams) {
+		run(stressTestParams, cleanupParams, false);
 	}
-	public final void run(CleanupParams cleanupParams, boolean testMode) {
+	public final void run(StressTestParams stressTestParams, CleanupParams cleanupParams, boolean testMode) {
+		if (stressTestParams == null || cleanupParams == null) {
+			run(StressTestType.NONE, -1, cleanupParams, testMode);
+	
+		} else {
+			// run a stress test by inserting line-end comments, comment lines, pragmas or chain colons after different Tokens in each Command
+			stressTestCount = stressTestParams.getCount();
+			stressTestIndex = 0;
+			for (StressTestType stressTestType : stressTestParams.stressTestTypes) {
+				for (int index = stressTestParams.insertAfterTokenIndexMin; index <= stressTestParams.insertAfterTokenIndexMax; ++index) {
+					boolean continueStressTestType = run(stressTestType, index, cleanupParams, testMode);
+					if (wasCancelled || !getIntegrityTestSuccess()) {
+						return;
+					}
+					// if no stress test Tokens of the current StressTestType could be inserted at the current index, 
+					// continue with the next StressTestType 
+					if (!continueStressTestType) {
+						break;
+					}
+					++stressTestIndex;
+				}
+			}
+		}
+	}
+	
+	public final boolean run(StressTestType stressTestType, int insertAfterTokenIndex, CleanupParams cleanupParams, boolean testMode) {
 		success = false;
 
 		lastReportedTask = TaskType.NONE;
@@ -132,14 +161,14 @@ public class Task implements IProgress {
 			lineCountInCleanupRange = resultingCode.getLineCountInCleanupRange();
 		} catch (ParseException | IntegrityBrokenException ex) {
 			ex.addToLog();
-			parseError = ex.getMessage();
-			return;
+			parseError = ex.getLineAndMessage(null);
+			return false;
 		}
 		if (parentJob.isCancellationPending(true)) {
 			wasCancelled = true;
-			return;
+			return false;
 		}
-		parseTimeMs = stopwatch.getElapsedTimeMs();
+		parseTimeMs += stopwatch.getElapsedTimeMs();
 
 		if (testMode)
 			parseCheckErrorsInTestMode = resultingCode.compareWithSource(parseParams.codeText, 10); // null if recompiled code matches source text
@@ -147,14 +176,29 @@ public class Task implements IProgress {
 		// parse only?
 		if (cleanupParams == null || !cleanupParams.executeCleanup()) {
 			success = true;
-			return;
+			return true;
 		}
 
 		// oldCodeDisplayLines must be retrieved now, before Rules are executed
 		stopwatch.resetAndStart();
 		ArrayList<DisplayLine> oldCodeDisplayLines = resultingCode.toDisplayLines(parseParams.lineNumOffset - 1);
-		compareTimeMs = stopwatch.getElapsedTimeMs();
+		compareTimeMs += stopwatch.getElapsedTimeMs();
 
+		// stress test: in each Command, insert a comment, pragma, or colon after the Token with the given index 
+		String stressTestInfo = "";
+		if (insertAfterTokenIndex >= 0) {
+			stressTestInfo = " [stress test: inserted " + stressTestType.description + " after token #" + String.valueOf(insertAfterTokenIndex) + "]";
+			try {
+				if (!resultingCode.insertStressTestTokentAt(insertAfterTokenIndex, stressTestType)) {
+					success = true;
+					return false;
+				}
+			} catch (IntegrityBrokenException ex) {
+				cleanupError = ex.getLineAndMessage(stressTestInfo);
+				return false;
+			}
+		}
+		
 		// clean: execute active rules
 		if (parseParams.surroundingCode != null)
 			resultingCode.clearUsedRules(); // the ChangeControls are shared between code and codePart
@@ -171,60 +215,63 @@ public class Task implements IProgress {
 			Rule rule = cleanupParams.rule;
 			if (rule != null)
 				ex.enhanceIfMissing(rule, rule.commandForErrorMsg);
-			ex.addToLog();
+			ex.addToLog(stressTestInfo);
 			if (ex.severity.getValue() > ExceptionSeverity.S1_STOP_RULE.getValue()) {
-				cleanupError = ex.getMessage();
-				return;
+				cleanupError = ex.getLineAndMessage(stressTestInfo);
+				return false;
 			}
 		}
 		if (parentJob.isCancellationPending(true)) {
 			wasCancelled = true;
-			return;
+			return false;
 		}
-		cleanupTimeMs = stopwatch.getElapsedTimeMs();
+		cleanupTimeMs += stopwatch.getElapsedTimeMs();
 
-		// compare
-		stopwatch.resetAndStart();
-		ArrayList<DisplayLine> newCodeDisplayLines = resultingCode.toDisplayLines(parseParams.lineNumOffset - 1);
-		CompareDoc doc1 = CompareDoc.createFromDisplayLines(oldCodeDisplayLines);
-		CompareDoc doc2 = CompareDoc.createFromDisplayLines(newCodeDisplayLines);
-		try {
-			resultingDiffDoc = doc1.compareTo(doc2, this);
-			changedLineCount = resultingDiffDoc.getChangedLineCount(); 
-		} catch (CompareException ex) {
-			ex.addToLog();
-			compareError = ex.getMessage();
-			return;
+		// compare (not necessary during stress test, which focuses on cleanup and integrity)
+		if (stressTestType == StressTestType.NONE) {
+			stopwatch.resetAndStart();
+			ArrayList<DisplayLine> newCodeDisplayLines = resultingCode.toDisplayLines(parseParams.lineNumOffset - 1);
+			CompareDoc doc1 = CompareDoc.createFromDisplayLines(oldCodeDisplayLines);
+			CompareDoc doc2 = CompareDoc.createFromDisplayLines(newCodeDisplayLines);
+			try {
+				resultingDiffDoc = doc1.compareTo(doc2, this);
+				changedLineCount = resultingDiffDoc.getChangedLineCount(); 
+			} catch (CompareException ex) {
+				ex.addToLog(stressTestInfo);
+				compareError = ex.getLineAndMessage(stressTestInfo);
+				return false;
+			}
+			if (parentJob.isCancellationPending(true)) {
+				wasCancelled = true;
+				return false;
+			}
+			compareTimeMs += stopwatch.getElapsedTimeMs();
 		}
-		if (parentJob.isCancellationPending(true)) {
-			wasCancelled = true;
-			return;
-		}
-		compareTimeMs += stopwatch.getElapsedTimeMs();
 
 		// test referential integrity
 		stopwatch.resetAndStart();
 		try {
 			resultingCode.testReferentialIntegrity(true, this);
 		} catch (IntegrityBrokenException ex) {
-			ex.addToLog();
-			integrityTestError = ex.getMessage();
-			return;
+			ex.addToLog(stressTestInfo);
+			integrityTestError = ex.getLineAndMessage(stressTestInfo);
+			return false;
 		}
 		if (parentJob.isCancellationPending(true)) {
 			wasCancelled = true;
-			return;
+			return false;
 		}
-		integrityTestTimeMs = stopwatch.getElapsedTimeMs();
+		integrityTestTimeMs += stopwatch.getElapsedTimeMs();
 
 		success = true;
+		return true;
 	}
 
 	@Override
 	public void report(TaskType task, double progressRatio) {
 		int progressPercent = (int) (progressRatio * 100.0);
 		if (task != lastReportedTask || progressPercent != lastReportedPercentage) {
-			reportProgress(new JobProgress(sourceName, task, progressRatio, batchCount, batchIndex));
+			reportProgress(new JobProgress(sourceName, task, progressRatio, batchIndex, batchCount, stressTestIndex, stressTestCount));
 			lastReportedTask = task;
 			lastReportedPercentage = progressPercent;
 		}

@@ -2,6 +2,7 @@ package com.sap.adt.abapcleaner.parser;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.security.InvalidParameterException;
 import java.util.ArrayList;
 
 import org.junit.jupiter.api.Test;
@@ -1174,6 +1175,14 @@ public class TokenTest {
 		assertAccessType("any_method( e1 = any_inner_method( IMPORTING i1 = !pi1 i2 = !pi2 ) e1 = other_inner_method( e1 = ?pe1 e2 = ?pe2 ) e3 = third_inner_method( CHANGING c1 = #pc1 c2 = #pc2 ) ).");
 	}
 
+	@Test
+	void testAccessTypeNoneAfterColonInParens() {
+		// ensure that prevToken == null does not trigger an exception when requesting the access type for "comp1" after "(:" 
+		Command command = buildCommand("ls_struc = VALUE ty_s_struc(: comp1 = lv_value ).");
+		Token token = command.getFirstToken().getLastTokenDeep(true, TokenSearch.ASTERISK, "comp1");
+		assertEquals(token.getMemoryAccessType(), MemoryAccessType.NONE);
+	}
+	
 	private void assertEndOfLogicalExpression(String commandText, String startTokenText, String expEndTokenText) {
 		Token startToken = buildCommand(commandText, startTokenText);
 		Token endToken = startToken.getEndOfLogicalExpression();
@@ -1437,5 +1446,48 @@ public class TokenTest {
 		assertTrue(buildCommand("lt_any[ num = 1 ]-name = 'a'.", 0).getEndOfTableExpression().textEquals("]-name"));
 		assertTrue(buildCommand("lt_any[ num = 1 ]-ref->mv_msgty = 'a'.", 0).getEndOfTableExpression().textEquals("]-ref->mv_msgty"));
 		assertTrue(buildCommand("lt_any[ num = 1 ]-inner[ 2 ]-name", 0).getEndOfTableExpression().textEquals("]-name"));
+	}
+	
+	@Test
+	void testCanInsertStressToken() {
+		// test cases in which the next Token is attached
+		assertFalse(buildCommand("DATA(lv_any) = 1.", 0).canInsertStressTestTokenAfter(StressTestType.COLON));
+		assertTrue(buildCommand("DATA lv_any TYPE i.", 3).canInsertStressTestTokenAfter(StressTestType.LINE_END_COMMENT));
+		assertTrue(buildCommand("DATA lv_any TYPE i, lv_other TYPE i.", 3).canInsertStressTestTokenAfter(StressTestType.LINE_END_COMMENT));
+		assertTrue(buildCommand("DATA: lv_any TYPE i.", 0).canInsertStressTestTokenAfter(StressTestType.LINE_END_COMMENT));
+
+		// test cases in which insertion is possible
+		assertTrue(buildCommand("DATA lv_any TYPE i.", 0).canInsertStressTestTokenAfter(StressTestType.LINE_END_COMMENT));
+		assertTrue(buildCommand("DATA lv_any TYPE i.", 0).canInsertStressTestTokenAfter(StressTestType.COMMENT_LINE));
+		assertTrue(buildCommand("DATA lv_any TYPE i.", 0).canInsertStressTestTokenAfter(StressTestType.PRAGMA));
+		assertTrue(buildCommand("DATA lv_any TYPE i.", 0).canInsertStressTestTokenAfter(StressTestType.COLON));
+
+		// test cases in which a pragma can NOT be inserted
+		assertFalse(buildCommand("* comment", 0).canInsertStressTestTokenAfter(StressTestType.PRAGMA));
+		assertFalse(buildCommand(" any_method( ).", 2).canInsertStressTestTokenAfter(StressTestType.PRAGMA));
+		assertFalse(buildCommand(" any_method( ). \" comment", 2).canInsertStressTestTokenAfter(StressTestType.PRAGMA));
+		assertFalse(buildCommand(" any_method( ). \" comment", 3).canInsertStressTestTokenAfter(StressTestType.PRAGMA));
+
+		// test cases in which a colon can NOT be inserted
+		assertFalse(buildCommand("* comment", 0).canInsertStressTestTokenAfter(StressTestType.COLON));
+		assertFalse(buildCommand(" any_method( ).", 2).canInsertStressTestTokenAfter(StressTestType.COLON));
+		assertFalse(buildCommand(" any_method( ). \" comment", 2).canInsertStressTestTokenAfter(StressTestType.COLON));
+		assertFalse(buildCommand(" any_method( ). \" comment", 3).canInsertStressTestTokenAfter(StressTestType.COLON));
+		assertFalse(buildCommand(" any_method( ) \" comment" + SEP + ".", 2).canInsertStressTestTokenAfter(StressTestType.COLON));
+		
+		// test unsupported StressTestType
+		try {
+			buildCommand("DATA lv_any TYPE i.", 0).canInsertStressTestTokenAfter(StressTestType.NONE);
+			fail();
+		} catch (InvalidParameterException ex) {
+			// expected case
+		}
+	}
+	
+	@Test
+	void testInsertStressToken() throws IntegrityBrokenException {
+		// most branches are tested by CommandTest.testInsertStressTestToken()
+		
+		assertFalse(buildCommand("DATA(lv_any) = 1", 0).insertStressTestTokenAfter(StressTestType.COMMENT_LINE));
 	}
 }
