@@ -2449,12 +2449,17 @@ public class Token {
 		if (next != null && next.isAttached() && !next.isCommaOrPeriod() && !next.isChainColon())
 			return false;
 
+		// if a pragma follows on the same line after a period, it must be considered as the "nextToken" here
+		Token nextCommandToken = null;
+		if (next == null && parentCommand.getNext() != null && parentCommand.getNext().firstToken.lineBreaks == 0)
+			nextCommandToken = parentCommand.getNext().firstToken;
+		
 		switch(stressTestType) {
 			case LINE_END_COMMENT:
-				return !isComment() && (next == null || !next.isCommentAfterCode());
+				return !isPragmaOrComment() && (next == null || !next.isPragmaOrComment()) && (nextCommandToken == null || !nextCommandToken.isPragma());
 
 			case COMMENT_LINE:
-				return (next != null) && !next.isCommentAfterCode();
+				return !isPragma() && (next != null) && !next.isPragmaOrComment() && (nextCommandToken == null || !nextCommandToken.isPragma());
 			
 			case PRAGMA:
 				return !isComment() && !isPeriod();

@@ -111,7 +111,7 @@ public class TaskTest {
 
 	@Test
 	void testCancelAfterCompare() {
-		Task task = runTask(3, "do 5 times." + LINE_SEP + "a += 1." + LINE_SEP + "enddo.");
+		Task task = runTask(4, "do 5 times." + LINE_SEP + "a += 1." + LINE_SEP + "enddo.");
 		
 		assertTrue(task.wasCancelled());
 		assertNotNull(task.getResultingCode());
@@ -128,7 +128,7 @@ public class TaskTest {
 
 	@Test
 	void testCancelAfterIntegrityTest() {
-		Task task = runTask(4, "do 5 times." + LINE_SEP + "a += 1." + LINE_SEP + "enddo.");
+		Task task = runTask(5, "do 5 times." + LINE_SEP + "a += 1." + LINE_SEP + "enddo.");
 		
 		assertTrue(task.wasCancelled());
 		assertNotNull(task.getResultingCode());

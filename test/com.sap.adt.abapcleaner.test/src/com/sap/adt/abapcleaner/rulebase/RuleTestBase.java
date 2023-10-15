@@ -28,6 +28,8 @@ import com.sap.adt.abapcleaner.parser.Code;
 import com.sap.adt.abapcleaner.parser.Command;
 import com.sap.adt.abapcleaner.parser.MemoryAccessType;
 import com.sap.adt.abapcleaner.parser.ParseParams;
+import com.sap.adt.abapcleaner.parser.StressTestParams;
+import com.sap.adt.abapcleaner.parser.StressTestType;
 import com.sap.adt.abapcleaner.parser.Token;
 import com.sap.adt.abapcleaner.programbase.CompareException;
 import com.sap.adt.abapcleaner.programbase.IntegrityBrokenException;
@@ -37,9 +39,11 @@ import com.sap.adt.abapcleaner.programbase.UnexpectedSyntaxAfterChanges;
 import com.sap.adt.abapcleaner.programbase.UnexpectedSyntaxBeforeChanges;
 
 public abstract class RuleTestBase {
+	/** -1 to deactivate stress test; 7 for medium (+ 50% duration), 31 for thorough (+ 100% duration) stress test */
+	private static final int STRESS_TEST_TOKEN_INDEX_MAX = 7;  
 	private static final String LINE_SEP = ABAP.LINE_SEPARATOR;
-	protected static Profile profile = Profile.createDefault();
 
+	protected static Profile profile = Profile.createDefault();
 	protected RuleID ruleID;
 
 	/** the ABAP release against which this code must compile (e.g. "757" for release 7.57; null if unknown), 
@@ -346,6 +350,53 @@ public abstract class RuleTestBase {
 			fail(e.getMessage());
 			return;
 		}
+		
+		// perform stress test by inserting line-end comments, comment lines, pragmas and colons after the first few Tokens
+		// and checking referential integrity after calling the rule under test (whether or not it was executed with the additional Tokens)
+		StressTestParams stressTestParams = StressTestParams.create(0, STRESS_TEST_TOKEN_INDEX_MAX, StressTestType.getAll()); 		
+		for (StressTestType stressTestType : stressTestParams.stressTestTypes) {
+			for (int index = stressTestParams.insertAfterTokenIndexMin; index <= stressTestParams.insertAfterTokenIndexMax; ++index) {
+				boolean continueStressTestType = runStressTest(stressTestType, index);
+				if (!continueStressTestType) {
+					break;
+				}
+			}
+		}
+	}
+	
+	private boolean runStressTest(StressTestType stressTestType, int insertAfterTokenIndex) {
+		// parse the source code
+		Code code = null;
+		try {
+			code = Code.parse(null, ParseParams.createForTest(sourceCodeBuilder.toString(), abapReleaseOfCode));
+		} catch (ParseException e) {
+			fail(e.getMessage());
+		}
+
+		String stressTestInfo = " [stress test: inserted " + stressTestType.description + " after token #" + String.valueOf(insertAfterTokenIndex) + "]";
+		try {
+			if (!code.insertStressTestTokentAt(insertAfterTokenIndex, stressTestType)) {
+				return false;
+			}
+		} catch (IntegrityBrokenException ex) {
+			fail("Error inserting stress test tokens:" + ex.getMessage() + stressTestInfo );
+		}
+
+		// call the Rule under test; the additional stress test Tokens may prevent the rule from being executed, 
+		// but in any case, the result must keep referential integrity
+		try {
+			getRule().executeIfAllowedOn(code, releaseRestrictionFromUI);
+		} catch (UnexpectedSyntaxBeforeChanges | UnexpectedSyntaxAfterChanges e) {
+			fail(e.getMessage() + stressTestInfo );
+		}
+
+		// test the referential integrity of the resulting objects (Code, Command, Token etc.)
+		try {
+			code.testReferentialIntegrity(true);
+		} catch (IntegrityBrokenException e1) {
+			fail("Error after executing rule '" + getRule().getDisplayName() + "':" + e1.getMessage() + stressTestInfo);
+		} 
+		return true;
 	}
 	
 	private void testDiffNavigator(Code code, DiffDoc diffDoc) {

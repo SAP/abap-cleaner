@@ -332,9 +332,11 @@ public class UnusedVariablesRule extends RuleForDeclarations {
 					throw new IllegalArgumentException("Unknown Action!");
 			}
 
-			// if the (remaining) Command starts with one or several comment lines, create separate Commands from it;
-			// this may happen if the first line of the Command was deleted or commented out, and the next line(s) already were comment lines
+			// if the (remaining) Command starts or ends with one or several comment lines, create separate Commands from it;
+			// this may happen if the first/last line of the Command was deleted or commented out, and the adjacent line(s) already were comment lines
 			if (command.splitOutLeadingCommentLines(originalCommand))
+				command.originalCommand = originalCommand;
+			if (command.splitOutTrailingCommentLines(originalCommand))
 				command.originalCommand = originalCommand;
 
 			command.testReferentialIntegrity(true, true);

@@ -157,9 +157,21 @@ public class Task implements IProgress {
 		Stopwatch stopwatch = Stopwatch.createAndStart();
 		try {
 			resultingCode = Code.parse(this, parseParams);
-			resultingCode.testReferentialIntegrity(true); // fail early, e.g. if a block is not closed
 			lineCountInCleanupRange = resultingCode.getLineCountInCleanupRange();
-		} catch (ParseException | IntegrityBrokenException ex) {
+		} catch (ParseException ex) {
+			ex.addToLog();
+			parseError = ex.getLineAndMessage(null);
+			return false;
+		}
+		if (parentJob.isCancellationPending(true)) {
+			wasCancelled = true;
+			return false;
+		}
+
+		// test referential integrity to fail early, e.g. if a block is not closed
+		try {
+			resultingCode.testReferentialIntegrity(true); 
+		} catch (IntegrityBrokenException ex) {
 			ex.addToLog();
 			parseError = ex.getLineAndMessage(null);
 			return false;

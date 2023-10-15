@@ -147,6 +147,9 @@ public class CommandTest {
 			// expect an error message that mentions ENDMETHOD as the expected level closer and ENDFUNCTION as the actual level closer
 			assertTrue(ex.getMessage().indexOf("ENDMETHOD") >= 0);
 			assertTrue(ex.getMessage().indexOf("ENDFUNCTION") >= 0);
+			// since this is NOT inside a macro definition with DEFINE, expect no mentioning of 'macro'
+			assertFalse(ex.getMessage().indexOf("macro") >= 0);
+			assertFalse(ex.getMessage().indexOf("Macro") >= 0);
 		}
 	}
 	
@@ -162,6 +165,9 @@ public class CommandTest {
 			assertTrue(ex.getMessage().indexOf("ELSE") >= 0);
 			assertTrue(ex.getMessage().indexOf("ENDIF") >= 0);
 			assertTrue(ex.getMessage().indexOf("ENDLOOP") >= 0);
+			// since this is NOT inside a macro definition with DEFINE, expect no mentioning of 'macro'
+			assertFalse(ex.getMessage().indexOf("macro") >= 0);
+			assertFalse(ex.getMessage().indexOf("Macro") >= 0);
 		}
 	}
 	
@@ -190,6 +196,42 @@ public class CommandTest {
 			assertTrue(ex.getMessage().indexOf("PUBLIC") >= 0);
 			assertTrue(ex.getMessage().indexOf("PROTECTED") >= 0);
 			assertTrue(ex.getMessage().indexOf("PRIVATE") >= 0);
+		}
+	}
+	
+	@Test
+	void testAddNextWithUnclosedOpenerInMacroDef() {
+		buildCommand("METHOD any_method." + SEP + "DEFINE any_macro." + SEP + "IF lt_any IS NOT INITIAL." + SEP + "DO 5 TIMES.");
+		Command command = commands[3];
+		try {
+			command.addNext(buildCommand("END-OF-DEFINITION."));
+			fail();
+		} catch (UnexpectedSyntaxException ex) {
+			// expect an error message that mentions that ENDDO was found instead of END-OF-DEFINITION,
+			// and that macro definitions with incomplete code blocks are not supported
+			assertTrue(ex.getMessage().indexOf("ENDDO") >= 0);
+			assertTrue(ex.getMessage().indexOf("END-OF-DEFINITION") >= 0);
+			assertTrue(ex.getMessage().indexOf("Macro") >= 0);
+			assertTrue(ex.getMessage().indexOf("incomplete code block") >= 0);
+			assertTrue(ex.getMessage().indexOf("not supported") >= 0);
+		}
+	}
+	
+	@Test
+	void testAddNextWithUnopenedCloserInMacroDef2() {
+		buildCommand("METHOD any_method." + SEP + "DEFINE any_macro." + SEP + "DO 5 TIMES." + SEP + "ENDDO.");
+		Command command = commands[3];
+		try {
+			command.addNext(buildCommand("ENDIF."));
+			fail();
+		} catch (UnexpectedSyntaxException ex) {
+			// expect an error message that mentions that ENDIF was found without corresponding IF,
+			// and that macro definitions with incomplete code blocks are not supported
+			assertTrue(ex.getMessage().indexOf("ENDIF") >= 0);
+			assertTrue(ex.getMessage().indexOf("IF") >= 0);
+			assertTrue(ex.getMessage().indexOf("Macro") >= 0);
+			assertTrue(ex.getMessage().indexOf("incomplete code block") >= 0);
+			assertTrue(ex.getMessage().indexOf("not supported") >= 0);
 		}
 	}
 	
@@ -311,7 +353,7 @@ public class CommandTest {
 		Command newCommand = null;
 		
 		try {
-			command.insertRightSibling(newCommand, false);
+			command.insertRightSibling(newCommand, false, false);
 			fail();
 		} catch (IntegrityBrokenException ex) {
 			fail();
@@ -323,28 +365,28 @@ public class CommandTest {
 	void testInsertRightSiblingToLastCommand() throws IntegrityBrokenException {
 		Command command = buildCommand("DATA a TYPE i.");
 		Command newCommand = buildCommand("DATA b TYPE string."); 
-		command.insertRightSibling(newCommand, false);
+		command.insertRightSibling(newCommand, false, false);
 	}
 	
 	@Test
 	void testInsertRightSiblingToInnerCommand() throws IntegrityBrokenException {
 		Command command = buildCommand("DATA a TYPE i. DATA c TYPE i.");
 		Command newCommand = buildCommand("DATA b TYPE string.");
-		command.insertRightSibling(newCommand, false);
+		command.insertRightSibling(newCommand, false, false);
 	}
 	
 	@Test
 	void testInsertRightSiblingToLastChild() throws IntegrityBrokenException {
 		Command command = buildCommand("IF a = 1. a += 1. ENDIF.").getNext();
 		Command newCommand = buildCommand("RETURN.");
-		command.insertRightSibling(newCommand, false);
+		command.insertRightSibling(newCommand, false, false);
 	}
 	
 	@Test
 	void testInsertRightSiblingToInnerChild() throws IntegrityBrokenException {
 		Command command = buildCommand("IF a = 1. a += 1. RETURN. ENDIF.").getNext();
 		Command newCommand = buildCommand("b += 1.");
-		command.insertRightSibling(newCommand, false);
+		command.insertRightSibling(newCommand, false, false);
 	}
 	
 	@Test
@@ -353,7 +395,7 @@ public class CommandTest {
 		Command newCommand = buildCommand("IF a = 2. RETURN. ENDIF.");
 
 		try {
-			command.insertRightSibling(newCommand, false);
+			command.insertRightSibling(newCommand, false, false);
 			fail();
 		} catch (IntegrityBrokenException ex) {
 		}
@@ -365,7 +407,7 @@ public class CommandTest {
 		Command newCommand = buildCommand("a = 1.");
 
 		try {
-			command.insertRightSibling(newCommand, false);
+			command.insertRightSibling(newCommand, false, false);
 			fail();
 		} catch (IntegrityBrokenException ex) {
 		}
