@@ -385,4 +385,24 @@ class ChainTest extends RuleTestBase {
 		testRule();
 	}
 
+	@Test
+	void testPragmaPositionCorrected() {
+		// expect that one or multiple pragmas are moved before the period where they belong,
+		// and that a space is ensured before them (see first line) 
+
+		buildSrc("    DATA: lo_item TYPE REF TO cl_item,##NEEDED ##PRAGMA");
+		buildSrc("          ls_struc TYPE if_any_interface=>ty_s_struc, ##NEEDED \" comment");
+		buildSrc("          mv_any_flag TYPE abap_bool VALUE abap_false, ##NO_TEXT ##PRAGMA \" comment");
+		buildSrc("          lv_any TYPE string.");
+
+		buildExp("    DATA lo_item TYPE REF TO cl_item ##NEEDED ##PRAGMA.");
+		buildExp("    DATA ls_struc TYPE if_any_interface=>ty_s_struc ##NEEDED. \" comment");
+		buildExp("    DATA mv_any_flag TYPE abap_bool VALUE abap_false ##NO_TEXT ##PRAGMA. \" comment");
+		buildExp("    DATA lv_any TYPE string.");
+
+		putAnyMethodAroundSrcAndExp();
+		
+		testRule();
+	}
+
 }

@@ -234,11 +234,25 @@ public class ChainRule extends RuleForCommands {
 
 			Token periodOrComma = lastTokenOfPartA.getLastTokenOnSiblings(true, TokenSearch.ASTERISK, ",|.");
 			if (periodOrComma.isComma()) {
-				// change the "," into ".' and determine the end of the section  
-				periodOrComma.setText(ABAP.DOT_SIGN_STRING, false);
-				periodOrComma.type = TokenType.PERIOD;
-				Token lastTokenOfPartB = periodOrComma.getNext().isCommentAfterCode() ? periodOrComma.getNext() : periodOrComma;
-				if (lastTokenOfPartB.getNext() != null && lastTokenOfPartB.getNext().isPragma() && lastTokenOfPartB.getNext().lineBreaks == 0) // pragma behind the , is a common mistake; we move the pragma along with the declaration line
+				// determine the end of the section
+
+				// pragma behind the , is a common mistake; we move the pragma(s) along with the declaration line 
+				// and correct the position of the comma/period to satisfy the referential integrity test
+				Token lastTokenOfPartB = periodOrComma;
+				while (lastTokenOfPartB.getNext() != null && lastTokenOfPartB.getNext().isPragma() && lastTokenOfPartB.getNext().lineBreaks == 0) {
+					lastTokenOfPartB = lastTokenOfPartB.getNext();
+				}
+				if (lastTokenOfPartB.isPragma()) {
+					// ensure at least one space left of the first pragma
+					if (periodOrComma.getNext().spacesLeft == 0)
+						periodOrComma.getNext().spacesLeft = 1;
+					// move the comma to the correct position
+					periodOrComma.removeFromCommand(false, true);
+					lastTokenOfPartB.insertRightSibling(periodOrComma);
+					lastTokenOfPartB = periodOrComma;
+				}
+				// include line-end comment into part B
+				if (lastTokenOfPartB.getNext().isCommentAfterCode())
 					lastTokenOfPartB = lastTokenOfPartB.getNext();
 
 				// copy the to-be-repeated 'part A' section to a new Command above the current one
@@ -254,9 +268,12 @@ public class ChainRule extends RuleForCommands {
 					throw new UnexpectedSyntaxAfterChanges(this, ex);
 				}
 
-				// move 'part B' to the new Command - including the "," (which is now a "."!) and possibly the comment after it 
+				// move 'part B' to the new Command - including the "," (changing it into "."!) and possibly the comment after it
 				int oldIndent = firstTokenOfPartB.getStartIndexInLine();
 				partB.removeFromCommand(false); 
+				// change the "," into ".' 
+				periodOrComma.setText(ABAP.DOT_SIGN_STRING, false);
+				periodOrComma.type = TokenType.PERIOD;
 				if (firstTokenOfPartB.isPeriod() && startLineBreaksPartB == 0)
 					firstTokenOfPartB.setWhitespace(0, 0);
 				else

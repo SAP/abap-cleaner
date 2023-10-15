@@ -535,9 +535,12 @@ public class Command {
 				// newCommand directly closes this Command
 				addSibling(newCommand);
 			} else if (newCommand.usedLevelCloser.requiresOpener) {
-				throw new UnexpectedSyntaxException(this,
-						"expected " + usedLevelOpener.getClosersList() + ", but found " + newCommand.usedLevelCloser.text + ". " + 
-						"Opening command (line " + Cult.format(this.sourceLineNumStart) + "): " + this.toStringForErrorMessage());
+				String msg = "expected " + usedLevelOpener.getClosersList() + ", but found " + newCommand.usedLevelCloser.text + ". "; 
+				if (belongsToMacroDefinition()) { 
+					msg += "Macro definitions with incomplete code blocks are currently not supported by " + Program.PRODUCT_NAME + ". ";
+				}
+				msg += "Opening command (line " + Cult.format(this.sourceLineNumStart) + "): " + this.toStringForErrorMessage();
+				throw new UnexpectedSyntaxException(this, msg);
 			} else {
 				// remove an optional level closer that does not apply in this case, e.g. 'DEFINE any_macro. CLASS &1 DEFINITION.'
 				newCommand.usedLevelCloser = null;
@@ -548,9 +551,12 @@ public class Command {
 			if (parent != null && newCommand.usedLevelCloser.isCloserFor(parent.usedLevelOpener)) {
 				parent.addSibling(newCommand);
 			} else if (newCommand.usedLevelCloser.requiresOpener) {
-				throw new UnexpectedSyntaxException(this, 
-						newCommand.usedLevelCloser.text + " found in line " + Cult.format(newCommand.sourceLineNumStart) + 
-						", but no corresponding " + newCommand.usedLevelCloser.getOpenersList());
+				String msg = newCommand.usedLevelCloser.text + " found in line " + Cult.format(newCommand.sourceLineNumStart); 
+				msg += ", but no corresponding " + newCommand.usedLevelCloser.getOpenersList() + ". "; 
+				if (belongsToMacroDefinition()) { 
+					msg += "Macro definitions with incomplete code blocks are currently not supported by " + Program.PRODUCT_NAME + ". ";
+				}
+				throw new UnexpectedSyntaxException(this, msg); 
 			} else {
 				newCommand.usedLevelCloser = null;
 				addSibling(newCommand);
@@ -600,6 +606,10 @@ public class Command {
 	}
 
 	public final void insertFirstChild(Command child) throws UnexpectedSyntaxException, IntegrityBrokenException {
+		insertFirstChild(child, false);
+	}
+	
+	public final void insertFirstChild(Command child, boolean skipIntegrityTest) throws UnexpectedSyntaxException, IntegrityBrokenException {
 		if (child == null)
 			throw new NullPointerException("child");
 		if (firstChild != null)
@@ -627,7 +637,9 @@ public class Command {
 		firstChild = child;
 		lastChild = child;
 
-		testReferentialIntegrity(false);
+		if (!skipIntegrityTest) {
+			testReferentialIntegrity(false);
+		}
 		child.testReferentialIntegrity(false);
 		if (nextSibling != null)
 			nextSibling.testReferentialIntegrity(false);
@@ -640,7 +652,7 @@ public class Command {
 	 * @throws IntegrityBrokenException 
 	 */
 	public final void insertRightSibling(Command newCommand) throws IntegrityBrokenException {
-		insertRightSibling(newCommand, false);
+		insertRightSibling(newCommand, false, false);
 	}
 
 	/**
@@ -649,7 +661,7 @@ public class Command {
 	 * @param newCommand
 	 * @throws IntegrityBrokenException 
 	 */
-	public final void insertRightSibling(Command newCommand, boolean moveFollowingLinesRight) throws IntegrityBrokenException {
+	public final void insertRightSibling(Command newCommand, boolean moveFollowingLinesRight, boolean skipIntegrityTest) throws IntegrityBrokenException {
 		if (newCommand == null)
 			throw new NullPointerException("newCommand");
 		if (newCommand.hasChildren())
@@ -684,7 +696,9 @@ public class Command {
 		newCommand.prev = this;
 		newCommand.prev.next = newCommand;
 
-		this.testReferentialIntegrity(false);
+		if (!skipIntegrityTest) {
+			this.testReferentialIntegrity(false);
+		}
 		newCommand.testReferentialIntegrity(false);
 		if (newCommand.next != null)
 			newCommand.next.testReferentialIntegrity(false);
@@ -1251,7 +1265,30 @@ public class Command {
 			} catch (ParseException e) {
 				throw new UnexpectedSyntaxAfterChanges(null, commentLine, "parse error splitting out leading comment line");
 			}
-			insertPrev(newCommand);
+			insertPrev(newCommand, true); // skip the integrity test, as it will be performed below and there may be more comment lines
+			if (!newCommand.isAsteriskCommentLine())
+				newCommand.firstToken.spacesLeft = newCommand.getIndent();
+			splitOut = true;
+		}
+
+		if (splitOut)
+			testReferentialIntegrity(true);
+
+		return splitOut;
+	}
+
+	public final boolean splitOutTrailingCommentLines(Command originalCommand) throws UnexpectedSyntaxAfterChanges {
+		boolean splitOut = false;
+		while (lastToken.isCommentLine() && tokenCount > 1) {
+			Token commentLine = lastToken;
+			commentLine.removeFromCommand(false, true); // skip the integrity test, as it will be performed below
+			Command newCommand = Command.create(commentLine, originalCommand);
+			try {
+				newCommand.finishBuild(getSourceTextStart(), getSourceTextEnd());
+			} catch (ParseException e) {
+				throw new UnexpectedSyntaxAfterChanges(null, commentLine, "parse error splitting out trailing comment line");
+			}
+			insertRightSibling(newCommand, false, true); // skip the integrity test for this Command, as there may be more comment lines 
 			if (!newCommand.isAsteriskCommentLine())
 				newCommand.firstToken.spacesLeft = newCommand.getIndent();
 			splitOut = true;
@@ -1289,7 +1326,7 @@ public class Command {
 				throw new UnexpectedSyntaxAfterChanges(null, useOriginalCommand, "parse error in extracted comment");
 			}
 
-			insertPrev(newCommentCommand);
+			insertPrev(newCommentCommand, false);
 			if (firstToken.lineBreaks > 1)
 				firstToken.lineBreaks = 1;
 
@@ -1434,14 +1471,14 @@ public class Command {
 	 * 
 	 * @param newCommand
 	 */
-	public final void insertPrev(Command newCommand) throws IntegrityBrokenException {
+	public final void insertPrev(Command newCommand, boolean skipIntegrityTest) throws IntegrityBrokenException {
 		if (!getClosesLevel()) {
 			insertLeftSibling(newCommand);
 		} else if (prevSibling.hasChildren()) {
-			prevSibling.lastChild.insertRightSibling(newCommand);
+			prevSibling.lastChild.insertRightSibling(newCommand, false, skipIntegrityTest);
 		} else {
 			try {
-				prevSibling.insertFirstChild(newCommand);
+				prevSibling.insertFirstChild(newCommand, skipIntegrityTest);
 			} catch (UnexpectedSyntaxException e) {
 				throw new IntegrityBrokenException(newCommand, e.getMessage());
 			}
@@ -1509,13 +1546,30 @@ public class Command {
 		check(usedLevelCloser == null || !usedLevelCloser.requiresOpener || (prevSibling != null && prevSibling.usedLevelOpener != null), this, false, true);
 		check(!firstToken.isCommentLine() || tokenCount == 1);
 
-		Token token = getLastCodeToken();
-		check(token == null || token.isComma() == false);
-
+		// ensure that the Command has the correct scope: either it is a stand-alone comment line,
+		// or it only contains pragmas, or it ends with a period, only followed by a line-end comment
+		if (firstToken.isComment()) {
+			check(firstToken == lastToken);
+			check(this.isFirstCommandInCode() || firstToken.lineBreaks > 0);
+		} else if (isAbap() && !representsEmptyLinesAtCodeEnd()) {
+			Token lastCodeToken = getLastCodeToken();
+			if (lastCodeToken == null) {
+				check(firstToken.isPragma());
+			} else {
+				check(lastCodeToken.isPeriod());
+				Token finalComment = lastCodeToken.getNext();
+				if (finalComment != null && finalComment.isPragma()) {
+					// tolerate this case, which is frequently found in given code and cannot be corrected wherever it is encountered
+				} else {
+					check(finalComment == null || (finalComment == lastToken && finalComment.isCommentAfterCode()));
+				}
+			}
+		}
+		
 		if (!deep)
 			return;
 
-		token = firstToken;
+		Token token = firstToken;
 		while (token != null) {
 			check(token.getParentCommand() == this);
 			token.testReferentialIntegrity(testCommentPositions);
@@ -2818,7 +2872,7 @@ public class Command {
 	}
 
 	public final boolean insertStressTestTokenAt(int tokenIndex, StressTestType stressTestType) throws IntegrityBrokenException {
-		if (!isAbap())
+		if (!isAbap() || representsEmptyLinesAtCodeEnd() || isPragmaLine())
 			return false;
 
 		// if chain colon shall be inserted, this can be done
@@ -2847,7 +2901,21 @@ public class Command {
 		}
 		return false;
 	}
-	
+
+	public final boolean representsEmptyLinesAtCodeEnd() {
+		return (this == parentCode.lastCommand && firstToken == lastToken && firstToken.lineBreaks > 0 && firstToken.getTextLength() == 0);
+	}
+
+	public final boolean belongsToMacroDefinition() {
+		Command command = this;
+		while (command != null) {
+			if (command.firstCodeTokenIsKeyword("DEFINE"))
+				return true;
+			command = command.parent;
+		}
+		return false;
+	}
+
 	/** Returns true if the Command matches a hard-coded pattern or condition.
 	 * This method can be used during development to search for examples in all sample code files. */
 	public final boolean matchesPattern() {

@@ -1964,4 +1964,25 @@ class UnusedVariablesTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testCommentOutAfterExistingCommentLine() {
+		buildSrc("    DATA: lv_a TYPE i,");
+		buildSrc("* comment");
+		buildSrc("          lv_b TYPE lv_a.");
+		buildSrc("");
+		buildSrc("    rv_result = lv_a.");
+		buildSrc("*    lv_b = 2.");
+
+		buildExp("    DATA: lv_a TYPE i.");
+		buildExp("* comment");
+		buildExp("*          lv_b TYPE lv_a.");
+		buildExp("");
+		buildExp("    rv_result = lv_a.");
+		buildExp("*    lv_b = 2.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }

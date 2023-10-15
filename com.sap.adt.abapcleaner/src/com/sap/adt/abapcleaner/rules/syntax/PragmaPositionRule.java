@@ -210,7 +210,7 @@ public class PragmaPositionRule extends Rule {
 				throw new UnexpectedSyntaxAfterChanges(this,  ex);
 			}
 		} else {
-			token.removeFromCommand();
+			token.removeFromCommand(false, true);
 			if (token.getNext() != null) {
 				token.getNext().copyWhitespaceFrom(token);
 			}

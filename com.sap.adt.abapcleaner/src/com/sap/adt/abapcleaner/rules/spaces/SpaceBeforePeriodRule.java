@@ -149,7 +149,7 @@ public class SpaceBeforePeriodRule extends RuleForCommands {
 		
 		} else {
 			// move the period or comma between the code and the line-end comment in the previous line
-			token.removeFromCommand();
+			token.removeFromCommand(false, true);
 			token.setWhitespace(0, requiredSpaces);
 			prev.insertLeftSibling(token);
 			return true;

@@ -91,7 +91,7 @@ public class FrmProgress {
 	private void createContents() {
 		shell = new Shell(SWT.APPLICATION_MODAL | SWT.BORDER | SWT.TITLE | SWT.TOOL);
 		shell.setImage(SWTResourceManager.getImage(FrmProgress.class, "/ShellImage.png"));
-		shell.setSize(578, 209);
+		shell.setSize(700, 209);
 		shell.setText("Progress");
 		GridLayout gl_shell = new GridLayout(2, false);
 		gl_shell.horizontalSpacing = 12;
