@@ -2,6 +2,7 @@ package com.sap.adt.abapcleaner.gui;
 
 import java.io.IOException;
 import java.io.PrintStream;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 import org.eclipse.wb.swt.SWTResourceManager;
@@ -922,6 +923,18 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 			}
 		});
 		mmuExtrasCreateRulesDocumentation.setText("Create Markdown Documentation for Rules");
+		
+		MenuItem mmuExtrasCreateReleaseNoteDocu = new MenuItem(menuExtras, SWT.NONE);
+		mmuExtrasCreateReleaseNoteDocu.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				try {
+				   createReleaseNoteDocumentation();
+				} catch (Exception ex) {
+				}
+			}
+		});
+		mmuExtrasCreateReleaseNoteDocu.setText("Create Release Note Documentation From Git Log");
 		
 		MenuItem mmuHelp = new MenuItem(mnsMain, SWT.CASCADE);
 		mmuHelp.setText("&Help");
@@ -2075,6 +2088,130 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 			ProgramLauncher.startProcess(docsDir);
 	}
 	
+	private void createReleaseNoteDocumentation() {
+		final String[] thanks = new String[] { "**Thank you** very much", "**Great thanks** to", "Great **thanks** to", "**Thanks a lot**,", "**Thanks** a lot to", "**Thank you**", "Many **thanks** to" };
+		final String[] reasonsWithFixes = new String[] { "for your contributions, ideas and bug reports that led to these improvements!",
+																		 "for reporting the bugs behind this release!",
+																		 "for the reporting the bugs behind these fixes!", 
+																		 "for the bug reports behind these fixes!", 
+																		 "for their ideas and bug reports!", 
+																		 "for the ideas and bug reports behind these improvements!", 
+																		 "for inspiring these improvements and fixes!", 
+																		 "for opening the issues that led to these enhancements and fixes!"};
+		final String[] reasonsWithoutFixes = new String[] { "for your contributions and ideas that led to these improvements!",
+				 															 "for the issues behind these improvements!", 
+																			 "for opening the issues behind these improvements!", 
+																			 "for all your ideas!", 
+																			 "for inspiring these improvements!", 
+																		 	 "for opening the issues that led to these improvements!" };
+		final String SEP = System.lineSeparator();
+		final int HASH_LENGTH = 7;
+
+		String text = SystemClipboard.getText();
+		if (StringUtil.isNullOrEmpty(text)) {
+			Message.show("Please run 'git log --oneline' and copy relevant lines to the clipboard first.");
+			SystemClipboard.setText("git log --oneline");
+			return;
+		}
+		
+		String[] lines = StringUtil.split(text, new char[] { '\r', '\n' }, true);
+		StringBuilder result = new StringBuilder();
+		HashSet<String> issueNums = new HashSet<>();
+		boolean containsFix = false;
+		for (String line : lines) {
+			line = line.trim();
+			
+			// remove hash
+			int spacePos = line.indexOf(' ');
+			if (spacePos == HASH_LENGTH && StringUtil.consistsOf(line.substring(0, HASH_LENGTH), "0123456789abcdef")) {
+				line = line.substring(HASH_LENGTH + 1).trim();
+			}
+			
+			// remove initial parenthesis like (HEAD -> v#.#.#), (upstream/main), (tag: v#.#.#)
+			if (StringUtil.startsWith(line, "(", false)) {
+				int closePos = line.indexOf(')');
+				if (closePos > 0) {
+					line = line.substring(closePos + 1).trim();
+				}
+			}
+			
+			// replace first word
+			spacePos = line.indexOf(' ');
+			if (spacePos > 1) {
+				String[] replacements = new String[] { "add->Added", "allow->Allowed", "change->Changed", "create->Created", 
+																	"enhance->Enhanced", "fix->Fixed", "improve->Improved", "include->Included", 
+																	"move->Moved", "replace->Replaced", "update->Updated" };
+				String firstWord = line.substring(0, spacePos);
+				boolean found = false;
+				for (String replacement : replacements) {
+					String[] replaceBits = StringUtil.split(replacement, "->", true);
+					if (firstWord.equals(replaceBits[0])) {
+						firstWord = replaceBits[1];
+						break;
+					}
+				}
+				if (!found) {
+					firstWord = firstWord.substring(0, 1).toUpperCase() + firstWord.substring(1);
+				}
+				line = "* " + firstWord + line.substring(spacePos);
+				if (firstWord.equals("Fixed")) {
+					containsFix = true;
+				}
+			}
+			
+			// replace Rule names
+			Rule[] rules = curProfile.getAllRules();
+			for (Rule rule : rules) {
+				String ruleName = rule.getClass().getSimpleName();
+				int namePos = line.indexOf(ruleName);
+				int nameEnd = namePos + ruleName.length();
+				if (namePos >= 0 && (namePos == 0 || !Character.isLetterOrDigit(line.charAt(namePos -1))) 
+						&& (nameEnd == line.length() || !Character.isLetterOrDigit(line.charAt(nameEnd)))) {
+					line = line.substring(0, namePos) + "rule '**" + rule.getDisplayName() + "**'" + line.substring(nameEnd);
+				}
+			}
+			
+			// replace issue reference
+			final String ISSUE_REF_START = " (#";
+			final String ISSUE_REF_END = ")";
+			int issueRefPos = line.indexOf(ISSUE_REF_START);
+			int issueNumEnd = line.indexOf(ISSUE_REF_END, issueRefPos + ISSUE_REF_START.length());
+			if (issueRefPos >= 0 && issueNumEnd >= 0) {
+				int issueNumStart = issueRefPos + ISSUE_REF_START.length();
+				String issueNum = line.substring(issueNumStart, issueNumEnd);
+				issueNums.add(issueNum);
+				line = line.substring(0, issueRefPos) + " ([#" + issueNum + "](../../../issues/" + issueNum + "))" 
+					  + line.substring(issueNumEnd + ISSUE_REF_END.length());
+			}
+			
+			result.append(line).append(SEP);
+		}
+
+		StringBuilder header = new StringBuilder();
+		header.append("## " + Cult.getReverseDate(LocalDateTime.now(), "-") + " (version #.#.#)");
+		header.append(SEP + SEP);
+		header.append(thanks[new Random().nextInt(thanks.length)]);
+		int contributorCount = 0;
+		for (String issueNum : issueNums) {
+			if (contributorCount > 0)
+				header.append((contributorCount + 1 < issueNums.size()) ? "," : " and");
+			if ((contributorCount + 1) % 3 == 0) 
+				header.append(SEP);
+			header.append(" [**" + issueNum + "**](https://github.com/" + issueNum + ")");
+			++contributorCount;
+		}
+		String[] reasons = containsFix ? reasonsWithFixes : reasonsWithoutFixes;
+		header.append(" " + reasons[new Random().nextInt(reasons.length)]);
+		header.append(SEP + SEP);
+
+		if (result.length() == 0) {
+			Message.show("No log line found.");
+		} else {
+			SystemClipboard.setText(header.toString() + result.toString());
+			Message.show("The release note documentation was copied to the clipboard.");
+		}
+	}
+
 	private void openProfilesFolder() {
 		Persistency persistency = Persistency.get();
 
