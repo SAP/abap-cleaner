@@ -134,7 +134,7 @@ CLASS cl_unchaining IMPLEMENTATION.
     DATA mv_bool_variable TYPE abap_bool VALUE abap_false ##NO_TEXT.
 
     " comment above the first identifier
-    FIELD-SYMBOLS <ls_data>      TYPE ty_s_data. ##PRAGMA_IN_WRONG_POSITION
+    FIELD-SYMBOLS <ls_data>      TYPE ty_s_data ##PRAGMA_IN_WRONG_POSITION.
     FIELD-SYMBOLS <ls_amount>  LIKE LINE OF its_amount. " comment
 
     " comment line within the chain
