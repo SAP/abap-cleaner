@@ -35,8 +35,10 @@ Aligns lists of variables after CLEAR: and FREE: and lists of components after S
      comp3
      comp4.
 
-    SORT mt_other_table BY   comp1 comp2 DESCENDING
-     comp3 comp4 AS TEXT.
+    SORT: mt_other_table BY   comp1 comp2 DESCENDING
+     comp3 comp4 AS TEXT,
+          mt_third_table BY  component1 AS TEXT
+      component2   component3.
   ENDMETHOD.
 ```
 
@@ -67,10 +69,13 @@ Resulting code:
                                 comp3
                                 comp4.
 
-    SORT mt_other_table BY comp1
-                           comp2 DESCENDING
-                           comp3
-                           comp4 AS TEXT.
+    SORT: mt_other_table BY comp1
+                            comp2 DESCENDING
+                            comp3
+                            comp4 AS TEXT,
+          mt_third_table BY component1 AS TEXT
+                            component2
+                            component3.
   ENDMETHOD.
 ```
 

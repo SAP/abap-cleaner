@@ -6,6 +6,15 @@ as well as bugfixes of reported issues, i.e. anything that enhances or changes t
 For a complete list of changes (including documentation, tests, refactoring etc.), please refer to 
 the list of [commits](../../../commits/main).
 
+## 2023-10-16 (version 1.7.2)
+
+**Thanks a lot**, [**openPhiL**](https://github.com/openPhiL), [**TMNielsenApS**](https://github.com/TMNielsenApS) and 
+[**ruhnla**](https://github.com/ruhnla) for your bug reports that led to these improvements!
+
+* Fixed several issues with comments, pragmas and colons from stress test ([#147](../../../issues/147))
+* Fixed Parser for chain colon in CLASS: ... DEFINITION DEFERRED ([#142](../../../issues/142))
+* Fixed rule '**Align CLEAR:, FREE: and SORT**' for SORT: chains ([#141](../../../issues/141))
+
 ## 2023-10-10 (version 1.7.1)
 
 Many **thanks** to [**Lightirius**](https://github.com/Lightirius) for reporting this bug so quickly!
