@@ -67,8 +67,10 @@ public class AlignClearFreeAndSortRule extends RuleForCommands {
 			+ LINE_SEP + "     comp3" 
 			+ LINE_SEP + "     comp4." 
 			+ LINE_SEP 
-			+ LINE_SEP + "    SORT mt_other_table BY   comp1 comp2 DESCENDING" 
-			+ LINE_SEP + "     comp3 comp4 AS TEXT." 
+			+ LINE_SEP + "    SORT: mt_other_table BY   comp1 comp2 DESCENDING" 
+			+ LINE_SEP + "     comp3 comp4 AS TEXT," 
+			+ LINE_SEP + "          mt_third_table BY  component1 AS TEXT" 
+			+ LINE_SEP + "      component2   component3." 
 			+ LINE_SEP + "  ENDMETHOD.";
    }
 
@@ -133,25 +135,29 @@ public class AlignClearFreeAndSortRule extends RuleForCommands {
 					tokens.add(token);
 			}
 
-		} else if (command.firstCodeTokenIsAnyKeyword("SORT")) {
+		} else if (command.firstCodeTokenIsKeyword("SORT")) {
 			// SORT itab [STABLE] [ASCENDING|DESCENDING] [AS TEXT] BY { comp1 [ASCENDING|DESCENDING] [AS TEXT]} { comp2 ... }.
-			DistinctLineSort distinctLineSort = getConfigDistinctLineSort();
-			distinctLine = (distinctLineSort == DistinctLineSort.ALWAYS) || (distinctLineSort == DistinctLineSort.ONLY_WITH_ADDITIONS) && firstToken.matchesOnSiblings(true, TokenSearch.ASTERISK, "ASCENDING|DESCENDING|AS TEXT");
 			
-			// exclude cases of "SORT itab [STABLE] BY (otab)" and "SORT itab [STABLE] BY VALUE #( ... )"
-			Token byToken = firstToken.getLastTokenOnSiblings(true, TokenSearch.ASTERISK, "BY");
-			if (byToken == null)
-				return false;
-			Token token = byToken.getNextCodeSibling();
-			if (token == null || token.textStartsWith("(") || token.isKeyword("VALUE"))
-				return false;
-			
-			// create a list of all identifiers after "BY"
+			// create a list of all identifiers after "BY"; only 'additions' after components (not after 'itab') count! 
+			Token token = firstToken.getLastTokenOnSiblings(true, TokenSearch.ASTERISK, "BY");
+			boolean additionFound = false;
 			while (token != null) {
-				if (token.isIdentifier())
+				if (token.textStartsWith("(") || token.isKeyword("VALUE")) {
+					// skip cases of "SORT itab [STABLE] BY (otab)" and "SORT itab [STABLE] BY VALUE #( ... )"
+				} else if (token.isIdentifier() && !token.getOpensLevel()) {
 					tokens.add(token);
+					if (!additionFound && token.matchesOnSiblings(true, TokenSearch.ANY_IDENTIFIER, "ASCENDING|DESCENDING|AS TEXT")) {
+						additionFound = true;
+					}
+				}
 				token = token.getNextCodeSibling();
+				if (token != null && token.isComma()) {
+					// move to the next "BY" keyword 
+					token = token.getLastTokenOnSiblings(true, TokenSearch.ASTERISK, "BY");
+				} 
 			}
+			DistinctLineSort distinctLineSort = getConfigDistinctLineSort();
+			distinctLine = (distinctLineSort == DistinctLineSort.ALWAYS) || (distinctLineSort == DistinctLineSort.ONLY_WITH_ADDITIONS) && additionFound;
 			
 		} else {
 			return false;
@@ -164,7 +170,7 @@ public class AlignClearFreeAndSortRule extends RuleForCommands {
 		boolean commandChanged = false;
 		int maxLineLength = configMaxLineLength.getValue();
 		Token firstInstance = tokens.get(0);
-		int indent = (firstInstance.lineBreaks == 0) ? firstInstance.getPrev().getEndIndexInLine() + 1 : firstInstance.getStartIndexInLine();
+		int indent = 0; // will be determined below 
 		
 		// move sections, either on individual lines (for distinctLine == true) 
 		// or continuing on the same line until maximum width is reached
@@ -172,6 +178,12 @@ public class AlignClearFreeAndSortRule extends RuleForCommands {
 			// determine the section to be moved; endToken is the Token following the last Token of the section (or null) 
 			Token token = tokens.get(i);
 			Token endToken = (i + 1 < tokens.size()) ? tokens.get(i + 1) : null;
+			Token prevCode = token.getPrevCodeSibling();
+			boolean isFirstSection = (i == 0 || command.firstCodeTokenIsKeyword("SORT") && prevCode != null && prevCode.isKeyword("BY")); 
+			if (isFirstSection) {
+				firstInstance = token;
+				indent = (firstInstance.lineBreaks == 0) ? firstInstance.getPrev().getEndIndexInLine() + 1 : firstInstance.getStartIndexInLine();
+			}
 
 			// if the section to be moved contains line breaks, find the first Token after the first line break 
 			Token firstTokenAfterLineBreak = null;
@@ -191,7 +203,7 @@ public class AlignClearFreeAndSortRule extends RuleForCommands {
 			// move current Token
 			int moveBy = 0;
 			boolean tokenChanged = false;
-			if (i == 0) {
+			if (isFirstSection) {
 				// for the first section, only condense multiple spaces, e.g. in "CLEAR:   lv_any_value, ..."
 				if (token.lineBreaks == 0 && token.spacesLeft > 1) {
 					moveBy = indent - oldStartIndex;
