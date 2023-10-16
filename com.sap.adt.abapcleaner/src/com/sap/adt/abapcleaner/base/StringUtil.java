@@ -500,4 +500,13 @@ public final class StringUtil {
 		} 
 		return sb.toString();
 	}
+
+	public static boolean consistsOf(String text, String allowedChars) {
+		for (char c : text.toCharArray()) {
+			if (allowedChars.indexOf(c) < 0) {
+				return false;
+			}
+		}
+		return true;
+	}
 }

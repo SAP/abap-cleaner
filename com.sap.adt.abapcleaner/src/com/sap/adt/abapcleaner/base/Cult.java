@@ -19,10 +19,19 @@ public final class Cult {
 	}
 
 	public static String getReverseDateTime(LocalDateTime dtm, boolean includeTime) {
-		String result = getPaddedString(dtm.getYear(), 4, '0') + getPaddedString(dtm.getMonthValue(), 2, '0') + getPaddedString(dtm.getDayOfMonth(), 2, '0');
-		if (includeTime)
-			result += "_" + getPaddedString(dtm.getHour(), 2, '0') + getPaddedString(dtm.getMinute(), 2, '0') + getPaddedString(dtm.getSecond(), 2, '0');
-		return result;
+		return getReverseDate(dtm, "") + (includeTime ? "_" + getReverseTime(dtm, "") : "");
+	}
+
+	public static String getReverseDate(LocalDateTime dtm, String separator) {
+		return getPaddedString(dtm.getYear(), 4, '0') + separator 
+			  + getPaddedString(dtm.getMonthValue(), 2, '0') + separator 
+			  + getPaddedString(dtm.getDayOfMonth(), 2, '0');
+	}
+
+	public static String getReverseTime(LocalDateTime dtm, String separator) {
+		return getPaddedString(dtm.getHour(), 2, '0') + separator
+			  + getPaddedString(dtm.getMinute(), 2, '0') + separator
+			  + getPaddedString(dtm.getSecond(), 2, '0');
 	}
 
 	public static String getPaddedString(int value, int minLength, char padding) {
