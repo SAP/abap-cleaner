@@ -258,16 +258,18 @@ class AlignClearFreeAndSortTest extends RuleTestBase {
 
 	@Test
 	void testSortOnlyAdditionsToDistinctLine() {
+		// ensure that additions ASCENDING, DESCENDING, AS TEXT after components cause distinct lines, 
+		// but NOT if these additions only appear after the table name, as in the first example
 		rule.configDistinctLineSort.setEnumValue(DistinctLineSort.ONLY_WITH_ADDITIONS);
 
-		buildSrc("    SORT mt_any_table STABLE BY comp1 comp2");
+		buildSrc("    SORT mt_any_table STABLE DESCENDING BY comp1 comp2");
 		buildSrc("     comp3");
 		buildSrc("     comp4.");
 		buildSrc("");
 		buildSrc("    SORT mt_other_table BY   comp1 comp2 DESCENDING");
 		buildSrc("     comp3 comp4 AS TEXT.");
 
-		buildExp("    SORT mt_any_table STABLE BY comp1 comp2 comp3 comp4.");
+		buildExp("    SORT mt_any_table STABLE DESCENDING BY comp1 comp2 comp3 comp4.");
 		buildExp("");
 		buildExp("    SORT mt_other_table BY comp1");
 		buildExp("                           comp2 DESCENDING");
@@ -369,6 +371,58 @@ class AlignClearFreeAndSortTest extends RuleTestBase {
 
 		copyExpFromSrc();
 		
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testSortChain() {
+		buildSrc("    SORT: lt_any    BY comp1 comp2 comp3,");
+		buildSrc("          lt_other  BY comp1 component2,");
+		buildSrc("          lt_third  BY (otab),");
+		buildSrc("          lt_fourth STABLE AS TEXT");
+		buildSrc("                    BY component1 ASCENDING component2 DESCENDING,");
+		buildSrc("          lt_fifth  DESCENDING");
+		buildSrc("                    BY component1 AS TEXT component2.");
+
+		buildExp("    SORT: lt_any    BY comp1");
+		buildExp("                       comp2");
+		buildExp("                       comp3,");
+		buildExp("          lt_other  BY comp1");
+		buildExp("                       component2,");
+		buildExp("          lt_third  BY (otab),");
+		buildExp("          lt_fourth STABLE AS TEXT");
+		buildExp("                    BY component1 ASCENDING");
+		buildExp("                       component2 DESCENDING,");
+		buildExp("          lt_fifth  DESCENDING");
+		buildExp("                    BY component1 AS TEXT");
+		buildExp("                       component2.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testSortChainWithByInDifferentPlaces() {
+		buildSrc("    SORT: lt_any BY comp1 comp2 comp3,");
+		buildSrc("          lt_other BY comp1 component2,");
+		buildSrc("          lt_third BY (otab),");
+		buildSrc("          lt_fourth STABLE AS TEXT BY component1 ASCENDING component2 DESCENDING,");
+		buildSrc("          lt_fifth DESCENDING BY component1 AS TEXT component2.");
+
+		buildExp("    SORT: lt_any BY comp1");
+		buildExp("                    comp2");
+		buildExp("                    comp3,");
+		buildExp("          lt_other BY comp1");
+		buildExp("                      component2,");
+		buildExp("          lt_third BY (otab),");
+		buildExp("          lt_fourth STABLE AS TEXT BY component1 ASCENDING");
+		buildExp("                                      component2 DESCENDING,");
+		buildExp("          lt_fifth DESCENDING BY component1 AS TEXT");
+		buildExp("                                 component2.");
+
 		putAnyMethodAroundSrcAndExp();
 
 		testRule();
