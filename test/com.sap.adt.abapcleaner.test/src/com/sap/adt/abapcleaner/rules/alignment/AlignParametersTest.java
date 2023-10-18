@@ -2734,4 +2734,26 @@ class AlignParametersTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testNonTableRowsSplitToMultiLine() {
+		// ensure that the option 'Table rows: Keep multiple components on single line' does NOT prevent splitting 
+		// constructor calls with NEW, and VALUE constructors for structures 
+
+		rule.configKeepComponentsOnSingleLine.setEnumValue(ComponentsOnSingleLine.IF_BELOW_MAX_LINE_LENGTH);
+
+		buildSrc("    DATA(lo_any) = NEW cl_any( iv_param1 = 1 iv_param2 = 2 ).");
+		buildSrc("    DATA(ls_any) = NEW ty_s_any( comp1 = 1 comp2 = 2 comp3 = 3 ).");
+		buildSrc("    any_method( iv_any_param = 1 iv_other_param = 2 ).");
+
+		buildExp("    DATA(lo_any) = NEW cl_any( iv_param1 = 1");
+		buildExp("                               iv_param2 = 2 ).");
+		buildExp("    DATA(ls_any) = NEW ty_s_any( comp1 = 1");
+		buildExp("                                 comp2 = 2");
+		buildExp("                                 comp3 = 3 ).");
+		buildExp("    any_method( iv_any_param   = 1");
+		buildExp("                iv_other_param = 2 ).");
+
+		testRule();
+	}
 }
