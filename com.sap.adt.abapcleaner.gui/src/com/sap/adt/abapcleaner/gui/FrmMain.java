@@ -30,7 +30,7 @@ import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Font;
-import org.eclipse.swt.graphics.FontData; 
+import org.eclipse.swt.graphics.FontData;
 
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
@@ -58,7 +58,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 
 	private static boolean isInitialized = false;
 
-	private CodeDisplayColors codeDisplayColors; 
+	private CodeDisplayColors codeDisplayColors;
 	private static final Color searchTextNotFoundColor = new Color(139, 0, 54); // dark red
 	private static Color searchInfoColor;
 	private static Color searchTextNormalColor;
@@ -66,9 +66,10 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 	private Font searchTextFont;
 
 	private boolean isPlugin;
+	private boolean isReadOnly;
 	private Code resultCode;
 	private String resultErrorMessage;
-	
+
 	private MainSettings settings;
 
 	protected Shell shell;
@@ -94,7 +95,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 	private Combo cboCleanupRangeExpandMode;
 	private Label lblCleanupRangeExpandModeEmptyCell;
 	private Combo cboReleaseRestriction;
-	
+
 	private Button chkHighlightIndentChanges;
 	private Button chkHighlightInnerSpaceChanges;
 	private Button chkHighlightCaseChanges;
@@ -118,11 +119,11 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 	private ArrayList<Profile> profiles = new ArrayList<Profile>();
 	private Profile curProfile = Profile.createDefault();
 	private CleanupRange originalCleanupRange;
-	
+
 	private RuleStats[] usedRules;
 
 	private int suspendItemCheck;
-	
+
 	/**
 	 * Launch the application.
 	 * 
@@ -139,7 +140,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 			CommandLineArgs commandLineArgs = CommandLineArgs.create(persistency, args);
 
 			if (commandLineArgs == null) {
-				// start the interactive (stand-alone) UI 
+				// start the interactive (stand-alone) UI
 				cleanInteractively(null, ABAP.NEWEST_RELEASE, null, false, null, null, false);
 
 			} else {
@@ -153,7 +154,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 
 				} else if (commandLineArgs.showHelp) {
 					System.out.print(CommandLineArgs.getHelp(persistency));
-				
+
 				} else {
 					// use application args for automatic cleanup
 					cleanAutomatically(commandLineArgs, System.out);
@@ -168,7 +169,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 	private static void initialize() {
 		if (isInitialized)
 			return;
-		
+
 		Program.initialize(null, "");
 		isInitialized = true;
 	}
@@ -181,7 +182,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		} else {
 			try (ISettingsReader reader = TextSettingsReader.createFromString(commandLineArgs.profileData, Program.TECHNICAL_VERSION)) {
 				profile = Profile.createFromSettings(reader, "");
-			} catch(IOException ex) {
+			} catch (IOException ex) {
 				out.println(ex.getMessage());
 				return;
 			}
@@ -193,27 +194,27 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 			cleanMultiAutomatically(commandLineArgs, out, profile);
 		}
 	}
-	
+
 	private static void cleanMultiAutomatically(CommandLineArgs commandLineArgs, PrintStream out, Profile profile) {
 		Persistency persistency = Persistency.get();
 		int baseSourcePathLength = commandLineArgs.sourceDir.length();
-		
-	  	for (String sourcePath : commandLineArgs.sourcePaths) {
+
+		for (String sourcePath : commandLineArgs.sourcePaths) {
 			String sourceCode = persistency.readAllTextFromFile(sourcePath);
 
 			CleanupResult result = cleanAutomatically(sourceCode, commandLineArgs.abapRelease, commandLineArgs.cleanupRange, profile, commandLineArgs.showStats);
-		  	if (result == null) {
+			if (result == null) {
 				out.println("Cleanup for file " + sourcePath + " cancelled.");
 				continue;
-		  	} else if (result.hasErrorMessage()) {
-		  		out.println("Errors during clean-up of file: " + sourcePath);
-		  		out.println(result.errorMessage);
-		  		continue;
-		  	}
+			} else if (result.hasErrorMessage()) {
+				out.println("Errors during clean-up of file: " + sourcePath);
+				out.println(result.errorMessage);
+				continue;
+			}
 
-		  	String sourceFolderFile = sourcePath.substring(baseSourcePathLength);
+			String sourceFolderFile = sourcePath.substring(baseSourcePathLength);
 			writeCleanUpResult(commandLineArgs, out, result, sourceFolderFile, persistency.combinePaths(commandLineArgs.targetDir, sourceFolderFile));
-	  	}
+		}
 	}
 
 	private static void cleanSingleSourceAutomatically(CommandLineArgs commandLineArgs, String sourceCode, PrintStream out, Profile profile) {
@@ -225,20 +226,20 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 			out.println(result.errorMessage);
 			return;
 		}
-		
+
 		writeCleanUpResult(commandLineArgs, out, result, null, commandLineArgs.targetPath);
 	}
 
 	private static void writeCleanUpResult(CommandLineArgs commandLineArgs, PrintStream out, CleanupResult result, String sourceFolderFile, String targetPath) {
-	  	// the main output is either the whole code document or the cleanup result of the line selection 
-	  	String output = null;
-	  	if (result.hasCleanedCode()) {
-		  	if (commandLineArgs.partialResult && result.hasLineSelection()) {
-			  	output = result.getSelectedText(); 
-		  	} else {
-			  	output = result.getCleanedCode();
-		  	}
-	  	}
+		// the main output is either the whole code document or the cleanup result of the line selection
+		String output = null;
+		if (result.hasCleanedCode()) {
+			if (commandLineArgs.partialResult && result.hasLineSelection()) {
+				output = result.getSelectedText();
+			} else {
+				output = result.getCleanedCode();
+			}
+		}
 		if (output == null) {
 			return;
 		}
@@ -248,19 +249,19 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 			// in case of multiple files, start with the current folder and file
 			if (!StringUtil.isNullOrEmpty(sourceFolderFile))
 				out.println(sourceFolderFile);
-			
-			if (commandLineArgs.showStats) 
+
+			if (commandLineArgs.showStats)
 				out.println(result.getStatsSummary());
-			if (commandLineArgs.showUsedRules) 
+			if (commandLineArgs.showUsedRules)
 				out.print(result.getRuleStats());
 
 			out.println();
 		}
-		
+
 		if (commandLineArgs.writesResultCodeToOutput()) {
 			out.print(output);
 		} else {
-			Persistency persistency = Persistency.get(); 
+			Persistency persistency = Persistency.get();
 			if (commandLineArgs.overwrite || !persistency.fileExists(targetPath)) {
 				persistency.ensureDirectoryExistsForPath(targetPath);
 				// for abapGit, ensure a final line separator
@@ -278,15 +279,15 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		settings.load();
 		if (profile == null)
 			profile = getMostRecentlyUsedProfile(settings);
-		
+
 		BackgroundJob job = new BackgroundJob(ParseParams.createForCleanupRange("", sourceCode, abapRelease, cleanupRange, settings.cleanupRangeExpandMode),
-													     CleanupParams.createForProfile(profile, false, settings.releaseRestriction));
+				CleanupParams.createForProfile(profile, false, settings.releaseRestriction));
 		job.run();
 		Task result = job.getResult();
 
 		if (result.getSuccess()) {
-			CleanupResult cleanupResult = result.getResultingCode().toCleanupResult(); 
-			
+			CleanupResult cleanupResult = result.getResultingCode().toCleanupResult();
+
 			if (provideRuleStats) {
 				StringBuilder stats = new StringBuilder();
 				RuleStats[] ruleStats = result.getResultingDiffDoc().getRuleStats(profile);
@@ -296,40 +297,43 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 				cleanupResult.setStats(result, stats.toString());
 			}
 			return cleanupResult;
-	
+
 		} else if (job.wasCancelled()) {
 			return null;
-		
+
 		} else {
 			return CleanupResult.createError(result.getErrorMessage());
 		}
 	}
-	
-	public static CleanupResult cleanInteractively(String sourceCode, String abapRelease, CleanupRange cleanupRange, boolean isPlugin, String sourcePageTitle, CodeDisplayColors codeDisplayColors, boolean readOnly) {
+
+	public static CleanupResult cleanInteractively(String sourceCode, String abapRelease, CleanupRange cleanupRange, boolean isPlugin, String sourcePageTitle,
+			CodeDisplayColors codeDisplayColors, boolean isReadOnly) {
 		initialize();
-		
+
 		Persistency persistency = Persistency.get();
-		
+
 		String[] codeDirs = persistency.getExistingDirs(FileType.CODE);
 		defaultCodeDirectory = (codeDirs == null || codeDirs.length == 0) ? persistency.getWorkDir() : codeDirs[0];
 
 		FrmMain window = new FrmMain();
 		window.codeDisplayColors = (codeDisplayColors != null) ? codeDisplayColors : CodeDisplayColors.createDefault();
-		window.open(isPlugin, sourcePageTitle, sourceCode, abapRelease, cleanupRange, readOnly);
+		window.open(isPlugin, sourcePageTitle, sourceCode, abapRelease, cleanupRange, isReadOnly);
 
-		if (window.resultCode != null)
-			return window.resultCode.toCleanupResult(); 
-		else if (!StringUtil.isNullOrEmpty(window.resultErrorMessage))
+		if (window.resultCode != null) {
+			return window.resultCode.toCleanupResult();
+		} else if (!StringUtil.isNullOrEmpty(window.resultErrorMessage)) {
 			return CleanupResult.createError(window.resultErrorMessage);
-		else
+		} else {
 			return null;
+		}
 	}
 
 	private static Profile getMostRecentlyUsedProfile(MainSettings settings) {
 		ArrayList<Profile> profiles = Profile.loadProfiles(settings.profilesDirectory, settings.readOnlyProfileDirs);
 		for (Profile profile : profiles) {
-			if (profile.toString().equals(settings.curProfileName)) 
+			if (profile.toString().equals(settings.curProfileName)) {
 				return profile;
+			}
 		}
 		return Profile.createDefault();
 	}
@@ -338,19 +342,20 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		settings = new MainSettings();
 		settings.setDefault();
 	}
-	
+
 	/**
 	 * @wbp.parser.entryPoint
 	 */
-	public void open(boolean isPlugin, String sourcePageTitle, String sourceCode, String abapRelease, CleanupRange cleanupRange, boolean readOnly) {
+	public void open(boolean isPlugin, String sourcePageTitle, String sourceCode, String abapRelease, CleanupRange cleanupRange, boolean isReadOnly) {
 		this.isPlugin = isPlugin;
-		
+		this.isReadOnly = isReadOnly;
+
 		Display display = Display.getDefault();
-		
+
 		createContents();
 
 		lblWatchClipboardInfo.setVisible(false);
-		
+
 		searchInfoColor = display.getSystemColor(SWT.COLOR_TITLE_INACTIVE_FOREGROUND); // SystemColors.ControlDark;
 		searchTextNormalColor = display.getSystemColor(SWT.COLOR_LIST_FOREGROUND); // SystemColors.WindowText;
 		FontData modelFont = lblSearch.getFont().getFontData()[0];
@@ -364,16 +369,18 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		codeDisplay.setChangeTypeControls(this);
 		codeDisplay.setFallbackKeyListener(this);
 		refreshHighlight();
-		
+
 		if (isPlugin) {
-			mmuCodeFromClipboard.dispose();
-			mmuCodeFromFile.dispose();
 			mmuCodeWatchClipboard.dispose();
-			mmuCodeClearDisplay.dispose();
-			mmuCodeSeparator.dispose();
+			if (!isReadOnly) {
+				mmuCodeFromClipboard.dispose();
+				mmuCodeFromFile.dispose();
+				mmuCodeClearDisplay.dispose();
+				mmuCodeSeparator.dispose();
+			}
 			mmuCodeExit.dispose();
-			
-			if (readOnly) {
+
+			if (isReadOnly) {
 				mmuCodeApplyAndClose.dispose();
 				mmuCodeCancel.setText(getMenuItemTextWithAccelerator("&Close Read-Only Preview", SWT.ESC));
 				btnApplyAndClose.dispose();
@@ -387,7 +394,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 			lblCleanupRangeExpandMode.dispose();
 			cboCleanupRangeExpandMode.dispose();
 			lblCleanupRangeExpandModeEmptyCell.dispose();
-			
+
 			btnApplyAndClose.dispose();
 			btnCancel.dispose();
 			cpsApplyOrCancel.dispose();
@@ -405,7 +412,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		shell.open();
 		shell.layout();
 		shell.update();
-		
+
 		if (!StringUtil.isNullOrEmpty(sourceCode)) {
 			originalCleanupRange = cleanupRange;
 			if (!refreshCode(sourcePageTitle, "", sourceCode, abapRelease, false, -1, -1, -1, cleanupRange, settings.cleanupRangeExpandMode) && isPlugin) {
@@ -418,13 +425,13 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 			lastSession.load();
 			if (!StringUtil.isNullOrEmpty(lastSession.getCodeText())) {
 				lastSession.reloadCodeTextFromCodePath();
-				refreshCode(lastSession.getSourceName(), lastSession.getSourcePath(), lastSession.getCodeText(), lastSession.getAbapRelease(), false, lastSession.getTopLineIndex(), lastSession.getCurLineIndex(),
-						lastSession.getSelectionStartLine(), null, CleanupRangeExpandMode.FULL_DOCUMENT); 
+				refreshCode(lastSession.getSourceName(), lastSession.getSourcePath(), lastSession.getCodeText(), lastSession.getAbapRelease(), false, lastSession.getTopLineIndex(),
+						lastSession.getCurLineIndex(), lastSession.getSelectionStartLine(), null, CleanupRangeExpandMode.FULL_DOCUMENT);
 			} else {
 				refreshCode("", "", "", ABAP.NEWEST_RELEASE, false);
 			}
 		}
-	
+
 		lstUsedRules.setVisible(true);
 
 		while (!shell.isDisposed()) {
@@ -454,7 +461,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 	protected void createContents() {
 		Display display = null;
 		int shellStyle = SWT.BORDER | SWT.CLOSE | SWT.MAX | SWT.RESIZE | SWT.TITLE;
-		
+
 		if (isPlugin) {
 			// if opened from ADT, open with APPLICATION_MODAL to prevent conflicting code changes
 			shellStyle |= SWT.APPLICATION_MODAL;
@@ -463,7 +470,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		}
 
 		shell = new Shell(display, shellStyle);
-		
+
 		shell.setMinimumSize(new Point(880, 600));
 		shell.addKeyListener(new KeyAdapter() {
 			@Override
@@ -474,7 +481,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		shell.addShellListener(new ShellAdapter() {
 			@Override
 			public void shellActivated(ShellEvent e) {
-				// refresh the profile list, because new profiles could have been added after menu "Help / Open Profiles Folder" was used; 
+				// refresh the profile list, because new profiles could have been added after menu "Help / Open Profiles Folder" was used;
 				// however, if the current profile name is still in the list, suppress reloading the profile and reprocessing the code
 				String profileName = (curProfile == null) ? Profile.DEFAULT_NAME : curProfile.name;
 				boolean suppressReprocessingIfFound = (curProfile != null);
@@ -491,7 +498,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 					applyAndClose();
 			}
 		});
-		shell.setImage(SWTResourceManager.getImage(FrmMain.class, "/ShellImage.png")); 
+		shell.setImage(SWTResourceManager.getImage(FrmMain.class, "/ShellImage.png"));
 		shell.setSize(1008, 729);
 		shell.setMaximized(true);
 		shell.setText(Program.PRODUCT_NAME);
@@ -502,7 +509,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 
 		MenuItem mmuCode = new MenuItem(mnsMain, SWT.CASCADE);
 		mmuCode.setText("&Code");
-		
+
 		Menu menuCode = new Menu(mmuCode);
 		mmuCode.setMenu(menuCode);
 
@@ -545,7 +552,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		mmuCodeClearDisplay.setText("Clear &Display");
 
 		mmuCodeSeparator = new MenuItem(menuCode, SWT.SEPARATOR);
-		
+
 		MenuItem mmuCodeToClipboard = new MenuItem(menuCode, SWT.NONE);
 		mmuCodeToClipboard.addSelectionListener(new SelectionAdapter() {
 			@Override
@@ -643,7 +650,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 			public void widgetSelected(SelectionEvent e) {
 				boolean highlight = mmuHighlightDeclarationKeywords.getSelection();
 				if (settings != null)
-					settings.highlightDeclarationKeywords = highlight; 
+					settings.highlightDeclarationKeywords = highlight;
 				if (codeDisplay != null && !codeDisplay.isDisposed())
 					codeDisplay.setHighlightDeclarationKeywords(highlight);
 			}
@@ -656,7 +663,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 			public void widgetSelected(SelectionEvent e) {
 				boolean highlight = mmuHighlightWritePositions.getSelection();
 				if (settings != null)
-					settings.highlightWritePositions = highlight; 
+					settings.highlightWritePositions = highlight;
 				if (codeDisplay != null && !codeDisplay.isDisposed())
 					codeDisplay.setHighlightWritePositions(highlight);
 			}
@@ -680,7 +687,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 			}
 		});
 		mmuExtrasGenerateUnitTest.setText(getMenuItemTextWithAccelerator("Generate &Unit Test from Code Selection", SWT.F10));
-		
+
 		MenuItem mmuExtrasGenerateUnitTestBuild = new MenuItem(menuExtras, SWT.NONE);
 		mmuExtrasGenerateUnitTestBuild.addSelectionListener(new SelectionAdapter() {
 			@Override
@@ -692,7 +699,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 			}
 		});
 		mmuExtrasGenerateUnitTestBuild.setText(getMenuItemTextWithAccelerator("Generate Unit Test (&Build Commands Only)", SWT.F11));
-		
+
 		new MenuItem(menuExtras, SWT.SEPARATOR);
 
 		MenuItem mmuExtrasImportTestCode = new MenuItem(menuExtras, SWT.NONE);
@@ -707,7 +714,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 			}
 		});
 		mmuExtrasImportTestCode.setText("Import Test Code from Clipboard...");
-		
+
 		new MenuItem(menuExtras, SWT.SEPARATOR);
 
 		MenuItem mmuExtrasTestParserOnFolder = new MenuItem(menuExtras, SWT.NONE);
@@ -742,12 +749,13 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 
 		Menu menuExtrasStressTestAllRulesOnFolder = new Menu(shell, SWT.DROP_DOWN);
 		mmuExtrasStressTestAllRulesOnFolder.setMenu(menuExtrasStressTestAllRulesOnFolder);
-		
+
 		MenuItem mmuExtrasStressTestAllRulesOnFolder4 = new MenuItem(menuExtrasStressTestAllRulesOnFolder, SWT.PUSH);
 		mmuExtrasStressTestAllRulesOnFolder4.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				testDirectory(new CleanupBatchJob(CleanupParams.createForProfile(curProfile, true, ABAP.NO_RELEASE_RESTRICTION), StressTestParams.create(0, 3, StressTestType.getAll())));
+				testDirectory(
+						new CleanupBatchJob(CleanupParams.createForProfile(curProfile, true, ABAP.NO_RELEASE_RESTRICTION), StressTestParams.create(0, 3, StressTestType.getAll())));
 			}
 		});
 		mmuExtrasStressTestAllRulesOnFolder4.setText("Insert Comment/Pragma/Colon After Token 0..3");
@@ -756,7 +764,8 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		mmuExtrasStressTestAllRulesOnFolder8.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				testDirectory(new CleanupBatchJob(CleanupParams.createForProfile(curProfile, true, ABAP.NO_RELEASE_RESTRICTION), StressTestParams.create(0, 7, StressTestType.getAll())));
+				testDirectory(
+						new CleanupBatchJob(CleanupParams.createForProfile(curProfile, true, ABAP.NO_RELEASE_RESTRICTION), StressTestParams.create(0, 7, StressTestType.getAll())));
 			}
 		});
 		mmuExtrasStressTestAllRulesOnFolder8.setText("Insert Comment/Pragma/Colon After Token 0..7");
@@ -765,7 +774,8 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		mmuExtrasStressTestAllRulesOnFolder16.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				testDirectory(new CleanupBatchJob(CleanupParams.createForProfile(curProfile, true, ABAP.NO_RELEASE_RESTRICTION), StressTestParams.create(0, 15, StressTestType.getAll())));
+				testDirectory(
+						new CleanupBatchJob(CleanupParams.createForProfile(curProfile, true, ABAP.NO_RELEASE_RESTRICTION), StressTestParams.create(0, 15, StressTestType.getAll())));
 			}
 		});
 		mmuExtrasStressTestAllRulesOnFolder16.setText("Insert Comment/Pragma/Colon After Token 0..15");
@@ -774,7 +784,8 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		mmuExtrasStressTestAllRulesOnFolder32.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				testDirectory(new CleanupBatchJob(CleanupParams.createForProfile(curProfile, true, ABAP.NO_RELEASE_RESTRICTION), StressTestParams.create(0, 31, StressTestType.getAll())));
+				testDirectory(
+						new CleanupBatchJob(CleanupParams.createForProfile(curProfile, true, ABAP.NO_RELEASE_RESTRICTION), StressTestParams.create(0, 31, StressTestType.getAll())));
 			}
 		});
 		mmuExtrasStressTestAllRulesOnFolder32.setText("Insert Comment/Pragma/Colon After Token 0..31");
@@ -849,7 +860,8 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		new MenuItem(menuExtras, SWT.SEPARATOR);
 
 		MenuItem mmuExtrasNextMatchingSample = new MenuItem(menuExtras, SWT.NONE);
-		mmuExtrasNextMatchingSample.setToolTipText("Opens the next code file from the /user/code folder (and subfolders) in which code is changed with the current profile settings.");
+		mmuExtrasNextMatchingSample
+				.setToolTipText("Opens the next code file from the /user/code folder (and subfolders) in which code is changed with the current profile settings.");
 		mmuExtrasNextMatchingSample.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
@@ -859,7 +871,8 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		mmuExtrasNextMatchingSample.setText(getMenuItemTextWithAccelerator("Open Next Match", SWT.SHIFT + SWT.CTRL + SWT.ARROW_RIGHT));
 
 		MenuItem mmuExtrasPrevMatchingSample = new MenuItem(menuExtras, SWT.NONE);
-		mmuExtrasPrevMatchingSample.setToolTipText("Opens the previous code file from the /user/code folder (and subfolders) in which code is changed with the current profile settings.");
+		mmuExtrasPrevMatchingSample
+				.setToolTipText("Opens the previous code file from the /user/code folder (and subfolders) in which code is changed with the current profile settings.");
 		mmuExtrasPrevMatchingSample.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
@@ -871,7 +884,8 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		new MenuItem(menuExtras, SWT.SEPARATOR);
 
 		MenuItem mmuExtrasNextPatternMatch = new MenuItem(menuExtras, SWT.NONE);
-		mmuExtrasNextPatternMatch.setToolTipText("Opens the next code file from the /user/code folder (and subfolders) in which a Command satisfies the hard-coded Command.patternMatch().");
+		mmuExtrasNextPatternMatch
+				.setToolTipText("Opens the next code file from the /user/code folder (and subfolders) in which a Command satisfies the hard-coded Command.patternMatch().");
 		mmuExtrasNextPatternMatch.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
@@ -881,7 +895,8 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		mmuExtrasNextPatternMatch.setText(getMenuItemTextWithAccelerator("Open Next Pattern Match", SWT.CTRL + SWT.F6));
 
 		MenuItem mmuExtrasPrevPatternMatch = new MenuItem(menuExtras, SWT.NONE);
-		mmuExtrasPrevPatternMatch.setToolTipText("Opens the previous code file from the /user/code folder (and subfolders) in which a Command satisfies the hard-coded Command.patternMatch().");
+		mmuExtrasPrevPatternMatch
+				.setToolTipText("Opens the previous code file from the /user/code folder (and subfolders) in which a Command satisfies the hard-coded Command.patternMatch().");
 		mmuExtrasPrevPatternMatch.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
@@ -891,7 +906,8 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		mmuExtrasPrevPatternMatch.setText(getMenuItemTextWithAccelerator("Open Previous Pattern Match", SWT.CTRL + SWT.F5));
 
 		MenuItem mmuExtrasPatternMatchesBeforeCleanupToClip = new MenuItem(menuExtras, SWT.NONE);
-		mmuExtrasPatternMatchesBeforeCleanupToClip.setToolTipText("Fills the clipboard with all commands from the code files in the /user/code folder (and subfolders) that satisfy the hard-coded Command.patternMatch() before cleanup.");
+		mmuExtrasPatternMatchesBeforeCleanupToClip.setToolTipText(
+				"Fills the clipboard with all commands from the code files in the /user/code folder (and subfolders) that satisfy the hard-coded Command.patternMatch() before cleanup.");
 		mmuExtrasPatternMatchesBeforeCleanupToClip.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
@@ -901,7 +917,8 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		mmuExtrasPatternMatchesBeforeCleanupToClip.setText("Copy Pattern Matches Before Cleanup to Clipboard (all Files)");
 
 		MenuItem mmuExtrasPatternMatchesAfterCleanupToClip = new MenuItem(menuExtras, SWT.NONE);
-		mmuExtrasPatternMatchesAfterCleanupToClip.setToolTipText("Fills the clipboard with all commands from the code files in the /user/code folder (and subfolders) that satisfy the hard-coded Command.patternMatch() after cleanup with the current profile.");
+		mmuExtrasPatternMatchesAfterCleanupToClip.setToolTipText(
+				"Fills the clipboard with all commands from the code files in the /user/code folder (and subfolders) that satisfy the hard-coded Command.patternMatch() after cleanup with the current profile.");
 		mmuExtrasPatternMatchesAfterCleanupToClip.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
@@ -917,25 +934,25 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 			@Override
 			public void widgetSelected(SelectionEvent e) {
 				try {
-				   createRulesDocumentation();
+					createRulesDocumentation();
 				} catch (Exception ex) {
 				}
 			}
 		});
 		mmuExtrasCreateRulesDocumentation.setText("Create Markdown Documentation for Rules");
-		
+
 		MenuItem mmuExtrasCreateReleaseNoteDocu = new MenuItem(menuExtras, SWT.NONE);
 		mmuExtrasCreateReleaseNoteDocu.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
 				try {
-				   createReleaseNoteDocumentation();
+					createReleaseNoteDocumentation();
 				} catch (Exception ex) {
 				}
 			}
 		});
 		mmuExtrasCreateReleaseNoteDocu.setText("Create Release Note Documentation From Git Log");
-		
+
 		MenuItem mmuHelp = new MenuItem(mnsMain, SWT.CASCADE);
 		mmuHelp.setText("&Help");
 
@@ -1015,19 +1032,19 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		gl_pnlRules.marginBottom = 5;
 		gl_pnlRules.marginRight = 5;
 		pnlRules.setLayout(gl_pnlRules);
-		
+
 		Composite cpsCleanupSettingsTitle = new Composite(pnlRules, SWT.NONE);
 		GridLayout gl_cpsCleanupSettingsTitle = new GridLayout(2, false);
 		gl_cpsCleanupSettingsTitle.marginWidth = 0;
 		gl_cpsCleanupSettingsTitle.marginHeight = 0;
 		cpsCleanupSettingsTitle.setLayout(gl_cpsCleanupSettingsTitle);
 		cpsCleanupSettingsTitle.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
-		
+
 		Label lblCleanupSettings = new Label(cpsCleanupSettingsTitle, SWT.NONE);
 		lblCleanupSettings.setSize(37, 15);
 		lblCleanupSettings.setFont(SWTResourceManager.getFont("Segoe UI", 9, SWT.BOLD));
 		lblCleanupSettings.setText("Cleanup Settings");
-		
+
 		lblWatchClipboardInfo = new Label(cpsCleanupSettingsTitle, SWT.NONE);
 		lblWatchClipboardInfo.setFont(SWTResourceManager.getFont("Segoe UI", 9, SWT.BOLD));
 		lblWatchClipboardInfo.setForeground(SWTResourceManager.getColor(SWT.COLOR_RED));
@@ -1045,7 +1062,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 
 		Label lblProfile = new Label(cpsCleanupSettings, SWT.NONE);
 		lblProfile.setText("Profile:");
-		
+
 		cboProfile = new Combo(cpsCleanupSettings, SWT.READ_ONLY);
 		cboProfile.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));
 		cboProfile.addSelectionListener(new SelectionAdapter() {
@@ -1066,10 +1083,10 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 			}
 		});
 		btnEditProfiles.setText("Con&figure...");
-		
+
 		lblCleanupRangeExpandMode = new Label(cpsCleanupSettings, SWT.NONE);
 		lblCleanupRangeExpandMode.setText("Default cleanup range:");
-		
+
 		cboCleanupRangeExpandMode = new Combo(cpsCleanupSettings, SWT.READ_ONLY);
 		cboCleanupRangeExpandMode.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));
 		for (CleanupRangeExpandMode expandMode : CleanupRangeExpandMode.values()) {
@@ -1086,12 +1103,12 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 				}
 			}
 		});
-		
+
 		lblCleanupRangeExpandModeEmptyCell = new Label(cpsCleanupSettings, SWT.NONE);
-		
+
 		Label lblReleaseRestriction = new Label(cpsCleanupSettings, SWT.NONE);
 		lblReleaseRestriction.setText("Restrict rules to syntax of:");
-		
+
 		cboReleaseRestriction = new Combo(cpsCleanupSettings, SWT.READ_ONLY);
 		cboReleaseRestriction.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));
 		for (String releaseRestrictionName : ABAP.RELEASE_RESTRICTION_NAMES)
@@ -1102,7 +1119,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 			@Override
 			public void widgetSelected(SelectionEvent e) {
 				if (cboReleaseRestriction.getSelectionIndex() >= 0) {
-					releaseRestrictionChanged(getReleaseRestrictionName(cboReleaseRestriction.getText())); 
+					releaseRestrictionChanged(getReleaseRestrictionName(cboReleaseRestriction.getText()));
 				}
 				codeDisplay.focusDisplay();
 			}
@@ -1227,18 +1244,18 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 
 		chkSearchChangedLines = new Button(cpsSearch2, SWT.CHECK);
 		chkSearchChangedLines.setText("Search in changed lines only");
-		
+
 		Composite cpsUsedRulesTitle = new Composite(pnlRules, SWT.NONE);
 		cpsUsedRulesTitle.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
 		GridLayout gl_cpsUsedRulesTitle = new GridLayout(2, false);
 		gl_cpsUsedRulesTitle.marginRight = 9;
 		gl_cpsUsedRulesTitle.marginWidth = 0;
 		cpsUsedRulesTitle.setLayout(gl_cpsUsedRulesTitle);
-				
+
 		Label lblUsedRulesInfo = new Label(cpsUsedRulesTitle, SWT.NONE);
 		lblUsedRulesInfo.setFont(SWTResourceManager.getFont("Segoe UI", 9, SWT.BOLD));
 		lblUsedRulesInfo.setText("Rules Used in Current Selection");
-		
+
 		Label lblUsedRulesHint = new Label(cpsUsedRulesTitle, SWT.NONE);
 		lblUsedRulesHint.setText("(uncheck to block rule locally)");
 
@@ -1257,13 +1274,13 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 			}
 		});
 		lstUsedRules.setLayoutData(new GridData(SWT.FILL, SWT.FILL, false, true, 1, 1));
-		
+
 		cpsApplyOrCancel = new Composite(pnlRules, SWT.NONE);
 		GridLayout gl_cpsApplyOrCancel = new GridLayout(2, false);
 		gl_cpsApplyOrCancel.marginWidth = 0;
 		cpsApplyOrCancel.setLayout(gl_cpsApplyOrCancel);
 		cpsApplyOrCancel.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false, 1, 1));
-		
+
 		btnApplyAndClose = new Button(cpsApplyOrCancel, SWT.NONE);
 		btnApplyAndClose.setFont(SWTResourceManager.getFont("Segoe UI", 9, SWT.BOLD));
 		btnApplyAndClose.setText("Apply and Close");
@@ -1273,7 +1290,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 				applyAndClose();
 			}
 		});
-		
+
 		btnCancel = new Button(cpsApplyOrCancel, SWT.NONE);
 		btnCancel.setText("Cancel");
 		btnCancel.addSelectionListener(new SelectionAdapter() {
@@ -1290,16 +1307,16 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 
 	private int findUsedRulesItem(SelectionEvent e) {
 		for (int i = 0; i < lstUsedRules.getItemCount(); ++i) {
-			if (lstUsedRules.getItem(i) == e.item) 
+			if (lstUsedRules.getItem(i) == e.item)
 				return i;
 		}
 		return -1;
 	}
 
 	private boolean codeFromClipboard(boolean showMessages) {
-		if (isPlugin)
+		if (isPlugin && !isReadOnly)
 			return false;
-		
+
 		if (!SystemClipboard.containsText()) {
 			Message.show("The clipboard is empty!");
 			return false;
@@ -1330,7 +1347,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 	private void clearDisplay() {
 		refreshCode("", "", "", ABAP.NEWEST_RELEASE, true);
 	}
-	
+
 	private void codeToClipboard(int addLfCount) {
 		final String LF = "\n";
 		String codeText = codeDisplay.getCodeToString();
@@ -1342,8 +1359,8 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 				sb.append(LF);
 			codeText = sb.toString();
 		}
-		
-		if (!StringUtil.isNullOrEmpty(codeText)) 
+
+		if (!StringUtil.isNullOrEmpty(codeText))
 			SystemClipboard.setText(codeText);
 	}
 
@@ -1376,16 +1393,16 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		} catch (SWTException ex) { // ERROR_WIDGET_DISPOSED, ERROR_THREAD_INVALID_ACCESS
 			settings.setShellBoundsUnspecified();
 		}
-		
+
 		// settings.releaseRestriction is directly updated in releaseRestrictionChange()
 		// settings.editProfiles... is directly updated within FrmProfiles
-				
+
 		settings.save();
 	}
 
 	private void loadSettings() {
 		settings.load();
-		
+
 		chkHighlightIndentChanges.setSelection(settings.highlightIndentChanges);
 		chkHighlightInnerSpaceChanges.setSelection(settings.highlightInnerSpaceChanges);
 		chkHighlightCaseChanges.setSelection(settings.highlightCaseChanges);
@@ -1405,7 +1422,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		mmuHighlightDeclarationKeywords.setSelection(settings.highlightDeclarationKeywords);
 		mmuHighlightWritePositions.setSelection(settings.highlightWritePositions);
 
-		// restore shell bounds 
+		// restore shell bounds
 		try {
 			shell.setMaximized(settings.shellMaximized);
 			if (!settings.shellMaximized && settings.areShellBoundsSpecified()) {
@@ -1416,55 +1433,57 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 			}
 		} catch (SWTException ex) { // ERROR_WIDGET_DISPOSED, ERROR_THREAD_INVALID_ACCESS
 		}
-		
+
 		if (!cboCleanupRangeExpandMode.isDisposed()) {
 			cboCleanupRangeExpandMode.select(settings.cleanupRangeExpandMode.getValue());
 		}
-		
+
 		String releaseRestrictionName = ABAP.getReleaseRestrictionName(settings.releaseRestriction);
 		if (!cboReleaseRestriction.isDisposed()) {
 			int itemIndex = cboReleaseRestriction.indexOf(getReleaseRestrictionDisplay(releaseRestrictionName));
 			if (itemIndex >= 0) {
-	      	cboReleaseRestriction.select(itemIndex);
+				cboReleaseRestriction.select(itemIndex);
 			}
 		}
 
-		// create a profile in which only the 'essential' rules are activated, i.e. those rules that are explicitly  
-		// demanded by the Clean ABAP style guide; this is done only once to avoid re-creating the profile again and again  
+		// create a profile in which only the 'essential' rules are activated, i.e. those rules that are explicitly
+		// demanded by the Clean ABAP style guide; this is done only once to avoid re-creating the profile again and again
 		if (!settings.wasEssentialProfileCreated) {
 			if (Profile.addAndSaveEssentialProfile(settings.profilesDirectory)) {
-            settings.wasEssentialProfileCreated = true;
-            settings.save();
+				settings.wasEssentialProfileCreated = true;
+				settings.save();
 			}
 		}
-		
+
 		refreshProfileList(StringUtil.isNullOrEmpty(settings.curProfileName) ? Profile.DEFAULT_NAME : settings.curProfileName, false);
 	}
 
 	private boolean refreshCode() {
 		// keep source name, path, code and abapRelease, and also try to keep the position
-		return refreshCode(null, null, null, null, true, codeDisplay.getTopLineIndex(), codeDisplay.getCurLineIndex(), codeDisplay.getSelectionStartLine(), originalCleanupRange, settings.cleanupRangeExpandMode);
+		return refreshCode(null, null, null, null, true, codeDisplay.getTopLineIndex(), codeDisplay.getCurLineIndex(), codeDisplay.getSelectionStartLine(), originalCleanupRange,
+				settings.cleanupRangeExpandMode);
 	}
-	
+
 	private boolean refreshCode(String newSourceName, String newSourcePath, String newCodeText, String newAbapRelease, boolean showMessages) {
 		return refreshCode(newSourceName, newSourcePath, newCodeText, newAbapRelease, showMessages, 0, 0, 0, null, CleanupRangeExpandMode.FULL_DOCUMENT);
 	}
 
-	private boolean refreshCode(String newSourceName, String newSourcePath, String newCodeText, String newAbapRelease, boolean showMessages, int topLineIndex, int curLineIndex, int selectionStartLine, CleanupRange cleanupRange, CleanupRangeExpandMode cleanupRangeExpandMode) {
+	private boolean refreshCode(String newSourceName, String newSourcePath, String newCodeText, String newAbapRelease, boolean showMessages, int topLineIndex, int curLineIndex,
+			int selectionStartLine, CleanupRange cleanupRange, CleanupRangeExpandMode cleanupRangeExpandMode) {
 		String sourceName = (newSourceName != null) ? newSourceName : codeDisplay.getSourceName();
 		String sourcePath = (newSourcePath != null) ? newSourcePath : codeDisplay.getSourcePath();
 		String sourceCode = (newCodeText != null) ? newCodeText : codeDisplay.getSourceCode();
 		String abapRelease = (newAbapRelease != null) ? newAbapRelease : codeDisplay.getAbapRelease();
-		
-		BackgroundJob job = new BackgroundJob(ParseParams.createForCleanupRange(sourceName, sourceCode, abapRelease, cleanupRange, cleanupRangeExpandMode), 
-														  CleanupParams.createForProfile(curProfile, false, settings.releaseRestriction));
+
+		BackgroundJob job = new BackgroundJob(ParseParams.createForCleanupRange(sourceName, sourceCode, abapRelease, cleanupRange, cleanupRangeExpandMode),
+				CleanupParams.createForProfile(curProfile, false, settings.releaseRestriction));
 		Task result = runJobWithProgressUiIfNeeded(job);
 
 		resultCode = null;
 		resultErrorMessage = null;
 
 		if (!result.getSuccess()) {
-			if (!job.wasCancelled()) { 
+			if (!job.wasCancelled()) {
 				if (showMessages) // TODO: otherwise, display it on a Label? (for 'Watch and Modify Clipboard' function)
 					Message.show(result.getErrorMessage());
 				else
@@ -1475,12 +1494,12 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 
 		// if only a certain range of lines shall be cleaned up and the code is first shown, scroll to the beginning of that range
 		if (topLineIndex < 0) {
-			DiffDoc diffDoc = result.getResultingDiffDoc(); 
-			curLineIndex = (diffDoc == null) ? 0 : diffDoc.getFirstLineInCleanupRange(); 
+			DiffDoc diffDoc = result.getResultingDiffDoc();
+			curLineIndex = (diffDoc == null) ? 0 : diffDoc.getFirstLineInCleanupRange();
 			selectionStartLine = curLineIndex;
 			topLineIndex = Math.max(0, curLineIndex - Math.max(codeDisplay.getVisibleLineCount() / 4, 4));
 		}
-		
+
 		// show result
 		String abapReleaseInfo = getReleaseInfo(newAbapRelease);
 		shell.setText(Program.PRODUCT_NAME + " - " + sourceName + abapReleaseInfo);
@@ -1489,8 +1508,8 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		if (Program.showDevFeatures()) {
 			shell.setText(Program.PRODUCT_NAME + " - " + sourceName + abapReleaseInfo + " - " + result.getCalculationTimeInfo());
 		}
-		// remember the resulting Code instance; the CleanupResult will only be created from it when the window is closed 
-		resultCode = result.getResultingCode(); 
+		// remember the resulting Code instance; the CleanupResult will only be created from it when the window is closed
+		resultCode = result.getResultingCode();
 
 		if (result.getLogSummary() != null) { // even with result.getSuccess() == true, there may be warnings in the log
 			if (showMessages) { // TODO: otherwise, display it on a Label? (for 'Watch and Modify Clipboard' function)
@@ -1501,17 +1520,17 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 	}
 
 	private String getReleaseInfo(String abapRelease) {
-		if (StringUtil.isNullOrEmpty(abapRelease)) 
+		if (StringUtil.isNullOrEmpty(abapRelease))
 			return "";
-		
+
 		// convert "757" into "7.57"
 		String abapReleaseDisplay = abapRelease;
-		if (ABAP.consistsOfDigitsOnly(abapRelease) && abapRelease.length() == 3) 
-			abapReleaseDisplay = abapRelease.substring(0, 1) + "." + abapRelease.substring(1);	
+		if (ABAP.consistsOfDigitsOnly(abapRelease) && abapRelease.length() == 3)
+			abapReleaseDisplay = abapRelease.substring(0, 1) + "." + abapRelease.substring(1);
 
 		return " (ABAP " + abapReleaseDisplay + ")";
 	}
-	
+
 	private Task runJobWithProgressUiIfNeeded(BackgroundJob job) {
 		return runJobWithProgressUiIfNeeded(job, Job.CODE_LENGTH_TO_SHOW_PROGRESS_FORM);
 	}
@@ -1532,8 +1551,9 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 	}
 
 	private int selectionChangedId;
+
 	public final void selectionChanged() {
-		// start timer to refresh list of used rules 250 ms after the last change 
+		// start timer to refresh list of used rules 250 ms after the last change
 		// (i.e. not at every keystroke or scrollbar movement, but only if there was no other keystroke in the meantime)
 		++selectionChangedId;
 		int selectionChangedIdAtStart = selectionChangedId;
@@ -1550,7 +1570,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		if (RuleStats.equals(usedRules, newUsedRules))
 			return;
 		usedRules = newUsedRules;
-		
+
 		++suspendItemCheck;
 		try {
 			lstUsedRules.setRedraw(false);
@@ -1582,7 +1602,8 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		String sourceName = persistency.getFileNameWithoutExtension(path);
 		String codeText = persistency.readAllTextFromFile(path);
 		if (keepPositionIfSameFile && codeDisplay != null && StringUtil.equalsIgnoreCaseCheckingForNull(path, codeDisplay.getSourcePath()))
-			return refreshCode(sourceName, path, codeText, ABAP.NEWEST_RELEASE, true, codeDisplay.getTopLineIndex(), codeDisplay.getCurLineIndex(), codeDisplay.getSelectionStartLine(), null, CleanupRangeExpandMode.FULL_DOCUMENT);
+			return refreshCode(sourceName, path, codeText, ABAP.NEWEST_RELEASE, true, codeDisplay.getTopLineIndex(), codeDisplay.getCurLineIndex(),
+					codeDisplay.getSelectionStartLine(), null, CleanupRangeExpandMode.FULL_DOCUMENT);
 		else
 			return refreshCode(sourceName, path, codeText, ABAP.NEWEST_RELEASE, true);
 	}
@@ -1613,7 +1634,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		try {
 			SystemClipboard.setText(detailedResult.toString());
 			clipInfo += " and copied to the clipboard.";
-		} catch(IllegalStateException ex) { 
+		} catch (IllegalStateException ex) {
 			// cannot open system clipboard
 		}
 		String summary = job.getBatchSummary() + System.lineSeparator() + clipInfo;
@@ -1630,7 +1651,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		BusyIndicator.showWhile(shell.getDisplay(), new Runnable() {
 			@Override
 			public void run() {
-				Persistency persistency = Persistency.get(); 
+				Persistency persistency = Persistency.get();
 				for (String path : paths)
 					commentIdentifier.identifyComments(persistency.readAllTextFromFile(path), null, mode);
 			}
@@ -1646,7 +1667,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 	private void getWordFreqForFolder(CommentIdentifierMode mode) {
 		String dir = showDirDialog(defaultCodeDirectory, "Get comment word frequencies from all text files in folder");
 		String[] paths = getAllPaths(dir, FileType.CODE, false, true);
-		if (paths == null) 
+		if (paths == null)
 			return;
 
 		final CommentIdentifier commentIdentifier = new CommentIdentifier();
@@ -1661,7 +1682,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 				}
 			}
 		});
-		
+
 		String oldTable = SystemClipboard.getText();
 		String result = commentIdentifier.getWordFrequencies(oldTable);
 		if (!StringUtil.isNullOrEmpty(result)) {
@@ -1682,23 +1703,23 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 	}
 
 	private void cancelAndClose() {
-		// even when canceling, save the settings, because it would be confusing if shell bounds etc. were different when the shell is opened again 
+		// even when canceling, save the settings, because it would be confusing if shell bounds etc. were different when the shell is opened again
 		saveSettings();
 
 		resultCode = null;
 		resultErrorMessage = null;
-		
+
 		shell.dispose();
 	}
-	
+
 	private void applyAndClose() {
 		saveSettings();
 
-		// keep current resultCode and resultErrorMessage 
-		
+		// keep current resultCode and resultErrorMessage
+
 		if (!isPlugin) {
-			LastSession lastSession = LastSession.create(codeDisplay.getSourceName(), codeDisplay.getSourcePath(), codeDisplay.getSourceCode(), codeDisplay.getAbapRelease(), codeDisplay.getTopLineIndex(),
-					codeDisplay.getCurLineIndex(), codeDisplay.getSelectionStartLine());
+			LastSession lastSession = LastSession.create(codeDisplay.getSourceName(), codeDisplay.getSourcePath(), codeDisplay.getSourceCode(), codeDisplay.getAbapRelease(),
+					codeDisplay.getTopLineIndex(), codeDisplay.getCurLineIndex(), codeDisplay.getSelectionStartLine());
 			lastSession.save();
 		}
 
@@ -1710,7 +1731,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 			profiles = Profile.loadProfiles(null, null);
 		else
 			profiles = Profile.loadProfiles(settings.profilesDirectory, settings.readOnlyProfileDirs);
-		
+
 		cboProfile.removeAll();
 
 		boolean profileNameFound = false;
@@ -1777,20 +1798,21 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 	}
 
 	private void refreshHighlight() {
-		codeDisplay.setHighlight(ChangeTypes.create(chkHighlightIndentChanges.getSelection(), chkHighlightInnerSpaceChanges.getSelection(), chkHighlightCaseChanges.getSelection(), chkHighlightContentChanges.getSelection()));
+		codeDisplay.setHighlight(ChangeTypes.create(chkHighlightIndentChanges.getSelection(), chkHighlightInnerSpaceChanges.getSelection(), chkHighlightCaseChanges.getSelection(),
+				chkHighlightContentChanges.getSelection()));
 	}
 
 	private void editProfiles() {
 		String curProfileName = (curProfile == null) ? null : curProfile.name;
 		FrmProfiles frmProfiles = new FrmProfiles();
 		EditProfilesResult profileResult = frmProfiles.open(curProfileName, settings, codeDisplay.getShowVerticalLine(), codeDisplay.getVerticalLinePos(), codeDisplayColors);
-		
-		// after returning from FrmProfiles, ensure FrmMain appears in the foreground, 
+
+		// after returning from FrmProfiles, ensure FrmMain appears in the foreground,
 		// even if another window was meanwhile activated and is higher in the Z order
 		if (!shell.getMinimized()) {
 			shell.forceActive();
 		}
-		
+
 		if (profileResult != null) {
 			// lastProfileName.saved is false if FrmProfiles was closed with "Cancel" or with the red X
 			if (profileResult.saved && profileResult.lastProfileName != null) {
@@ -1846,7 +1868,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		if (e.keyCode == SWT.F1) {
 			ProgramLauncher.showHelp(HelpTopic.MAIN);
 			e.doit = false;
-		} else if (!isPlugin && ((e.stateMask & SWT.CTRL) != 0) && e.keyCode == 'v') {
+		} else if ((!isPlugin || isReadOnly) && ((e.stateMask & SWT.CTRL) != 0) && e.keyCode == 'v') {
 			codeFromClipboard(true);
 			e.doit = false;
 		} else if (isPlugin && e.keyCode == SWT.ESC) {
@@ -1857,14 +1879,14 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 			e.doit = false;
 		} else if (e.keyCode >= 'a' && e.keyCode <= 'z') {
 			// toggle the used rule at the given position
-			int itemIndex = (int)e.keyCode - (int)'a';
+			int itemIndex = (int) e.keyCode - (int) 'a';
 			if (itemIndex >= 0 && usedRules != null && usedRules.length > itemIndex) {
 				try {
 					TableItem item = lstUsedRules.getItem(itemIndex);
 					boolean newValue = !item.getChecked();
 					item.setChecked(newValue); // this does NOT trigger the event
 					setBlockRule(itemIndex, !newValue);
-				} catch (IllegalArgumentException | SWTException ex) { 
+				} catch (IllegalArgumentException | SWTException ex) {
 				}
 				e.doit = false;
 			}
@@ -1882,22 +1904,22 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 			e.doit = false;
 		}
 	}
-	
+
 	private void openNextMatchingSampleFile(boolean ascending) {
 		String dir = defaultCodeDirectory;
 
 		String[] paths = getAllPaths(dir, FileType.CODE, true, true);
-		if (paths == null) 
+		if (paths == null)
 			return;
 		paths = sortPaths(paths, ascending, codeDisplay.getSourcePath());
 
 		// find the next file in which at least one Command is changed with the current profile settings
-		Persistency persistency = Persistency.get(); 
+		Persistency persistency = Persistency.get();
 		for (String testPath : paths) {
 			String sourceName = persistency.getFileNameWithoutExtension(testPath);
 			String codeText = persistency.readAllTextFromFile(testPath);
-			BackgroundJob job = new BackgroundJob(ParseParams.createForWholeCode(sourceName, codeText, ABAP.NEWEST_RELEASE), 
-															  CleanupParams.createForProfile(curProfile, false, settings.releaseRestriction));
+			BackgroundJob job = new BackgroundJob(ParseParams.createForWholeCode(sourceName, codeText, ABAP.NEWEST_RELEASE),
+					CleanupParams.createForProfile(curProfile, false, settings.releaseRestriction));
 			Task result = runJobWithProgressUiIfNeeded(job);
 
 			RuleStats[] ruleStats = result.getResultingDiffDoc().getRuleStats(curProfile);
@@ -1909,7 +1931,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 				}
 			}
 		}
-		
+
 		Message.show("None of the " + String.valueOf(paths.length) + " files is changed with the current profile settings.");
 	}
 
@@ -1917,17 +1939,17 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		String dir = defaultCodeDirectory;
 
 		String[] paths = getAllPaths(dir, FileType.CODE, true, true);
-		if (paths == null) 
+		if (paths == null)
 			return;
 		paths = sortPaths(paths, ascending, codeDisplay.getSourcePath());
 
 		// find the next file in which at least one Command satisfies the hard-coded Command.matchesPattern()
-		Persistency persistency = Persistency.get(); 
+		Persistency persistency = Persistency.get();
 		for (String testPath : paths) {
 			String sourceName = persistency.getFileNameWithoutExtension(testPath);
 			String codeText = persistency.readAllTextFromFile(testPath);
-			BackgroundJob job = new BackgroundJob(ParseParams.createForWholeCode(sourceName, codeText, ABAP.NEWEST_RELEASE), 
-															  CleanupParams.createForProfile(curProfile, false, settings.releaseRestriction));
+			BackgroundJob job = new BackgroundJob(ParseParams.createForWholeCode(sourceName, codeText, ABAP.NEWEST_RELEASE),
+					CleanupParams.createForProfile(curProfile, false, settings.releaseRestriction));
 			Task result = runJobWithProgressUiIfNeeded(job);
 
 			Command command = result.getResultingCode().getFirstPatternMatch();
@@ -1937,27 +1959,27 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 				return;
 			}
 		}
-		
+
 		Message.show("None of the " + String.valueOf(paths.length) + " files contains a Command that satisfies the Command.matchesPattern() condition.");
 	}
 
 	private void patternMatchesToClip(boolean doCleanup) {
 		String dir = defaultCodeDirectory;
 		String LINE_SEP = System.lineSeparator();
-		
+
 		String[] paths = getAllPaths(dir, FileType.CODE, true, true);
-		if (paths == null) 
+		if (paths == null)
 			return;
 		paths = sortPaths(paths, true, codeDisplay.getSourcePath());
 
 		int fileCount = 0;
 		int matchCount = 0;
 		StringBuilder sb = new StringBuilder();
-		Persistency persistency = Persistency.get(); 
+		Persistency persistency = Persistency.get();
 		for (String testPath : paths) {
 			String sourceName = persistency.getFileNameWithoutExtension(testPath);
 			String codeText = persistency.readAllTextFromFile(testPath);
-			CleanupParams cleanupParams = doCleanup ? CleanupParams.createForProfile(curProfile, false, settings.releaseRestriction) : null; 
+			CleanupParams cleanupParams = doCleanup ? CleanupParams.createForProfile(curProfile, false, settings.releaseRestriction) : null;
 			BackgroundJob job = new BackgroundJob(ParseParams.createForWholeCode(sourceName, codeText, ABAP.NEWEST_RELEASE), cleanupParams);
 			Task result = runJobWithProgressUiIfNeeded(job);
 
@@ -1978,7 +2000,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 
 					// append the Command itself and the corresponding opening / closing Command
 					addPatternMatch(sb, command, false);
-					
+
 					// append related commands, if any
 					ArrayList<Command> relatedCommands = command.getCommandsRelatedToPatternMatch();
 					if (relatedCommands != null) {
@@ -1987,14 +2009,14 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 							addPatternMatch(sb, relatedCommand, true);
 						}
 					}
-					
+
 					sb.append(System.lineSeparator());
 				}
 				command = command.getNext();
 			}
 		}
 
-		if (sb.length() > 0) 
+		if (sb.length() > 0)
 			SystemClipboard.setText(sb.toString());
 
 		String taskInfo = "Pattern matches " + (doCleanup ? "after cleanup" : "before cleanup");
@@ -2004,7 +2026,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 	}
 
 	private void addPatternMatch(StringBuilder sb, Command command, boolean addLineNumber) {
-		// for Commands like [END]LOOP, [END]IF etc., add the corresponding opening and/or closing Command, too, 
+		// for Commands like [END]LOOP, [END]IF etc., add the corresponding opening and/or closing Command, too,
 		// so the resulting text can more easily be used for testing
 		Command openingCommand = command.getOpeningCommand();
 		if (openingCommand != null) {
@@ -2017,7 +2039,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 			sb.append(ABAP.COMMENT_SIGN_STRING + " line " + String.valueOf(command.getSourceLineNumStart()));
 		}
 		sb.append(removeMultipleLineBreaks(command.toString()));
-		
+
 		Command closingCommand = command.getClosingCommand();
 		if (closingCommand != null) {
 			sb.append(removeMultipleLineBreaks(closingCommand.toString()));
@@ -2037,12 +2059,12 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 	}
 
 	private void watchClipboard() {
-		if (!mmuCodeWatchClipboard.getSelection()) 
+		if (!mmuCodeWatchClipboard.getSelection())
 			return;
-		
+
 		mmuCodeWatchClipboard.getDisplay().timerExec(WATCH_CLIPBOARD_INTERVAL_MS, new Runnable() {
 			String lastClipboard = SystemClipboard.getText();
-			
+
 			public void run() {
 				if (!mmuCodeWatchClipboard.getSelection())
 					return;
@@ -2051,29 +2073,29 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 				if (curClipboard != null && (lastClipboard == null || !lastClipboard.equals(curClipboard))) {
 					int finalLfCount = StringUtil.suffixCount(curClipboard, "\n", false);
 					if (codeFromClipboard(false)) {
-						// clipboard was successfully processed 
+						// clipboard was successfully processed
 						codeToClipboard(finalLfCount);
 						Display.getCurrent().beep(); // TODO: this is a bit obtrusive ... - alternatives?
 						lastClipboard = SystemClipboard.getText();
 
-					} else { 
+					} else {
 						// clipboard could NOT be processed successfully
-						
-						// TODO: play an error sound, e.g. 
-						// InputStream inputStream = getClass().getResourceAsStream("/sounds/error.wav"); 
+
+						// TODO: play an error sound, e.g.
+						// InputStream inputStream = getClass().getResourceAsStream("/sounds/error.wav");
 						// AudioStream audioStream = new AudioStream(inputStream);
 						// AudioPlayer.player.start(audioStream);
 						lastClipboard = curClipboard;
 					}
 				}
-				
+
 				if (!shell.isDisposed()) {
 					mmuCodeWatchClipboard.getDisplay().timerExec(WATCH_CLIPBOARD_INTERVAL_MS, this);
 				}
 			}
 		});
 	}
-	
+
 	private void createRulesDocumentation() {
 		RuleDocumentation ruleDoc = new RuleDocumentation(Profile.createDefault().getRulesSortedByGroup());
 
@@ -2082,28 +2104,22 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 
 		ruleDoc.deleteOldRuleDocs(docsDir, persistency);
 		ruleDoc.create(docsDir, persistency);
-		
+
 		Message.show("Documentation saved to '" + docsDir + "'. Press OK to open folder.");
 		if (persistency.directoryExists(docsDir))
 			ProgramLauncher.startProcess(docsDir);
 	}
-	
+
 	private void createReleaseNoteDocumentation() {
-		final String[] thanks = new String[] { "**Thank you** very much", "**Great thanks** to", "Great **thanks** to", "**Thanks a lot**,", "**Thanks** a lot to", "**Thank you**", "Many **thanks** to" };
+		final String[] thanks = new String[] { "**Thank you** very much", "**Great thanks** to", "Great **thanks** to", "**Thanks a lot**,", "**Thanks** a lot to", "**Thank you**",
+				"Many **thanks** to" };
 		final String[] reasonsWithFixes = new String[] { "for your contributions, ideas and bug reports that led to these improvements!",
-																		 "for reporting the bugs behind this release!",
-																		 "for the reporting the bugs behind these fixes!", 
-																		 "for the bug reports behind these fixes!", 
-																		 "for their ideas and bug reports!", 
-																		 "for the ideas and bug reports behind these improvements!", 
-																		 "for inspiring these improvements and fixes!", 
-																		 "for opening the issues that led to these enhancements and fixes!"};
-		final String[] reasonsWithoutFixes = new String[] { "for your contributions and ideas that led to these improvements!",
-				 															 "for the issues behind these improvements!", 
-																			 "for opening the issues behind these improvements!", 
-																			 "for all your ideas!", 
-																			 "for inspiring these improvements!", 
-																		 	 "for opening the issues that led to these improvements!" };
+				"for reporting the bugs behind this release!", "for the reporting the bugs behind these fixes!", "for the bug reports behind these fixes!",
+				"for their ideas and bug reports!", "for the ideas and bug reports behind these improvements!", "for inspiring these improvements and fixes!",
+				"for opening the issues that led to these enhancements and fixes!" };
+		final String[] reasonsWithoutFixes = new String[] { "for your contributions and ideas that led to these improvements!", "for the issues behind these improvements!",
+				"for opening the issues behind these improvements!", "for all your ideas!", "for inspiring these improvements!",
+				"for opening the issues that led to these improvements!" };
 		final String SEP = System.lineSeparator();
 		final int HASH_LENGTH = 7;
 
@@ -2113,20 +2129,20 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 			SystemClipboard.setText("git log --oneline");
 			return;
 		}
-		
+
 		String[] lines = StringUtil.split(text, new char[] { '\r', '\n' }, true);
 		StringBuilder result = new StringBuilder();
 		HashSet<String> issueNums = new HashSet<>();
 		boolean containsFix = false;
 		for (String line : lines) {
 			line = line.trim();
-			
+
 			// remove hash
 			int spacePos = line.indexOf(' ');
 			if (spacePos == HASH_LENGTH && StringUtil.consistsOf(line.substring(0, HASH_LENGTH), "0123456789abcdef")) {
 				line = line.substring(HASH_LENGTH + 1).trim();
 			}
-			
+
 			// remove initial parenthesis like (HEAD -> v#.#.#), (upstream/main), (tag: v#.#.#)
 			if (StringUtil.startsWith(line, "(", false)) {
 				int closePos = line.indexOf(')');
@@ -2134,13 +2150,12 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 					line = line.substring(closePos + 1).trim();
 				}
 			}
-			
+
 			// replace first word
 			spacePos = line.indexOf(' ');
 			if (spacePos > 1) {
-				String[] replacements = new String[] { "add->Added", "allow->Allowed", "change->Changed", "create->Created", 
-																	"enhance->Enhanced", "fix->Fixed", "improve->Improved", "include->Included", 
-																	"move->Moved", "replace->Replaced", "update->Updated" };
+				String[] replacements = new String[] { "add->Added", "allow->Allowed", "change->Changed", "create->Created", "enhance->Enhanced", "fix->Fixed", "improve->Improved",
+						"include->Included", "move->Moved", "replace->Replaced", "update->Updated" };
 				String firstWord = line.substring(0, spacePos);
 				boolean found = false;
 				for (String replacement : replacements) {
@@ -2158,19 +2173,19 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 					containsFix = true;
 				}
 			}
-			
+
 			// replace Rule names
 			Rule[] rules = curProfile.getAllRules();
 			for (Rule rule : rules) {
 				String ruleName = rule.getClass().getSimpleName();
 				int namePos = line.indexOf(ruleName);
 				int nameEnd = namePos + ruleName.length();
-				if (namePos >= 0 && (namePos == 0 || !Character.isLetterOrDigit(line.charAt(namePos -1))) 
+				if (namePos >= 0 && (namePos == 0 || !Character.isLetterOrDigit(line.charAt(namePos - 1)))
 						&& (nameEnd == line.length() || !Character.isLetterOrDigit(line.charAt(nameEnd)))) {
 					line = line.substring(0, namePos) + "rule '**" + rule.getDisplayName() + "**'" + line.substring(nameEnd);
 				}
 			}
-			
+
 			// replace issue reference
 			final String ISSUE_REF_START = " (#";
 			final String ISSUE_REF_END = ")";
@@ -2180,10 +2195,9 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 				int issueNumStart = issueRefPos + ISSUE_REF_START.length();
 				String issueNum = line.substring(issueNumStart, issueNumEnd);
 				issueNums.add(issueNum);
-				line = line.substring(0, issueRefPos) + " ([#" + issueNum + "](../../../issues/" + issueNum + "))" 
-					  + line.substring(issueNumEnd + ISSUE_REF_END.length());
+				line = line.substring(0, issueRefPos) + " ([#" + issueNum + "](../../../issues/" + issueNum + "))" + line.substring(issueNumEnd + ISSUE_REF_END.length());
 			}
-			
+
 			result.append(line).append(SEP);
 		}
 
@@ -2195,7 +2209,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		for (String issueNum : issueNums) {
 			if (contributorCount > 0)
 				header.append((contributorCount + 1 < issueNums.size()) ? "," : " and");
-			if ((contributorCount + 1) % 3 == 0) 
+			if ((contributorCount + 1) % 3 == 0)
 				header.append(SEP);
 			header.append(" [**" + issueNum + "**](https://github.com/" + issueNum + ")");
 			++contributorCount;
@@ -2218,7 +2232,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		String savePath = Profile.getSavePath(settings.profilesDirectory, Profile.DEFAULT_NAME);
 		String saveDir = persistency.getDirectoryName(savePath);
 		if (!persistency.directoryExists(saveDir)) {
-			// if no directory is found, create one ...  
+			// if no directory is found, create one ...
 			persistency.createDirectory(saveDir);
 			// ... and try again
 			if (!persistency.directoryExists(saveDir)) {
@@ -2239,7 +2253,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 	private String[] getAllPaths(String dir, FileType fileType, boolean recursive, boolean showNotFoundMessage) {
 		if (dir == null || dir.length() == 0)
 			return null;
-		
+
 		Persistency persistency = Persistency.get();
 		String extension = "*" + persistency.getExtension(FileType.CODE);
 		String[] paths = persistency.getFilesInDirectory(dir, extension, recursive);
@@ -2250,13 +2264,13 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		}
 		return paths;
 	}
-	
+
 	private String[] sortPaths(String[] paths, boolean ascending, String startAfterPath) {
 		if (paths == null)
 			return paths;
-		
+
 		Arrays.sort(paths);
-		
+
 		// identify the current file in the (sorted) list
 		int readIndex = 0;
 		if (!StringUtil.isNullOrEmpty(startAfterPath)) {
@@ -2269,7 +2283,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		}
 		if (readIndex == 0 && ascending)
 			return paths;
-		
+
 		String[] result = new String[paths.length];
 		int writeIndex = 0;
 		for (int i = 0; i < paths.length; ++i) {
@@ -2277,7 +2291,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 			result[writeIndex] = paths[readIndex];
 			++writeIndex;
 		}
-		
+
 		return result;
 	}
 }
