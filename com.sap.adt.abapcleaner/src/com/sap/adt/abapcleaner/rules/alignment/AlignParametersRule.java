@@ -489,7 +489,7 @@ public class AlignParametersRule extends RuleForCommands {
 					parentTokenOfFirstLine = curParent;
 				}
 			}
-		} else {
+		} else if (contentType == ContentType.ROW_IN_VALUE_OR_NEW_CONSTRUCTOR || isTableOfSingleComponents(parentToken, endToken)) {
 			// only the range parentToken ... endToken is included in the AlignTable; determine whether it can be kept on one line
 			keepOnSingleLine = determineKeepOnSingleLine(parentToken, endToken, tableStart.earlyIndent);
 		}
@@ -877,6 +877,22 @@ public class AlignParametersRule extends RuleForCommands {
 		}
 	}
 
+	private boolean isTableOfSingleComponents(Token parentToken, Token end) {
+		// returns true for a table with single components like VALUE #( ( 1 ) ( 2 ) ( 3 ) ) or 
+		// VALUE #( ( lo_any ) ( lo_other ) ( lo_third ) ), which may be kept on one line, although it is not a table row 
+		
+		Token testToken = parentToken.getNext();
+		while (testToken != null) {
+			if (!testToken.textEqualsAny("(", ")")) {
+				return false;
+			} if (testToken.hasChildren() && testToken.getFirstChild() != testToken.getLastChild()) {
+				return false;
+			}
+			testToken = testToken.getNextSibling();
+		}
+		return true;
+	}
+	
 	private boolean moveRowInValueOrNewConstructor(Token openingToken, int baseIndent, boolean keepOnSingleLine) throws UnexpectedSyntaxAfterChanges, IntegrityBrokenException {
 		int oldStartIndex = openingToken.getStartIndexInLine();
 		boolean changed = false;
