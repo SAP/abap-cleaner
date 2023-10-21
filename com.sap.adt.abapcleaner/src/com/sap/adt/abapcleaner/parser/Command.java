@@ -1090,18 +1090,12 @@ public class Command {
 		// determine start and end of the select clause
 		// (see https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/index.htm?file=abapselect_mainquery.htm)
 		Token selectClauseStart = selectToken.getNextCodeSibling();
-		Token selectClauseEnd;
+		boolean isSelectFromFields = false;
 		if (selectClauseStart.isKeyword("FROM")) {
+			isSelectFromFields = true;
 			selectClauseStart = selectToken.getLastTokenOnSiblings(true, TokenSearch.ASTERISK, "FIELDS");
 			selectClauseStart = selectClauseStart.getNextCodeSibling();
-			// the INTO clause may come earlier than specified in the ABAP reference
-			selectClauseEnd = selectClauseStart.getLastTokenOnSiblings(true, TokenSearch.ASTERISK, "FOR ALL ENTRIES IN|WHERE|GROUP BY|HAVING|ORDER BY|%_HINTS|INTO");
-		} else {
-			// the INTO clause may come even before FROM 
-			selectClauseEnd = selectClauseStart.getLastTokenOnSiblings(true, TokenSearch.ASTERISK, "FROM|INTO");
 		}
-		if (selectClauseEnd == null)
-			return false; // unexpected syntax
 		
 		// skip the "DISTINCT" which the select clause may start with
 		// (see https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/index.htm?file=abapselect_clause.htm)
@@ -1125,7 +1119,7 @@ public class Command {
 		// see https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/index.htm?file=abapselect_list.htm)
 		boolean aggregateFunctionFound = false;
 		Token token = selectListStart;
-		while (token != null && token != selectClauseEnd) {
+		while (token != null) {
 			// determine whether anywhere, a table field is found anywhere in the select list entry; this entry may contain 
 			// - table fields 
 			// - untyped literals like 123, 'abc', `abc`, 
@@ -1164,18 +1158,30 @@ public class Command {
 
 			// move behind the Term
 			token = term.lastToken.getNextCodeToken();
-			if (token == selectClauseEnd) 
-				break;
 			
 			// skip "AS alias" expression
 			if (token.isKeyword("AS")) 
 				token = token.getNextCodeSibling().getNextCodeSibling();
-			if (token == selectClauseEnd)
-				break;
 			
 			// skip the comma
 			if (token.textEquals(",")) {
 				token = token.getNextCodeSibling();
+				continue;
+			} 
+			
+			// check whether the select list ends
+			if (!token.isKeyword()) {
+				// list continues
+			} else if (isSelectFromFields) {
+				// the INTO clause may come earlier than specified in the ABAP reference
+				if (token.matchesOnSiblings(true, "FOR ALL ENTRIES IN|WHERE|GROUP BY|HAVING|ORDER BY|%_HINTS|INTO")) {
+					break;
+				}
+			} else {
+				// the INTO clause or UP TO ... ROWS may come even before FROM 
+				if (token.matchesOnSiblings(true, "FROM|INTO|UP TO")) {
+					break;
+				}
 			}
 		}
 		// ENDSELECT is NOT required if at least one aggregate function was found (but no table field outside of it) 
