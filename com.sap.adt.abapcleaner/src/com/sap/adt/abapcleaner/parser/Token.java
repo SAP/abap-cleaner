@@ -2537,4 +2537,11 @@ public class Token {
 		return newToken;
 	}
 
+	public boolean isSqlLiteralType() {
+		return (isIdentifier() && next != null && next.isAttached() && this.textEqualsAny(ABAP.abapSqlLiteralTypes));
+	}
+	
+	public boolean isSqlTypeInCast() {
+		return textEqualsAny(ABAP.abapSqlLiteralTypes) && parent != null && parent.textEquals("CAST(") && getPrevCodeSibling() != null && getPrevCodeSibling().isKeyword("AS");
+	}
 }

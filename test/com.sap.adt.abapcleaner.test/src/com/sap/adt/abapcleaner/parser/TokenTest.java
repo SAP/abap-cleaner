@@ -1490,4 +1490,19 @@ public class TokenTest {
 		
 		assertFalse(buildCommand("DATA(lv_any) = 1", 0).insertStressTestTokenAfter(StressTestType.COMMENT_LINE));
 	}
+	
+	@Test
+	void testAbapSqlLiteralType() {
+		// ensure that with ABAP SQL Typed Literals, the literal type is correctly identified 
+		assertTrue(buildCommand("SELECT int1`1` AS lit1 FROM any_table INTO @DATA(ls_any).", 1).isSqlLiteralType());
+		assertTrue(buildCommand("SELECT decfloat16`3.14` AS lit1 FROM any_table INTO @DATA(ls_any).", 1).isSqlLiteralType());
+		assertTrue(buildCommand("SELECT d16n`3.14` AS lit1 FROM any_table INTO @DATA(ls_any).", 1).isSqlLiteralType());
+		assertTrue(buildCommand("SELECT char`abc` AS lit1 FROM any_table INTO @DATA(ls_any).", 1).isSqlLiteralType());
+		assertTrue(buildCommand("SELECT string`abc` AS lit1 FROM any_table INTO @DATA(ls_any).", 1).isSqlLiteralType());
+		assertTrue(buildCommand("SELECT numc`012` AS lit1 FROM any_table INTO @DATA(ls_any).", 1).isSqlLiteralType());
+		assertTrue(buildCommand("SELECT cuky`EUR` AS lit1 FROM any_table INTO @DATA(ls_any).", 1).isSqlLiteralType());
+		assertTrue(buildCommand("SELECT dats`20230419` AS lit1 FROM any_table INTO @DATA(ls_any).", 1).isSqlLiteralType());
+
+		assertFalse(buildCommand("SELECT int1 FROM any_table INTO @DATA(ls_any). ENDSELECT.", 1).isSqlLiteralType());
+}
 }

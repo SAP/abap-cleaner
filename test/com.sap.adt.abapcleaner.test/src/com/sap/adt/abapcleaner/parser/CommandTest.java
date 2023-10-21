@@ -1146,15 +1146,37 @@ public class CommandTest {
 	}
 	
 	@Test
-	void testRequiresEndSelect() {
-		// since .requiresEndSelect() is private, we test .getOpensLevel() instead (see Command.finishBuild())
+	void testOpensSelectLoop() {
+		// since .opensSelectLoop() is private, we test .getOpensLevel() instead (see Command.finishBuild())
 		assertTrue(buildCommand("SELECT DISTINCT (fieldlist) FROM dtab GROUP BY (scol) ORDER BY (scol) INTO (@dref->*, @count).").getOpensLevel());
 		assertTrue(buildCommand("SELECT DISTINCT (fieldlist) FROM dtab WHERE fld1 = 'ABC' INTO @dref->*.").getOpensLevel());
 		
+		// ensure that despite the arithmetic expressions, any_field is always identified as a table field due to which ENDSELECT is required, 
+		// including inside CAST( ... )  
+		assertTrue(buildCommand("SELECT any_field + 1 AS fld FROM any_table INTO @DATA(ls_any). ENDSELECT.").getOpensLevel());
+		assertTrue(buildCommand("SELECT 1 + any_field AS fld FROM any_table INTO @DATA(ls_any). ENDSELECT.").getOpensLevel());
+		assertTrue(buildCommand("SELECT CAST( any_field AS D34N ) / CAST( other_field AS D34N ) AS fld FROM any_table INTO @DATA(ls_any). ENDSELECT.").getOpensLevel());
+		assertTrue(buildCommand("SELECT 2 * any_field + 7 * @lc_any AS fld FROM any_table INTO @DATA(ls_any). ENDSELECT.").getOpensLevel());
+		assertTrue(buildCommand("SELECT concat( any_field, upper( 'abc' ) ) AS fld FROM any_table INTO @DATA(ls_any). ENDSELECT.").getOpensLevel());
+		assertTrue(buildCommand("SELECT concat( char`abc`, any_field ) AS fld FROM any_table INTO @DATA(ls_any). ENDSELECT.").getOpensLevel());
+	   assertTrue(buildCommand("SELECT instr( 'abc', 'a' )  AS any_ FROM any_table INTO @DATA(ls_any). ENDSELECT.").getOpensLevel());
+	   assertTrue(buildCommand("SELECT div( num1, num2 ) AS div FROM any_table INTO @DATA(ls_any). ENDSELECT.").getOpensLevel());
+	   assertTrue(buildCommand("SELECT division( num1, num2, 2 ) AS division FROM any_table INTO @DATA(ls_any). ENDSELECT.").getOpensLevel());
+	   assertTrue(buildCommand("SELECT mod( num1, num2 ) AS mod FROM any_table INTO @DATA(ls_any). ENDSELECT.").getOpensLevel());
+	   assertTrue(buildCommand("SELECT @lc_any + abs( num1 - num2 ) AS sum FROM any_table INTO @DATA(ls_any). ENDSELECT.").getOpensLevel());
+
+	   // literals and host variables WITHOUT an aggregation function also require ENDSELECT
+		assertTrue(buildCommand("SELECT @abap_true AS bool, 'literal' as lit FROM any_table INTO @DATA(ls_any). ENDSELECT.").getOpensLevel());
+		assertTrue(buildCommand("SELECT concat( char`abc`, char`def` ) AS fld FROM any_table INTO @DATA(ls_any). ENDSELECT.").getOpensLevel());
+
 		assertFalse(buildCommand("SELECT FROM dtab FIELDS fld1, MIN( price ) AS min_price, MAX( price ) AS max_price GROUP BY fld1 INTO TABLE @DATA(result).").getOpensLevel());
 		assertFalse(buildCommand("SELECT FROM dtab FIELDS COUNT( CASE WHEN num1 < 4 THEN 'X' WHEN num1 BETWEEN 4 AND 7 THEN 'Y' END ) AS cnt, COUNT(*) AS cntstar INTO TABLE @DATA(result).").getOpensLevel());
 		assertFalse(buildCommand("SELECT FROM dtab FIELDS COUNT(*) INTO (@DATA(avg)).").getOpensLevel());
 		assertFalse(buildCommand("SELECT ( SUM( amt1 ) + SUM( amt2 ) ) AS amt_sum FROM any_table INTO @DATA(lt_amount).").getOpensLevel());
+
+		// ensure that untyped and typed literals are correctly handled
+		assertFalse(buildCommand("SELECT 1 AS lit1, '3.14' AS lit2, COUNT( * ) AS count, `text` AS lit3 FROM any_table INTO @DATA(ls_any).").getOpensLevel());
+		assertFalse(buildCommand("SELECT int1`1` AS lit1, d16n`3.14` AS lit2, COUNT( * ) AS count, cuky`EUR` AS lit3, dats`20230419` AS lit4 FROM any_table INTO @DATA(ls_any).").getOpensLevel());
 	}
 
 	@Test

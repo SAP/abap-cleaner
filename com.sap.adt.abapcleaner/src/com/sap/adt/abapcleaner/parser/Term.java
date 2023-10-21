@@ -145,14 +145,17 @@ public class Term {
 			// continue below
 		} else if (firstToken.isStringLiteral() || firstToken.isLiteral() || firstToken.isIdentifier() || firstToken.isOtherOp()) {
 			// continue below
+		} else if (firstToken.getOpensLevel() && firstToken.textEqualsAny(ABAP.abapSqlFunctions)) {
+			// continue below
 		} else {
 			throw new UnexpectedSyntaxException(firstToken, "First token '" + firstToken.text + "' unexpected for a Term");
 		}
 
 		// determine the lastToken of this Term
 		if (token.startsStringTemplate()) {
-			while (!token.endsStringTemplate())
+			while (!token.endsStringTemplate()) {
 				token = token.getNextSibling();
+			}
 		} else {
 			while (token.getOpensLevel()) {
 				token = token.getNextSibling();
@@ -168,13 +171,15 @@ public class Term {
 			while (token.getNext() != null && token.getNext().textEqualsAny(binaryOperators)) {
 				token = token.getNext().getNext();
 				if (token.startsStringTemplate()) {
-					while (!token.endsStringTemplate())
+					while (!token.endsStringTemplate()) {
 						token = token.getNextSibling();
+					}
 				} else {
 					if (token.isAnyKeyword(ABAP.constructorOperators)) // e.g. "... + COND any_data_element( WHEN ... THEN ... )
 						token = token.getNext();
-					while (token.getOpensLevel())
+					while (token.getOpensLevel()) {
 						token = token.getNextSibling(); // the next sibling closes the level again, but might open another level
+					}
 				}
 			}
 		}
