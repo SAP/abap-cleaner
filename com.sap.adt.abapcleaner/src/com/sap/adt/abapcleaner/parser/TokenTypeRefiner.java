@@ -12,10 +12,6 @@ import com.sap.adt.abapcleaner.base.ABAP;
  * but are kept for code that is considered erroneous by the RND Parser.</p> 
  */
 public class TokenTypeRefiner implements ITokenTypeRefiner {
-	private static final String[] sqlFunctions = new String[] { "AVG(", "MEDIAN(", "MAX(", "MIN(", "SUM(", "PRODUCT(", "STDDEV(", "VAR(", "CORR(", "CORR_SPEARMAN(", 
-			"STRING_AGG(", "COUNT(", "GROUPING(", "ALLOW_PRECISION_LOSS(", "ABS(", "CEIL(", "DIV(", "DIVISION(", "FLOOR(", "MOD(", "ROUND(", "CONCAT(", "CONCAT_WITH_SPACE(", 
-			"INSTR(", "LEFT(", "LENGTH(", "LOWER(", "LPAD(", "LTRIM(", "REPLACE(", "RIGHT(", "RPAD(", "RTRIM(", "SUBSTRING(", "UPPER(" }; // TODO: and many more ...
-
 	public static TokenTypeRefiner create() {
 		return new TokenTypeRefiner();
 	}
@@ -32,7 +28,7 @@ public class TokenTypeRefiner implements ITokenTypeRefiner {
 				if (token.type == TokenType.KEYWORD || (token.type == TokenType.COMPARISON_OP && token.startsWithLetter())) {
 					// use TokenType "keyword" for "DATA(", "FINAL(", "FIELD-SYMBOL(" and "VALUE(", but not for "lines(" (as opposed to "LINES OF")
 					if (token.textEndsWith("(") && !token.opensInlineDeclaration() && !token.textEquals("VALUE(") &&
-							(!firstCode.isKeyword("SELECT") || !token.textEqualsAny(sqlFunctions))) {
+							(!firstCode.isKeyword("SELECT") || !token.textEqualsAny(ABAP.abapSqlFunctions))) {
 						token.type = TokenType.IDENTIFIER;
 					}
 					

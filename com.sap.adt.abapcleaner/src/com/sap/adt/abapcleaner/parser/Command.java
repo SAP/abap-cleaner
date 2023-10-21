@@ -26,7 +26,6 @@ public class Command {
 	public final static String[] declarationKeywords = new String[] { "CONSTANTS", "DATA", "FIELD-SYMBOLS", "TYPES", "CLASS-DATA", "STATICS" }; // "DATA(", "FINAL(" and "FIELD-SYMBOL(" do NOT belong here
 	public final static String[] declarationKeywordsReservingMemory = new String[] { "CONSTANTS", "DATA", "FIELD-SYMBOLS", "CLASS-DATA", "STATICS" }; 
 	public final static String[] declarationKeywordsOnlyInClassDef = new String[] { "ALIASES", "INTERFACES", "CLASS-DATA", "CLASS-EVENTS", "CLASS-METHODS", "METHODS", "EVENTS" };
-	public final static String[] aggregateFunctions = new String[] { "AVG(", "MEDIAN(", "MAX(", "MIN(", "SUM(", "PRODUCT(", "STDDEV(", "VAR(", "CORR(", "CORR_SPEARMAN(", "STRING_AGG(", "COUNT(", "GROUPING(", "ALLOW_PRECISION_LOSS(" };
 
 	private static String getLevelOpenerKey(String text) {
 		return AbapCult.toUpper(text);
@@ -936,8 +935,9 @@ public class Command {
 				// unexpected syntax
 				opensSelectLoop = false;
 			}
-			if (!opensSelectLoop) 
+			if (!opensSelectLoop) { 
 				usedLevelOpener = null;
+			}
 		}
 
 		// the (obsolete) CLASS ... DEFINITION LOAD statement is NOT followed by ENDCLASS
@@ -1044,7 +1044,7 @@ public class Command {
 		}
 	}
 	
-	private boolean opensSelectLoop() throws NullPointerException {
+	private boolean opensSelectLoop() throws NullPointerException, ParseException {
 		// determine whether a SELECT command requires an ENDSELECT and therefore opens a level
 		// see https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/index.htm?file=abapselect.htm 
 		// similarly, determine whether WITH requires ENDWITH by analyzing its main SELECT query
@@ -1123,31 +1123,48 @@ public class Command {
 		// - SELECT FROM sflight FIELDS [carrid, connid, MAX( seatsmax - seatsocc ) AS seatsfree_max] GROUP BY ..FIELDS.
 		// - SELECT DISTINCT [cityto] FROM spfli WHERE ...
 		// see https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/index.htm?file=abapselect_list.htm)
+		boolean aggregateFunctionFound = false;
 		Token token = selectListStart;
 		while (token != null && token != selectClauseEnd) {
-			// if any of the columns in the select clause is NOT an aggregate function, ENDSELECT is required
-			// (do not use token.isAnyKeyword() here, since some aggregate functions may not be classified correctly)
-			boolean aggregateFunctionFound = false;
-			if (token.textEquals("(")) {
-				// consider arithmetic expressions such as '( SUM( amt1 ) + SUM( amt2 ) ) AS amt_sum'
-				Token test = token.getNextCodeToken();
-				while (test != token.getNextSibling()) {
-					if (test.textEqualsAny(aggregateFunctions)) {
-						aggregateFunctionFound = true;
-						break;
-					}
+			// determine whether anywhere, a table field is found anywhere in the select list entry; this entry may contain 
+			// - table fields 
+			// - untyped literals like 123, 'abc', `abc`, 
+			// - typed literals like int1`42`, decfloat16`3.14`, char`abc`, numc`012`, cuky`EUR`,  
+			// - host variables or host constants (e.g. @lc_constant, @iv_variable),
+			// - SQL functions func( arg1[, arg2] ... ) like abs(, ceil(, div(, floor(, mod(, round(, concat(, instr(, length( etc.
+			// - an arithmetic expression combining any of these elements
+			Term term;
+			try {
+				term = Term.createArithmetic(token);
+			} catch (UnexpectedSyntaxException e) {
+				throw new ParseException(parentCode, this.sourceLineNumStart, e);
+			}
+			// consider SELECT * already now, so the * does not get confused with multiplication 
+			if (term.firstToken.textEquals("*"))
+				return true;
+
+			Token test = term.firstToken;
+			boolean foundLast = false;
+			while (test != null && !foundLast) {
+				foundLast = (test == term.lastToken);
+				if (test.isIdentifier() && !test.getOpensLevel() && !test.textStartsWith(ABAP.AT_SIGN_STRING) 
+						&& !test.isSqlLiteralType() && !test.isSqlTypeInCast()) {
+					// access to table field found outside of aggregate functions, therefore ENDSELECT is required
+					return true;
+				} 
+				if (test.textEqualsAny(ABAP.abapSqlAggregateFunctions)) {
+					aggregateFunctionFound = true;
+					// table fields inside aggregate functions are fine, therefore skip the aggregate function
+					test = test.getNextCodeSibling();
+				} else {
+					// move to the next Token - also looking into parentheses or SQL functions like concat(
 					test = test.getNextCodeToken();
 				}
-			} else {
-				aggregateFunctionFound = token.textEqualsAny(aggregateFunctions); 
-			}
-			if (!aggregateFunctionFound) { 
-				return true;
 			}
 
-			// move behind the closing parenthesis ")" of the aggregate function; even "COUNT(*)" is tokenized into 3 Tokens
-			token = token.getNextCodeSibling().getNextCodeSibling();
-			if (token == selectClauseEnd)
+			// move behind the Term
+			token = term.lastToken.getNextCodeToken();
+			if (token == selectClauseEnd) 
 				break;
 			
 			// skip "AS alias" expression
@@ -1157,11 +1174,12 @@ public class Command {
 				break;
 			
 			// skip the comma
-			if (token.textEquals(","))
+			if (token.textEquals(",")) {
 				token = token.getNextCodeSibling();
+			}
 		}
-      // all columns in the select list are aggregate functions, therefore ENDSELECT is NOT required
-		return false;
+		// ENDSELECT is NOT required if at least one aggregate function was found (but no table field outside of it) 
+		return !aggregateFunctionFound;
 	}
 
 	private void distinguishOperators(boolean isComparisonPositionAtStart, Token start, Token end) {

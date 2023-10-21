@@ -889,4 +889,83 @@ class IndentTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testSelectWithLiteralsHostVarsEndSelect() {
+		// ENDSELECT is required because only (untyped and typed) literals and host variables are used, 
+		// but no aggregate function, since COUNT inside the last arithmetic expression is commented out 
+		buildSrc("      SELECT +1 AS untyped1,");
+		buildSrc("             -1 AS untyped2,");
+		buildSrc("             'any' AS untyped3,");
+		buildSrc("             `any` AS untyped4,");
+		buildSrc("             1 + 2 * ( 3 + @lc_any ) AS untyped5,");
+		buildSrc("");
+		buildSrc("             int1`1` AS typed1,");
+		buildSrc("             d16n`1.1` AS typed2,");
+		buildSrc("             dats`20230419` AS typed3,");
+		buildSrc("             cuky`EUR` AS typed4,");
+		buildSrc("             concat( char`abc`, @lc_text ) AS typed5,");
+		buildSrc("");
+		buildSrc("             \" ( 1 + @lc_any * COUNT( * ) ) AS aggr_func_used");
+		buildSrc("        FROM any_table INTO @DATA(ls_and).");
+		buildSrc("      ENDSELECT.");
+
+		buildExp("    SELECT +1 AS untyped1,");
+		buildExp("           -1 AS untyped2,");
+		buildExp("           'any' AS untyped3,");
+		buildExp("           `any` AS untyped4,");
+		buildExp("           1 + 2 * ( 3 + @lc_any ) AS untyped5,");
+		buildExp("");
+		buildExp("           int1`1` AS typed1,");
+		buildExp("           d16n`1.1` AS typed2,");
+		buildExp("           dats`20230419` AS typed3,");
+		buildExp("           cuky`EUR` AS typed4,");
+		buildExp("           concat( char`abc`, @lc_text ) AS typed5,");
+		buildExp("");
+		buildExp("           \" ( 1 + @lc_any * COUNT( * ) ) AS aggr_func_used");
+		buildExp("      FROM any_table INTO @DATA(ls_and).");
+		buildExp("    ENDSELECT.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testSelectWithLiteralsHostVarsAndAggrFunc() {
+		// ENDSELECT is NOT required because of the aggregate function COUNT inside the last arithmetic expression 
+		buildSrc("      SELECT +1 AS untyped1,");
+		buildSrc("             -1 AS untyped2,");
+		buildSrc("             'any' AS untyped3,");
+		buildSrc("             `any` AS untyped4,");
+		buildSrc("             1 + 2 * ( 3 + @lc_any ) AS untyped5,");
+		buildSrc("");
+		buildSrc("             int1`1` AS typed1,");
+		buildSrc("             d16n`1.1` AS typed2,");
+		buildSrc("             dats`20230419` AS typed3,");
+		buildSrc("             cuky`EUR` AS typed4,");
+		buildSrc("             concat( char`abc`, @lc_text ) AS typed5,");
+		buildSrc("");
+		buildSrc("             ( 1 + @lc_any * COUNT( * ) ) AS aggr_func_used");
+		buildSrc("        FROM any_table INTO @DATA(ls_and).");
+
+		buildExp("    SELECT +1 AS untyped1,");
+		buildExp("           -1 AS untyped2,");
+		buildExp("           'any' AS untyped3,");
+		buildExp("           `any` AS untyped4,");
+		buildExp("           1 + 2 * ( 3 + @lc_any ) AS untyped5,");
+		buildExp("");
+		buildExp("           int1`1` AS typed1,");
+		buildExp("           d16n`1.1` AS typed2,");
+		buildExp("           dats`20230419` AS typed3,");
+		buildExp("           cuky`EUR` AS typed4,");
+		buildExp("           concat( char`abc`, @lc_text ) AS typed5,");
+		buildExp("");
+		buildExp("           ( 1 + @lc_any * COUNT( * ) ) AS aggr_func_used");
+		buildExp("      FROM any_table INTO @DATA(ls_and).");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }

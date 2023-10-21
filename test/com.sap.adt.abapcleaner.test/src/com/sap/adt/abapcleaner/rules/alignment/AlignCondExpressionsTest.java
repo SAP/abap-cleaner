@@ -725,4 +725,31 @@ class AlignCondExpressionsTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	/*
+	@Test
+	void testKeepOneLinerSwitchAsIs() {
+		buildSrc("    lv_num = SWITCH #( lv_num WHEN 0 THEN 3 ELSE ( lv_num - 1 ) ).");
+
+		copyExpFromSrc();
+		
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testCreateOneLinerSwitch() {
+		rule.configOneLinerStyle.setEnumValue(CondOneLinerStyle.CREATE);
+
+		buildSrc("    lv_num = SWITCH #( lv_num");
+		buildSrc("                       WHEN 0 THEN 3 ELSE ( lv_num - 1 ) ).");
+
+		buildExp("    lv_num = SWITCH #( lv_num WHEN 0 THEN 3 ELSE ( lv_num - 1 ) ).");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+	 */
 }
