@@ -91,6 +91,8 @@ public class FileSystem implements IFileSystem {
 
 	private void addFiles(File dir, String searchPattern, boolean recursive, ArrayList<String> paths) {
 		File[] files = dir.listFiles(); 
+		if (files == null)
+			return;
 		for (File file : files) {
 			if (recursive && file.isDirectory())
 				addFiles(file, searchPattern, recursive, paths);
@@ -117,6 +119,8 @@ public class FileSystem implements IFileSystem {
 
 	private void addDirs(File dir, boolean recursive, ArrayList<String> paths) {
 		File[] files = dir.listFiles(); // TODO: provide FilenameFilter interface created with searchPattern!
+		if (files == null)
+			return;
 		for (File file : files) {
 			if (file.isDirectory()) {
 				paths.add(file.getAbsolutePath());
@@ -141,17 +145,19 @@ public class FileSystem implements IFileSystem {
 		// delete (empty) sub-directories first
 		if (recursive) {
 			File[] files = dir.listFiles(); 
-
-			for (File file : files) {
-				// if any file was found, stop the operation
-				if (file.isFile()) 
-					return false;
-			}
-
-			for (File file : files) {
-				// if any deletion fails, stop the operation
-				if (file.isDirectory() && !deleteDir(file, recursive)) {
-					return false;
+			if (files != null) {
+				for (File file : files) {
+					// if any file was found, stop the operation
+					if (file.isFile()) {
+						return false;
+					}
+				}
+	
+				for (File file : files) {
+					// if any deletion fails, stop the operation
+					if (file.isDirectory() && !deleteDir(file, recursive)) {
+						return false;
+					}
 				}
 			}
 		}

@@ -144,6 +144,8 @@ public class FileSystemDouble implements IFileSystem {
 
 	@Override
 	public String[] getFilesInDirectory(String path, String searchPattern, boolean recursive) {
+		if (!directoryExists(path))
+			return null;
 		ArrayList<String> paths = new ArrayList<>();
 		path = getKey(addDirSep(path));
 		for (String file : fileInfos.keySet()) {
