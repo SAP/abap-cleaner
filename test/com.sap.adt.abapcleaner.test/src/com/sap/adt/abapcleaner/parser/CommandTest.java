@@ -1165,20 +1165,27 @@ public class CommandTest {
 	   assertTrue(buildCommand("SELECT mod( num1, num2 ) AS mod FROM any_table INTO @DATA(ls_any). ENDSELECT.").getOpensLevel());
 	   assertTrue(buildCommand("SELECT @lc_any + abs( num1 - num2 ) AS sum FROM any_table INTO @DATA(ls_any). ENDSELECT.").getOpensLevel());
 
-	   // literals and host variables WITHOUT an aggregation function also require ENDSELECT
-		assertTrue(buildCommand("SELECT @abap_true AS bool, 'literal' as lit FROM any_table INTO @DATA(ls_any). ENDSELECT.").getOpensLevel());
-		assertTrue(buildCommand("SELECT concat( char`abc`, char`def` ) AS fld FROM any_table INTO @DATA(ls_any). ENDSELECT.").getOpensLevel());
-
 		assertFalse(buildCommand("SELECT FROM dtab FIELDS fld1, MIN( price ) AS min_price, MAX( price ) AS max_price GROUP BY fld1 INTO TABLE @DATA(result).").getOpensLevel());
 		assertFalse(buildCommand("SELECT FROM dtab FIELDS COUNT( CASE WHEN num1 < 4 THEN 'X' WHEN num1 BETWEEN 4 AND 7 THEN 'Y' END ) AS cnt, COUNT(*) AS cntstar INTO TABLE @DATA(result).").getOpensLevel());
 		assertFalse(buildCommand("SELECT FROM dtab FIELDS COUNT(*) INTO (@DATA(avg)).").getOpensLevel());
 		assertFalse(buildCommand("SELECT ( SUM( amt1 ) + SUM( amt2 ) ) AS amt_sum FROM any_table INTO @DATA(lt_amount).").getOpensLevel());
-
-		// ensure that untyped and typed literals are correctly handled
-		assertFalse(buildCommand("SELECT 1 AS lit1, '3.14' AS lit2, COUNT( * ) AS count, `text` AS lit3 FROM any_table INTO @DATA(ls_any).").getOpensLevel());
-		assertFalse(buildCommand("SELECT int1`1` AS lit1, d16n`3.14` AS lit2, COUNT( * ) AS count, cuky`EUR` AS lit3, dats`20230419` AS lit4 FROM any_table INTO @DATA(ls_any).").getOpensLevel());
 	}
 
+	@Test
+	void testOpensSelectLoopLiterals() {
+		// ensure that untyped and typed literals are correctly handled:
+	   // if literals and host variables are used, but NO aggregation function is called, ENDSELECT is required
+		assertTrue(buildCommand("SELECT @abap_true AS bool, 'literal' as lit FROM any_table INTO @DATA(ls_any). ENDSELECT.").getOpensLevel());
+		assertTrue(buildCommand("SELECT concat( char`abc`, char`def` ) AS fld FROM any_table INTO @DATA(ls_any). ENDSELECT.").getOpensLevel());
+
+		// with at least one aggregation function, ENDSELECT is NOT required
+		assertFalse(buildCommand("SELECT 1 AS lit1, '3.14' AS lit2, COUNT( * ) AS count, `text` AS lit3 FROM any_table INTO @DATA(ls_any).").getOpensLevel());
+		assertFalse(buildCommand("SELECT int1`1` AS lit1, d16n`3.14` AS lit2, COUNT( * ) AS count, cuky`EUR` AS lit3, dats`20230419` AS lit4 FROM any_table INTO @DATA(ls_any).").getOpensLevel());
+
+		// ensure that this even works if UP TO ... ROWS in an unusual position 
+		assertFalse(buildCommand("SELECT MAX( any_field ) UP TO 1 ROWS FROM any_table INTO @DATA(ls_any).").getOpensLevel());
+	}
+	
 	@Test
 	void testInsertLeftSiblingSectionError() throws IntegrityBrokenException {
 		boolean throwsException = false;
