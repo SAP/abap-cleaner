@@ -455,23 +455,26 @@ public class DiffNavigator {
 		return diffDoc.getRuleStatsOfLineRange(profile, getSelectionLineMin(), getSelectionLineMax());
 	}
 
-	public final void setBlockRuleInSelection(RuleID ruleID, boolean blocked) {
+	public final boolean setBlockRuleInSelection(RuleID ruleID, boolean blocked) {
 		int startLine = getSelectionLineMin();
 		int lastLine = getSelectionLineMax();
 		
 		// if the last line is an empty line in both displays, it is not intuitive that this belongs to the next command
 		lastLine = diffDoc.getLastNonEmptyOrChangedLineInRange(startLine, lastLine);
 
+		boolean changed = false;
 		Command lastCommand = null;
 		for (int i = startLine; i <= lastLine; ++i) {
 			DiffLine line = diffDoc.getLine(i);
 			DisplayLine displayLine = (line.rightLine != null) ? line.rightLine : line.leftLine;
 			Command command = displayLine.parentCommand;
 			if (command != null && command != lastCommand) {
-				command.getChangeControl().setBlockedRule(ruleID, blocked);
+				if (command.getChangeControl().setBlockedRule(ruleID, blocked))
+					changed = true;
 				lastCommand = command;
 			}
 		}
+		return changed;
 	}
 
 	public final void setHighlight(ChangeTypes highlight) {
