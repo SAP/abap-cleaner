@@ -193,10 +193,12 @@ public class AlignParametersRule extends RuleForCommands {
 		// (exception: RAISE ... MESSAGE ... EXPORTING ..., where the MESSAGE section benefits from AlignWithSecondWordRule)
 		
 		// align CALL METHOD|FUNCTION|BADI without parentheses (a call with parentheses will simply be handled by the "all other cases" section below)
-		// also align CREATE OBJECT, if it was not replaced by a NEW constructor by the CreateObjectRule
+		// also align CREATE OBJECT, if it was not replaced by a NEW constructor by the CreateObjectRule, 
+		// and RECEIVE RESULTS FROM FUNCTION func [KEEPING TASK] (with IMPORTING, TABLES, CHANGING, EXCEPTIONS)
 		Token period = command.getLastNonCommentToken();
 		if (firstCode.matchesOnSiblings(true, "CALL", "METHOD|FUNCTION|BADI")
-		 || firstCode.matchesOnSiblings(true, "CREATE", "OBJECT")) {
+		 || firstCode.matchesOnSiblings(true, "CREATE", "OBJECT")
+		 || firstCode.matchesOnSiblings(true, "RECEIVE", "RESULTS", "FROM", "FUNCTION")) {
 			// CALL FUNCTION has a lot of potential parameters, so we just search the siblings(!) for the first keyword. 
 			// In case of CALL METHOD identifier( ... ), this is deliberately NOT found among the siblings 
 			// (see ABAP Reference: "CALL FUNCTION - Quick reference")
@@ -625,11 +627,14 @@ public class AlignParametersRule extends RuleForCommands {
 			}
 		}
 		
+		boolean isReceiveResults = (contentType == ContentType.PROCEDURAL_CALL_PARAMS && parentToken.getParentCommand().firstCodeTokenIsKeyword("RECEIVE"));
+		
 		// find assignments within the siblings inside the parentheses or brackets
 		boolean isInLetExpression = false;
 		boolean hasLetExpression = false;
 		boolean continueLastLine = false;
 		boolean tableEndsWithOtherLine = false; 
+		boolean isInExceptions = false;
 
 		while (token != null && token != end && token.getNext() != null) {
 			if ((token.isIdentifier() || token.isKeyword("OTHERS"))
@@ -644,6 +649,7 @@ public class AlignParametersRule extends RuleForCommands {
 					if (!keyword.isKeyword() || keyword != parameter.getPrevCodeSibling()) {
 						keyword = null; 
 					} else if (keyword.isAnyKeyword("EXPORTING", "IMPORTING", "TABLES", "CHANGING", "RECEIVING", "EXCEPTIONS")) {
+						isInExceptions = keyword.isKeyword("EXCEPTIONS");
 						// keep keyword 
 					} else if (keyword.isKeyword("COMPONENTS")) { // for "KEY ... COMPONENTS c1 = ... c2 = ..." 
 						// keep keyword
@@ -656,6 +662,22 @@ public class AlignParametersRule extends RuleForCommands {
 				}
 				Token assignmentOp = parameter.getNextCodeSibling(); // there may be a comment line between EXPORTING and the first parameter
 				Term expression = Term.createArithmetic(assignmentOp.getNext());
+				
+				// for "RECEIVE RESULTS FROM FUNCTION func" consider the MESSAGE addition after two special exceptions, 
+				// see https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/abapreceive_para.htm:
+				// EXCEPTIONS [exc1 = n1 exc2 = n2 ...] 
+				//            [system_failure = ns [MESSAGE smess]] 
+            //            [communication_failure = nc [MESSAGE cmess]]  
+				if (isReceiveResults && isInExceptions && parameter.textEqualsAny("system_failure", "communication_failure")) {
+					Token next = expression.lastToken.getNextCodeSibling();
+					if (next != null && next.isKeyword("MESSAGE")) {
+						Token messageIdentifier = next.getNextCodeSibling();
+						if (messageIdentifier != null) {
+							// extend the expression to contain MESSAGE smess / cmess:
+							expression = Term.createForTokenRange(assignmentOp.getNext(), messageIdentifier);
+						}
+					}
+				}
 				
 				// build the next table line from the identified parts of the assignment
 				AlignLine line = continueLastLine ? table.getLastLine() : table.addLine();

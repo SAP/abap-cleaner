@@ -180,4 +180,21 @@ class AlignWithSecondWordTest extends RuleTestBase {
 		
 		testRule();
 	}
+
+	@Test
+	void testReceiveResultsSkipped() {
+		// ensure that RECEIVE RESULTS FROM FUNCTION is NOT processed
+		buildSrc("    RECEIVE RESULTS FROM FUNCTION 'ANY_FUNCTION' KEEPING TASK");
+		buildSrc("      IMPORTING  et_any                = lt_any");
+		buildSrc("                 et_other              = lt_other");
+		buildSrc("      EXCEPTIONS communication_failure = 1 MESSAGE lv_message");
+		buildSrc("                 system_failure        = 2 MESSAGE lv_message");
+		buildSrc("                 OTHERS                = 3.");
+
+		copyExpFromSrc();
+		
+		putAnyMethodAroundSrcAndExp();
+		
+		testRule();
+	}
 }

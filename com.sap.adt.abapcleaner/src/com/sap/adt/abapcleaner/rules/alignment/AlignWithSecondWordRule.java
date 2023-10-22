@@ -93,6 +93,7 @@ public class AlignWithSecondWordRule extends Rule {
 					|| command.isDeclarationInClassDef() || (command.getOpensLevel() && !firstToken.isKeyword("LOOP")) 
 					|| firstToken.matchesOnSiblings(true, "CALL", "METHOD|FUNCTION|BADI")
 					|| firstToken.matchesOnSiblings(true, "CREATE", "OBJECT")
+					|| firstToken.matchesOnSiblings(true, "RECEIVE", "RESULTS", "FROM", "FUNCTION")
 					|| firstToken.matchesOnSiblings(true, "RAISE", TokenSearch.makeOptional("RESUMABLE"), "EXCEPTION", "TYPE", TokenSearch.ANY_IDENTIFIER, "EXPORTING")
 					|| firstToken.matchesOnSiblings(true, "RAISE", "SHORTDUMP", "TYPE", TokenSearch.ANY_IDENTIFIER, "EXPORTING")
 					|| firstToken.getNextSibling() != firstToken.getNext();
