@@ -128,7 +128,8 @@ You are welcome to [**contribute to ABAP cleaner development**](CONTRIBUTING.md)
 
 ### Code of Conduct
 
-We as members, contributors, and leaders pledge to make participation in our community a harassment-free experience for everyone. By participating in this project, you agree to abide by its [Code of Conduct](https://github.com/SAP/.github/blob/main/CODE_OF_CONDUCT.md) at all times.
+We as members, contributors, and leaders pledge to make participation in our community a harassment-free experience for everyone. 
+By participating in this project, you agree to abide by its [Code of Conduct](https://github.com/SAP/.github/blob/main/CODE_OF_CONDUCT.md) at all times.
 
 
 ## Limitations and Known Issues
@@ -138,6 +139,11 @@ in which menu 'Help / Install New Software...' is available.
 
 Since ABAP cleaner does not perform additional backend calls, cleanup is restricted to what can be done within the current code document, 
 without retrieving additional DDIC information, signatures, includes etc.
+
+ABAP cleaner strives to offer cleanup rules that automatically detect what can be improved in the given ABAP code, 
+so after some initial configuration, users shall be able to apply "everything everywhere" with just one keystroke. 
+ABAP cleaner is therefore restricted to cleanup rules that keep functionality unchanged and can be applied without 
+any additional user interaction, or need for subsequent inspection of changes. 
 
 At any given time, known and unresolved issues are shown as "Open" issues with label "bug" in the 
 [Issues](../../issues) section.
