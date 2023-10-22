@@ -56,6 +56,8 @@ Aligns conditional expressions with the constructor operators COND \#\( WHEN ...
                                  THEN |High Noon|
                                 ELSE THROW cx_cant_be( ) ) ).
 
+    ev_num = SWITCH #( ev_num WHEN 999 THEN 0 ELSE ( ev_num + 1 ) ).
+
     out->write( SWITCH string( sy-index
                                WHEN 1 THEN 'one'
                                WHEN 2 THEN 'two'
@@ -98,6 +100,8 @@ Resulting code:
                                  |High Noon|
                                ELSE
                                  THROW cx_cant_be( ) ) ).
+
+    ev_num = SWITCH #( ev_num WHEN 999 THEN 0 ELSE ( ev_num + 1 ) ).
 
     out->write( SWITCH string( sy-index
                                WHEN 1 THEN 'one'

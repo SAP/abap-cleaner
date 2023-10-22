@@ -55,6 +55,9 @@ If you only want a **preview** of the cleaned code, **without locking or changin
 This opens the interactive ABAP cleaner UI as described above, but the code will not be locked or changed. 
 Nevertheless, changes to ABAP cleaner settings (selected profile, activated rules and options etc.) will be kept. 
 
+The read-only preview also allows you to **paste other ABAP code** (e.g. from SAP GUI) into the ABAP cleaner UI 
+by pressing ***Ctrl + V*** or selecting menu 'Code / From Clipboard', or to **read code from a file** with 'Code / From File...'. 
+
 
 ## Cleaning code with the stand-alone ABAP cleaner app
 
