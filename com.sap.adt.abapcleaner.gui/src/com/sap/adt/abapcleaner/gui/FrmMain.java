@@ -2,7 +2,6 @@ package com.sap.adt.abapcleaner.gui;
 
 import java.io.IOException;
 import java.io.PrintStream;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 import org.eclipse.wb.swt.SWTResourceManager;
@@ -48,9 +47,6 @@ import com.sap.adt.abapcleaner.comparer.*;
 import com.sap.adt.abapcleaner.comparer.ChangeTypes;
 
 import org.eclipse.swt.graphics.Point;
-import org.eclipse.swt.events.MouseTrackAdapter;
-import org.eclipse.swt.events.MouseEvent;
-import org.eclipse.swt.events.MouseAdapter;
 
 public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeControls, IFallbackKeyListener {
 	private static final String SEARCH_INFO = "(press Ctrl + F and type search string)";
@@ -999,7 +995,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 				if (Persistency.get().fileExists(path))
 					ProgramLauncher.startProcess(path);
 				else
-					Message.show("The error log (" + path + ") is empty.");
+					Message.show("The error log (" + path + ") is empty.", shell);
 			}
 		});
 		mmuHelpOpenErrorLog.setText("Open &Error Log");
@@ -1331,7 +1327,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 			return false;
 
 		if (!SystemClipboard.containsText()) {
-			Message.show("The clipboard is empty!");
+			Message.show("The clipboard is empty!", shell);
 			return false;
 		}
 		String code = SystemClipboard.getText();
@@ -1498,7 +1494,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		if (!result.getSuccess()) {
 			if (!job.wasCancelled()) {
 				if (showMessages) // TODO: otherwise, display it on a Label? (for 'Watch and Modify Clipboard' function)
-					Message.show(result.getErrorMessage());
+					Message.show(result.getErrorMessage(), shell);
 				else
 					resultErrorMessage = result.getErrorMessage();
 			}
@@ -1526,7 +1522,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 
 		if (result.getLogSummary() != null) { // even with result.getSuccess() == true, there may be warnings in the log
 			if (showMessages) { // TODO: otherwise, display it on a Label? (for 'Watch and Modify Clipboard' function)
-				Message.show(result.getLogSummary());
+				Message.show(result.getLogSummary(), shell);
 			}
 		}
 		return true;
@@ -1609,7 +1605,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 	private boolean refreshFromFile(String path, boolean keepPositionIfSameFile) {
 		Persistency persistency = Persistency.get();
 		if (!persistency.fileExists(path)) {
-			Message.show("File '" + path + "' not found!");
+			Message.show("File '" + path + "' not found!", shell);
 			return false;
 		}
 		String sourceName = persistency.getFileNameWithoutExtension(path);
@@ -1651,7 +1647,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 			// cannot open system clipboard
 		}
 		String summary = job.getBatchSummary() + System.lineSeparator() + clipInfo;
-		Message.show(summary, title);
+		Message.show(summary, title, shell);
 	}
 
 	private void getSepFreqForFolder(CommentIdentifierMode mode) {
@@ -1673,7 +1669,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		String result = commentIdentifier.getSeparatorFrequencies();
 		if (!StringUtil.isNullOrEmpty(result)) {
 			SystemClipboard.setText(result);
-			Message.show("Separator frequencies for " + CommentIdentifier.getScopeDescription(mode) + " copied to Clipboard.");
+			Message.show("Separator frequencies for " + CommentIdentifier.getScopeDescription(mode) + " copied to Clipboard.", shell);
 		}
 	}
 
@@ -1700,7 +1696,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		String result = commentIdentifier.getWordFrequencies(oldTable);
 		if (!StringUtil.isNullOrEmpty(result)) {
 			SystemClipboard.setText(result);
-			Message.show("Word frequencies for " + CommentIdentifier.getScopeDescription(mode) + " copied to Clipboard.");
+			Message.show("Word frequencies for " + CommentIdentifier.getScopeDescription(mode) + " copied to Clipboard.", shell);
 		}
 	}
 
@@ -1712,7 +1708,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		int lineCount = commentIdentifier.identifyComments(code, output, mode);
 
 		SystemClipboard.setText(output.toString());
-		Message.show(Cult.format(lineCount) + " lines processed; result copied to Clipboard.");
+		Message.show(Cult.format(lineCount) + " lines processed; result copied to Clipboard.", shell);
 	}
 
 	private void cancelAndClose() {
@@ -1763,7 +1759,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 	}
 
 	private void helpAbout() {
-		Message.show(Program.getAboutText(), Program.PRODUCT_NAME, SWT.OK);
+		Message.show(Program.getAboutText(), Program.PRODUCT_NAME, SWT.OK, shell);
 	}
 
 	public final void searchModeChanged(boolean searchMode) {
@@ -1945,7 +1941,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 			}
 		}
 
-		Message.show("None of the " + String.valueOf(paths.length) + " files is changed with the current profile settings.");
+		Message.show("None of the " + String.valueOf(paths.length) + " files is changed with the current profile settings.", shell);
 	}
 
 	private void openNextPatternMatchFile(boolean ascending) {
@@ -1973,7 +1969,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 			}
 		}
 
-		Message.show("None of the " + String.valueOf(paths.length) + " files contains a Command that satisfies the Command.matchesPattern() condition.");
+		Message.show("None of the " + String.valueOf(paths.length) + " files contains a Command that satisfies the Command.matchesPattern() condition.", shell);
 	}
 
 	private void patternMatchesToClip(boolean doCleanup) {
@@ -2035,7 +2031,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		String taskInfo = "Pattern matches " + (doCleanup ? "after cleanup" : "before cleanup");
 		String matchInfo = " found for " + Cult.format(matchCount) + " commands in " + Cult.format(fileCount) + " files";
 		String clipInfo = (sb.length() > 0) ? " (details see clipboard)" : "";
-		Message.show(taskInfo + matchInfo + clipInfo);
+		Message.show(taskInfo + matchInfo + clipInfo, shell);
 	}
 
 	private void addPatternMatch(StringBuilder sb, Command command, boolean addLineNumber) {
@@ -2125,7 +2121,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		ruleDoc.deleteOldRuleDocs(docsDir, persistency);
 		ruleDoc.create(docsDir, persistency);
 
-		Message.show("Documentation saved to '" + docsDir + "'. Press OK to open folder.");
+		Message.show("Documentation saved to '" + docsDir + "'. Press OK to open folder.", shell);
 		if (persistency.directoryExists(docsDir))
 			ProgramLauncher.startProcess(docsDir);
 	}
@@ -2145,7 +2141,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 
 		String text = SystemClipboard.getText();
 		if (StringUtil.isNullOrEmpty(text)) {
-			Message.show("Please run 'git log --oneline' and copy relevant lines to the clipboard first.");
+			Message.show("Please run 'git log --oneline' and copy relevant lines to the clipboard first.", shell);
 			SystemClipboard.setText("git log --oneline");
 			return;
 		}
@@ -2239,10 +2235,10 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		header.append(SEP + SEP);
 
 		if (result.length() == 0) {
-			Message.show("No log line found.");
+			Message.show("No log line found.", shell);
 		} else {
 			SystemClipboard.setText(header.toString() + result.toString());
-			Message.show("The release note documentation was copied to the clipboard.");
+			Message.show("The release note documentation was copied to the clipboard.", shell);
 		}
 	}
 
@@ -2256,7 +2252,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 			persistency.createDirectory(saveDir);
 			// ... and try again
 			if (!persistency.directoryExists(saveDir)) {
-				Message.show("Local profiles folder not found; failed to create folder '" + saveDir + "'");
+				Message.show("Local profiles folder not found; failed to create folder '" + saveDir + "'", shell);
 				return;
 			}
 		}
@@ -2279,7 +2275,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		String[] paths = persistency.getFilesInDirectory(dir, extension, recursive);
 		if (paths == null || paths.length == 0) {
 			if (showNotFoundMessage)
-				Message.show("No " + extension + " files found in folder " + dir);
+				Message.show("No " + extension + " files found in folder " + dir, shell);
 			return null;
 		}
 		return paths;
