@@ -39,8 +39,14 @@ public class ChangeControl {
 		usedRules.clear();
 	}
 
-	public final void setBlockedRule(RuleID ruleId, boolean blocked) {
-		blockedRules.set(ruleId.getValue(), blocked);
+	/**  returns true if the setting was changed */
+	public final boolean setBlockedRule(RuleID ruleId, boolean blocked) {
+		if (blockedRules.get(ruleId.getValue()) == blocked) {
+			return false;
+		} else {
+			blockedRules.set(ruleId.getValue(), blocked);
+			return true;
+		}
 	}
 
 	public final void addToRuleStats(int[] ruleUseCount, int[] ruleBlockedCount) {

@@ -1112,8 +1112,8 @@ public class CodeDisplay extends Composite {
 		return navigator.getRuleStats(profile);
 	}
 
-	public final void setBlockRuleInSelection(RuleID ruleID, boolean blocked) {
-		navigator.setBlockRuleInSelection(ruleID, blocked);
+	public final boolean setBlockRuleInSelection(RuleID ruleID, boolean blocked) {
+		return navigator.setBlockRuleInSelection(ruleID, blocked);
 	}
 
 	public final void setHighlight(ChangeTypes highlight) {

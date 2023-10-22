@@ -48,6 +48,9 @@ import com.sap.adt.abapcleaner.comparer.*;
 import com.sap.adt.abapcleaner.comparer.ChangeTypes;
 
 import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.events.MouseTrackAdapter;
+import org.eclipse.swt.events.MouseEvent;
+import org.eclipse.swt.events.MouseAdapter;
 
 public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeControls, IFallbackKeyListener {
 	private static final String SEARCH_INFO = "(press Ctrl + F and type search string)";
@@ -1267,8 +1270,18 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 				if (suspendItemCheck == 0) {
 					int itemIndex = findUsedRulesItem(e);
 					if (itemIndex >= 0 && usedRules != null && usedRules.length > itemIndex) {
-						boolean checked = lstUsedRules.getItem(itemIndex).getChecked();
-						setBlockRule(itemIndex, !checked);
+						// the next time FrmProfile is opened, preselect this rule
+						if (settings != null) { 
+							settings.profilesLastRuleID = usedRules[itemIndex].getRuleID();
+						}
+						if (e.detail == SWT.CHECK) {
+							// if check state was changed, (un)block the rule and reprocess the selection
+							setBlockRule(itemIndex, !lstUsedRules.getItem(itemIndex).getChecked());
+						} else if ((e.stateMask & SWT.CONTROL) != 0) {
+							// open FrmProfiles to configure this rule
+							editProfiles();
+							codeDisplay.focusDisplay();
+						}
 					}
 				}
 			}
@@ -2052,12 +2065,19 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 
 	private void setBlockRule(int usedRulesIndex, boolean blocked) {
 		if (usedRulesIndex >= 0 && usedRules != null && usedRules.length > usedRulesIndex) {
-			codeDisplay.setBlockRuleInSelection(usedRules[usedRulesIndex].getRuleID(), blocked);
-			codeDisplay.reprocessSelection(curProfile, settings.releaseRestriction);
+			RuleID ruleID = usedRules[usedRulesIndex].getRuleID();
+			// the next time FrmProfile is opened, preselect this rule  
+			if (settings != null) { 
+				settings.profilesLastRuleID = ruleID;
+			}
+			boolean changed = codeDisplay.setBlockRuleInSelection(ruleID, blocked);
+			if (changed) {
+				codeDisplay.reprocessSelection(curProfile, settings.releaseRestriction);
+			}
 		}
 		codeDisplay.focusDisplay();
 	}
-
+	
 	private void watchClipboard() {
 		if (!mmuCodeWatchClipboard.getSelection())
 			return;

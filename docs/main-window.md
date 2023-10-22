@@ -141,6 +141,8 @@ while the profile configuration should be used to _generally_ activate or deacti
 Deactivation of rules in specific code places will be lost when the code is processed again 
 (e.g. with a different profile or by opening ABAP cleaner again).
 
+You can use _Ctrl_ + click on one of the rules in the list to directly open its configuration in the current profile. 
+
 ### No pragmas or pseudo-comments for ABAP cleaner
 
 ABAP cleaner strives to automatically determine where cleanup is possible and beneficial with the various cleanup rules. 
