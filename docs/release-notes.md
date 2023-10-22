@@ -8,7 +8,7 @@ the list of [commits](../../../commits/main).
 
 ## 2023-10-23 (version 1.8.0)
 
-Many **thanks** to [**PilotFlying**](https://github.com/PilotFlying), [**fmabap**](https://github.com/fmabap),
+**Great thanks** to [**PilotFlying**](https://github.com/PilotFlying), [**fmabap**](https://github.com/fmabap),
 [**ConjuringCoffee**](https://github.com/ConjuringCoffee), [**GKaschke**](https://github.com/GKaschke), 
 [**franzreitmayer**](https://github.com/franzreitmayer), [**JoachimEck**](https://github.com/JoachimEck) 
 and [**MagneeR**](https://github.com/MagneeR) for opening the issues that led to these enhancements and fixes!
@@ -17,10 +17,10 @@ and [**MagneeR**](https://github.com/MagneeR) for opening the issues that led to
 * Added menus '**Code / From Clipboard**' and 'Code / **From File**' **in read-only preview** ([#155](../../../issues/155))
 * Added **documentation** of limitation to **non-functional changes** ([#158](../../../issues/158))
 * Enhanced rule '**Align parameters and components**' for **RECEIVE RESULTS** FROM FUNCTION ([#166](../../../issues/166))
-* Fixed rule '**Align conditional expressions**' for **SWITCH one-liners** ([#156](../../../issues/156))
 * Fixed read-only **team folders** for **non-existing directories** ([#160](../../../issues/160))
-* Fixed **Parser** for **UP TO ... ROWS** in unusual position ([#159](../../../issues/159))
 * Fixed **Parser** for **literals, host variables**, and **arithmetic expressions in SELECT** ([#165](../../../issues/165))
+* Fixed **Parser** for **UP TO ... ROWS** in unusual position ([#159](../../../issues/159))
+* Fixed rule '**Align conditional expressions**' for **SWITCH one-liners** ([#156](../../../issues/156))
 * Fixed rule '**Align parameters and components**' for **non-table-row one-liners** ([#153](../../../issues/153))
 
 ## 2023-10-16 (version 1.7.2)
@@ -162,7 +162,6 @@ Great **thanks** to [**ConjuringCoffee**](https://github.com/ConjuringCoffee), [
 * Fixed rule '**Align parameters and components**' for line starts **left of the assignment** operator in **nested cases** ([#53](../../../issues/53))
 * Fixed rule '**Delete unused variables**' options wording, replacing 'measure' with '**action**' ([#52](../../../issues/52))
 * Fixed **background color** of options in Profiles editor for **dark theme** ([#47](../../../issues/47))
-
 
 ## 2023-06-06 (version 1.3.0)
 
