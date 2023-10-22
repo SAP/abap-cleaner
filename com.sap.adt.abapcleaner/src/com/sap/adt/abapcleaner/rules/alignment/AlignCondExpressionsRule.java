@@ -28,6 +28,8 @@ import com.sap.adt.abapcleaner.rulehelpers.AlignTable;
 
 public class AlignCondExpressionsRule extends RuleForCommands {
 	private enum Columns {
+		LET_EXPR,
+		OPERAND,
 		WHEN, 
 		CONDITION, 
 		THEN, 
@@ -37,7 +39,7 @@ public class AlignCondExpressionsRule extends RuleForCommands {
 		
 		public int getValue() { return this.ordinal(); }
 	}
-	private static final int MAX_COLUMN_COUNT = 6;
+	private static final int MAX_COLUMN_COUNT = 8;
 
 	private final static RuleReference[] references = new RuleReference[] { new RuleReference(RuleSource.ABAP_CLEANER) };
 
@@ -102,6 +104,8 @@ public class AlignCondExpressionsRule extends RuleForCommands {
 			+ LINE_SEP + "                               WHEN sy-timlo = t"
 			+ LINE_SEP + "                                 THEN |High Noon|"
 			+ LINE_SEP + "                                ELSE THROW cx_cant_be( ) ) )."
+			+ LINE_SEP 
+			+ LINE_SEP + "    ev_num = SWITCH #( ev_num WHEN 999 THEN 0 ELSE ( ev_num + 1 ) )."
 			+ LINE_SEP 
 			+ LINE_SEP + "    out->write( SWITCH string( sy-index"
 			+ LINE_SEP + "                               WHEN 1 THEN 'one'"
@@ -182,21 +186,19 @@ public class AlignCondExpressionsRule extends RuleForCommands {
 		int basicIndent = token.getStartIndexInLine();
 		int firstLineBreaks = token.lineBreaks;
 
-		AlignLine line = null;
+		AlignLine line = table.addLine();
 		
 		// read initial LET ... IN
 		if (token.isKeyword("LET")) {
 			Term letTerm = readTermUntil(token, true, "IN");
-			line = table.addLine();
-			line.setCell(Columns.WHEN.getValue(), AlignCellTerm.createSpecial(letTerm, 0, true));
-			token = letTerm.lastToken;
+			line.setCell(Columns.LET_EXPR.getValue(), new AlignCellTerm(letTerm));
+			token = letTerm.lastToken.getNextCodeSibling();
 		}
 		// for SWITCH expressions, read the operand
 		if (isSwitch && token != null) {
 			Term operand = readTermUntil(token, false, "WHEN");
-			line = table.addLine();
-			line.setCell(Columns.WHEN.getValue(), AlignCellTerm.createSpecial(operand, 0, true));
-			token = operand.lastToken;
+			line.setCell(Columns.OPERAND.getValue(), new AlignCellTerm(operand));
+			token = operand.lastToken.getNextCodeSibling();
 		}
 
 		int whenCount = 0;
@@ -205,7 +207,9 @@ public class AlignCondExpressionsRule extends RuleForCommands {
 
 		while (token != null) {
 			if (token.isKeyword("WHEN")) {
-				line = table.addLine();
+				if (whenCount > 0) {
+					line = table.addLine();
+				}
 				++whenCount;
 				
 				line.setCell(Columns.WHEN.getValue(), new AlignCellToken(token));
@@ -235,6 +239,9 @@ public class AlignCondExpressionsRule extends RuleForCommands {
 			token = token.getNextCodeSibling();
 		}
 		
+		AlignColumn letExprColumn = table.getColumn(Columns.LET_EXPR.getValue());
+		AlignColumn operandColumn = table.getColumn(Columns.OPERAND.getValue());
+		AlignColumn whenColumn = table.getColumn(Columns.WHEN.getValue());
 		AlignColumn conditionColumn = table.getColumn(Columns.CONDITION.getValue());
 		AlignColumn thenColumn = table.getColumn(Columns.THEN.getValue());
 		AlignColumn thenValueColumn = table.getColumn(Columns.THEN_VALUE.getValue());
@@ -254,10 +261,19 @@ public class AlignCondExpressionsRule extends RuleForCommands {
 			}
 			if (alignAsOneLiner) {
 				return table.align(basicIndent, firstLineBreaks, true);
-			} 
+			}
 		}
 
-		// for all NON-one-liners, move the ELSE line below WHEN lines
+		// for all NON-one-liners, force and line break after LET ... IN and the SWITCH operand, 
+		// and move the ELSE line below WHEN lines
+		if (!letExprColumn.isEmpty()) {
+			letExprColumn.setForceLineBreakAfter(true);
+			operandColumn.setForceIndent(0);
+		}
+		if (!operandColumn.isEmpty()) {
+			operandColumn.setForceLineBreakAfter(true);
+			whenColumn.setForceIndent(0);
+		}
 		thenValueColumn.setForceLineBreakAfter(false);
 		elseColumn.setForceIndent(0);
 
