@@ -726,10 +726,9 @@ class AlignCondExpressionsTest extends RuleTestBase {
 		testRule();
 	}
 
-	/*
 	@Test
 	void testKeepOneLinerSwitchAsIs() {
-		buildSrc("    lv_num = SWITCH #( lv_num WHEN 0 THEN 3 ELSE ( lv_num - 1 ) ).");
+		buildSrc("    ev_num = SWITCH #( ev_num WHEN 999 THEN 0 ELSE ( ev_num + 1 ) ).");
 
 		copyExpFromSrc();
 		
@@ -742,14 +741,31 @@ class AlignCondExpressionsTest extends RuleTestBase {
 	void testCreateOneLinerSwitch() {
 		rule.configOneLinerStyle.setEnumValue(CondOneLinerStyle.CREATE);
 
-		buildSrc("    lv_num = SWITCH #( lv_num");
-		buildSrc("                       WHEN 0 THEN 3 ELSE ( lv_num - 1 ) ).");
+		buildSrc("    ev_num = SWITCH #( ev_num");
+		buildSrc("                       WHEN 999 THEN 0");
+		buildSrc("                       ELSE ( ev_num + 1 ) ).");
 
-		buildExp("    lv_num = SWITCH #( lv_num WHEN 0 THEN 3 ELSE ( lv_num - 1 ) ).");
+		buildExp("    ev_num = SWITCH #( ev_num WHEN 999 THEN 0 ELSE ( ev_num + 1 ) ).");
 
 		putAnyMethodAroundSrcAndExp();
 
 		testRule();
 	}
-	 */
+	
+	@Test 
+	void testSwitchWithLet() {
+		rule.configOneLinerStyle.setEnumValue(CondOneLinerStyle.SPLIT);
+
+		buildSrc("    ev_result = SWITCH string( LET lv_prefix = 'number ' IN sy-index WHEN 1 THEN lv_prefix + 'one' ELSE lv_prefix + 'two' ).");
+
+		buildExp("    ev_result = SWITCH string( LET lv_prefix = 'number ' IN");
+		buildExp("                               sy-index");
+		buildExp("                               WHEN 1");
+		buildExp("                               THEN lv_prefix + 'one'");
+		buildExp("                               ELSE lv_prefix + 'two' ).");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }
