@@ -6,6 +6,23 @@ as well as bugfixes of reported issues, i.e. anything that enhances or changes t
 For a complete list of changes (including documentation, tests, refactoring etc.), please refer to 
 the list of [commits](../../../commits/main).
 
+## 2023-10-23 (version 1.8.0)
+
+Many **thanks** to [**PilotFlying**](https://github.com/PilotFlying), [**fmabap**](https://github.com/fmabap),
+[**ConjuringCoffee**](https://github.com/ConjuringCoffee), [**GKaschke**](https://github.com/GKaschke), 
+[**franzreitmayer**](https://github.com/franzreitmayer), [**JoachimEck**](https://github.com/JoachimEck) 
+and [**MagneeR**](https://github.com/MagneeR) for opening the issues that led to these enhancements and fixes!
+
+* Added **Ctrl + click navigation** from "Rules Used ..." list **to rule configuration** ([#161](../../../issues/161))
+* Added menus '**Code / From Clipboard**' and 'Code / **From File**' **in read-only preview** ([#155](../../../issues/155))
+* Added **documentation** of limitation to **non-functional changes** ([#158](../../../issues/158))
+* Enhanced rule '**Align parameters and components**' for **RECEIVE RESULTS** FROM FUNCTION ([#166](../../../issues/166))
+* Fixed rule '**Align conditional expressions**' for **SWITCH one-liners** ([#156](../../../issues/156))
+* Fixed read-only **team folders** for **non-existing directories** ([#160](../../../issues/160))
+* Fixed **Parser** for **UP TO ... ROWS** in unusual position ([#159](../../../issues/159))
+* Fixed **Parser** for **literals, host variables**, and **arithmetic expressions in SELECT** ([#165](../../../issues/165))
+* Fixed rule '**Align parameters and components**' for **non-table-row one-liners** ([#153](../../../issues/153))
+
 ## 2023-10-16 (version 1.7.2)
 
 **Thanks a lot**, [**openPhiL**](https://github.com/openPhiL), [**TMNielsenApS**](https://github.com/TMNielsenApS) and 
