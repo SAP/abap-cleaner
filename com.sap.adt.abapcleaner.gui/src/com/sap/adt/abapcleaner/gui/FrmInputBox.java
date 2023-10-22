@@ -34,7 +34,7 @@ public class FrmInputBox {
 	/**
 	 * @wbp.parser.entryPoint
 	 */
-	public final String open(String defaultText, String title, boolean restrictToValidFileNameChars) {
+	public final String open(String defaultText, String title, boolean restrictToValidFileNameChars, Shell caller) {
       Display display = Display.getDefault();
 		createContents();
 
@@ -50,6 +50,9 @@ public class FrmInputBox {
 			if (!display.readAndDispatch()) {
 				display.sleep();
 			}
+		}
+		if (caller != null && !caller.getMinimized()) {
+			caller.forceActive();
 		}
       return result;
    }

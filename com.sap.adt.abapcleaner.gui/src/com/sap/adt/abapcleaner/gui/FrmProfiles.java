@@ -1260,7 +1260,7 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
          codeDisplay.refreshCode(result.getResultingCode(), result.getResultingDiffDoc(), setPosition, setPosition, setPosition);
          return true;
       } else {
-         Message.show(result.getErrorMessage());
+         Message.show(result.getErrorMessage(), shell);
          return false;
       }
    }
@@ -1405,36 +1405,26 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
    
 
    private void createProfile() {
-      FrmInputBox inputBox = new FrmInputBox();
-      String name = inputBox.open("", "New profile name:", true);
-      if (StringUtil.isNullOrEmpty(name))
-         return;
-      if (findProfile(name) != null) {
-         Message.show("There already is a profile by the name of '" + name + "'!");
-         return;
+   	String newName = inputNewProfileName("");
+      if (!StringUtil.isNullOrEmpty(newName)) {
+	      profiles.add(Profile.create(newName));
+	      refreshProfileList(newName);
       }
-      profiles.add(Profile.create(name));
-      refreshProfileList(name);
    }
 
    private void copyProfile() {
-      FrmInputBox inputBox = new FrmInputBox();
       String oldName = (curProfile == null) ? "" : curProfile.getNameWithoutPrefix();
-      String name = inputBox.open(oldName, "New profile name:", true);
-      if (StringUtil.isNullOrEmpty(name))
-         return;
-      if (findProfile(name) != null) {
-         Message.show("There already is a profile by the name of '" + name + "'!");
-         return;
+   	String newName = inputNewProfileName(oldName);
+      if (!StringUtil.isNullOrEmpty(newName)) {
+	      profiles.add(Profile.createFromModel(newName, curProfile));
+	      refreshProfileList(newName);
       }
-      profiles.add(Profile.createFromModel(name, curProfile));
-      refreshProfileList(name);
    }
 
    private void deleteProfile() {
       if (curProfile == null || profiles.size() <= 1)
          return;
-      if (Message.show("Are you sure you want to delete the profile '" + curProfile.name + "'?", "Delete profile?", SWT.YES | SWT.NO | SWT.CANCEL | SWT.ICON_QUESTION) != SWT.YES)
+      if (Message.show("Are you sure you want to delete the profile '" + curProfile.name + "'?", "Delete profile?", SWT.YES | SWT.NO | SWT.CANCEL | SWT.ICON_QUESTION, shell) != SWT.YES)
          return;
       profiles.remove(curProfile);
       int index = lstProfiles.getSelectionIndex();
@@ -1447,19 +1437,25 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
    }
 
    private void renameProfile() {
+   	String newName = inputNewProfileName(curProfile.name);
+      if (!StringUtil.isNullOrEmpty(newName)) {
+	      if (settings.profilesHighlightItem.equals(ProfileHighlightItem.getPersistentStringOfProfile(curProfile.name))) {
+	      	settings.profilesHighlightItem = ProfileHighlightItem.getPersistentStringOfProfile(newName);
+	      }
+	      curProfile.name = newName;
+	      refreshProfileList(newName);
+      }
+   }
+
+   private String inputNewProfileName(String suggestedName) {
       FrmInputBox inputBox = new FrmInputBox();
-      String newName = inputBox.open(curProfile.name, "New profile name:", true);
-      if (StringUtil.isNullOrEmpty(newName))
-         return;
+      String newName = inputBox.open(suggestedName, "New profile name:", true, shell);
       if (findProfile(newName) != null) {
-         Message.show("There already is a profile by the name of '" + newName + "'!");
-         return;
+         Message.show("There already is a profile by the name of '" + newName + "'!", shell);
+         return null;
+      } else {
+      	return newName;
       }
-      if (settings.profilesHighlightItem.equals(ProfileHighlightItem.getPersistentStringOfProfile(curProfile.name))) {
-      	settings.profilesHighlightItem = ProfileHighlightItem.getPersistentStringOfProfile(newName);
-      }
-      curProfile.name = newName;
-      refreshProfileList(newName);
    }
 
    private void importProfiles() {
@@ -1523,7 +1519,7 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 				title = "Overwrite " + Cult.format(existingCount) + " profiles?";
 				msg = "Overwrite " + Cult.format(existingCount) + " existing profiles '" + sbExisting.toString() + "'?";
 			}
-			if (Message.show(msg, title, SWT.YES | SWT.NO | SWT.CANCEL | SWT.ICON_QUESTION) != SWT.YES) {
+			if (Message.show(msg, title, SWT.YES | SWT.NO | SWT.CANCEL | SWT.ICON_QUESTION, shell) != SWT.YES) {
 				return;
 			}
 		}
@@ -1540,7 +1536,7 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 			try (ISettingsReader reader = TextSettingsReader.createFromFile(persistency, importPath, Program.TECHNICAL_VERSION)) {
 				importedProfile = Profile.createFromSettings(reader, "");
 			} catch (IOException ex) {
-	   		Message.show(ex.getMessage());
+	   		Message.show(ex.getMessage(), shell);
 				continue;
 			}
 
@@ -1584,7 +1580,7 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 				result = Cult.format(importCount) + " profiles were imported.";
 			}
 			result += System.lineSeparator() + System.lineSeparator() + "In order to persist the changes, close the window with button '" + btnOK.getText().replace("&", "") + "' when done.";
-			Message.show(result, title);
+			Message.show(result, title, shell);
 		}
    }
 
@@ -1642,7 +1638,7 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 				title = "Overwrite " + Cult.format(existingCount) + " files?";
 				msg = "Overwrite " + Cult.format(existingCount) + " existing files '" + sbExisting.toString() + "'?";
 			}
-			if (Message.show(msg, title, SWT.YES | SWT.NO | SWT.CANCEL | SWT.ICON_QUESTION) != SWT.YES) {
+			if (Message.show(msg, title, SWT.YES | SWT.NO | SWT.CANCEL | SWT.ICON_QUESTION, shell) != SWT.YES) {
 				return;
 			}
 		}
@@ -1661,7 +1657,7 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 	   			firstSuccessProfileName = name;
 	   		}
 	   	} catch (IOException ex) {
-	   		Message.show(ex.getMessage());
+	   		Message.show(ex.getMessage(), shell);
 	   	}
 		} 
 
@@ -1676,7 +1672,7 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 				title = "Export Profiles";
 				result = Cult.format(exportCount) + " profiles were exported.";
 			}
-			Message.show(result, title);
+			Message.show(result, title, shell);
 		}
    }
 
@@ -1704,7 +1700,7 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
          	if (profileIsReadOnly) {
             	// revert any (un)checking if the profile is read-only
          		if (activate != rule.isActive) {
-         			Message.show("Profile '" + curProfile.name + "' is read-only!\r\nYou can create a copy of it in your own profile folder in order to change its configuration.");
+         			Message.show("Profile '" + curProfile.name + "' is read-only!\r\nYou can create a copy of it in your own profile folder in order to change its configuration.", shell);
          			chkRules.getItem(index).setChecked(rule.isActive);
          			chkRules.redraw();
          		}
@@ -1788,10 +1784,10 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 
 	private boolean exampleCodeFromClipboard() {
 		if (!SystemClipboard.containsText()) {
-			Message.show("The clipboard is empty!");
+			Message.show("The clipboard is empty!", shell);
 			return false;
 		} else if (curRule == null) {
-			Message.show("Please select a rule first!");
+			Message.show("Please select a rule first!", shell);
 			return false;
 		}
 

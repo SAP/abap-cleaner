@@ -371,7 +371,7 @@ public class CodeDisplay extends Composite {
 		if (errorMessage == null) {
 			refreshCode();
 		} else {
-			Message.show(errorMessage);
+			Message.show(errorMessage, getShell());
 		}
 	}
 
@@ -1158,7 +1158,7 @@ public class CodeDisplay extends Composite {
 		String srcText = StringUtil.trimEnd(getSelectedText(DisplaySide.LEFT), ABAP.LINE_SEPARATOR);
 		String expText = StringUtil.trimEnd(getSelectedText(DisplaySide.RIGHT), ABAP.LINE_SEPARATOR);
 		if (StringUtil.isNullOrEmpty(srcText)) {
-			Message.show("Please select some source code first!");
+			Message.show("Please select some source code first!", getShell());
 			return;
 		}
 
@@ -1245,7 +1245,7 @@ public class CodeDisplay extends Composite {
 			if (rule == null) {
 				message += "\r\n" + "WARNING: Code was processed with more than 1 rule!";
 			}
-			Message.show(message, "Generate Unit Test from Code Selection");
+			Message.show(message, "Generate Unit Test from Code Selection", getShell());
 		}
 	}
 
@@ -1256,7 +1256,7 @@ public class CodeDisplay extends Composite {
 		// get the left and right side of the currently selected code section
 		String srcText = StringUtil.trimEnd(getSelectedText(DisplaySide.LEFT), ABAP.LINE_SEPARATOR);
 		if (StringUtil.isNullOrEmpty(srcText)) {
-			Message.show("Please select some source code first!");
+			Message.show("Please select some source code first!", getShell());
 			return;
 		}
 
@@ -1281,7 +1281,7 @@ public class CodeDisplay extends Composite {
 		SystemClipboard.setText(sb.toString());
 		if (showMessage) {
 			String message = "The generated example code was copied to the clipboard.";
-			Message.show(message, "Generate Example from Code Selection");
+			Message.show(message, "Generate Example from Code Selection", getShell());
 		}
 	}
 

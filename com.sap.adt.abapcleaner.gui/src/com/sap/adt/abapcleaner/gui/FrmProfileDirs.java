@@ -288,8 +288,8 @@ public class FrmProfileDirs {
 			String overwriteTitle = (existingCount == 1) ? "Overwrite file?" : "Overwrite " + Cult.format(existingCount) + " files?";  
 			String existingInfo = (existingCount == 1) ? "the existing file" : Cult.format(existingCount) + " existing files";
 			String msg = "Moving profiles to the new folder would overwrite " + existingInfo + " '" + sbExisting.toString() + "'." + twoLineSeps + "Continue?";
-			if (Message.show(msg, overwriteTitle, SWT.YES | SWT.NO | SWT.CANCEL | SWT.ICON_QUESTION) != SWT.YES) {
-				Message.show("Action cancelled; keeping current profiles folder '" + oldDir + "'.", title);
+			if (Message.show(msg, overwriteTitle, SWT.YES | SWT.NO | SWT.CANCEL | SWT.ICON_QUESTION, shell) != SWT.YES) {
+				Message.show("Action cancelled; keeping current profiles folder '" + oldDir + "'.", title, shell);
 				return;
 			}
 		}
@@ -309,7 +309,7 @@ public class FrmProfileDirs {
 
 		// if no profile could be moved, do not change the directory
 		if (moveCount == 0 && oldPaths.length > 0) {
-			Message.show("Existing profile(s) could not be moved to the new folder; keeping current folder '" + oldDir + "'.", title);
+			Message.show("Existing profile(s) could not be moved to the new folder; keeping current folder '" + oldDir + "'.", title, shell);
 			return;	
 		}
 
@@ -326,7 +326,7 @@ public class FrmProfileDirs {
 		if (notMovedCount > 0) {
 			result += twoLineSeps + Cult.format(notMovedCount) + " profile(s) kept in the old folder, as they could not be moved.";
 		}
-		Message.show(result, title);
+		Message.show(result, title, shell);
    }
 
    private void selectReadOnlyDir(Text txtReadOnlyDir) {
