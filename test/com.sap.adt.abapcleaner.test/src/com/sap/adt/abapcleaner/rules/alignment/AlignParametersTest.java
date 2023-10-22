@@ -2756,4 +2756,36 @@ class AlignParametersTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testReceiveResults() {
+		buildSrc("    RECEIVE RESULTS FROM FUNCTION 'ANY_FUNCTION' KEEPING TASK");
+		buildSrc("       IMPORTING");
+		buildSrc("  et_any = lt_any");
+		buildSrc("    et_other = lt_other");
+		buildSrc("       EXCEPTIONS");
+		buildSrc("         communication_failure = 1 MESSAGE lv_message");
+		buildSrc("       system_failure = 2 MESSAGE lv_message");
+		buildSrc("         OTHERS = 3.");
+		buildSrc("");
+		buildSrc("    RECEIVE RESULTS FROM FUNCTION 'ANY_FUNCTION' IMPORTING  et_any = lt_any et_other = lt_other");
+		buildSrc("       EXCEPTIONS any_exception = 1 communication_failure = 2 system_failure = 3 OTHERS = 4.");
+
+		buildExp("    RECEIVE RESULTS FROM FUNCTION 'ANY_FUNCTION' KEEPING TASK");
+		buildExp("      IMPORTING  et_any                = lt_any");
+		buildExp("                 et_other              = lt_other");
+		buildExp("      EXCEPTIONS communication_failure = 1 MESSAGE lv_message");
+		buildExp("                 system_failure        = 2 MESSAGE lv_message");
+		buildExp("                 OTHERS                = 3.");
+		buildExp("");
+		buildExp("    RECEIVE RESULTS FROM FUNCTION 'ANY_FUNCTION'");
+		buildExp("      IMPORTING  et_any                = lt_any");
+		buildExp("                 et_other              = lt_other");
+		buildExp("      EXCEPTIONS any_exception         = 1");
+		buildExp("                 communication_failure = 2");
+		buildExp("                 system_failure        = 3");
+		buildExp("                 OTHERS                = 4.");
+
+		testRule();
+	}
 }
