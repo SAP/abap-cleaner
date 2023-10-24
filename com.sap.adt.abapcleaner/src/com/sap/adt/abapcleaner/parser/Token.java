@@ -1825,7 +1825,7 @@ public class Token {
 		} else if (firstToken.matchesOnSiblings(true, "GET", "REFERENCE", "OF") && prevToken.isKeyword("INTO")) {
 			// GET REFERENCE OF dobj INTO dref. 
 			return MemoryAccessType.WRITE;
-		} else if (firstToken.isAnyKeyword("CLEAR", "CLEAR:", "FREE", "FREE:") && !prevToken.isKeyword("WITH")) {
+		} else if (firstToken.isAnyKeyword("CLEAR", "CLEAR:", "FREE", "FREE:") && parent == null && !prevToken.isKeyword("WITH")) {
 			// CLEAR dobj [ {WITH val [IN {CHARACTER|BYTE} MODE] } | {WITH NULL} ].
 			// FREE dobj. 
 			return MemoryAccessType.WRITE;
@@ -2071,8 +2071,9 @@ public class Token {
 			while (testToken != null && !testToken.isKeyword("EXPORTING")) {
 				testToken = testToken.getPrevCodeSibling();
 			}
-			if (testToken == null)
+			if (testToken == null) {
 				return MemoryAccessType.WRITE;
+			}
 		} 
 
 		// User Dialogs: Dynpros
@@ -2165,19 +2166,20 @@ public class Token {
 				|| firstToken.matchesOnSiblings(true, "CALL", "DATABASE", "PROCEDURE")
 				|| firstToken.matchesOnSiblings(true, "RECEIVE", "RESULTS", "FROM", "FUNCTION")
 				|| (parentToken != null && parentToken.textEndsWith("(") && !parentToken.textEquals("(")))) {
-			// find corresponding access token
+			// for method calls, find corresponding access token
 			Token accessKeyword = prevToken;
 			while (accessKeyword != null && !accessKeyword.isAnyKeyword("EXPORTING", "IMPORTING", "TABLES", "CHANGING", "RECEIVING", "EXCEPTIONS")) {
 				accessKeyword = accessKeyword.getPrevCodeSibling();
 			}
 			// if no access keyword is found, we use the default result .READ below
 			if (accessKeyword != null) {
-				if (accessKeyword.isAnyKeyword("TABLES", "EXPORTING"))
+				if (accessKeyword.isAnyKeyword("TABLES", "EXPORTING")) {
 					return MemoryAccessType.READ;
-				else if (accessKeyword.isAnyKeyword("IMPORTING", "RECEIVING"))
+				} else if (accessKeyword.isAnyKeyword("IMPORTING", "RECEIVING")) {
 					return MemoryAccessType.WRITE;
-				else if (accessKeyword.isAnyKeyword("CHANGING")) 
+				} else if (accessKeyword.isAnyKeyword("CHANGING")) { 
 					return MemoryAccessType.READ_WRITE;
+				}
 			}
 		}
 
