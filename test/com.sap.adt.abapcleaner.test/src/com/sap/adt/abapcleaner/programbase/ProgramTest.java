@@ -27,13 +27,14 @@ public class ProgramTest {
 		assertNotNull(releases);
 		assertTrue(releases.length > 0);
 		
-		LocalDate tomorrow = LocalDate.now().plusDays(1);
+		// server time may be 1 day behind due to different time zones, therefore tolerate one extra day for release dates
+		LocalDate dayAfterTomorrow = LocalDate.now().plusDays(2);
 		
 		Release lastRelease = null;
 		for (Release release : releases) {
 			assertFalse(StringUtil.isNullOrEmpty(release.toString()));
 			
-			assertTrue(release.wasEarlierThan(tomorrow.getYear(), tomorrow.getMonthValue(), tomorrow.getDayOfMonth()));
+			assertTrue(release.wasEarlierThan(dayAfterTomorrow.getYear(), dayAfterTomorrow.getMonthValue(), dayAfterTomorrow.getDayOfMonth()));
 			if (lastRelease != null) {
 				assertTrue(release.wasEarlierThan(lastRelease.releaseDate));
 			}

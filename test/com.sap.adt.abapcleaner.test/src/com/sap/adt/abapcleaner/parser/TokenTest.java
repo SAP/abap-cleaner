@@ -874,6 +874,11 @@ public class TokenTest {
 			commandText.append(commandTextWithMarkers.substring(writePos, markerPos));
 			writePos = markerPos + 1;
 			String varName = ABAP.readTillEndOfVariableName(commandTextWithMarkers, writePos, true);
+			if (StringUtil.isNullOrEmpty(varName)) {
+				// the marker is not meant as a marker, e.g. in 'VALUE #( ... )'
+				commandText.append(commandTextWithMarkers.charAt(markerPos));
+				continue;
+			}
 			char nextChar = commandTextWithMarkers.charAt(writePos + varName.length());
 			if (nextChar == '(' || nextChar == '[') {
 				varName += nextChar;
@@ -1173,6 +1178,31 @@ public class TokenTest {
 		assertAccessType("!pr1 = any_method( EXPORTING e1 = ?pe1 e2 = ?pe2 IMPORTING i1 = !pi1 i2 = !pi2 CHANGING c1 = #pc1 c2 = #pc2 ).");
 		assertAccessType("!pr1 = any_method( e1 = ?pe1 e2 = ?pe2 ).");
 		assertAccessType("any_method( e1 = any_inner_method( IMPORTING i1 = !pi1 i2 = !pi2 ) e1 = other_inner_method( e1 = ?pe1 e2 = ?pe2 ) e3 = third_inner_method( CHANGING c1 = #pc1 c2 = #pc2 ) ).");
+		assertAccessType("!lv_result = xsdbool( ?lv_any = ?lv_other ).");
+	}
+
+	@Test
+	void testAccessTypeTableExpression() {
+		assertAccessType("!lt_table[ ?lv_index ]-comp = ?lv_value.");
+		assertAccessType("!lt_table[ id = ?lv_id name = ?lv_name ]-comp = ?lv_value.");
+		assertAccessType("CLEAR !lt_table[ ?lv_index ].");
+		assertAccessType("CLEAR !lt_table[ ?lv_index ]-comp.");
+		assertAccessType("CLEAR !lt_table[ id = ?lv_id name = ?lv_name ].");
+		assertAccessType("CLEAR !lt_table[ id = ?lv_id name = ?lv_name ]-comp.");
+		assertAccessType("CLEAR: !lt_any_table[ ?lv_index ], !lt_other_table[ id = ?lv_id name = ?lv_name ]-comp, lt_third_table[ get_index( ?iv_any ) ].");
+	}
+
+	@Test
+	void testAccessTypeFuncInsideTableExpr() {
+		assertAccessType("CLEAR !lt_table[ get_index( ?lv_any ) ].");
+		assertAccessType("CLEAR !lt_table[ get_index( id = ?lv_id name = ?lv_name ) ].");
+		assertAccessType("CLEAR !lt_table[ get_index( EXPORTING iv_any = ?lv_any IMPORTING ev_other = !lv_other ) ].");
+	}
+	
+	@Test
+	void testAccessTypeValueConstructor() {
+		assertAccessType("!ls_result = VALUE #( comp = ?lv_any  comp2 = ?lv_other + ?lv_third ).");
+		assertAccessType("!lt_result = VALUE #( comp = ?lv_any ( comp2 = ?lv_other ) ( comp2 = ?lv_third ) ).");
 	}
 
 	@Test
