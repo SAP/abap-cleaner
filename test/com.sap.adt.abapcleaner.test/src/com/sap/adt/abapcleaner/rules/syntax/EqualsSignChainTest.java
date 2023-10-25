@@ -1,50 +1,22 @@
 package com.sap.adt.abapcleaner.rules.syntax;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.sap.adt.abapcleaner.rulebase.RuleID;
 import com.sap.adt.abapcleaner.rulebase.RuleTestBase;
 
 class EqualsSignChainTest extends RuleTestBase {
-	private EqualsSignChainRule rule;
-	
 	EqualsSignChainTest() {
 		super(RuleID.EQUALS_SIGN_CHAIN);
-		rule = (EqualsSignChainRule)getRule();
-	}
-	
-	@BeforeEach
-	void setUp() {
-		// setup default test configuration (may be modified in the individual test methods)
-		rule.configRepeatIntegerLiterals.setValue(true);
-		rule.configRepeatStringLiterals.setValue(true);
-		rule.configRepeatSimpleIdentifiers.setValue(true);
 	}
 	
 	@Test
-	void testRepeatNumberLiteral() {
-		rule.configRepeatIntegerLiterals.setValue(true);
-
+	void testNumberLiteral() {
 		buildSrc("    \" assign a number literal");
 		buildSrc("    a = b = 42. \" plain and simple");
 
 		buildExp("    \" assign a number literal");
 		buildExp("    b = 42. \" plain and simple");
-		buildExp("    a = 42.");
-
-		putAnyMethodAroundSrcAndExp();
-		
-		testRule();
-	}
-	
-	@Test
-	void testDontRepeatNumberLiteral() {
-		rule.configRepeatIntegerLiterals.setValue(false);
-
-		buildSrc("    a = b = 42.");
-
-		buildExp("    b = 42.");
 		buildExp("    a = b.");
 
 		putAnyMethodAroundSrcAndExp();
@@ -53,24 +25,7 @@ class EqualsSignChainTest extends RuleTestBase {
 	}
 	
 	@Test
-	void testRepeatStringLiteral() {
-		rule.configRepeatStringLiterals.setValue(true);
-
-		buildSrc("    c = d = e = 'abc'. \" still quite simple");
-
-		buildExp("    e = 'abc'. \" still quite simple");
-		buildExp("    d = 'abc'.");
-		buildExp("    c = 'abc'.");
-
-		putAnyMethodAroundSrcAndExp();
-		
-		testRule();
-	}
-	
-	@Test
-	void testDontRepeatStringLiteral() {
-		rule.configRepeatStringLiterals.setValue(false);
-
+	void testStringLiteral() {
 		buildSrc("    c = d = e = 'abc'. \" still quite simple");
 
 		buildExp("    e = 'abc'. \" still quite simple");
@@ -83,26 +38,7 @@ class EqualsSignChainTest extends RuleTestBase {
 	}
 	
 	@Test
-	void testRepeatSimpleIdentifier() {
-		rule.configRepeatSimpleIdentifiers.setValue(true);
-
-		buildSrc("    \" assign a simple variable");
-		buildSrc("    f = g = h = iv_value.");
-
-		buildExp("    \" assign a simple variable");
-		buildExp("    h = iv_value.");
-		buildExp("    g = iv_value.");
-		buildExp("    f = iv_value.");
-
-		putAnyMethodAroundSrcAndExp();
-		
-		testRule();
-	}
-	
-	@Test
-	void testDontRepeatSimpleIdentifier() {
-		rule.configRepeatSimpleIdentifiers.setValue(false);
-
+	void testSimpleIdentifier() {
 		buildSrc("    \" assign a simple variable");
 		buildSrc("    f = g = h = iv_value.");
 
@@ -118,10 +54,6 @@ class EqualsSignChainTest extends RuleTestBase {
 	
 	@Test
 	void testFunctionalCall() {
-		// ensure that functional method calls are never repeated, because they could have side effects
-		
-		rule.configRepeatSimpleIdentifiers.setValue(true);
-
 		buildSrc("    f = g = h = next_value( ).");
 
 		buildExp("    h = next_value( ).");
@@ -172,8 +104,6 @@ class EqualsSignChainTest extends RuleTestBase {
 	
 	@Test
 	void testThreeVariables() {
-		rule.configRepeatSimpleIdentifiers.setValue(false);
-
 		buildSrc("    a = b = c.");
 
 		buildExp("    b = c.");

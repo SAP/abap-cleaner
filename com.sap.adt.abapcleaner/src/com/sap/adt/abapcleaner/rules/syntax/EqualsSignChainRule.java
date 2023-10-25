@@ -24,6 +24,9 @@ public class EqualsSignChainRule extends RuleForCommands {
 	public String getDescription() { return "Resolves assignments to multiple variables with assignment operator chaining (a = b = c = 1.) into several commands."; }
 
 	@Override
+	public String getHintsAndRestrictions() { return "Since different (implicit) conversion rules may apply to the assignments, the rightmost term can not be repeated, even if it is a literal."; }
+
+	@Override
 	public LocalDate getDateCreated() { return LocalDate.of(2021, 1, 6); }
 
 	@Override
@@ -40,30 +43,26 @@ public class EqualsSignChainRule extends RuleForCommands {
       return "" 
 			+ LINE_SEP + "  METHOD equals_sign_chaining." 
 			+ LINE_SEP + "    \" assign a number literal" 
-			+ LINE_SEP + "    a = b = 42. \" plain and simple" 
+			+ LINE_SEP + "    a = b = 42. \" comment" 
 			+ LINE_SEP 
 			+ LINE_SEP + "    \" assign a string literal" 
-			+ LINE_SEP + "    c = d = e = 'abc'. \" still quite simple" 
+			+ LINE_SEP + "    c = d = e = 'abc'." 
 			+ LINE_SEP 
 			+ LINE_SEP + "    \" assign a simple variable" 
 			+ LINE_SEP + "    f = g = h = iv_value." 
 			+ LINE_SEP 
-			+ LINE_SEP + "    \" assign a complex expression that should not be repeated" 
+			+ LINE_SEP + "    \" assign a complex expression" 
 			+ LINE_SEP + "    i = j = k = l = m = complex_expression( iv_param_1 = 5" 
 			+ LINE_SEP + "                                            iv_param_2 = 'abc' " 
 			+ LINE_SEP + "                                            iv_param_3 = VALUE #( iv_param_4 = 42  " 
 			+ LINE_SEP + "                                                                  iv_param_5 = iv_value ) ). " 
+			+ LINE_SEP 
+			+ LINE_SEP + "    \" depending on variable types, assignments may invoke a sequence of implicit" 
+			+ LINE_SEP + "    \" conversion rules, therefore this can NOT be resolved into lv_numc8 = lv_float" 
+			+ LINE_SEP + "    \" and lv_datum = lv_float, but rather, all conversion steps must be kept:" 
+			+ LINE_SEP + "    lv_datum = lv_numc8 = lv_float." 
 			+ LINE_SEP + "  ENDMETHOD.";
    }
-
-	final ConfigBoolValue configRepeatIntegerLiterals = new ConfigBoolValue(this, "RepeatIntegerLiterals", "Repeat integer literals", true);
-	final ConfigBoolValue configRepeatStringLiterals = new ConfigBoolValue(this, "RepeatStringLiterals", "Repeat string literals", true);
-	final ConfigBoolValue configRepeatSimpleIdentifiers = new ConfigBoolValue(this, "RepeatSimpleIdentifiers", "Repeat simple identifiers", true);
-
-	private final ConfigValue[] configValues = new ConfigValue[] { configRepeatIntegerLiterals, configRepeatStringLiterals, configRepeatSimpleIdentifiers };
-
-	@Override
-	public ConfigValue[] getConfigValues() { return configValues; }
 
 	public EqualsSignChainRule(Profile profile) {
 		super(profile);
@@ -88,10 +87,6 @@ public class EqualsSignChainRule extends RuleForCommands {
 		if (!assignmentOp.getNext().matchesOnSiblings(false, TokenSearch.ANY_ARITHMETIC_EXPRESSION, "."))
 			return false;
 
-		boolean repeatIntegerLiterals = configRepeatIntegerLiterals.getValue();
-		boolean repeatStringLiterals = configRepeatStringLiterals.getValue();
-		boolean repeatSimpleIdentifiers = configRepeatSimpleIdentifiers.getValue();
-
 		Command originalCommand = (command.originalCommand != null) ? command.originalCommand : command;
 		command.originalCommand = originalCommand;
 
@@ -103,9 +98,6 @@ public class EqualsSignChainRule extends RuleForCommands {
 		Token commentAfterPeriod = command.getLastNonCommentToken().getNext();
 		if (commentAfterPeriod != null && !commentAfterPeriod.isCommentAfterCode())
 			commentAfterPeriod = null;
-
-		// if the final Term is a simple literal or identifier, it will be copied to all Commands
-		Term copyTerm = null;
 
 		// start with the last assignment and create a new Command (above the current Command) from it;
 		// then continue with the assignment before that etc.
@@ -134,12 +126,9 @@ public class EqualsSignChainRule extends RuleForCommands {
 			moveTerm.firstToken.setWhitespace();
 			newPeriod.insertLeftSibling(moveTerm);
 
-			// in the first loop cycle, decide whether the Term is simple and can be copied to all other Commands
-			if (i == 0 && ((repeatIntegerLiterals && moveTerm.isSingleIntegerLiteral()) 
-					|| (repeatStringLiterals && moveTerm.isSingleStringLiteral())
-					|| (repeatSimpleIdentifiers && moveTerm.isSingleIdentifier()))) {
-				copyTerm = moveTerm;
-			}
+			// even if the Term is a simple literal, it can NOT copied to the subsequent Commands, because the receiving
+			// variables may have different types, so different conversion rule apply (e.g., 'DATUM = NUMC(8) = FLOAT' 
+			// does NOT lead to the same date as 'DATUM = FLOAT') 
 			
 			// move the assignment operator (=) to the new Command
 			Token moveAssignmentOp = identifier.getNext();
@@ -168,14 +157,6 @@ public class EqualsSignChainRule extends RuleForCommands {
 			identifier = identifier.getPrev().getPrev();
 			if (!identifier.isIdentifier())
 				throw new UnexpectedSyntaxAfterChanges(this, identifier, "Expected an identifier, but found " + identifier.getTypeAndTextForErrorMessage() + "!");
-
-			// if the final Term is simple, use it in all Commands (rather than writing d = 42. c = d. b = c. a = b.)
-			if (copyTerm != null) {
-				Token obsoleteIdentifier = identifier.getNext().getNext();
-				Token copyOfSimpleTerm = Token.createForAbap(0, 1, copyTerm.firstToken.getText(), copyTerm.firstToken.sourceLineNum);
-				obsoleteIdentifier.insertLeftSibling(copyOfSimpleTerm);
-				obsoleteIdentifier.removeFromCommand();
-			}
 
 			lineBreaks = 1;
 		}
