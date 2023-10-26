@@ -33,7 +33,6 @@ class ComparisonOperatorTest extends RuleTestBase {
 		testRule();
 	}
 
-	
 	@Test
 	void testMultiLine() {
 		// ensure that the indent of the second line is adjusted to the shortened = operator
@@ -49,6 +48,19 @@ class ComparisonOperatorTest extends RuleTestBase {
 		buildExp("    ENDIF.");
 
 		putAnyMethodAroundSrcAndExp();
+		
+		testRule();
+	}
+	
+	@Test
+	void testSelectOptionsOptionKept() {
+		// ensure that in 'SELECT-OPTIONS selcrit FOR dobj DEFAULT val1 [TO val2] [OPTION opt] ....', 'opt' is NOT changed,  
+		// because '... OPTION <>.' would be a syntax error ('opt' can be EQ, NE, GE, GT, LE, LT, CP, or NP)
+		
+		buildSrc("REPORT any_report.");
+		buildSrc("  SELECT-OPTIONS s_any FOR dtab-field DEFAULT 'abc' OPTION NE.");
+
+		copyExpFromSrc();
 		
 		testRule();
 	}

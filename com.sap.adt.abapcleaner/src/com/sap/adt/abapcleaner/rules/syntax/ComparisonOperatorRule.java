@@ -64,6 +64,15 @@ public class ComparisonOperatorRule extends RuleForTokens {
 	protected boolean executeOn(Code code, Command command, Token token, int releaseRestriction) {
 		if (!token.isComparisonOperator() || !token.isAnyComparisonOperator(textualComparisonOps))
 			return false;
+		
+		// do NOT change 'opt' in: 'SELECT-OPTIONS selcrit FOR dobj DEFAULT val1 [TO val2] [OPTION opt] ....'
+		if (command.firstCodeTokenIsKeyword("SELECT-OPTIONS")) {
+			Token prev = token.getPrevCodeSibling();
+			if (prev != null && prev.isKeyword("OPTION")) {
+				return false;
+			}
+		}
+
 		String newOperator = ABAP.getSymbolicComparisonOperator(token.getText());
 		token.setText(newOperator, true);
 		return true;
