@@ -1534,5 +1534,11 @@ public class TokenTest {
 		assertTrue(buildCommand("SELECT dats`20230419` AS lit1 FROM any_table INTO @DATA(ls_any).", 1).isSqlLiteralType());
 
 		assertFalse(buildCommand("SELECT int1 FROM any_table INTO @DATA(ls_any). ENDSELECT.", 1).isSqlLiteralType());
-}
+	}
+	
+	@Test
+	void testOffsetWithAsterisk() {
+		// ensure that the type of the '*' token is corrected from COMMENT to OTHER_OP (see Token.addNext)
+		assertTrue(buildCommand("lv_any+4(*) = lv_other.", 1).isOtherOp());
+	}
 }

@@ -405,6 +405,11 @@ public class Token {
 		next = newToken;
 
 		if (opensLevel && !newToken.closesLevel) {
+			// correct the token type of '*' in 'lv_any+4(*) = ...', which was initially identified as a comment 
+			// in the Token constructor, if it appeared on the first code line
+			if (newToken.isAttached() && newToken.textEquals("*")) {
+				newToken.type = TokenType.OTHER_OP;
+			}
 			addChild(newToken);
 		} else if (!opensLevel && newToken.closesLevel) {
 			if (parent == null) {
