@@ -238,7 +238,7 @@ public class Task implements IProgress {
 			return false;
 		}
 		cleanupTimeMs += stopwatch.getElapsedTimeMs();
-
+		
 		// compare (not necessary during stress test, which focuses on cleanup and integrity)
 		if (stressTestType == StressTestType.NONE) {
 			stopwatch.resetAndStart();
@@ -264,6 +264,9 @@ public class Task implements IProgress {
 		stopwatch.resetAndStart();
 		try {
 			resultingCode.testReferentialIntegrity(true, this);
+			if (stressTestType == StressTestType.NONE) {
+				resultingCode.checkSyntaxAfterCleanup();
+			}
 		} catch (IntegrityBrokenException ex) {
 			ex.addToLog(stressTestInfo);
 			integrityTestError = ex.getLineAndMessage(stressTestInfo);

@@ -339,10 +339,41 @@ public class Code {
 	}
 
 	private void check(boolean value) throws IntegrityBrokenException {
-		if (!value)
+		if (!value) {
 			throw new IntegrityBrokenException(this, "Failed referential integrity test on Code level!");
+		}
 	}
 
+	public final void checkSyntaxAfterCleanup() throws IntegrityBrokenException {
+		TokenTypeRefinerRnd rndParser = Program.getRndParser();
+		if (rndParser == null)
+			return;
+
+		StringBuilder sbLine = new StringBuilder();
+		int errorCommandCount = 0;
+		
+		Command command = firstCommand;
+		while (command != null) {
+			int errorCount = rndParser.getErrorTokenCount(command);
+			if (errorCount > command.getErrorTokenCountBeforeCleanup()) {
+				++errorCommandCount;
+				if (errorCommandCount > 1)
+					sbLine.append(", ");
+				sbLine.append(Cult.format(command.getSourceLineNumStart()));
+				if (errorCommandCount >= 10) {
+					break;
+				}
+			}
+			command = command.getNext();
+		}
+		if (errorCommandCount > 0) {
+			String message = "after cleanup, erroneous tokens were detected in the ";
+			message += (errorCommandCount == 1) ? "command at line " : "commands at lines ";
+			message += sbLine.toString();
+			throw new IntegrityBrokenException(this, message);
+		}
+	}
+	
 	final ChangeControl getChangeControl(int sourceTextStart, int sourceTextEnd) {
 		if (changeControlOfSourceLineStart.containsKey(sourceTextStart)) 
 			return changeControlOfSourceLineStart.get(sourceTextStart);
@@ -599,11 +630,20 @@ public class Code {
 	} 
 
 	public final boolean insertStressTestTokentAt(int tokenIndex, StressTestType stressTestType) throws IntegrityBrokenException {
+		// TokenTypeRefinerRnd rndParser = Program.getRndParser();
 		Command command = firstCommand;
 		boolean found = false;
 		while (command != null) {
 			if (command.insertStressTestTokenAt(tokenIndex, stressTestType)) {
 				found = true;
+				/*
+				// in case syntax errors were introduced (e.g. due to wrong pragma positions), update the number of 
+				// erroneous tokens before cleanup
+				if (rndParser != null) {
+					int errorTokenCount = rndParser.getErrorTokenCount(command);
+					command.setErrorStateBeforeCleanup(errorTokenCount);
+				}
+				*/
 			}
 			command = command.getNext();
 		}

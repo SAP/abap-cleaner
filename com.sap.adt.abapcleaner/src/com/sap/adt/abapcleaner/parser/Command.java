@@ -88,6 +88,9 @@ public class Command {
 	 * chained statement, they are handled like blanks (but do not provoke a syntax error) 
 	 * see <a href="https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/index.htm?file=abenchained_statements.htm">Chained Statements</a> */
 	private int chainColonCount;
+
+	/** the number of tokens in this command that were rated with ErrorState.Erroneous by the RND Parser when the Command was first parsed */
+	private int errorCountBeforeCleanup;
 	
 	public final Code getParentCode() { return parentCode; }
 	final void setParentCode(Code value) { parentCode = value; }
@@ -131,6 +134,8 @@ public class Command {
 	public final boolean containsSourceLineNum(int sourceLineNum) { return sourceLineNumStart <= sourceLineNum && sourceLineNumEnd >= sourceLineNum; }
 
 	public final ChangeControl getChangeControl() { return changeControl; }
+
+	public final int getErrorTokenCountBeforeCleanup() { return errorCountBeforeCleanup; }
 
 	public final String getIdString() { return Integer.toHexString(iD) + ":"; }
 
@@ -3060,6 +3065,11 @@ public class Command {
 		return true;
 	}
 
+	public void setErrorStateBeforeCleanup(int errorCount) {
+		this.errorCountBeforeCleanup = errorCount;
+	}
+	
+	
 	/** Returns true if the Command matches a hard-coded pattern or condition.
 	 * This method can be used during development to search for examples in all sample code files. */
 	public final boolean matchesPattern() {
@@ -3081,5 +3091,5 @@ public class Command {
 	public final ArrayList<Command> getCommandsRelatedToPatternMatch() {
 		return null;
 	}
-	
+
 }
