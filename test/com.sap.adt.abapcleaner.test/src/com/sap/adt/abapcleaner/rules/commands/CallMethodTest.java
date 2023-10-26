@@ -205,4 +205,19 @@ class CallMethodTest extends RuleTestBase {
 
 		testRule();
 	}
+	
+	@Test
+	void testCallMethodOfOleUnchanged() {
+		// expect the pragmas and the comment to remain outside the parentheses
+
+		buildSrc("   CALL METHOD OF ole 'any_method' = rc");
+		buildSrc("     EXPORTING #1 = 'C:\\temp'");
+		buildSrc("               #2 = lv_any.");
+
+		copyExpFromSrc();
+		
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }

@@ -92,6 +92,10 @@ public class CallMethodRule extends RuleForCommands {
 		Token firstToken = command.getFirstToken();
 		if (!firstToken.matchesOnSiblings(false, "CALL", "METHOD", TokenSearch.ANY_NON_COMMENT))
 			return false;
+		
+		// excluded cases of 'CALL METHOD OF ole meth ...'
+		if (firstToken.matchesOnSiblings(false, "CALL", "METHOD", "OF"))
+			return false;
 
 		// the replacement is NOT possible for dynamic typing: CALL METHOD modify->(method_name) EXPORTING ...
 		Token methodName = firstToken.getNext().getNext();
