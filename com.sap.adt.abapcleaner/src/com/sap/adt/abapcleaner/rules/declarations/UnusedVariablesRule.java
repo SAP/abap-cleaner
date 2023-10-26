@@ -193,155 +193,62 @@ public class UnusedVariablesRule extends RuleForDeclarations {
 			}
 			
 			// determine the action to be taken; this is NOT dependent on "usedCountInSelfAssignment" (neither in active code nor comment code)
-			UnusedVariableAction action;
-			if (varInfo.isAssigned())
-				action = convertToAction(UnusedVariableActionIfAssigned.forValue((varInfo.isUsedInComment()) ? configActionForAssignedVarsOnlyUsedInComment.getValue() : configActionForAssignedVars.getValue()));
-			else if (varInfo.isUsedInComment() || varInfo.isAssignedInComment())
-				action = UnusedVariableAction.forValue(varInfo.isConstant ? configActionForConstantsOnlyUsedInComment.getValue() : configActionForVarsOnlyUsedInComment.getValue());
-			else
-				action = UnusedVariableAction.forValue(varInfo.isConstant ? configActionForConstantsNeverUsed.getValue() : configActionForVarsNeverUsed.getValue());
+			UnusedVariableAction action = getAction(varInfo);
+			String message = (action == UnusedVariableAction.ADD_TODO_COMMENT) ? getMessage(varInfo, command) : null;
 
-			if (action == UnusedVariableAction.IGNORE)
-				continue;
-
-			// add a to-do comment, if required by the action, or  
-			// - if the variable is declared inline with DATA(...) or FIELD-SYMBOL(...)
-			// - if the variable is declared with DATA/CONSTANTS/STATICS BEGIN OF ... (bound structure data)  
-			if (action == UnusedVariableAction.ADD_TODO_COMMENT || varInfo.isDeclaredInline || varInfo.isBoundStructuredData) {
-				String message;
-				if (varInfo.isAssigned()) {
-					if (varInfo.isUsedInComment())
-						message = varAssignedButOnlyUsedInCommentMsg;
-					else if (command.firstCodeTokenIsKeyword("MESSAGE")) // MESSAGE ... INTO DATA( )
-						message = varAssignedButNeverUsedAddPragmaMsg;
-					else
-						message = varAssignedButNeverUsedMsg;
-				} else if (varInfo.isUsedInComment() || varInfo.isAssignedInComment()) {
-					message = (varInfo.isConstant ? constOnlyUsedInCommentMsg : varOnlyUsedInCommentMsg);
-				} else {
-					message = (varInfo.isConstant ? constNeverUsedMsg : varNeverUsedMsg);
-				}
-				boolean commentAdded = false;
-				try {
-					if (command.getClosesLevel()) { // in case of 'CATCH ... INTO DATA(...)', the comment cannot be added as a 'previous sibling', because that must be the TRY statement 
-						commentAdded = (command.appendCommentToLineOf(varInfo.declarationToken, message) != null);
-					} else {
-						commentAdded = (command.putCommentAboveLineOf(varInfo.declarationToken, message) != null);
-					}
-				} catch (UnexpectedSyntaxException ex) {
-					throw new UnexpectedSyntaxAfterChanges(this, ex);
-				}
-				if (commentAdded)
+			try {
+				if (command.handleChainElement(varInfo.declarationToken, action.getCorrespondingChainElementAction(), message)) {
 					code.addRuleUse(this, command);
-				continue;
-			}
-
-			// get information on the line to be deleted / commented out and the surrounding lines
-			Command originalCommand = (command.originalCommand != null) ? command.originalCommand : command;
-			Token identifier = varInfo.declarationToken;
-			Token keyword = command.getFirstToken();
-			if (keyword.isComment()) // just to be sure; however, with the call to command.splitOutLeadingCommentLines() below, this should not happen anymore
-				keyword = keyword.getNextNonCommentSibling();
-			Token colon = keyword.getNext().isChainColon() ? keyword.getNext() : null;
-			// boolean isKeywordOnSameLine = (identifier.lineBreaks == 0);
-			Token commaOrPeriod = identifier.getLastTokenOnSiblings(true, TokenSearch.ASTERISK, ".|,");
-			Token lastTokenInLine = (commaOrPeriod.getNext() != null && commaOrPeriod.getNext().isCommentAfterCode()) ? commaOrPeriod.getNext() : commaOrPeriod;
-			boolean isInChain = command.isSimpleChain();
-			boolean isFirstInChain = isInChain && identifier.getPrevNonCommentToken().isChainColon();
-			boolean isLastInChain = isInChain && commaOrPeriod.isPeriod();
-			boolean isOnlyOneInChain = isFirstInChain && isLastInChain;
-			Token prevComma = (isInChain && !isFirstInChain) ? identifier.getPrevNonCommentSibling() : null;
-			Token nextIdentifier = (isInChain && !isLastInChain) ? lastTokenInLine.getNextNonCommentSibling() : null;
-			Token firstTokenInLine = (isInChain && !isFirstInChain) ? identifier : keyword;
-
-			// make the surrounding chain work without the line to be deleted / commented out
-			if (isInChain && !isOnlyOneInChain) {
-				if (isLastInChain) {
-					prevComma.setText(ABAP.DOT_SIGN_STRING, false);
-					prevComma.type = TokenType.PERIOD;
-				} else if (isFirstInChain) {
-					nextIdentifier.copyWhitespaceFrom(identifier);
-					int lineBreaks = (action == UnusedVariableAction.DELETE) ? keyword.lineBreaks : 1;
-					nextIdentifier.insertLeftSibling(Token.createForAbap(lineBreaks, keyword.spacesLeft, keyword.getText(), TokenType.KEYWORD, keyword.sourceLineNum));
-					if (colon != null)
-						nextIdentifier.insertLeftSibling(Token.createForAbap(0, colon.spacesLeft, colon.getText(), TokenType.COLON, colon.sourceLineNum));
-				} else if (nextIdentifier != null && nextIdentifier.lineBreaks == 0) {
-					nextIdentifier.copyWhitespaceFrom(identifier);
 				}
+			} catch(UnexpectedSyntaxException ex) {
+				throw new UnexpectedSyntaxAfterChanges(this, ex);
+			}
+		}
+	}
+	
+	private UnusedVariableAction getAction(VariableInfo varInfo) {
+		if (varInfo.isDeclaredInline || varInfo.isBoundStructuredData) {
+			// add a to-do comment, if required by the action (see below), or
+			// - if the variable is declared inline with DATA(...) or FIELD-SYMBOL(...)
+			// - if the variable is declared with DATA/CONSTANTS/STATICS BEGIN OF ... (bound structure data)
+			return UnusedVariableAction.ADD_TODO_COMMENT;
+		
+		} else if (varInfo.isAssigned()) {
+			if (varInfo.isUsedInComment()) {
+				return convertToAction(UnusedVariableActionIfAssigned.forValue(configActionForAssignedVarsOnlyUsedInComment.getValue()));	
+			} else {
+				return convertToAction(UnusedVariableActionIfAssigned.forValue(configActionForAssignedVars.getValue()));	
+			}
+		
+		} else if (varInfo.isUsedInComment() || varInfo.isAssignedInComment()) {
+			if (varInfo.isConstant) {
+				return UnusedVariableAction.forValue(configActionForConstantsOnlyUsedInComment.getValue());
+			} else {
+				return UnusedVariableAction.forValue(configActionForVarsOnlyUsedInComment.getValue());
 			}
 
-			switch (action) {
-				case COMMENT_OUT_WITH_ASTERISK:
-				case COMMENT_OUT_WITH_QUOT:
-					// create a comment line
-					String lineText = Command.sectionToString(firstTokenInLine, lastTokenInLine, true);
-					int indent = 0;
-					if (action == UnusedVariableAction.COMMENT_OUT_WITH_QUOT) {
-						indent = firstTokenInLine.getStartIndexInLine();
-						lineText = ABAP.COMMENT_SIGN_STRING + " " + StringUtil.trimStart(lineText);
-					} else {
-						lineText = ABAP.LINE_COMMENT_SIGN_STRING + lineText;
-					}
-					Token newComment = Token.createForAbap(Math.max(firstTokenInLine.lineBreaks, 1), indent, lineText, TokenType.COMMENT, firstTokenInLine.sourceLineNum);
-
-					// insert the comment line, possibly as a new Command before or after the current one
-					if ((isFirstInChain || isLastInChain) && !isOnlyOneInChain) {
-						Command newCommand = Command.create(newComment, originalCommand);
-						try {
-							newCommand.finishBuild(command.getSourceTextStart(), command.getSourceTextEnd());
-						} catch (ParseException e) {
-							throw new UnexpectedSyntaxAfterChanges(null, command, "parse error in commented-out line");
-						}
-
-						// code.addRuleUse(this, newCommand); is not required, because it will have the same effect as "code.addRuleUse(this, command)" below
-						if (isFirstInChain)
-							command.insertLeftSibling(newCommand);
-						else
-							command.getNext().insertLeftSibling(newCommand);
-						command.originalCommand = originalCommand;
-					} else {
-						firstTokenInLine.insertLeftSibling(newComment, false, true);
-					}
-
-					// remove the old declaration code
-					try {
-						// referential integrity cannot be checked at this point, because we may still need to split out leading comment lines
-						Term.createForTokenRange(firstTokenInLine, lastTokenInLine).removeFromCommand(true);
-					} catch (UnexpectedSyntaxException ex) {
-						throw new UnexpectedSyntaxAfterChanges(this, ex);
-					}
-					break;
-
-				case DELETE:
-					// remove the declaration code (and possibly the whole Command)
-					try {
-						if (isInChain && !isOnlyOneInChain) {
-							Term termToDelete = Term.createForTokenRange(firstTokenInLine, lastTokenInLine); 
-							termToDelete.removeFromCommand(true);
-						} else {
-							// transfer line breaks to next command to keep sections separate
-							if (command.getNext() != null && command.getFirstTokenLineBreaks() > command.getNext().getFirstTokenLineBreaks())
-								command.getNext().getFirstToken().lineBreaks = command.getFirstTokenLineBreaks();
-							command.removeFromCode();
-						}
-					} catch (UnexpectedSyntaxException ex) {
-						throw new UnexpectedSyntaxAfterChanges(this, ex);
-					}
-					break;
-				default:
-					throw new IllegalArgumentException("Unknown Action!");
+		} else {
+			if (varInfo.isConstant) {
+				return UnusedVariableAction.forValue(configActionForConstantsNeverUsed.getValue());
+			} else {
+				return UnusedVariableAction.forValue(configActionForVarsNeverUsed.getValue());
 			}
-
-			// if the (remaining) Command starts or ends with one or several comment lines, create separate Commands from it;
-			// this may happen if the first/last line of the Command was deleted or commented out, and the adjacent line(s) already were comment lines
-			if (command.splitOutLeadingCommentLines(originalCommand))
-				command.originalCommand = originalCommand;
-			if (command.splitOutTrailingCommentLines(originalCommand))
-				command.originalCommand = originalCommand;
-
-			command.testReferentialIntegrity(true, true);
-			
-			code.addRuleUse(this, command);
+		}
+	}
+	
+	private String getMessage(VariableInfo varInfo, Command command) { 
+		if (varInfo.isAssigned()) {
+			if (varInfo.isUsedInComment()) {
+				return varAssignedButOnlyUsedInCommentMsg;
+			} else if (command.firstCodeTokenIsKeyword("MESSAGE")) { // MESSAGE ... INTO DATA( )
+				return varAssignedButNeverUsedAddPragmaMsg;
+			} else {
+				return varAssignedButNeverUsedMsg;
+			}
+		} else if (varInfo.isUsedInComment() || varInfo.isAssignedInComment()) {
+			return (varInfo.isConstant ? constOnlyUsedInCommentMsg : varOnlyUsedInCommentMsg);
+		} else {
+			return (varInfo.isConstant ? constNeverUsedMsg : varNeverUsedMsg);
 		}
 	}
 

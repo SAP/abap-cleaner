@@ -890,6 +890,10 @@ public class Token {
 			newToken.copyWhitespaceFrom(this);
 			this.setWhitespace();
 		}
+		// if newToken is a comment, ensure a line break before this Token
+		if (newToken.isComment() && lineBreaks == 0) {
+			this.setWhitespace(1, parentCommand.getIndent() + ABAP.INDENT_STEP);
+		}
 		
 		++parentCommand.tokenCount;
 

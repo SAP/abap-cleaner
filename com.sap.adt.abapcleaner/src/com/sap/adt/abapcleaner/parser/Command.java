@@ -2939,6 +2939,126 @@ public class Command {
 		}
 		return false;
 	}
+	
+	/**
+	 * Handles the specified chain element (or, if the Command is not a chain, the entire Command) with the specified action.
+	 * @param start - the Token with which the chain element starts; in non-chains, the Token after the ABAP keyword
+	 * @param action - whether to add a comment, comment out the chain element, or remove it 
+	 * @param commentText - comment text (without comment sign) in case of ChainElementAction.ADD_TODO_COMMENT
+	 * @return
+	 * @throws UnexpectedSyntaxException
+	 * @throws UnexpectedSyntaxAfterChanges
+	 * @throws IntegrityBrokenException
+	 */
+	public final boolean handleChainElement(Token start, ChainElementAction action, String commentText) throws UnexpectedSyntaxException, UnexpectedSyntaxAfterChanges, IntegrityBrokenException {
+		if (action == ChainElementAction.IGNORE) {
+			return false;
+
+		} else if (action == ChainElementAction.ADD_TODO_COMMENT) {
+			boolean commentAdded = false;
+			if (getClosesLevel()) { // in case of 'CATCH ... INTO DATA(...)', the comment cannot be added as a 'previous sibling', because that must be the TRY statement 
+				commentAdded = (appendCommentToLineOf(start, commentText) != null);
+			} else {
+				commentAdded = (putCommentAboveLineOf(start, commentText) != null);
+			}
+			return commentAdded;
+		}
+		
+		// get information on the line to be deleted / commented out and the surrounding lines
+		Command originalCommand = (this.originalCommand != null) ? this.originalCommand : this;
+		Token keyword = getFirstToken();
+		if (keyword.isComment()) // just to be sure; however, with the call to splitOutLeadingCommentLines() below, this should not happen anymore
+			keyword = keyword.getNextNonCommentSibling();
+		Token colon = keyword.getNext().isChainColon() ? keyword.getNext() : null;
+		// boolean isKeywordOnSameLine = (identifier.lineBreaks == 0);
+		Token commaOrPeriod = start.getLastTokenOnSiblings(true, TokenSearch.ASTERISK, ".|,");
+		Token lastTokenInLine = (commaOrPeriod.getNext() != null && commaOrPeriod.getNext().isCommentAfterCode()) ? commaOrPeriod.getNext() : commaOrPeriod;
+		boolean isInChain = isSimpleChain();
+		boolean isFirstInChain = isInChain && start.getPrevNonCommentToken().isChainColon();
+		boolean isLastInChain = isInChain && commaOrPeriod.isPeriod();
+		boolean isOnlyOneInChain = isFirstInChain && isLastInChain;
+		Token prevComma = (isInChain && !isFirstInChain) ? start.getPrevNonCommentSibling() : null;
+		Token nextIdentifier = (isInChain && !isLastInChain) ? lastTokenInLine.getNextNonCommentSibling() : null;
+		Token firstTokenInLine = (isInChain && !isFirstInChain) ? start : keyword;
+
+		// make the surrounding chain work without the line to be deleted / commented out
+		if (isInChain && !isOnlyOneInChain) {
+			if (isLastInChain) {
+				prevComma.setText(ABAP.DOT_SIGN_STRING, false);
+				prevComma.type = TokenType.PERIOD;
+			} else if (isFirstInChain) {
+				nextIdentifier.copyWhitespaceFrom(start);
+				int lineBreaks = (action == ChainElementAction.DELETE) ? keyword.lineBreaks : 1;
+				nextIdentifier.insertLeftSibling(Token.createForAbap(lineBreaks, keyword.spacesLeft, keyword.getText(), TokenType.KEYWORD, keyword.sourceLineNum));
+				if (colon != null) {
+					nextIdentifier.insertLeftSibling(Token.createForAbap(0, colon.spacesLeft, colon.getText(), TokenType.COLON, colon.sourceLineNum));
+				}
+			} else if (nextIdentifier != null && nextIdentifier.lineBreaks == 0) {
+				nextIdentifier.copyWhitespaceFrom(start);
+			}
+		}
+
+		if (action == ChainElementAction.COMMENT_OUT_WITH_ASTERISK || action == ChainElementAction.COMMENT_OUT_WITH_QUOT) {
+			// create a comment line
+			String lineText = Command.sectionToString(firstTokenInLine, lastTokenInLine, true);
+			int indent = 0;
+			if (action == ChainElementAction.COMMENT_OUT_WITH_QUOT) {
+				indent = firstTokenInLine.getStartIndexInLine();
+				lineText = ABAP.COMMENT_SIGN_STRING + " " + StringUtil.trimStart(lineText);
+			} else {
+				lineText = ABAP.LINE_COMMENT_SIGN_STRING + lineText;
+			}
+			Token newComment = Token.createForAbap(Math.max(firstTokenInLine.lineBreaks, 1), indent, lineText, TokenType.COMMENT, firstTokenInLine.sourceLineNum);
+
+			// insert the comment line, possibly as a new Command before or after the current one
+			if ((isFirstInChain || isLastInChain) && !isOnlyOneInChain) {
+				Command newCommand = Command.create(newComment, originalCommand);
+				try {
+					newCommand.finishBuild(getSourceTextStart(), getSourceTextEnd());
+				} catch (ParseException e) {
+					throw new UnexpectedSyntaxException(this, "parse error in commented-out line");
+				}
+
+				// code.addRuleUse(this, newCommand); is not required, because it will have the same effect as "code.addRuleUse(this, command)" below
+				if (isFirstInChain)
+					insertLeftSibling(newCommand);
+				else
+					getNext().insertLeftSibling(newCommand);
+				this.originalCommand = originalCommand;
+			} else {
+				firstTokenInLine.insertLeftSibling(newComment, false, true);
+			}
+
+			// remove the old declaration code
+			// referential integrity cannot be checked at this point, because we may still need to split out leading comment lines
+			Term.createForTokenRange(firstTokenInLine, lastTokenInLine).removeFromCommand(true);
+
+		} else if (action == ChainElementAction.DELETE) {
+			// remove the declaration code (and possibly the whole Command)
+			if (isInChain && !isOnlyOneInChain) {
+				Term termToDelete = Term.createForTokenRange(firstTokenInLine, lastTokenInLine); 
+				termToDelete.removeFromCommand(true);
+			} else {
+				// transfer line breaks to next command to keep sections separate
+				if (next != null && getFirstTokenLineBreaks() > next.getFirstTokenLineBreaks())
+					next.getFirstToken().lineBreaks = getFirstTokenLineBreaks();
+				removeFromCode();
+			}
+
+		} else {
+			throw new IllegalArgumentException("Unknown Action!");
+		}
+
+		// if the (remaining) Command starts or ends with one or several comment lines, create separate Commands from it;
+		// this may happen if the first/last line of the Command was deleted or commented out, and the adjacent line(s) already were comment lines
+		if (splitOutLeadingCommentLines(originalCommand))
+			this.originalCommand = originalCommand;
+		if (splitOutTrailingCommentLines(originalCommand))
+			this.originalCommand = originalCommand;
+
+		testReferentialIntegrity(true, true);
+		return true;
+	}
 
 	/** Returns true if the Command matches a hard-coded pattern or condition.
 	 * This method can be used during development to search for examples in all sample code files. */
