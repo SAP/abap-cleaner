@@ -2214,8 +2214,8 @@ public class Token {
 	public Token getEndOfParamsOrComponentsList() {
 		if (!getOpensLevel() || !hasChildren() || isLiteral()) {
 			return null;
-		} else if (next.isAttached() && (next.isIdentifier() || next.isLiteral())) {
-			// e.g. DATA(lv_variable) or lv_any(5)
+		} else if (next.isAttached() && (next.isIdentifier() || next.isLiteral() || next.textEquals("*"))) {
+			// e.g. DATA(lv_variable) or lv_any(5) or lv_any+5(*)
 			return null; 
 
 		} else if (textEqualsAny("boolc(", " boolx(", " xsdbool(")) {

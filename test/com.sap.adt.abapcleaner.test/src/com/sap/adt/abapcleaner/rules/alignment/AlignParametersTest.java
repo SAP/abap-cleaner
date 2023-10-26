@@ -2788,4 +2788,17 @@ class AlignParametersTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testOffsetAndAsteriskKept() {
+		// ensure that '(*)' is NOT processed, so no space is introduced
+		
+		buildSrc("    lv_any+5(*) = lv_other.");
+
+		copyExpFromSrc();
+		
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }
