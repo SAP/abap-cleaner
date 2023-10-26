@@ -1985,4 +1985,25 @@ class UnusedVariablesTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testCommentOutVariableInLineMid() {
+		// ensure that commenting out a variable works if it is in the middle of three variables on the same line
+		
+		rule.configActionForVarsNeverUsed.setEnumValue(UnusedVariableAction.COMMENT_OUT_WITH_ASTERISK);
+
+		buildSrc("    DATA: lv_used TYPE i, lv_unused TYPE i, lv_used2 TYPE i.");
+		buildSrc("");
+		buildSrc("    rv_result = lv_used + lv_used2.");
+
+		buildExp("    DATA: lv_used TYPE i,");
+		buildExp("* lv_unused TYPE i,");
+		buildExp("      lv_used2 TYPE i.");
+		buildExp("");
+		buildExp("    rv_result = lv_used + lv_used2.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }
