@@ -85,6 +85,15 @@ public final class Program {
 		return tokenTypeRefiner; 
 	}
 	
+	public static TokenTypeRefinerRnd getRndParser() {
+		ITokenTypeRefiner refiner = getTokenTypeRefiner();
+		if (refiner != null && refiner instanceof TokenTypeRefinerRnd) { 
+			return (TokenTypeRefinerRnd)refiner;
+		} else {
+			return null;
+		}
+	}
+	
 	public static String getAboutText() {
 		final String lineSep = System.lineSeparator();
 

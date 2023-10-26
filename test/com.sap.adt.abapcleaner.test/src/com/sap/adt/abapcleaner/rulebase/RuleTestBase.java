@@ -204,6 +204,7 @@ public abstract class RuleTestBase {
 		// test the referential integrity of the resulting objects (Code, Command, Token etc.)
 		try {
 			code.testReferentialIntegrity(true);
+			code.checkSyntaxAfterCleanup();
 		} catch (IntegrityBrokenException e1) {
 			fail("Error after executing rule '" + getRule().getDisplayName() + "':" + e1.getMessage());
 		} 
@@ -387,12 +388,13 @@ public abstract class RuleTestBase {
 		try {
 			getRule().executeIfAllowedOn(code, releaseRestrictionFromUI);
 		} catch (UnexpectedSyntaxBeforeChanges | UnexpectedSyntaxAfterChanges e) {
-			fail(e.getMessage() + stressTestInfo );
+			fail(e.getMessage() + stressTestInfo);
 		}
 
 		// test the referential integrity of the resulting objects (Code, Command, Token etc.)
 		try {
 			code.testReferentialIntegrity(true);
+			// code.checkSyntaxAfterCleanup();
 		} catch (IntegrityBrokenException e1) {
 			fail("Error after executing rule '" + getRule().getDisplayName() + "':" + e1.getMessage() + stressTestInfo);
 		} 

@@ -117,8 +117,8 @@ class IndentTest extends RuleTestBase {
 		buildSrc("      FROM dtab");
 		buildSrc("      WHERE any_field NE space.");
 		buildSrc("");
-		buildSrc("    SELECT MIN( aa ), MAX( b ) AS bb, SUM( cc ), \" comment");
-		buildSrc("           PRODUCT( d ) AS dd, STDDEV( ee ), CORR_SPEARMAN( ff )");
+		buildSrc("    SELECT MIN( aa ) AS a, MAX( bb ) AS b, SUM( cc ) AS c, \" comment");
+		buildSrc("           PRODUCT( dd ) AS d, STDDEV( ee ) AS e, CORR_SPEARMAN( ff, gg ) AS f");
 		buildSrc("      FROM any_table");
 		buildSrc("      INTO CORRESPONDING FIELDS OF wa_test");
 		buildSrc("      WHERE kdauf NE space.");
