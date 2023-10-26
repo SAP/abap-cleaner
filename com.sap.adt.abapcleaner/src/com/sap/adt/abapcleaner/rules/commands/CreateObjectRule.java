@@ -90,6 +90,10 @@ public class CreateObjectRule extends RuleForCommands {
 		// do not process CREATE OBJECT ... AREA HANDLE
 		if (next.matchesOnSiblings(true, "AREA", "HANDLE"))
 			return false;
+		
+		// do not process 'CREATE OBJECT ole class ...' 
+		if (!next.isPeriod() && !next.isAnyKeyword("TYPE", "EXPORTING", "EXCEPTIONS"))
+			return false;
 
  		// do not process the RAP-specific variant CREATE OBJECT ... FOR TESTING
 		if (next.matchesOnSiblings(true, TokenSearch.ASTERISK, "FOR", "TESTING"))

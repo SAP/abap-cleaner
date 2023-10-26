@@ -194,7 +194,6 @@ class CreateObjectTest extends RuleTestBase {
 		testRule();
 	}
 
-
 	@Test
 	void testCommentAfterIdentifierOrType() {
 		// ensure integrity is not broken if a comment is in a weird place
@@ -225,4 +224,20 @@ class CreateObjectTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testCreateObjectOleUnchanged() {
+		buildSrc("    DATA app TYPE ole2_object.");
+		buildSrc("");
+		buildSrc("    CREATE OBJECT app 'any.class' NO FLUSH QUEUE-ONLY.");
+		buildSrc("    CREATE OBJECT app \" comment");
+		buildSrc("      'other.class'.");
+
+		copyExpFromSrc();
+
+		putAnyMethodAroundSrcAndExp();
+		
+		testRule();
+	}
+
 }
