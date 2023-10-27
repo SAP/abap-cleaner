@@ -1,5 +1,6 @@
 package com.sap.adt.abapcleaner.rules.commands;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.sap.adt.abapcleaner.base.ABAP;
@@ -7,10 +8,19 @@ import com.sap.adt.abapcleaner.rulebase.RuleID;
 import com.sap.adt.abapcleaner.rulebase.RuleTestBase;
 
 class CreateObjectTest extends RuleTestBase {
+	private CreateObjectRule rule;
+	
 	CreateObjectTest() {
 		super(RuleID.CREATE_OBJECT);
+		rule = (CreateObjectRule)getRule();
 	}
 	
+	@BeforeEach
+	void setUp() {
+		// setup default test configuration (may be modified in the individual test methods)
+		rule.configProcessChains.setValue(true);
+	}
+
 	@Test
 	void testOldAbapRelease() {
 		// ensure that NEW is NOT introduced if the code must compile against an ABAP Release prior to 7.40, 
@@ -163,6 +173,8 @@ class CreateObjectTest extends RuleTestBase {
 
 	@Test
 	void testChainUnchanged() {
+		rule.configProcessChains.setValue(false);
+		
 		buildSrc("    CREATE OBJECT:lo_any_object,");
 		buildSrc("                  lo_other_object.");
    	buildSrc("    CREATE OBJECT lo_any_object");
@@ -256,4 +268,67 @@ class CreateObjectTest extends RuleTestBase {
 		testRule();
 	}
 
+	@Test
+	void testChainProcessed() {
+		rule.configProcessChains.setValue(true);
+
+		buildSrc("    CREATE OBJECT: lx_message, lx_other_message.");
+		buildSrc("");
+		buildSrc("    CREATE OBJECT: lo_any TYPE cl_any_class,");
+		buildSrc("* comment1");
+		buildSrc("* comment2");
+		buildSrc("                   lo_other TYPE (lv_class_name),");
+		buildSrc("                   lo_third TYPE cl_othird_class");
+		buildSrc("                     EXPORTING io_contract = me.");
+
+		buildExp("    lx_message = NEW #( ).");
+		buildExp("    lx_other_message = NEW #( ).");
+		buildExp("");
+		buildExp("    lo_any = NEW cl_any_class( ).");
+		buildExp("* comment1");
+		buildExp("* comment2");
+		buildExp("    CREATE OBJECT lo_other TYPE (lv_class_name).");
+		buildExp("    lo_third = NEW cl_othird_class(");
+		buildExp("                      io_contract = me ).");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testNoLineBreakAboveComment() {
+		// ensure that the 2 line breaks above CREATE OBJECT do NOT result in two line breaks above '* comment'
+		buildSrc("    any_method( ).");
+		buildSrc("");
+		buildSrc("    CREATE OBJECT: lo_any,");
+		buildSrc("* comment");
+		buildSrc("                   lo_other.");
+
+		buildExp("    any_method( ).");
+		buildExp("");
+		buildExp("    lo_any = NEW #( ).");
+		buildExp("* comment");
+		buildExp("    lo_other = NEW #( ).");
+
+		testRule();
+	}
+
+	@Test
+	void testChainKept() {
+		rule.configProcessChains.setValue(false);
+
+		buildSrc("    CREATE OBJECT: lx_message, lx_other_message.");
+		buildSrc("");
+		buildSrc("    CREATE OBJECT: lo_any TYPE cl_any_class,");
+		buildSrc("                   lo_other TYPE (lv_class_name),");
+		buildSrc("                   lo_third TYPE cl_othird_class");
+		buildSrc("                     EXPORTING io_contract = me.");
+
+		copyExpFromSrc();
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }

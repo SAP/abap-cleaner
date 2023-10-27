@@ -65,6 +65,10 @@ public class CheckOutsideLoopRule extends CheckStatementRuleBase {
 			+ LINE_SEP + "    \" CHECKs only preceded by declarations and CLEAR" 
 			+ LINE_SEP + "    CHECK a = abap_false AND b > 3 OR a = abap_true AND b <= 10." 
 			+ LINE_SEP 
+			+ LINE_SEP + "    \" chains can only be processed if they are first unchained" 
+			+ LINE_SEP + "    CHECK: a IS NOT INITIAL," 
+			+ LINE_SEP + "           b < 5." 
+			+ LINE_SEP 
 			+ LINE_SEP + "    lv_value = 1." 
 			+ LINE_SEP 
 			+ LINE_SEP + "    \" CHECKs inside the method" 
@@ -90,8 +94,9 @@ public class CheckOutsideLoopRule extends CheckStatementRuleBase {
 
    final ConfigEnumValue<KeepCheckOutsideLoopCondition> configKeepCondition = new ConfigEnumValue<KeepCheckOutsideLoopCondition>(this, "KeepCondition", "Keep CHECK statement:", new String[] { "never", "at method start", "after declarations", "after declarations and CLEAR statements" }, KeepCheckOutsideLoopCondition.KEEP_AFTER_DECLARATIONS);
 	final ConfigBoolValue configAllowCheckAfterCheckpoints = new ConfigBoolValue(this, "AllowCheckAfterCheckpoints", "Allow CHECK after ASSERT, BREAK-POINT and LOG-POINT", true, false, LocalDate.of(2023, 10, 10));
-   
-	private final ConfigValue[] configValues = new ConfigValue[] { configKeepCondition, configNegationStyle, configConvertAbapFalseAndAbapTrue, configAllowCheckAfterCheckpoints };
+	final ConfigBoolValue configProcessChains = new ConfigBoolValue(this, "ProcessChains", "Unchain CHECK: chains outside loops (required for processing them with this rule)", true, false, LocalDate.of(2023, 10, 27));
+
+	private final ConfigValue[] configValues = new ConfigValue[] { configKeepCondition, configNegationStyle, configConvertAbapFalseAndAbapTrue, configAllowCheckAfterCheckpoints, configProcessChains };
 
 	@Override
 	public ConfigValue[] getConfigValues() { return configValues; }
@@ -111,6 +116,7 @@ public class CheckOutsideLoopRule extends CheckStatementRuleBase {
 		NegationStyle negationStyle = NegationStyle.forValue(configNegationStyle.getValue());
 		boolean convertAbapFalseAndAbapTrue = configConvertAbapFalseAndAbapTrue.getValue();
 		boolean allowCheckAfterCheckpoints = configAllowCheckAfterCheckpoints.getValue();
+		boolean processChains = configProcessChains.getValue();
 		boolean isInsideMethod = false; 
 		
 		Command command = code.firstCommand;
@@ -135,8 +141,8 @@ public class CheckOutsideLoopRule extends CheckStatementRuleBase {
 			}
 
 			// only change the statement if we are SURE to be inside a method, because if only a code snippet from a LOOP body is processed, CHECK may be erroneously converted to IF ... RETURN! 
-			if (isInsideMethod && !isCommandBlocked(command) && command.firstCodeTokenIsKeyword("CHECK") && !command.containsChainColon() && keepCondition.getValue() <= convertUpTo.getValue())
-				executeOn(code, command, false, negationStyle, convertAbapFalseAndAbapTrue, releaseRestriction);
+			if (isInsideMethod && !isCommandBlocked(command) && command.firstCodeTokenIsKeyword("CHECK") && keepCondition.getValue() <= convertUpTo.getValue())
+				executeOn(code, command, false, processChains, negationStyle, convertAbapFalseAndAbapTrue, releaseRestriction);
 
 			if (command.getOpensLevel() && command.firstCodeTokenIsAnyKeyword(ABAP.loopKeywords))
 				command = command.getNextSibling();

@@ -54,6 +54,10 @@ public class CheckInLoopRule extends CheckStatementRuleBase {
 			+ LINE_SEP + "        CHECK ls_row-min_id <> 0." 
 			+ LINE_SEP + "        CHECK ls_row-processed = abap_false." 
 			+ LINE_SEP 
+			+ LINE_SEP + "        \" chains can only be processed if they are first unchained" 
+			+ LINE_SEP + "        CHECK: ls_row-max_id > 0," 
+			+ LINE_SEP + "               ls_row-flag IS NOT INITIAL." 
+			+ LINE_SEP 
 			+ LINE_SEP + "        WHILE lv_id < ls_row-max_id." 
 			+ LINE_SEP + "          lv_id += 1." 
 			+ LINE_SEP 
@@ -73,8 +77,9 @@ public class CheckInLoopRule extends CheckStatementRuleBase {
    }
 
    final ConfigEnumValue<KeepCheckInLoopCondition> configKeepCondition = new ConfigEnumValue<KeepCheckInLoopCondition>(this, "KeepCondition", "Keep CHECK statement in LOOP:", new String[] { "never", "at loop start" }, KeepCheckInLoopCondition.NEVER);
+	final ConfigBoolValue configProcessChains = new ConfigBoolValue(this, "ProcessChains", "Unchain CHECK: chains in loops (required for processing them with this rule)", true, false, LocalDate.of(2023, 10, 27));
    
-	private final ConfigValue[] configValues = new ConfigValue[] { configKeepCondition, configNegationStyle, configConvertAbapFalseAndAbapTrue };
+	private final ConfigValue[] configValues = new ConfigValue[] { configKeepCondition, configNegationStyle, configConvertAbapFalseAndAbapTrue, configProcessChains };
 
 	@Override
 	public ConfigValue[] getConfigValues() { return configValues; }
@@ -93,6 +98,7 @@ public class CheckInLoopRule extends CheckStatementRuleBase {
 		KeepCheckInLoopCondition convertUpTo = KeepCheckInLoopCondition.NEVER; // tells which condition(s) would still be satisfied at the position of the current Command
 		NegationStyle negationStyle = NegationStyle.forValue(configNegationStyle.getValue());
 		boolean convertAbapFalseAndAbapTrue = configConvertAbapFalseAndAbapTrue.getValue();
+		boolean processChains = configProcessChains.getValue();
 
 		Command command = code.firstCommand;
 		int loopLevel = 0;
@@ -112,9 +118,9 @@ public class CheckInLoopRule extends CheckStatementRuleBase {
 				convertUpTo = KeepCheckInLoopCondition.KEEP_AT_LOOP_START;
 			}
 
-			if (loopLevel > 0 && !isCommandBlocked(command) && firstToken.isKeyword("CHECK") && !command.containsChainColon()
+			if (loopLevel > 0 && !isCommandBlocked(command) && firstToken.isKeyword("CHECK")
 					&& keepCondition.getValue() <= convertUpTo.getValue()) {
-				executeOn(code, command, true, negationStyle, convertAbapFalseAndAbapTrue, releaseRestriction);
+				executeOn(code, command, true, processChains, negationStyle, convertAbapFalseAndAbapTrue, releaseRestriction);
 			}
 			
 			command = command.getNext();

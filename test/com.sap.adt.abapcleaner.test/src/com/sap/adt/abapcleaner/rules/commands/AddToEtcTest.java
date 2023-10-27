@@ -18,6 +18,7 @@ class AddToEtcTest extends RuleTestBase {
 	@BeforeEach
 	void setUp() {
 		// setup default test configuration (may be modified in the individual test methods)
+		rule.configProcessChains.setValue(true);
 		rule.configReplacementStyleForOldRelease.setEnumValue(AddToReplacementStyleForOldRelease.KEEP);
 	}
 	
@@ -194,15 +195,38 @@ class AddToEtcTest extends RuleTestBase {
 
 	@Test
 	void testChainUnchanged() {
-		buildSrc("    ADD 1 TO : lv_value_a, lv_value_b.");
+		rule.configProcessChains.setValue(false);
+
+		buildSrc("    ADD 1 TO: lv_value_a, lv_value_b.");
 		buildSrc("    SUBTRACT: 1 FROM lv_value_a, 2 FROM lv_value_b.");
-		buildSrc("    MULTIPLY iv_value BY : 2, 3, 4.");
-		buildSrc("    DIVIDE iv_value : BY 2, BY 3, BY 4.");
+		buildSrc("    MULTIPLY iv_value BY: 2, 3, 4.");
+		buildSrc("    DIVIDE iv_value: BY 2, BY 3, BY 4.");
 
 		copyExpFromSrc();
 
 		putAnyMethodAroundSrcAndExp();
 		
+		testRule();
+	}
+
+	@Test
+	void testChainChanged() {
+		buildSrc("    ADD 1 TO: lv_value_a, lv_value_b.");
+		buildSrc("    SUBTRACT: 1 FROM lv_value_a, 2 FROM lv_value_b.");
+		buildSrc("    MULTIPLY iv_value BY: 2, 3, 4.");
+		buildSrc("    DIVIDE iv_value: BY 2, BY 3, BY 4.");
+
+		buildExp("    lv_value_a += 1.");
+		buildExp("    lv_value_b += 1.");
+		buildExp("    lv_value_a -= 1.");
+		buildExp("    lv_value_b -= 2.");
+		buildExp("    iv_value *= 2.");
+		buildExp("    iv_value *= 3.");
+		buildExp("    iv_value *= 4.");
+		buildExp("    iv_value /= 2.");
+		buildExp("    iv_value /= 3.");
+		buildExp("    iv_value /= 4.");
+
 		testRule();
 	}
 

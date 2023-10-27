@@ -521,4 +521,37 @@ public abstract class Rule {
 	public boolean hasSameConfigurationAs(Rule otherRule, String configName) {
 		return getString(configName).equals(otherRule.getString(configName));
 	}
+	
+	/** returns an ArrayList of non-chained Commands; the ArrayList is empty if the supplied Command was chained,  
+	 * but unchaining is not allowed or not possible */
+	protected ArrayList<Command> unchain(Code code, Command command, boolean allowUnchain) throws UnexpectedSyntaxAfterChanges {
+   	ArrayList<Command> unchainedCommands = new ArrayList<>();
+	   if (!command.containsChainColon()) {
+	   	unchainedCommands.add(command);
+	   	return unchainedCommands;
+	   } else if (!allowUnchain) {
+   		return unchainedCommands;
+	   }
+
+	   Command prevCommand = command.getPrev();
+   	Command endCommand = command.getNext();
+
+   	boolean unchained;
+   	if (command.containsComma()) {
+	   	unchained = ((ChainRule)parentProfile.getRule(RuleID.DECLARATION_CHAIN)).executeOn(code, command, false);
+   	} else {
+   		unchained = ((ChainOfOneRule)parentProfile.getRule(RuleID.CHAIN_OF_ONE)).executeOn(code, command, false);
+   	}
+   	if (!unchained) 
+   		return unchainedCommands;
+
+   	// process unchained MOVE commands
+   	Command unchainedCommand = (prevCommand == null) ? code.firstCommand : prevCommand.getNext();
+   	while (unchainedCommand != endCommand) {
+   		if (!unchainedCommand.isCommentLine()) 
+   			unchainedCommands.add(unchainedCommand);
+   		unchainedCommand = unchainedCommand.getNext();
+   	} 
+   	return unchainedCommands;
+	}
 }

@@ -22,6 +22,7 @@ class CheckOutsideLoopTest extends RuleTestBase {
 		rule.configNegationStyle.setEnumValue(NegationStyle.AVOID_INNER_NEGATIONS);
 		rule.configConvertAbapFalseAndAbapTrue.setValue(true);
 		rule.configAllowCheckAfterCheckpoints.setValue(true);
+		rule.configProcessChains.setValue(true);
 	}
 	
 	@Test
@@ -426,9 +427,32 @@ class CheckOutsideLoopTest extends RuleTestBase {
 	}
 	
 	@Test
-	void testChainsUnchanged() {
-		// as of now, expect chains to be ignored 
+	void testChainsProcessed() {
+		rule.configProcessChains.setValue(true);
+	
+		buildSrc("    lv_value = 1.");
+		buildSrc("");
+		buildSrc("    CHECK: its_table_1 IS INITIAL,");
+		buildSrc("           its_table_2 IS INITIAL.");
+
+		buildExp("    lv_value = 1.");
+		buildExp("");
+		buildExp("    IF its_table_1 IS NOT INITIAL.");
+		buildExp("      RETURN.");
+		buildExp("    ENDIF.");
+		buildExp("    IF its_table_2 IS NOT INITIAL.");
+		buildExp("      RETURN.");
+		buildExp("    ENDIF.");
+
+		putAnyMethodAroundSrcAndExp();
 		
+		testRule();
+	}
+
+	@Test
+	void testChainsUnchanged() {
+		rule.configProcessChains.setValue(false);
+	
 		buildSrc("    lv_value = 1.");
 		buildSrc("");
 		buildSrc("    CHECK: its_table_1 IS INITIAL,");
