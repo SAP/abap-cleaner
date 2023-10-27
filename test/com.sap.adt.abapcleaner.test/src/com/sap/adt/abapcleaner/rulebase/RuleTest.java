@@ -253,7 +253,7 @@ class RuleTest {
 	
 	@Test
 	void testWasEnhancedSince() {
-		Rule translateRule = profile.getRule(RuleID.TRANSLATE);
+		Rule translateRule = profile.getRule(RuleID.EXPORTING_KEYWORD);
 		assertFalse(translateRule.wasEnhancedSince(null));
 
 		Release[] releases = Program.getReleases();

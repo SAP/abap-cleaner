@@ -1,6 +1,7 @@
 package com.sap.adt.abapcleaner.rules.commands;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 
 import com.sap.adt.abapcleaner.parser.*;
 import com.sap.adt.abapcleaner.programbase.UnexpectedSyntaxAfterChanges;
@@ -45,7 +46,7 @@ public class CallMethodRule extends RuleForCommands {
 	public RuleReference[] getReferences() { return references; }
 
 	@Override
-	public RuleID[] getDependentRules() { return new RuleID[] { RuleID.ALIGN_PARAMETERS } ; }
+	public RuleID[] getDependentRules() { return new RuleID[] { RuleID.UPPER_AND_LOWER_CASE, RuleID.ALIGN_PARAMETERS } ; }
 
 	@Override
 	public boolean isEssential() { return true; }
@@ -76,8 +77,22 @@ public class CallMethodRule extends RuleForCommands {
 			+ LINE_SEP 
 			+ LINE_SEP + "    CALL METHOD (iv_dynamic_class_name)=>(iv_dynamic_method_name)" 
 			+ LINE_SEP + "      EXPORTING iv_par = iv_par. " 
+			+ LINE_SEP 
+			+ LINE_SEP + "    \" chains can only be processed if they are first unchained" 
+			+ LINE_SEP + "    CALL METHOD: any_method," 
+			+ LINE_SEP + "                 other_method EXPORTING iv_value = iv_value," 
+			+ LINE_SEP + "                 mo_any_instance->(iv_dynamic_method_name)."
+			+ LINE_SEP 
+			+ LINE_SEP + "    CALL METHOD third_method EXPORTING iv_name =: 'abc', 'def', 'ghi'." 
 			+ LINE_SEP + "  ENDMETHOD.";
    }
+
+	final ConfigBoolValue configProcessChains = new ConfigBoolValue(this, "ProcessChains", "Unchain CALL METHOD: chains (required for processing them with this rule)", true, false, LocalDate.of(2023, 10, 27));
+
+   private final ConfigValue[] configValues = new ConfigValue[] { configProcessChains };
+
+	@Override
+	public ConfigValue[] getConfigValues() { return configValues; }
 
 	public CallMethodRule(Profile profile) {
 		super(profile);
@@ -86,9 +101,23 @@ public class CallMethodRule extends RuleForCommands {
 
 	@Override
 	protected boolean executeOn(Code code, Command command, int releaseRestriction) throws UnexpectedSyntaxAfterChanges {
-		if (command.containsChainColon())
+		Token firstToken = command.getFirstToken();
+		if (!firstToken.matchesOnSiblings(false, "CALL", "METHOD", TokenSearch.makeOptional(":"), TokenSearch.ANY_IDENTIFIER))
 			return false;
 		
+		ArrayList<Command> unchainedCommands = unchain(code, command, configProcessChains.getValue());
+		if (unchainedCommands == null || unchainedCommands.isEmpty())
+			return false;
+		
+		for (Command unchainedCommand : unchainedCommands) {
+			if (executeOnUnchained(code, unchainedCommand, releaseRestriction)) {
+				code.addRuleUse(this, unchainedCommand);
+			}
+		}
+		return false; // addRuleUse() was already called above
+	}
+	
+	private boolean executeOnUnchained(Code code, Command command, int releaseRestriction) throws UnexpectedSyntaxAfterChanges {
 		Token firstToken = command.getFirstToken();
 		if (!firstToken.matchesOnSiblings(false, "CALL", "METHOD", TokenSearch.ANY_IDENTIFIER))
 			return false;

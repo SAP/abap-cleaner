@@ -291,6 +291,9 @@ public class ChainRule extends RuleForCommands {
 				if (addRuleUse) {
 					code.addRuleUse(this, newCommand);
 				}
+				// now reduce number of line breaks to 1 (otherwise, comment lines that will now have to be split out
+				// would have too many lineBreaks)
+				firstTokenOfPartA.lineBreaks = 1;
 				// continue with loop
 
 			} else {

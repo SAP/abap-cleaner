@@ -1,6 +1,7 @@
 package com.sap.adt.abapcleaner.rules.commands;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 
 import com.sap.adt.abapcleaner.base.*;
 import com.sap.adt.abapcleaner.parser.*;
@@ -59,7 +60,7 @@ public class AssertClassRule extends RuleForCommands {
 			+ LINE_SEP + "    ASSERT is_parameters-component_name IS INITIAL." 
 			+ LINE_SEP + "    ASSERT io_any_instance IS NOT INITIAL." 
 			+ LINE_SEP 
-			+ LINE_SEP + "    ASSERT sy-subrc = 0. \" defitem must exist" 
+			+ LINE_SEP + "    ASSERT sy-subrc = 0. \" item must exist" 
 			+ LINE_SEP + "    ASSERT sy-subrc = 4." 
 			+ LINE_SEP + "    ASSERT sy-subrc = get_expected_subrc_value( param_a = 'abc' " 
 			+ LINE_SEP + "                                                param_b = 'def' )." 
@@ -83,6 +84,11 @@ public class AssertClassRule extends RuleForCommands {
 			+ LINE_SEP + "    ASSERT <ls_row>-item_key <= ms_parameters-last_item_key." 
 			+ LINE_SEP + "    ASSERT lv_quantity <= 100." 
 			+ LINE_SEP + "    ASSERT abs( <ls_any_field_symbol>-sum_quantity ) > 0." 
+			+ LINE_SEP 
+			+ LINE_SEP + "    \" chains can only be processed if they are first unchained" 
+			+ LINE_SEP + "    ASSERT: sy-subrc = 0," 
+			+ LINE_SEP + "            io_instance IS BOUND," 
+			+ LINE_SEP + "            iv_is_valid = abap_false." 
 			+ LINE_SEP + "  ENDMETHOD."
 			+ LINE_SEP + "ENDCLASS."
 			+ LINE_SEP 
@@ -127,8 +133,9 @@ public class AssertClassRule extends RuleForCommands {
 	}
 
 	final ConfigTextValue configAssertClassName = new ConfigTextValue(this, "AssertClassName", "Assert class name:", "cx_assert", ConfigTextType.ABAP_CLASS);
+	final ConfigBoolValue configProcessChains = new ConfigBoolValue(this, "ProcessChains", "Unchain ASSERT: chains (required for processing them with this rule)", true, false, LocalDate.of(2023, 10, 27));
 
-	private final ConfigValue[] configValues = new ConfigValue[] { configAssertClassName };
+	private final ConfigValue[] configValues = new ConfigValue[] { configAssertClassName, configProcessChains };
  
 	@Override
 	public ConfigValue[] getConfigValues() { return configValues; }
@@ -144,14 +151,28 @@ public class AssertClassRule extends RuleForCommands {
 	
 	@Override
 	protected boolean executeOn(Code code, Command command, int releaseRestriction) throws UnexpectedSyntaxBeforeChanges, UnexpectedSyntaxAfterChanges {
-		if (command.containsChainColon())
-			return false;
 		if (!command.firstCodeTokenIsKeyword("ASSERT"))
 			return false;
 		
+		ArrayList<Command> unchainedCommands = unchain(code, command, configProcessChains.getValue());
+		if (unchainedCommands == null || unchainedCommands.isEmpty())
+			return false;
+		
+		for (Command unchainedCommand : unchainedCommands) {
+			if (executeOnUnchained(code, unchainedCommand)) {
+				code.addRuleUse(this, unchainedCommand);
+			}
+		}
+		return false; // addRuleUse() was already called above
+	}
+	
+	
+	private boolean executeOnUnchained(Code code, Command command) throws UnexpectedSyntaxBeforeChanges, UnexpectedSyntaxAfterChanges {
 		// exclude cases with optional additions ID or FIELDS:
 		// ASSERT [ [ID group [SUBKEY sub]] [FIELDS val1 val2 ...] CONDITION ] log_exp. 
 		Token assertToken = command.getFirstCodeToken();
+		if (assertToken == null || !assertToken.isKeyword("ASSERT"))
+			return false;
 		Token next = assertToken.getNextCodeSibling(); 
 		if (next.isAnyKeyword("ID", "FIELDS"))
 			return false;

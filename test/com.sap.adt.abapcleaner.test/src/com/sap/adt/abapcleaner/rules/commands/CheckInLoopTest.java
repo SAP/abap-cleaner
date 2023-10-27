@@ -21,6 +21,7 @@ class CheckInLoopTest extends RuleTestBase {
 		rule.configKeepCondition.setEnumValue(KeepCheckInLoopCondition.NEVER);
 		rule.configNegationStyle.setEnumValue(NegationStyle.AVOID_INNER_NEGATIONS);
 		rule.configConvertAbapFalseAndAbapTrue.setValue(true);
+		rule.configProcessChains.setValue(true);
 	}
 	
 	@Test
@@ -318,7 +319,8 @@ class CheckInLoopTest extends RuleTestBase {
 
 	@Test
 	void testChainsUnchanged() {
-		buildSrc("    \" chains are currently ignored:");
+		rule.configProcessChains.setValue(false);
+		
 		buildSrc("    DO 10 TIMES.");
 		buildSrc("      CHECK: its_table_1 IS INITIAL,");
 		buildSrc("             its_table_2 IS INITIAL.");
@@ -430,6 +432,48 @@ class CheckInLoopTest extends RuleTestBase {
 
 		putAnyMethodAroundSrcAndExp();
 
+		testRule();
+	}
+	
+	@Test
+	void testChainProcessed() {
+		rule.configProcessChains.setValue(true);
+
+		buildSrc("    DO 5 TIMES.");
+		buildSrc("      CHECK: its_table IS NOT INITIAL,");
+		buildSrc("             sy-index > 1.");
+		buildSrc("      lv_counter += 1.");
+		buildSrc("    ENDDO.");
+
+		buildExp("    DO 5 TIMES.");
+		buildExp("      IF its_table IS INITIAL.");
+		buildExp("        CONTINUE.");
+		buildExp("      ENDIF.");
+		buildExp("      IF sy-index <= 1.");
+		buildExp("        CONTINUE.");
+		buildExp("      ENDIF.");
+		buildExp("      lv_counter += 1.");
+		buildExp("    ENDDO.");
+
+		putAnyMethodAroundSrcAndExp();
+		
+		testRule();
+	}
+	
+	@Test
+	void testChainKept() {
+		rule.configProcessChains.setValue(false);
+
+		buildSrc("    DO 5 TIMES.");
+		buildSrc("      CHECK: its_table IS NOT INITIAL,");
+		buildSrc("             sy-index > 1.");
+		buildSrc("      lv_counter += 1.");
+		buildSrc("    ENDDO.");
+
+		copyExpFromSrc();
+
+		putAnyMethodAroundSrcAndExp();
+		
 		testRule();
 	}
 }

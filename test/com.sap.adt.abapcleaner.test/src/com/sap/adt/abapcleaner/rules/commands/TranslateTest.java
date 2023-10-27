@@ -20,6 +20,7 @@ public class TranslateTest extends RuleTestBase {
 	   rule.configReplaceTranslateToUpperLower.setValue(true);
 		rule.configReplaceTranslateUsing.setValue(true);
 		rule.configReplaceUnevenMasks.setValue(true);
+		rule.configProcessChains.setValue(true);
 	}
 
 	@Test
@@ -225,6 +226,44 @@ public class TranslateTest extends RuleTestBase {
 		buildExp("    lv_text = translate( val  = lv_text");
 		buildExp("                         from = `\\|`");
 		buildExp("                         to   = `  ` ).");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testChainKept() {
+		rule.configProcessChains.setValue(false);
+
+		buildSrc("    TRANSLATE: lv_text TO LOWER CASE, lv_other_text TO UPPER CASE.");
+		buildSrc("");
+		buildSrc("    TRANSLATE lv_abc USING: '1 2 3 ', 'a-b-c-'.");
+
+		copyExpFromSrc();
+		
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testChainProcessed() {
+		rule.configProcessChains.setValue(true);
+
+		buildSrc("    TRANSLATE: lv_text TO LOWER CASE, lv_other_text TO UPPER CASE.");
+		buildSrc("");
+		buildSrc("    TRANSLATE lv_abc USING: '1 2 3 ', 'a-b-c-'.");
+
+		buildExp("    lv_text = to_lower( lv_text ).");
+		buildExp("    lv_other_text = to_upper( lv_other_text ).");
+		buildExp("");
+		buildExp("    lv_abc = translate( val  = lv_abc");
+		buildExp("                        from = `123`");
+		buildExp("                        to   = `   ` ).");
+		buildExp("    lv_abc = translate( val  = lv_abc");
+		buildExp("                        from = `abc`");
+		buildExp("                        to   = `---` ).");
 
 		putAnyMethodAroundSrcAndExp();
 

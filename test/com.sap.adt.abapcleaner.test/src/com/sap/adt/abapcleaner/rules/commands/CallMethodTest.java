@@ -1,15 +1,25 @@
 package com.sap.adt.abapcleaner.rules.commands;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.sap.adt.abapcleaner.rulebase.RuleID;
 import com.sap.adt.abapcleaner.rulebase.RuleTestBase;
 
 class CallMethodTest extends RuleTestBase {
+	private CallMethodRule rule;
+	
 	CallMethodTest() {
 		super(RuleID.CALL_METHOD);
+		rule = (CallMethodRule)getRule();
 	}
 	
+	@BeforeEach
+	void setUp() {
+		// setup default test configuration (may be modified in the individual test methods)
+		rule.configProcessChains.setValue(true);
+	}
+
 	@Test
 	void testCallWithoutParentheses() {
 		buildSrc("    CALL METHOD any_method.");
@@ -87,6 +97,8 @@ class CallMethodTest extends RuleTestBase {
 
 	@Test
 	void testChainUnchanged() {
+		rule.configProcessChains.setValue(false);
+		
 		buildSrc("    CALL METHOD:any_method,");
 		buildSrc("                other_method.");
    	buildSrc("    CALL METHOD : any_method( ),");
@@ -239,4 +251,43 @@ class CallMethodTest extends RuleTestBase {
 		testRule();
 	}
 
+	@Test
+	void testChainProcessed() {
+		rule.configProcessChains.setValue(true);
+
+		buildSrc("    CALL METHOD: any_method,");
+		buildSrc("                 other_method EXPORTING iv_value = iv_value,");
+		buildSrc("                 mo_any_instance->(iv_dynamic_method_name).");
+		buildSrc("");
+		buildSrc("    CALL METHOD third_method EXPORTING iv_name =: 'abc', 'def', 'ghi'.");
+
+		buildExp("    any_method( ).");
+		buildExp("    other_method( iv_value = iv_value ).");
+		buildExp("    CALL METHOD mo_any_instance->(iv_dynamic_method_name).");
+		buildExp("");
+		buildExp("    third_method( iv_name = 'abc' ).");
+		buildExp("    third_method( iv_name = 'def' ).");
+		buildExp("    third_method( iv_name = 'ghi' ).");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testChainKept() {
+		rule.configProcessChains.setValue(false);
+
+		buildSrc("    CALL METHOD: any_method,");
+		buildSrc("                 other_method EXPORTING iv_value = iv_value,");
+		buildSrc("                 mo_any_instance->(iv_dynamic_method_name).");
+		buildSrc("");
+		buildSrc("    CALL METHOD third_method EXPORTING iv_name =: 'abc', 'def', 'ghi'.");
+
+		copyExpFromSrc();
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }

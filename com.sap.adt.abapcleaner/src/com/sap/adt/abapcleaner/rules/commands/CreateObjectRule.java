@@ -1,6 +1,7 @@
 package com.sap.adt.abapcleaner.rules.commands;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 
 import com.sap.adt.abapcleaner.base.ABAP;
 import com.sap.adt.abapcleaner.parser.*;
@@ -70,8 +71,23 @@ public class CreateObjectRule extends RuleForCommands {
 			+ LINE_SEP + "      EXCEPTIONS" 
 			+ LINE_SEP + "        cx_message     = 1" 
 			+ LINE_SEP + "        others         = 2." 
+			+ LINE_SEP 
+			+ LINE_SEP + "    \" chains can only be processed if they are first unchained" 
+			+ LINE_SEP + "    CREATE OBJECT: lx_message, lx_other_message." 
+			+ LINE_SEP 
+			+ LINE_SEP + "    CREATE OBJECT: lo_any TYPE cl_any_class," 
+			+ LINE_SEP + "                   lo_other TYPE (lv_class_name)," 
+			+ LINE_SEP + "                   lo_third TYPE cl_othird_class" 
+			+ LINE_SEP + "                     EXPORTING io_contract = me." 
 			+ LINE_SEP + "  ENDMETHOD.";
 	}
+
+	final ConfigBoolValue configProcessChains = new ConfigBoolValue(this, "ProcessChains", "Unchain CREATE OBJECT: chains (required for processing them with this rule)", true, false, LocalDate.of(2023, 10, 27));
+
+   private final ConfigValue[] configValues = new ConfigValue[] { configProcessChains };
+
+	@Override
+	public ConfigValue[] getConfigValues() { return configValues; }
 
 	public CreateObjectRule(Profile profile) {
 		super(profile);
@@ -81,11 +97,26 @@ public class CreateObjectRule extends RuleForCommands {
 	@Override
 	protected boolean executeOn(Code code, Command command, int releaseRestriction) throws UnexpectedSyntaxAfterChanges {
 		Token firstToken = command.getFirstToken();
+		if (!firstToken.matchesOnSiblings(false, "CREATE", "OBJECT", TokenSearch.makeOptional(":"), TokenSearch.ANY_IDENTIFIER))
+			return false;
+		
+		ArrayList<Command> unchainedCommands = unchain(code, command, configProcessChains.getValue());
+		if (unchainedCommands == null || unchainedCommands.isEmpty())
+			return false;
+		
+		for (Command unchainedCommand : unchainedCommands) {
+			if (executeOnUnchained(code, unchainedCommand, releaseRestriction)) {
+				code.addRuleUse(this, unchainedCommand);
+			}
+		}
+		return false; // addRuleUse() was already called above
+	}
+	
+	private boolean executeOnUnchained(Code code, Command command, int releaseRestriction) throws UnexpectedSyntaxAfterChanges {
+		Token firstToken = command.getFirstToken();
 		if (!firstToken.matchesOnSiblings(false, "CREATE", "OBJECT", TokenSearch.ANY_IDENTIFIER))
 			return false;
-		else if (command.isLateChain())
-			return false;
-
+			
 		Token identifier = firstToken.getNext().getNext();
 		Token next = identifier.getNextCodeSibling();
 
@@ -130,7 +161,6 @@ public class CreateObjectRule extends RuleForCommands {
 		((ExportingKeywordRule) parentProfile.getRule(RuleID.EXPORTING_KEYWORD)).executeOn(code, command, typeInfo, false, releaseRestriction);
 
 		command.invalidateMemoryAccessType();
-		
 		return true;
 	}
 }

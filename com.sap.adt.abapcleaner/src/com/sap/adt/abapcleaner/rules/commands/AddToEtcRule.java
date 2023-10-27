@@ -1,6 +1,7 @@
 package com.sap.adt.abapcleaner.rules.commands;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 
 import com.sap.adt.abapcleaner.base.ABAP;
 import com.sap.adt.abapcleaner.parser.*;
@@ -47,7 +48,7 @@ public class AddToEtcRule extends RuleForCommands {
       return "" 
 			+ LINE_SEP + "  METHOD replace_obsolete_add_to_etc." 
 			+ LINE_SEP + "    ADD 1 TO ls_struc-component." 
-			+ LINE_SEP + "    ADD iv_value  TO lv_length." 
+			+ LINE_SEP + "    ADD iv_value TO lv_length." 
 			+ LINE_SEP 
 			+ LINE_SEP + "    SUBTRACT lo_typedesc->length FROM lv_length." 
 			+ LINE_SEP + "    SUBTRACT is_struc-component FROM lv_length." 
@@ -62,13 +63,23 @@ public class AddToEtcRule extends RuleForCommands {
 			+ LINE_SEP + "    DIVIDE lv_value BY lo_struc-component." 
 			+ LINE_SEP + "    DIVIDE lv_value BY class_name( )=>get_tool( )->get_value( iv_param  = 5" 
 			+ LINE_SEP + "                                                              iv_param2 = 'abc' )." 
+			+ LINE_SEP 
+			+ LINE_SEP + "    \" chains can only be processed if they are first unchained" 
+			+ LINE_SEP + "    ADD 10 TO: lv_value, lv_other." 
+			+ LINE_SEP 
+			+ LINE_SEP + "    SUBTRACT: 1 FROM lv_value, 2 FROM lv_other." 
+			+ LINE_SEP 
+			+ LINE_SEP + "    MULTIPLY iv_value BY: 2, 3, 5." 
+			+ LINE_SEP 
+			+ LINE_SEP + "    DIVIDE iv_value: BY lv_any, BY lv_other." 
 			+ LINE_SEP + "  ENDMETHOD.";
    }
 
 	final ConfigEnumValue<AddToReplacementStyleForOldRelease> configReplacementStyleForOldRelease = new ConfigEnumValue<AddToReplacementStyleForOldRelease>(this, "AddToReplacementStyle", "If cleanup is restricted to NetWeaver < 7.54 syntax,",
 			new String[] { "keep obsolete statements", "replace with 'a = a + ...' etc." }, AddToReplacementStyleForOldRelease.REPLACE_WITHOUT_ASSIGNMENT_OP, AddToReplacementStyleForOldRelease.KEEP, LocalDate.of(2022, 8, 26));
+	final ConfigBoolValue configProcessChains = new ConfigBoolValue(this, "ProcessChains", "Unchain ADD:, SUBTRACT: etc. chains (required for processing them with this rule)", true, false, LocalDate.of(2023, 10, 27));
 
-	private final ConfigValue[] configValues = new ConfigValue[] { configReplacementStyleForOldRelease };
+	private final ConfigValue[] configValues = new ConfigValue[] { configReplacementStyleForOldRelease, configProcessChains };
 
 	@Override
 	public ConfigValue[] getConfigValues() { return configValues; }
@@ -84,8 +95,16 @@ public class AddToEtcRule extends RuleForCommands {
 
 	@Override
 	protected boolean executeOn(Code code, Command command, int releaseRestriction) throws UnexpectedSyntaxBeforeChanges, UnexpectedSyntaxAfterChanges {
-		if (command.containsChainColon())
+		Token firstToken = command.getFirstCodeToken();
+		if (firstToken == null)
 			return false;
+		
+		if (	!firstToken.matchesOnSiblings(true, "ADD", TokenSearch.ASTERISK, "TO")
+			&& !firstToken.matchesOnSiblings(true, "SUBTRACT", TokenSearch.ASTERISK, "FROM")
+			&& !firstToken.matchesOnSiblings(true, "MULTIPLY", TokenSearch.ASTERISK, "BY")
+			&& !firstToken.matchesOnSiblings(true, "DIVIDE", TokenSearch.ASTERISK, "BY")) {
+			return false;
+		}
 		
 		// determine whether introducing calculation assignment operators is allowed by the release restrictions;
 		// if not, determine whether the obsolete statement should be kept or replaced with 'a = a + ...' etc.
@@ -93,10 +112,20 @@ public class AddToEtcRule extends RuleForCommands {
 		if (!areCalcAssignOpsAllowed && getReplacementStyleForOldRelease() == AddToReplacementStyleForOldRelease.KEEP)
 			return false;
 		
-		return replaceAddOrSubtract(code, command, "ADD", "TO", "+", areCalcAssignOpsAllowed) 
-		 	 || replaceAddOrSubtract(code, command, "SUBTRACT", "FROM", "-", areCalcAssignOpsAllowed)
-			 || replaceMultiplyOrDivide(code, command, "MULTIPLY", "BY", "*", areCalcAssignOpsAllowed) 
-			 || replaceMultiplyOrDivide(code, command, "DIVIDE", "BY", "/", areCalcAssignOpsAllowed);
+		ArrayList<Command> unchainedCommands = unchain(code, command, configProcessChains.getValue());
+		if (unchainedCommands == null || unchainedCommands.isEmpty())
+			return false;
+		
+		for (Command unchainedCommand : unchainedCommands) {
+			if (	replaceAddOrSubtract(code, unchainedCommand, "ADD", "TO", "+", areCalcAssignOpsAllowed) 
+				|| replaceAddOrSubtract(code, unchainedCommand, "SUBTRACT", "FROM", "-", areCalcAssignOpsAllowed)
+				|| replaceMultiplyOrDivide(code, unchainedCommand, "MULTIPLY", "BY", "*", areCalcAssignOpsAllowed) 
+				|| replaceMultiplyOrDivide(code, unchainedCommand, "DIVIDE", "BY", "/", areCalcAssignOpsAllowed)) {
+				
+				code.addRuleUse(this, unchainedCommand);
+			}
+   	}
+		return false; // addRuleUse() was already called above
 	}
 
 	private boolean replaceAddOrSubtract(Code code, Command command, String keyword1Text, String keyword2Text, String operator, boolean areCalcAssignOpsAllowed) throws UnexpectedSyntaxBeforeChanges, UnexpectedSyntaxAfterChanges {

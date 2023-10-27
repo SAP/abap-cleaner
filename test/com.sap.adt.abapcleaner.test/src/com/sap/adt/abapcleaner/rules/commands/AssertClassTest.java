@@ -18,6 +18,7 @@ class AssertClassTest extends RuleTestBase {
 	void setUp() {
 		// setup default test configuration (may be modified in the individual test methods)
 		rule.configAssertClassName.setValue("cx_any_assert");
+		rule.configProcessChains.setValue(true);
 	}
 	
 	@Test
@@ -170,6 +171,8 @@ class AssertClassTest extends RuleTestBase {
 
 	@Test
 	void testChainUnchanged() {
+		rule.configProcessChains.setValue(false);
+
 		buildSrc("    ASSERT: a = 1, b = 2.");
 		buildSrc("    ASSERT NOT: lo_item IS BOUND,");
 		buildSrc("                <ls_field> IS ASSIGNED.");
@@ -242,4 +245,37 @@ class AssertClassTest extends RuleTestBase {
 		testRule();
 	}
 
+	@Test
+	void testChainProcessed() {
+		rule.configProcessChains.setValue(true);
+		
+		buildSrc("    ASSERT: sy-subrc = 0,");
+		buildSrc("            io_instance IS BOUND,");
+		buildSrc("            \" comment");
+		buildSrc("            iv_is_valid = abap_false.");
+
+		buildExp("    cx_any_assert=>assert_subrc( ).");
+		buildExp("    cx_any_assert=>assert_bound( io_instance ).");
+		buildExp("    \" comment");
+		buildExp("    cx_any_assert=>assert_false( iv_is_valid ).");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testChainKept() {
+		rule.configProcessChains.setValue(false);
+		
+		buildSrc("    ASSERT: sy-subrc = 0,");
+		buildSrc("            io_instance IS BOUND,");
+		buildSrc("            iv_is_valid = abap_false.");
+
+		copyExpFromSrc();
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }

@@ -1,6 +1,7 @@
 package com.sap.adt.abapcleaner.rules.commands;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 
 import com.sap.adt.abapcleaner.parser.*;
 import com.sap.adt.abapcleaner.programbase.*;
@@ -21,7 +22,20 @@ public abstract class CheckStatementRuleBase extends Rule {
 	 * transforms "CHECK {logical expression}." into "IF {negated logical expression}. CONTINUE/RETURN. ENDIF."
 	 * @throws IntegrityBrokenException 
 	 */
-	protected final boolean executeOn(Code code, Command command, boolean isInLoop, NegationStyle negationStyle, boolean convertAbapFalseAndAbapTrue, int releaseRestriction) throws UnexpectedSyntaxBeforeChanges, UnexpectedSyntaxAfterChanges {
+	protected final boolean executeOn(Code code, Command command, boolean isInLoop, boolean processChains, NegationStyle negationStyle, boolean convertAbapFalseAndAbapTrue, int releaseRestriction) throws UnexpectedSyntaxBeforeChanges, UnexpectedSyntaxAfterChanges {
+		ArrayList<Command> unchainedCommands = unchain(code, command, processChains);
+		if (unchainedCommands == null || unchainedCommands.isEmpty())
+			return false;
+		
+		for (Command unchainedCommand : unchainedCommands) {
+			if (executeOnUnchained(code, unchainedCommand, isInLoop, negationStyle, convertAbapFalseAndAbapTrue, releaseRestriction)) {
+				code.addRuleUse(this, unchainedCommand);
+			}
+		}
+		return false; // addRuleUse() was already called above
+	}
+
+	private final boolean executeOnUnchained(Code code, Command command, boolean isInLoop, NegationStyle negationStyle, boolean convertAbapFalseAndAbapTrue, int releaseRestriction) throws UnexpectedSyntaxBeforeChanges, UnexpectedSyntaxAfterChanges {
 		Token firstToken = command.getFirstToken();
 		Token period = command.getLastNonCommentToken();
 		int indent = firstToken.getStartIndexInLine();
@@ -68,7 +82,6 @@ public abstract class CheckStatementRuleBase extends Rule {
 			(new UnexpectedSyntaxAfterChanges(this, null)).addToLog();
 			return false;
 		}
-		code.addRuleUse(this, command);
 		return true;
 	}
 }

@@ -1,6 +1,7 @@
 package com.sap.adt.abapcleaner.rules.commands;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 
 import com.sap.adt.abapcleaner.base.ABAP;
 import com.sap.adt.abapcleaner.parser.Code;
@@ -84,14 +85,20 @@ public class TranslateRule extends RuleForCommands {
 			+ LINE_SEP + "    \" translate( ) must have FROM = `c`, since FROM = `c+`  TO = `C` would remove the `+`"
 			+ LINE_SEP + "    DATA lv_c_plus_plus TYPE string VALUE `c++`." 
 			+ LINE_SEP + "    TRANSLATE lv_c_plus_plus USING 'cC+'." 
+			+ LINE_SEP 
+			+ LINE_SEP + "    \" chains can only be processed if they are first unchained" 
+			+ LINE_SEP + "    TRANSLATE: lv_text TO LOWER CASE, lv_other_text TO UPPER CASE." 
+			+ LINE_SEP 
+			+ LINE_SEP + "    TRANSLATE lv_abc USING: '1 2 3 ', 'a-b-c-'." 
 			+ LINE_SEP + "  ENDMETHOD.";
    }
 
    final ConfigBoolValue configReplaceTranslateToUpperLower = new ConfigBoolValue(this, "ReplaceTranslateToUpperLower", "Replace TRANSLATE ... TO UPPER|LOWER", true);
    final ConfigBoolValue configReplaceTranslateUsing = new ConfigBoolValue(this, "ReplaceTranslateUsing", "Replace TRANSLATE ... USING", true);
    final ConfigBoolValue configReplaceUnevenMasks = new ConfigBoolValue(this, "ReplaceUnevenMasks", "Replace TRANSLATE ... USING if mask has an uneven number of chars", true);
+	final ConfigBoolValue configProcessChains = new ConfigBoolValue(this, "ProcessChains", "Unchain TRANSLATE: chains (required for processing them with this rule)", true, false, LocalDate.of(2023, 10, 27));
 
-   private final ConfigValue[] configValues = new ConfigValue[] { configReplaceTranslateToUpperLower, configReplaceTranslateUsing, configReplaceUnevenMasks };
+   private final ConfigValue[] configValues = new ConfigValue[] { configReplaceTranslateToUpperLower, configReplaceTranslateUsing, configReplaceUnevenMasks, configProcessChains };
 
 	@Override
 	public ConfigValue[] getConfigValues() { return configValues; }
@@ -103,30 +110,38 @@ public class TranslateRule extends RuleForCommands {
 
 	@Override
 	protected boolean executeOn(Code code, Command command, int releaseRestriction) throws UnexpectedSyntaxBeforeChanges, UnexpectedSyntaxAfterChanges {
-	   if (command.containsChainColon())
-   		return false;
-		
 		// for the syntax of the deprecated TRANSLATE statement, see https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/index.htm?file=abaptranslate.htm
 		Token firstToken = command.getFirstToken();
-		if (firstToken == null || !firstToken.isKeyword("TRANSLATE"))
+		if (firstToken == null)
 			return false;
 		
-		if (firstToken.matchesOnSiblings(false, "TRANSLATE", TokenSearch.ANY_IDENTIFIER, "TO", "UPPER|LOWER", "CASE")) {
-			if (configReplaceTranslateToUpperLower.getValue() && replaceTranslateToUpperOrLower(firstToken)) {
-				command.invalidateMemoryAccessType();
-				return true;
-			}
-		} else if (firstToken.matchesOnSiblings(false, "TRANSLATE", TokenSearch.ANY_IDENTIFIER, "USING", TokenSearch.ANY_LITERAL)) {
-			if (configReplaceTranslateUsing.getValue() && replaceTranslateUsing(firstToken)){
-				command.invalidateMemoryAccessType();
-				return true;
+		if (	!firstToken.matchesOnSiblings(true, "TRANSLATE", TokenSearch.ASTERISK, "TO", "UPPER|LOWER", "CASE")
+			&& !firstToken.matchesOnSiblings(true, "TRANSLATE", TokenSearch.ASTERISK, "USING")) {
+			return false;
+		}
+		
+		ArrayList<Command> unchainedCommands = unchain(code, command, configProcessChains.getValue());
+		if (unchainedCommands == null || unchainedCommands.isEmpty())
+			return false;
+		
+		for (Command unchainedCommand : unchainedCommands) {
+			firstToken = unchainedCommand.getFirstCodeToken();
+			if (firstToken == null) {
+				// skip Command
+			} else if (firstToken.matchesOnSiblings(false, "TRANSLATE", TokenSearch.ANY_IDENTIFIER, "TO", "UPPER|LOWER", "CASE")) {
+				if (configReplaceTranslateToUpperLower.getValue() && replaceTranslateToUpperOrLower(unchainedCommand, firstToken)) {
+					code.addRuleUse(this, unchainedCommand);
+				}
+			} else if (firstToken.matchesOnSiblings(false, "TRANSLATE", TokenSearch.ANY_IDENTIFIER, "USING", TokenSearch.ANY_LITERAL)) {
+				if (configReplaceTranslateUsing.getValue() && replaceTranslateUsing(unchainedCommand, firstToken)){
+					code.addRuleUse(this, unchainedCommand);
+				}
 			}
 		}
-
-		return false;
+		return false; // addRuleUse() was already called above
 	}
 
-	private boolean replaceTranslateToUpperOrLower(Token firstToken) throws UnexpectedSyntaxAfterChanges, IntegrityBrokenException {
+	private boolean replaceTranslateToUpperOrLower(Command command, Token firstToken) throws UnexpectedSyntaxAfterChanges, IntegrityBrokenException {
 		Token identifier1 = firstToken.getNextCodeSibling();
 		Token toToken = identifier1.getNextCodeSibling();
 		Token upperLowerToken = toToken.getNextCodeSibling();
@@ -153,10 +168,12 @@ public class TranslateRule extends RuleForCommands {
 		toToken.removeFromCommand();
 		upperLowerToken.removeFromCommand();
 		caseToken.removeFromCommand();
+
+		command.invalidateMemoryAccessType();
 		return true;
 	}
 	
-	private boolean replaceTranslateUsing(Token firstToken) throws UnexpectedSyntaxAfterChanges, IntegrityBrokenException {
+	private boolean replaceTranslateUsing(Command command, Token firstToken) throws UnexpectedSyntaxAfterChanges, IntegrityBrokenException {
 		Token identifier1 = firstToken.getNextCodeSibling();
 		Token usingToken = identifier1.getNextCodeSibling();
 		Token maskToken = usingToken.getNextCodeSibling();
@@ -217,6 +234,8 @@ public class TranslateRule extends RuleForCommands {
 		
 		usingToken.removeFromCommand();
 		maskToken.removeFromCommand();
+
+		command.invalidateMemoryAccessType();
 		return true;
 	}
 }

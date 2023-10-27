@@ -1,12 +1,11 @@
 package com.sap.adt.abapcleaner.rules.commands;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 
 import com.sap.adt.abapcleaner.parser.*;
 import com.sap.adt.abapcleaner.programbase.*;
 import com.sap.adt.abapcleaner.rulebase.*;
-import com.sap.adt.abapcleaner.rules.declarations.ChainOfOneRule;
-import com.sap.adt.abapcleaner.rules.declarations.ChainRule;
 
 public class MoveToRule extends RuleForCommands {
 	private final static RuleReference[] references = new RuleReference[] {
@@ -62,10 +61,14 @@ public class MoveToRule extends RuleForCommands {
 			+ LINE_SEP + "      \" another comment"
 			+ LINE_SEP + "      EXACT iv_data TO ev_data,"
 			+ LINE_SEP + "      io_instance ?TO eo_instance."
+			+ LINE_SEP + ""
+			+ LINE_SEP + "    \" with the MOVE chain, get_next_value( ) is also called 3 times,"
+			+ LINE_SEP + "    \" but without the chain, that's much clearer:"
+			+ LINE_SEP + "    MOVE get_next_value( ) TO: ev_any, ev_other, ev_third." 
 			+ LINE_SEP + "  ENDMETHOD.";
    }
 
-	final ConfigBoolValue configProcessChains = new ConfigBoolValue(this, "ProcessChains", "Process MOVE: chains", true, false, LocalDate.of(2023, 6, 5));
+	final ConfigBoolValue configProcessChains = new ConfigBoolValue(this, "ProcessChains", "Unchain MOVE: chains (required for processing them with this rule)", true, false, LocalDate.of(2023, 10, 27));
 
 	private final ConfigValue[] configValues = new ConfigBoolValue[] { configProcessChains };
 
@@ -82,68 +85,16 @@ public class MoveToRule extends RuleForCommands {
 		if (!command.firstCodeTokenIsKeyword("MOVE"))
 			return false;
 		
-	   if (!command.containsChainColon()) {
-	   	return executeOnNonChain(code, command);
-	   
-	   } else if (configProcessChains.getValue() && command.containsChainColon()) {
-	   	// check whether all parts of the chain match the expected pattern
-	   	boolean isChainOfOne = true;
-	   	if (command.isSimpleChain()) {
-	   		// expect "MOVE: [EXACT] <term1> TO <identifier1>, [EXACT] <term2> TO <identifier2>, ..."
-		   	Token checkToken = command.getFirstToken().getNextCodeSibling().getNextCodeSibling();
-		   	while (checkToken != null) {
-		   		Token lastToken = checkToken.getLastTokenOnSiblings(true, TokenSearch.makeOptional("EXACT"), TokenSearch.ANY_TERM, "TO|?TO", TokenSearch.ANY_IDENTIFIER, ".|,");
-		   		if (lastToken == null || !lastToken.isCommaOrPeriod())
-		   			return false;
-		   		if (lastToken.isComma())
-		   			isChainOfOne = false;
-		   		checkToken = lastToken.getNextCodeSibling();
-		   	}
-	   	} else {
-	   		// expect "MOVE [EXACT] <term1> TO: <identifier1>, <identifier2>, ...."
-	   		Token chainColon = command.getFirstToken().getLastTokenOnSiblings(true, "MOVE", TokenSearch.makeOptional("EXACT"), TokenSearch.ANY_TERM, "TO|?TO", ":");
-	   		if (chainColon == null)
-	   			return false;
-	   		Token checkToken = chainColon;
-	   		while (checkToken != null) {
-	   			checkToken = checkToken.getNextCodeSibling();
-	   			if (checkToken == null)
-	   				break;
-	   			if (!checkToken.isIdentifier())
-	   				return false;
-	   			checkToken = checkToken.getNextCodeSibling();
-	   			if (checkToken == null || !checkToken.isCommaOrPeriod())
-	   				return false;
-	   			if (checkToken.isComma())
-	   				isChainOfOne = false;
-	   		}
-	   	}
-	   	
-	   	// unchain MOVE: into multiple commands
-	   	Command prevCommand = command.getPrev();
-	   	Command endCommand = command.getNext();
-	   	boolean unchained;
-	   	if (isChainOfOne) {
-	   		unchained = ((ChainOfOneRule)parentProfile.getRule(RuleID.CHAIN_OF_ONE)).executeOn(code, command, false);
-	   	} else {
-		   	unchained = ((ChainRule)parentProfile.getRule(RuleID.DECLARATION_CHAIN)).executeOn(code, command, false);
-	   	}
-	   	if (!unchained)
-	   		return false;
-
-	   	// process unchained MOVE commands
-	   	Command changeCommand = (prevCommand == null) ? code.firstCommand : prevCommand.getNext();
-	   	while (changeCommand != endCommand) {
-	   		if (changeCommand.isCommentLine() || executeOnNonChain(code, changeCommand)) {
-	   			code.addRuleUse(this, changeCommand);
-	   		}
-	   		changeCommand = changeCommand.getNext();
-	   	} 
-	   	return true;
-
-	   } else {
-	   	return false;
-	   }
+		ArrayList<Command> unchainedCommands = unchain(code, command, configProcessChains.getValue());
+		if (unchainedCommands == null || unchainedCommands.isEmpty())
+			return false;
+		
+		for (Command unchainedCommand : unchainedCommands) {
+   		if (executeOnNonChain(code, unchainedCommand)) {
+   			code.addRuleUse(this, unchainedCommand);
+   		}
+   	} 
+		return false; // addRuleUse() was already called above
 	}
 	
 	private boolean executeOnNonChain(Code code, Command command) throws UnexpectedSyntaxBeforeChanges, UnexpectedSyntaxAfterChanges {
@@ -194,7 +145,6 @@ public class MoveToRule extends RuleForCommands {
 		term.addIndent(term.firstToken.getStartIndexInLine() - termPos);
 
 		command.invalidateMemoryAccessType();
-
 		return true;
 	}
 }

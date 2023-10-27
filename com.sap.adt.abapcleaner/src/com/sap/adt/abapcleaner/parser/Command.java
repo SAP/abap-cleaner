@@ -230,6 +230,8 @@ public class Command {
 
 	public final boolean containsChainColon() { return (chainColonCount > 0); }
 	
+	public final boolean containsComma() { return firstToken.matchesOnSiblings(true, TokenSearch.ASTERISK, ","); }
+	
 	public final boolean isLateChain() { return containsChainColon() && !isSimpleChain(); }
 
 	public final boolean startsLoop() { return getOpensLevel() && firstCodeTokenIsAnyKeyword(ABAP.loopKeywords); }
@@ -3079,7 +3081,6 @@ public class Command {
 	public void setErrorStateBeforeCleanup(int errorCount) {
 		this.errorCountBeforeCleanup = errorCount;
 	}
-	
 	
 	/** Returns true if the Command matches a hard-coded pattern or condition.
 	 * This method can be used during development to search for examples in all sample code files. */
