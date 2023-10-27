@@ -2020,4 +2020,30 @@ class UnusedVariablesTest extends RuleTestBase {
 		deactivateRuleUseCheck();
 		testRule();
 	}
+
+	@Test
+	void testChainElementsOnSameLine() {
+		// ensure that removing the unused variable from the middle works even if the previous and/or next variable
+		// is declared on the same line:
+		
+		buildSrc("    DATA: lv_any1 TYPE i, lv_unused1 TYPE i, lv_other1 TYPE i.");
+		buildSrc("    DATA: lv_any2 TYPE i, lv_unused2 TYPE i,");
+		buildSrc("          lv_other2 TYPE i.");
+		buildSrc("    DATA: lv_any3 TYPE i,");
+		buildSrc("          lv_unused3 TYPE i, lv_other3 TYPE i.");
+		buildSrc("");
+		buildSrc("    rv_result = lv_any1 + lv_other1 + lv_any2 + lv_other2 + lv_any3 + lv_other3.");
+
+		buildExp("    DATA: lv_any1 TYPE i, lv_other1 TYPE i.");
+		buildExp("    DATA: lv_any2 TYPE i,");
+		buildExp("          lv_other2 TYPE i.");
+		buildExp("    DATA: lv_any3 TYPE i,");
+		buildExp("          lv_other3 TYPE i.");
+		buildExp("");
+		buildExp("    rv_result = lv_any1 + lv_other1 + lv_any2 + lv_other2 + lv_any3 + lv_other3.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }

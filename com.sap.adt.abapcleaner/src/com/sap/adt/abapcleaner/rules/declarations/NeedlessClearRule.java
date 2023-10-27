@@ -47,7 +47,7 @@ public class NeedlessClearRule extends RuleForDeclarations {
 	public RuleReference[] getReferences() { return references; }
 
 	@Override
-	public RuleID[] getDependentRules() { return new RuleID[] { RuleID.LOCAL_DECLARATION_ORDER, RuleID.CHAIN_OF_ONE, RuleID.UNUSED_VARIABLES, RuleID.INSET }; }
+	public RuleID[] getDependentRules() { return new RuleID[] { RuleID.LOCAL_DECLARATION_ORDER, RuleID.CHAIN_OF_ONE, RuleID.UNUSED_VARIABLES, RuleID.INSET, RuleID.UPPER_AND_LOWER_CASE }; }
 
 	@Override
    public String getExample() {
@@ -233,7 +233,7 @@ public class NeedlessClearRule extends RuleForDeclarations {
 
 		// if configured, exclude cases where a structure is cleared which is assigned directly afterwards 
 		if (configKeepStrucBeforeAssign.getValue()) {
-			Command next = token.getParentCommand().getNext();
+			Command next = token.getParentCommand().getNextNonCommentCommand();
 			if (next != null && next.isAssignment(false, false) && next.getFirstCodeToken().textStartsWith(text + "-")) {
 				return false;
 			}
