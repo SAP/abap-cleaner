@@ -1045,7 +1045,7 @@ public class Command {
 		while (token != null) {
 			if (token.isChainColon()) 
 				++chainColonCount;
-			token = token.getNextNonCommentToken();
+			token = token.getNextCodeToken();
 		}
 	}
 	
@@ -2137,16 +2137,18 @@ public class Command {
 	}
 
 	void onTokenInserted(Token token) {
-		if (token.isChainColon())
+		if (token.isChainColon()) {
 			++chainColonCount;
+		}
 	}
 
 	void onTokenRemoved(Token token) {
-		if (chainColonCount > 0 && token.isChainColon())
-			--chainColonCount ;
+		if (chainColonCount > 0 && token.isChainColon()) {
+			--chainColonCount;
+		}
 	}
 	
-	public void removeAllFurtherChainColons() throws UnexpectedSyntaxAfterChanges {
+	public void removeAllChainColons() throws UnexpectedSyntaxAfterChanges {
 		// after the first chain colon : was removed from a Command (by the caller), all further colons must be removed, too: 
 		// such additional colons are syntactically correct and are simply ignored while there is another colon before them: 
 		// 'If further colons are listed after the first colon of a chained statement, they are handled like blanks' 
@@ -2171,6 +2173,7 @@ public class Command {
 				token = token.getNext();
 			}
 		}
+		chainColonCount = 0;
 	}
 	
 	public Command copyTokenRangeToNewCommand(Token startToken, Token endToken, int startLineBreaks, int startSpacesLeft) throws UnexpectedSyntaxException {
@@ -2906,7 +2909,8 @@ public class Command {
 
 		// if chain colon shall be inserted, this can be done
 		// - anywhere if no chain colon exists in the Command (thus creating a "chain of one"), or otherwise
-		// - somewhere after an existing one chain colon (so the new chain colon has no effect on the chain)
+		// - somewhere after an existing one chain colon (so the new chain colon has no effect on the chain);
+		//   in this case, tokenIndex = 0 refers to the existing colon  
 		// - but never in ABAP SQL Commands like SELECT, UPDATE, WITH etc. (in which "," has a different meaning)
 		Token token = firstToken;
 		if (stressTestType == StressTestType.COLON) {
@@ -2971,19 +2975,17 @@ public class Command {
 		
 		// get information on the line to be deleted / commented out and the surrounding lines
 		Command originalCommand = (this.originalCommand != null) ? this.originalCommand : this;
-		Token keyword = getFirstToken();
-		if (keyword.isComment()) // just to be sure; however, with the call to splitOutLeadingCommentLines() below, this should not happen anymore
-			keyword = keyword.getNextNonCommentSibling();
-		Token colon = keyword.getNext().isChainColon() ? keyword.getNext() : null;
+		Token keyword = getFirstCodeToken();
+		Token colon = keyword.getNextCodeToken().isChainColon() ? keyword.getNextCodeToken() : null;
 		// boolean isKeywordOnSameLine = (identifier.lineBreaks == 0);
 		Token commaOrPeriod = start.getLastTokenOnSiblings(true, TokenSearch.ASTERISK, ".|,");
 		Token lastTokenInLine = (commaOrPeriod.getNext() != null && commaOrPeriod.getNext().isCommentAfterCode()) ? commaOrPeriod.getNext() : commaOrPeriod;
 		boolean isInChain = isSimpleChain();
-		boolean isFirstInChain = isInChain && start.getPrevNonCommentToken().isChainColon();
+		boolean isFirstInChain = isInChain && start.getPrevCodeToken().isChainColon();
 		boolean isLastInChain = isInChain && commaOrPeriod.isPeriod();
 		boolean isOnlyOneInChain = isFirstInChain && isLastInChain;
-		Token prevComma = (isInChain && !isFirstInChain) ? start.getPrevNonCommentSibling() : null;
-		Token nextIdentifier = (isInChain && !isLastInChain) ? lastTokenInLine.getNextNonCommentSibling() : null;
+		Token prevComma = (isInChain && !isFirstInChain) ? start.getPrevCodeSibling() : null;
+		Token nextIdentifier = (isInChain && !isLastInChain) ? lastTokenInLine.getNextCodeSibling() : null;
 		Token firstTokenInLine = (isInChain && !isFirstInChain) ? start : keyword;
 
 		// make the surrounding chain work without the line to be deleted / commented out
@@ -3085,7 +3087,7 @@ public class Command {
 		//   return changesSyField(ABAP.SyField.SUBRC) && SyFieldAnalyzer.getSyFieldReadersFor(ABAP.SyField.SUBRC, this).size() >= 2;
 		//   - getCommandsRelatedToPatternMatch() can then return SyFieldAnalyzer.getSyFieldReadersFor(ABAP.SyField.SUBRC, this);
 		
-		return false;
+		return firstToken.matchesDeep(true, TokenSearch.ASTERISK, "AUTHORITY-CHECK", "DISABLE", "BEGIN");
 	}
 	
 	public final ArrayList<Command> getCommandsRelatedToPatternMatch() {

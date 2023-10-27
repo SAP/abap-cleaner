@@ -24,9 +24,9 @@ class SpacesInEmptyBracketsTest extends RuleTestBase {
 	
 	@Test
 	void testMethodChain() {
-		buildSrc("    ev_result = class_name(  )=>get_tool(  )->get_value(    ).");
+		buildSrc("    ev_result = class_name=>get_tool(  )->get_value(    ).");
 
-		buildExp("    ev_result = class_name( )=>get_tool( )->get_value( ).");
+		buildExp("    ev_result = class_name=>get_tool( )->get_value( ).");
 
 		putAnyMethodAroundSrcAndExp();
 		
@@ -37,7 +37,7 @@ class SpacesInEmptyBracketsTest extends RuleTestBase {
 	void testMethodChainUnchanged() {
 		rule.configRemoveMultiSpaceIfEmpty.setValue(false);
 
-		buildSrc("    ev_result = class_name(  )=>get_tool(  )->get_value(    ).");
+		buildSrc("    ev_result = class_name=>get_tool(  )->get_value(    ).");
 
 		copyExpFromSrc(); 
 
@@ -48,11 +48,11 @@ class SpacesInEmptyBracketsTest extends RuleTestBase {
 
 	@Test
 	void testCommentLineInsideCommand() {
-		buildSrc("    class_name(  )=>get_tool(");
+		buildSrc("    class_name=>get_tool(");
 		buildSrc("        \" comment");
 		buildSrc("        )->get_value(    ).");
 
-		buildExp("    class_name( )=>get_tool(");
+		buildExp("    class_name=>get_tool(");
 		buildExp("        \" comment");
 		buildExp("        )->get_value( ).");
 

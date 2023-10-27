@@ -169,24 +169,24 @@ class UpperAndLowerCaseTest extends RuleTestBase {
 		buildSrc("      FOR TYPE LINE OF TYPE,");
 		buildSrc("      DO TYPE REF TO TYPE,");
 		buildSrc("      ENDFOR TYPE TABLE OF TYPE WITH DEFAULT KEY,");
-		buildSrc("      ENDDO TYPE SORTED TABLE OF REF TO TYPE,");
+		buildSrc("      ENDDO TYPE SORTED TABLE OF REF TO TYPE WITH UNIQUE DEFAULT KEY,");
 		buildSrc("      WHILE TYPE RANGE OF TYPE INITIAL SIZE 4,");
 		buildSrc("      ENDWHILE LIKE TYPE,");
 		buildSrc("      ENDLOOP LIKE LINE OF TYPE,");
 		buildSrc("      IF LIKE REF TO TYPE,");
-		buildSrc("      ENDIF LIKE HASHED TABLE OF REF TO TYPE WITH EMPTY KEY.");
+		buildSrc("      ENDIF LIKE HASHED TABLE OF REF TO TYPE WITH UNIQUE DEFAULT KEY.");
 
 		buildExp("    DATA:");
 		buildExp("      loop TYPE type LENGTH 10,");
 		buildExp("      for TYPE LINE OF type,");
 		buildExp("      do TYPE REF TO type,");
 		buildExp("      endfor TYPE TABLE OF type WITH DEFAULT KEY,");
-		buildExp("      enddo TYPE SORTED TABLE OF REF TO type,");
+		buildExp("      enddo TYPE SORTED TABLE OF REF TO type WITH UNIQUE DEFAULT KEY,");
 		buildExp("      while TYPE RANGE OF type INITIAL SIZE 4,");
 		buildExp("      endwhile LIKE type,");
 		buildExp("      endloop LIKE LINE OF type,");
 		buildExp("      if LIKE REF TO type,");
-		buildExp("      endif LIKE HASHED TABLE OF REF TO type WITH EMPTY KEY.");
+		buildExp("      endif LIKE HASHED TABLE OF REF TO type WITH UNIQUE DEFAULT KEY.");
 
 		putAnyMethodAroundSrcAndExp();
 		
@@ -197,14 +197,14 @@ class UpperAndLowerCaseTest extends RuleTestBase {
 	void testIdentifierNamedResult() {
 		buildSrc("    \" 'result' must be lower case except in very specific statements:");
 		buildSrc("    TYPES ty_action_export_parameter TYPE TABLE FOR ACTION RESULT CDS_entity_name~action_name.");
-		buildSrc("    CALL TRANSFORMATION trans OPTIONS any_options SOURCE XML src_xml RESULT XML rslt_xml.");
+		buildSrc("    CALL TRANSFORMATION trans OPTIONS clear = 'all' SOURCE XML src_xml RESULT XML rslt_xml.");
 		buildSrc("    FETCH NEXT CURSOR dbcur INTO wa EXTENDED RESULT @oref.");
 		buildSrc("    DATA(result) = abap_true.");
 		buildSrc("    result = xsdbool( result = abap_false OR result = abap_true ).");
 
 		buildExp("    \" 'result' must be lower case except in very specific statements:");
 		buildExp("    TYPES ty_action_export_parameter TYPE TABLE FOR ACTION RESULT CDS_entity_name~action_name.");
-		buildExp("    CALL TRANSFORMATION trans OPTIONS any_options SOURCE XML src_xml RESULT XML rslt_xml.");
+		buildExp("    CALL TRANSFORMATION trans OPTIONS clear = 'all' SOURCE XML src_xml RESULT XML rslt_xml.");
 		buildExp("    FETCH NEXT CURSOR dbcur INTO wa EXTENDED RESULT @oref.");
 		buildExp("    DATA(result) = abap_true.");
 		buildExp("    result = xsdbool( result = abap_false OR result = abap_true ).");
@@ -332,7 +332,7 @@ class UpperAndLowerCaseTest extends RuleTestBase {
 		buildSrc("    data lr_range type ref to data.");
 		buildSrc("    types ty_ts_table type sorted table of ty_s_struc with unique key item_id period");
 		buildSrc("                                                      with non-unique sorted key key components a b c.");
-		buildSrc("    loop at mts_table using key key where a = 1.");
+		buildSrc("    loop at mts_table into <ls_any> using key key where a = 1.");
 		buildSrc("    endloop.");
 		buildSrc("");
 		buildSrc("    delete adjacent duplicates from mt_item_range comparing low.");
@@ -340,7 +340,7 @@ class UpperAndLowerCaseTest extends RuleTestBase {
 		buildExp("    DATA lr_range TYPE REF TO data.");
 		buildExp("    TYPES ty_ts_table TYPE SORTED TABLE OF ty_s_struc WITH UNIQUE KEY item_id period");
 		buildExp("                                                      WITH NON-UNIQUE SORTED KEY key COMPONENTS a b c.");
-		buildExp("    LOOP AT mts_table USING KEY key WHERE a = 1.");
+		buildExp("    LOOP AT mts_table INTO <ls_any> USING KEY key WHERE a = 1.");
 		buildExp("    ENDLOOP.");
 		buildExp("");
 		buildExp("    DELETE ADJACENT DUPLICATES FROM mt_item_range COMPARING low.");
@@ -357,7 +357,7 @@ class UpperAndLowerCaseTest extends RuleTestBase {
 		buildSrc("    DATA LR_RANGE TYPE REF TO DATA.");
 		buildSrc("    TYPES TY_TS_TABLE TYPE SORTED TABLE OF TY_S_STRUC WITH UNIQUE KEY ITEM_ID PERIOD");
 		buildSrc("                                                      WITH NON-UNIQUE SORTED KEY KEY COMPONENTS A B C.");
-		buildSrc("    LOOP AT MTS_TABLE USING KEY KEY WHERE A = 1.");
+		buildSrc("    LOOP AT MTS_TABLE INTO <LS_ANY> USING KEY KEY WHERE A = 1.");
 		buildSrc("    ENDLOOP.");
 		buildSrc("");
 		buildSrc("    DELETE ADJACENT DUPLICATES FROM MT_ITEM_RANGE COMPARING LOW.");
@@ -365,7 +365,7 @@ class UpperAndLowerCaseTest extends RuleTestBase {
 		buildExp("    DATA lr_range TYPE REF TO data.");
 		buildExp("    TYPES ty_ts_table TYPE SORTED TABLE OF ty_s_struc WITH UNIQUE KEY item_id period");
 		buildExp("                                                      WITH NON-UNIQUE SORTED KEY key COMPONENTS a b c.");
-		buildExp("    LOOP AT mts_table USING KEY key WHERE a = 1.");
+		buildExp("    LOOP AT mts_table INTO <ls_any> USING KEY key WHERE a = 1.");
 		buildExp("    ENDLOOP.");
 		buildExp("");
 		buildExp("    DELETE ADJACENT DUPLICATES FROM mt_item_range COMPARING low.");

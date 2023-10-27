@@ -73,11 +73,15 @@ public class ExportingKeywordRule extends RuleForTokens {
 		if (!token.getOpensLevel() || !token.hasChildren() || token.isLiteral() || token.getFirstChild().isAttached())
 			return false;
 
-		if (!token.getFirstChild().matchesOnSiblings(false, TokenSearch.ANY_NUMBER_OF_COMMENTS, "EXPORTING")
-				|| token.getFirstChild().matchesOnSiblings(true, TokenSearch.ASTERISK, "IMPORTING|CHANGING|RECEIVING|EXCEPTIONS"))
+		// ensure that EXPORTING is the only keyword
+		Token firstChildCode = token.getFirstChild().getThisOrNextCodeToken();
+		if (firstChildCode == null || !firstChildCode.isKeyword("EXPORTING")) {
 			return false;
-
-		Token keyword = token.getFirstChild().getLastTokenOnSiblings(true, TokenSearch.ANY_NUMBER_OF_COMMENTS, "EXPORTING");
+		} else if (firstChildCode.matchesOnSiblings(true, TokenSearch.ASTERISK, "IMPORTING|CHANGING|RECEIVING|EXCEPTIONS")) { 
+			return false;
+		}
+		
+		Token keyword = firstChildCode;
 		if (!keyword.isKeyword())
 			return false;
 		Token next = keyword.getNext();

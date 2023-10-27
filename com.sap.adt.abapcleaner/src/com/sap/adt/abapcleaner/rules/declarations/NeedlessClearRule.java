@@ -86,7 +86,7 @@ public class NeedlessClearRule extends RuleForDeclarations {
 			+ LINE_SEP + "    \" no need to clear local variables at method end, either; however, you may only want to" 
 			+ LINE_SEP + "    \" add a TODO comment here, because you may just be in the process of writing the method" 
 			+ LINE_SEP + "    CLEAR: lv_other, lv_any." 
-			+ LINE_SEP + "    CLEAR lv_third, lr_ref." 
+			+ LINE_SEP + "    CLEAR: lv_third, lr_ref." 
 			+ LINE_SEP + "    CLEAR: lt_table," 
 			+ LINE_SEP + "           ev_table." 
 			+ LINE_SEP + "  ENDMETHOD.";

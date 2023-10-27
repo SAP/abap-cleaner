@@ -47,17 +47,13 @@ public class AddToEtcRule extends RuleForCommands {
       return "" 
 			+ LINE_SEP + "  METHOD replace_obsolete_add_to_etc." 
 			+ LINE_SEP + "    ADD 1 TO ls_struc-component." 
-			+ LINE_SEP + "    ADD lts_table[ num  = 5" 
-			+ LINE_SEP + "                   name = 'abc']-length TO lv_length." 
+			+ LINE_SEP + "    ADD iv_value  TO lv_length." 
 			+ LINE_SEP 
 			+ LINE_SEP + "    SUBTRACT lo_typedesc->length FROM lv_length." 
-			+ LINE_SEP + "    SUBTRACT class_name( )=>get_tool( )->get_value( iv_param  = 5" 
-			+ LINE_SEP + "                                                    iv_param2 = 'abc' ) FROM lv_length." 
+			+ LINE_SEP + "    SUBTRACT is_struc-component FROM lv_length." 
 			+ LINE_SEP 
 			+ LINE_SEP + "    SUBTRACT 1 FROM ls_any_structure-item_key." 
 			+ LINE_SEP + "    SUBTRACT lo_typedesc->length FROM lv_length." 
-			+ LINE_SEP + "    SUBTRACT lts_table[ num  = 5" 
-			+ LINE_SEP + "                        name = 'abc']-length FROM lv_length." 
 			+ LINE_SEP 
 			+ LINE_SEP + "    MULTIPLY iv_value BY 2." 
 			+ LINE_SEP + "    MULTIPLY lv_value BY lts_table[ num  = 5" 

@@ -55,19 +55,19 @@ public class TaskTest {
 		assertEquals(null, task.getParseError());
 		assertEquals(null, task.getCleanupError());
 		assertEquals(null, task.getCompareError());
-		assertEquals(null, task.getIntegrityTestError());
+		assertEquals(null, task.getCheckError());
 		assertEquals("", task.getErrorMessage());
 		
 		assertTrue(task.getParseTimeMs() >= 0);
 		assertTrue(task.getCleanupTimeMs() >= 0);
+		assertTrue(task.getCheckTimeMs() >= 0);
 		assertTrue(task.getCompareTimeMs() >= 0);
-		assertTrue(task.getIntegrityTestTimeMs() >= 0);
 
 		assertTrue(task.getParseSuccess());
 		assertTrue(task.getCleanupSuccess(false));
 		assertTrue(task.getCleanupSuccess(true));
+		assertTrue(task.getCheckSuccess());
 		assertTrue(task.getCompareSuccess());
-		assertTrue(task.getIntegrityTestSuccess());
 		assertTrue(task.getSuccess());
 		
 		assertNull(task.getLogSummary());
@@ -86,8 +86,8 @@ public class TaskTest {
 		
 		assertEquals(0, task.getParseTimeMs());
 		assertEquals(0, task.getCleanupTimeMs());
+		assertEquals(0, task.getCheckTimeMs());
 		assertEquals(0, task.getCompareTimeMs());
-		assertEquals(0, task.getIntegrityTestTimeMs());
 
 		assertFalse(task.getSuccess());
 	}
@@ -102,32 +102,32 @@ public class TaskTest {
 		
 		assertTrue(task.getParseTimeMs() >= 0);
 		assertEquals(0, task.getCleanupTimeMs());
+		assertEquals(0, task.getCheckTimeMs());
 		// compare time includes retrieval of 'oldCodeDisplayLines' and is therefore already used after parsing
 		assertTrue(task.getCompareTimeMs() >= 0);
-		assertEquals(0, task.getIntegrityTestTimeMs());
-
-		assertFalse(task.getSuccess());
-	}
-
-	@Test
-	void testCancelAfterCompare() {
-		Task task = runTask(4, "do 5 times." + LINE_SEP + "a += 1." + LINE_SEP + "enddo.");
-		
-		assertTrue(task.wasCancelled());
-		assertNotNull(task.getResultingCode());
-		assertNotNull(task.getResultingDiffDoc());
-		
-		assertTrue(task.getParseTimeMs() >= 0);
-		assertTrue(task.getCleanupTimeMs() >= 0);
-		// compare time includes retrieval of 'oldCodeDisplayLines' and is therefore already used after parsing
-		assertTrue(task.getCompareTimeMs() >= 0);
-		assertEquals(0, task.getIntegrityTestTimeMs());
 
 		assertFalse(task.getSuccess());
 	}
 
 	@Test
 	void testCancelAfterIntegrityTest() {
+		Task task = runTask(4, "do 5 times." + LINE_SEP + "a += 1." + LINE_SEP + "enddo.");
+		
+		assertTrue(task.wasCancelled());
+		assertNotNull(task.getResultingCode());
+		assertNull(task.getResultingDiffDoc());
+		
+		assertTrue(task.getParseTimeMs() >= 0);
+		assertTrue(task.getCleanupTimeMs() >= 0);
+		assertTrue(task.getCleanupTimeMs() >= 0);
+		// compare time includes retrieval of 'oldCodeDisplayLines' and is therefore already used after parsing
+		assertTrue(task.getCompareTimeMs() >= 0);
+
+		assertFalse(task.getSuccess());
+	}
+
+	@Test
+	void testCancelAfterCompare() {
 		Task task = runTask(5, "do 5 times." + LINE_SEP + "a += 1." + LINE_SEP + "enddo.");
 		
 		assertTrue(task.wasCancelled());
@@ -136,8 +136,9 @@ public class TaskTest {
 		
 		assertTrue(task.getParseTimeMs() >= 0);
 		assertTrue(task.getCleanupTimeMs() >= 0);
+		assertTrue(task.getCheckTimeMs() >= 0);
+		// compare time includes retrieval of 'oldCodeDisplayLines' and is therefore already used after parsing
 		assertTrue(task.getCompareTimeMs() >= 0);
-		assertEquals(0, task.getIntegrityTestTimeMs());
 
 		assertFalse(task.getSuccess());
 	}
@@ -157,20 +158,20 @@ public class TaskTest {
 
 		assertEquals(null, task.getParseError());
 		assertEquals(null, task.getCleanupError());
+		assertEquals(null, task.getCheckError());
 		assertEquals(null, task.getCompareError());
-		assertEquals(null, task.getIntegrityTestError());
 		assertEquals("", task.getErrorMessage());
 		
 		assertTrue(task.getParseTimeMs() >= 0);
 		assertTrue(task.getCleanupTimeMs() >= 0);
+		assertTrue(task.getCheckTimeMs() >= 0);
 		// ignore compare time
-		assertTrue(task.getIntegrityTestTimeMs() >= 0);
 
 		assertTrue(task.getParseSuccess());
 		assertTrue(task.getCleanupSuccess(false));
 		assertTrue(task.getCleanupSuccess(true));
+		assertTrue(task.getCheckSuccess());
 		assertTrue(task.getCompareSuccess());
-		assertTrue(task.getIntegrityTestSuccess());
 		assertTrue(task.getSuccess());
 		
 		assertNull(task.getLogSummary());

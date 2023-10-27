@@ -1493,10 +1493,11 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 
 		if (!result.getSuccess()) {
 			if (!job.wasCancelled()) {
-				if (showMessages) // TODO: otherwise, display it on a Label? (for 'Watch and Modify Clipboard' function)
+				if (showMessages) { // TODO: otherwise, display it on a Label? (for 'Watch and Modify Clipboard' function)
 					Message.show(result.getErrorMessage(), shell);
-				else
+				} else {
 					resultErrorMessage = result.getErrorMessage();
+				}
 			}
 			return false;
 		}

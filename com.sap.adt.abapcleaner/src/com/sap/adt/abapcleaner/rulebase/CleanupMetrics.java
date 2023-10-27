@@ -28,11 +28,15 @@ class CleanupMetrics {
 	private int cleanupExceptionCount;
 	private int cleanupWarningCount;
 
+	private int checkSuccessCount;
+	private int checkExceptionCount;
+
 	private int compareSuccessCount;
 	private int compareExceptionCount;
 
 	private double parseSum_ms;
 	private double cleanupSum_ms;
+	private double checkSum_ms;
 	private double compareSum_ms;
 
 	private int[] totalRuleUseCount = new int[Rule.RULE_COUNT];
@@ -79,11 +83,13 @@ class CleanupMetrics {
 		details.append("\tParse duration (ms)\tParse result");
 		if (cleanupParams.executeCleanup()) {
 			details.append("\tCleanup duration (ms)\tCleanup result");
+			details.append("\tCheck duration (ms)\tCheck result");
 			details.append("\tCompare duration (ms)\tCompare result");
 
 			details.append("\t");
-			for (int i = 0; i < Rule.RULE_COUNT; ++i)
+			for (int i = 0; i < Rule.RULE_COUNT; ++i) {
 				details.append("\t").append(cleanupParams.profile.getRule(RuleID.forValue(i)).getDisplayName());
+			}
 		}
 		details.append(lineSep);
 	}
@@ -118,74 +124,83 @@ class CleanupMetrics {
 			appendDurationAndMessage(-1, task.getParseError());
 			++parseExceptionCount;
 		}
-
-		// cleanup result
-		if (cleanupParams.executeCleanup() && task.getCleanupSuccess(false)) {
-			int rules_ms = task.getCleanupTimeMs();
-			cleanupSum_ms += rules_ms;
-
-			appendDurationAndMessage(rules_ms, "OK");
-			++cleanupSuccessCount;
-
-		} else {
-			if (task.getCleanupError() != null) {
+		
+		if (cleanupParams.executeCleanup()) {
+			// cleanup result
+			if (task.getCleanupSuccess(false)) {
+				int rules_ms = task.getCleanupTimeMs();
+				cleanupSum_ms += rules_ms;
+				appendDurationAndMessage(rules_ms, "OK");
+				++cleanupSuccessCount;
+			} else if (task.getCleanupError() != null) {
 				appendDurationAndMessage(-1, task.getCleanupError());
 				++cleanupExceptionCount;
 			} else {
 				appendDurationAndMessage(-1, task.getLogText(2000, " // "));
 				++cleanupWarningCount;
 			}
-		}
-
-		// comparer result
-		if (cleanupParams.executeCleanup() && task.getCompareSuccess()) {
-			int compare_ms = task.getCompareTimeMs();
-			compareSum_ms += compare_ms;
-
-			appendDurationAndMessage(compare_ms, "OK");
-			++compareSuccessCount;
-
-		} else {
-			appendDurationAndMessage(-1, task.getCompareError());
-			++compareExceptionCount;
-		}
-
-		// rule use count
-		if (cleanupParams.executeCleanup() && task.getCleanupSuccess(true)) {
-			int[] ruleUseCount = new int[Rule.RULE_COUNT];
-			int[] ruleBlockedCount = new int[Rule.RULE_COUNT];
-			
-			Command command = code.firstCommand;
-			while (command != null) {
-				command.getChangeControl().addToRuleStats(ruleUseCount, ruleBlockedCount);
-				command = command.getNext();
+	
+			// (integrity and syntax) check result
+			if (task.getCheckSuccess()) {
+				int check_ms = task.getCheckTimeMs();
+				checkSum_ms += check_ms;
+				appendDurationAndMessage(check_ms, "OK");
+				++checkSuccessCount;
+			} else {
+				appendDurationAndMessage(-1, task.getCheckError());
+				++checkExceptionCount;
 			}
-
-			appendRuleUseCount(ruleUseCount, "");
-			for (int i = 0; i < Rule.RULE_COUNT; ++i) 
-				totalRuleUseCount[i] += ruleUseCount[i];
+	
+			// comparer result
+			if (cleanupParams.executeCleanup() && task.getCompareSuccess()) {
+				int compare_ms = task.getCompareTimeMs();
+				compareSum_ms += compare_ms;
+				appendDurationAndMessage(compare_ms, "OK");
+				++compareSuccessCount;
+			} else {
+				appendDurationAndMessage(-1, task.getCompareError());
+				++compareExceptionCount;
+			}
+	
+			// rule use count
+			if (cleanupParams.executeCleanup() && task.getCleanupSuccess(true)) {
+				int[] ruleUseCount = new int[Rule.RULE_COUNT];
+				int[] ruleBlockedCount = new int[Rule.RULE_COUNT];
+				
+				Command command = code.firstCommand;
+				while (command != null) {
+					command.getChangeControl().addToRuleStats(ruleUseCount, ruleBlockedCount);
+					command = command.getNext();
+				}
+	
+				appendRuleUseCount(ruleUseCount, "");
+				for (int i = 0; i < Rule.RULE_COUNT; ++i) 
+					totalRuleUseCount[i] += ruleUseCount[i];
+			}
 		}
-
 		details.append(lineSep);
 	}
 	
 	void buildFinish(int duration_ms) {
 		StringBuilder parseSummary = new StringBuilder();
 		StringBuilder cleanupSummary = new StringBuilder();
+		StringBuilder checkSummary = new StringBuilder();
 		StringBuilder compareSummary = new StringBuilder();
 
-		if (parseExceptionCount == 0 && parseErrorCount == 0)
+		// parse result
+		if (parseExceptionCount == 0 && parseErrorCount == 0) {
 			parseSummary.append("OK!");
-		else {
+		} else {
 			parseSummary.append(Cult.format(parseExceptionCount) + " exceptions");
 			parseSummary.append(", " + Cult.format(parseErrorCount) + " parse errors");
 			parseSummary.append(", " + Cult.format(parseSuccessCount) + " OK.");
 		}
 
 		if (cleanupParams.executeCleanup()) {
-			if (cleanupExceptionCount == 0 && cleanupWarningCount == 0)
+			// cleanup result
+			if (cleanupExceptionCount == 0 && cleanupWarningCount == 0) {
 				cleanupSummary.append("OK!");
-			else {
+			} else {
 				if (cleanupExceptionCount > 0)
 					cleanupSummary.append(Cult.format(cleanupExceptionCount) + " exceptions, ");
 				if (cleanupWarningCount > 0)
@@ -193,9 +208,18 @@ class CleanupMetrics {
 				cleanupSummary.append(Cult.format(cleanupSuccessCount) + " OK.");
 			}
 	
-			if (compareExceptionCount == 0)
+			// check result
+			if (checkExceptionCount == 0) {
+				checkSummary.append("OK!");
+			} else {
+				checkSummary.append(Cult.format(checkExceptionCount) + " exceptions");
+				checkSummary.append(", " + Cult.format(checkSuccessCount) + " OK.");
+			}
+	
+			// compare result
+			if (compareExceptionCount == 0) {
 				compareSummary.append("OK!");
-			else {
+			} else {
 				compareSummary.append(Cult.format(compareExceptionCount) + " exceptions");
 				compareSummary.append(", " + Cult.format(compareSuccessCount) + " OK.");
 			}
@@ -208,15 +232,16 @@ class CleanupMetrics {
 		summary.append("Parser: ").append(parseSummary.toString()).append(lineSep);
 		if (cleanupParams.executeCleanup()) {
 			summary.append("Cleaner: ").append(cleanupSummary.toString()).append(lineSep);
+			summary.append("Checker: ").append(checkSummary.toString()).append(lineSep);
 			summary.append("Comparer: ").append(compareSummary.toString()).append(lineSep);
 		}
 		
-		appendSumLine(parseSummary.toString(), cleanupSummary.toString(), compareSummary.toString());
+		appendSumLine(parseSummary.toString(), cleanupSummary.toString(), checkSummary.toString(), compareSummary.toString());
 		
 		wasBuildFinished = true;
 	}
 
-	private void appendSumLine(String parseSummary, String cleanupSummary, String compareSummary) {
+	private void appendSumLine(String parseSummary, String cleanupSummary, String checkSummary, String compareSummary) {
 		// total code metrics
 		appendSourceInfo("Sum", codeMetrics.getByteSum());
 		
@@ -224,6 +249,7 @@ class CleanupMetrics {
 		appendDurationAndMessage((int) parseSum_ms, " " + parseSummary);
 		if (cleanupParams.executeCleanup()) {
 			appendDurationAndMessage((int) cleanupSum_ms, " " + cleanupSummary);
+			appendDurationAndMessage((int) checkSum_ms, " " + checkSummary);
 			appendDurationAndMessage((int) compareSum_ms, " " + compareSummary);
 
 			appendRuleUseCount(totalRuleUseCount, "inactive");

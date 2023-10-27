@@ -2006,4 +2006,18 @@ class UnusedVariablesTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testPragmaAfterColon() {
+		buildSrc("    DATA lv_any TYPE i ##NEEDED.");
+		buildSrc("    FIELD-SYMBOLS: ##ANY_PRAGMA");
+		buildSrc("      <ls_other> TYPE ty_s_any.");
+
+		buildExp("    DATA lv_any TYPE i ##NEEDED.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		deactivateRuleUseCheck();
+		testRule();
+	}
 }

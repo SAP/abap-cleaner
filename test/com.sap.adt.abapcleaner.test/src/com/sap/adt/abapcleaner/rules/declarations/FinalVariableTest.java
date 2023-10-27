@@ -115,7 +115,7 @@ class FinalVariableTest extends RuleTestBase {
 	@Test
 	void testNonLeadingInlineDeclChanged() {
 		buildSrc("    GET TIME FIELD DATA(lv_time).");
-		buildSrc("    GET PARAMETER ID 'ANY_PARAMETER' FIELD DATA(lv_param)");
+		buildSrc("    GET PARAMETER ID 'ANY_PARAMETER' FIELD DATA(lv_param).");
 		buildSrc("    READ TABLE lt_data INDEX 1 INTO DATA(ls_data).");
 		buildSrc("");
 		buildSrc("    LOOP AT it_flight INTO DATA(ls_flight) ##INTO_OK.");
@@ -127,7 +127,7 @@ class FinalVariableTest extends RuleTestBase {
 		buildSrc("    ENDTRY.");
 
 		buildExp("    GET TIME FIELD FINAL(lv_time).");
-		buildExp("    GET PARAMETER ID 'ANY_PARAMETER' FIELD FINAL(lv_param)");
+		buildExp("    GET PARAMETER ID 'ANY_PARAMETER' FIELD FINAL(lv_param).");
 		buildExp("    READ TABLE lt_data INDEX 1 INTO FINAL(ls_data).");
 		buildExp("");
 		buildExp("    LOOP AT it_flight INTO FINAL(ls_flight) ##INTO_OK.");
@@ -285,7 +285,7 @@ class FinalVariableTest extends RuleTestBase {
 	@Test
 	void testDataUnchangedWithWriteToFieldSymbolCompInLoop() {
 		// expect DATA to be kept, because <ls_data> is assigned to lt_data and used in a write position 
-		buildSrc("    DATA(lt_data) TYPE ty_tt_any_table.");
+		buildSrc("    DATA(lt_data) = get_table( ).");
 		buildSrc("    LOOP AT lt_data ASSIGNING FIELD-SYMBOL(<ls_data>).");
 		buildSrc("      <ls_data>-any_component = get_value( ).");
 		buildSrc("    ENDLOOP.");
@@ -300,7 +300,7 @@ class FinalVariableTest extends RuleTestBase {
 	@Test
 	void testDataUnchangedWithWriteToFieldSymbolInLoop() {
 		// expect DATA to be kept, because <ls_data> is assigned to lt_data and used in a write position 
-		buildSrc("    DATA(lt_data) TYPE ty_tt_any_table.");
+		buildSrc("    DATA(lt_data) = get_table( ).");
 		buildSrc("    LOOP AT lt_data ASSIGNING FIELD-SYMBOL(<ls_data>).");
 		buildSrc("      <ls_data> = get_data( ).");
 		buildSrc("    ENDLOOP.");
@@ -315,7 +315,7 @@ class FinalVariableTest extends RuleTestBase {
 	@Test
 	void testDataUnchangedWithReadTableAndWriteToFieldSymbol() {
 		// expect DATA to be kept, because <ls_data> is assigned to lt_data and used in a write position 
-		buildSrc("    DATA(lt_data) TYPE ty_tt_any_table.");
+		buildSrc("    DATA(lt_data) = get_table( ).");
 		buildSrc("    FIELD-SYMBOLS <ls_data> LIKE LINE OF lt_data.");
 		buildSrc("    READ TABLE lt_data WITH TABLE KEY any_comp = 1 ASSIGNING <ls_data>.");
 		buildSrc("    CLEAR: <ls_data>-any_component,");
@@ -331,7 +331,7 @@ class FinalVariableTest extends RuleTestBase {
 	@Test
 	void testDataUnchangedWithAssignAndChangingFieldSymbol() {
 		// expect DATA to be kept, because <ls_data> is assigned to lt_data and used in a write position 
-		buildSrc("    DATA(lt_data) TYPE ty_tt_any_table.");
+		buildSrc("    DATA(lt_data) = get_table( ).");
 		buildSrc("    ASSIGN lt_data[ 1 ] TO FIELD-SYMBOL(<ls_data>).");
 		buildSrc("    any_method( CHANGING iv_any_param = <ls_data>-any_component ).");
 		
@@ -345,12 +345,12 @@ class FinalVariableTest extends RuleTestBase {
 	@Test
 	void testDataChangedWithAssignAndReadFromFieldSymbol() {
 		// expect FINAL to be introduced, because <ls_data> is only used in read positions 
-		buildSrc("    DATA(lt_data) TYPE ty_tt_any_table.");
+		buildSrc("    DATA(lt_data) = get_table( ).");
 		buildSrc("    ASSIGN lt_data[ 1 ] TO FIELD-SYMBOL(<ls_data>).");
 		buildSrc("    any_method( iv_any_param = <ls_data>-any_component ).");
 		buildSrc("    ev_result = <ls_data>-other_component.");
 
-		buildExp("    FINAL(lt_data) TYPE ty_tt_any_table.");
+		buildExp("    FINAL(lt_data) = get_table( ).");
 		buildExp("    ASSIGN lt_data[ 1 ] TO FIELD-SYMBOL(<ls_data>).");
 		buildExp("    any_method( iv_any_param = <ls_data>-any_component ).");
 		buildExp("    ev_result = <ls_data>-other_component.");
@@ -363,7 +363,7 @@ class FinalVariableTest extends RuleTestBase {
 	@Test
 	void testDataUnchangedWithWriteToDataRefInLoop() {
 		// expect DATA to be kept, because lr_data points to lt_data (and is used in a write position) 
-		buildSrc("    DATA(lt_data) TYPE ty_tt_any_table.");
+		buildSrc("    DATA(lt_data) = get_table( ).");
 		buildSrc("    LOOP AT lt_data REFERENCE INTO FINAL(lr_data).");
 		buildSrc("      any_method( lr_data ).");
 		buildSrc("    ENDLOOP.");
@@ -378,7 +378,7 @@ class FinalVariableTest extends RuleTestBase {
 	@Test
 	void testDataUnchangedWithDataRefInLoop() {
 		// expect DATA to be kept, because lr_data points to lt_data 
-		buildSrc("    DATA(lt_data) TYPE ty_tt_any_table.");
+		buildSrc("    DATA(lt_data) = get_table( ).");
 		buildSrc("    GET REFERENCE OF lt_data INTO FINAL(lr_data).");
 		
 		copyExpFromSrc();
@@ -391,7 +391,7 @@ class FinalVariableTest extends RuleTestBase {
 	@Test
 	void testDataUnchangedWithReadTableReferenceInto() {
 		// expect DATA to be kept, because lr_data points to lt_data (and is used in a write position) 
-		buildSrc("    DATA(lt_data) TYPE ty_tt_any_table.");
+		buildSrc("    DATA(lt_data) = get_table( ).");
 		buildSrc("    DATA ls_data TYPE REF TO ty_s_any_struc.");
 		buildSrc("    READ TABLE lt_data WITH TABLE KEY any_comp = 1 REFERENCE INTO lr_data.");
 		buildSrc("    CLEAR: lr_data->any_component,");
@@ -407,7 +407,7 @@ class FinalVariableTest extends RuleTestBase {
 	@Test
 	void testDataUnchangedWithAssignDataRef() {
 		// expect DATA to be kept, because lr_data points to lt_data  
-		buildSrc("    DATA(lt_data) TYPE ty_tt_any_table.");
+		buildSrc("    DATA(lt_data) = get_table( ).");
 		buildSrc("    FINAL(lr_data) = REF #( lt_data[ 1 ]-component ).");
 		
 		copyExpFromSrc();
@@ -420,7 +420,7 @@ class FinalVariableTest extends RuleTestBase {
 	@Test
 	void testDataUnchangedExportingRef() {
 		// expect DATA to be kept, because lr_data points to lt_data  
-		buildSrc("    DATA(lt_data) TYPE ty_tt_any_table.");
+		buildSrc("    DATA(lt_data) = get_table( ).");
 		buildSrc("    any_method( ir_data = REF #( lt_data[ 1 ] ) ).");
 		
 		copyExpFromSrc();
@@ -433,12 +433,12 @@ class FinalVariableTest extends RuleTestBase {
 	@Test
 	void testDataChangedWithDataRefToAttribute() {
 		// expect FINAL to be introduced, because lr_data only points to an attribute 
-		buildSrc("    DATA(lt_data) TYPE ty_tt_any_table.");
+		buildSrc("    DATA(lt_data) = get_table( ).");
 		buildSrc("    FINAL(lr_data) = REF #( mt_data ).");
 		buildSrc("    any_method( it_data = lt_data ).");
 		buildSrc("    ev_result = lt_data[ 1 ]-any_component.");
 
-		buildExp("    FINAL(lt_data) TYPE ty_tt_any_table.");
+		buildExp("    FINAL(lt_data) = get_table( ).");
 		buildExp("    FINAL(lr_data) = REF #( mt_data ).");
 		buildExp("    any_method( it_data = lt_data ).");
 		buildExp("    ev_result = lt_data[ 1 ]-any_component.");

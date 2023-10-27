@@ -344,32 +344,51 @@ public class Code {
 		}
 	}
 
-	public final void checkSyntaxAfterCleanup() throws IntegrityBrokenException {
+	public final void checkSyntax(boolean afterCleanup) throws IntegrityBrokenException {
+		final int maxErrorLinesToReport = 10;
+		
 		TokenTypeRefinerRnd rndParser = Program.getRndParser();
 		if (rndParser == null)
 			return;
 
 		StringBuilder sbLine = new StringBuilder();
 		int errorCommandCount = 0;
+		String firstErrorDetails = null;
 		
 		Command command = firstCommand;
 		while (command != null) {
-			int errorCount = rndParser.getErrorTokenCount(command);
-			if (errorCount > command.getErrorTokenCountBeforeCleanup()) {
-				++errorCommandCount;
-				if (errorCommandCount > 1)
-					sbLine.append(", ");
-				sbLine.append(Cult.format(command.getSourceLineNumStart()));
-				if (errorCommandCount >= 10) {
-					break;
+			if (command.isInCleanupRange()) {
+				RndParseResult rndParseResult;
+				try {
+					rndParseResult = rndParser.getRndParseResult(command);
+				} catch (ParseException e) {
+					throw new IntegrityBrokenException(command, e.getMessage());
+				}
+				if (rndParseResult != null) {
+					int allowedErrorCount = afterCleanup ? command.getErrorTokenCountBeforeCleanup() : 0;
+					if (rndParseResult.errorTokenCount > allowedErrorCount) {
+						++errorCommandCount;
+						if (errorCommandCount > 1)
+							sbLine.append(", ");
+						sbLine.append(Cult.format(command.getSourceLineNumStart()));
+						if (firstErrorDetails == null)
+							firstErrorDetails = rndParseResult.getFirstErrorDetails();
+						if (errorCommandCount >= maxErrorLinesToReport) {
+							break;
+						}
+					}
 				}
 			}
 			command = command.getNext();
 		}
 		if (errorCommandCount > 0) {
-			String message = "after cleanup, erroneous tokens were detected in the ";
-			message += (errorCommandCount == 1) ? "command at line " : "commands at lines ";
-			message += sbLine.toString();
+			String message = (errorCommandCount == 1) ? "line " : "lines ";
+			message += sbLine.toString() + ": syntax error" + (afterCleanup ? " after cleanup" : "");
+			if (!StringUtil.isNullOrEmpty(firstErrorDetails)) {
+				if (errorCommandCount > 1)
+					message += "; first error";
+				message += " " + firstErrorDetails; // "at token '...' (line # + #, col #)"
+			}
 			throw new IntegrityBrokenException(this, message);
 		}
 	}
@@ -630,20 +649,28 @@ public class Code {
 	} 
 
 	public final boolean insertStressTestTokentAt(int tokenIndex, StressTestType stressTestType) throws IntegrityBrokenException {
-		// TokenTypeRefinerRnd rndParser = Program.getRndParser();
+		TokenTypeRefinerRnd rndParser = Program.getRndParser();
+		
 		Command command = firstCommand;
 		boolean found = false;
 		while (command != null) {
 			if (command.insertStressTestTokenAt(tokenIndex, stressTestType)) {
 				found = true;
-				/*
+
 				// in case syntax errors were introduced (e.g. due to wrong pragma positions), update the number of 
-				// erroneous tokens before cleanup
+				// erroneous tokens before cleanup; e.g., if there is a comment, pragma (or even line break) between 
+				// the keywords "OPEN" and "CURSOR", RND Parser will show all commas in the SELECT field list as erroneous 
 				if (rndParser != null) {
-					int errorTokenCount = rndParser.getErrorTokenCount(command);
-					command.setErrorStateBeforeCleanup(errorTokenCount);
+					RndParseResult rndParseResult;
+					try {
+						rndParseResult = rndParser.getRndParseResult(command);
+					} catch (ParseException e) {
+						throw new IntegrityBrokenException(command, e.getMessage());
+					}
+					if (rndParseResult != null) {
+						command.setErrorStateBeforeCleanup(rndParseResult.errorTokenCount);
+					}
 				}
-				*/
 			}
 			command = command.getNext();
 		}

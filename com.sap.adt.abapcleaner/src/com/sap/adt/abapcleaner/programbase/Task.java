@@ -31,12 +31,12 @@ public class Task implements IProgress {
 	private String parseError;
 	private String cleanupError;
 	private String compareError;
-	private String integrityTestError;
+	private String checkError;
 
 	private int parseTimeMs;
 	private int cleanupTimeMs;
 	private int compareTimeMs;
-	private int integrityTestTimeMs;
+	private int checkTimeMs;
 	private boolean success;
 
 	public final boolean wasCancelled() { return wasCancelled; }
@@ -57,9 +57,9 @@ public class Task implements IProgress {
 
 	public final String getCleanupError() { return cleanupError; }
 
-	public final String getCompareError() { return compareError; }
+	public final String getCheckError() { return checkError; }
 
-	public final String getIntegrityTestError() { return integrityTestError; }
+	public final String getCompareError() { return compareError; }
 
 	private String logSummary; // may contain text even with success == true
 
@@ -71,15 +71,15 @@ public class Task implements IProgress {
 
 	public final int getCompareTimeMs() { return compareTimeMs; }
 
-	public final int getIntegrityTestTimeMs() { return integrityTestTimeMs; }
+	public final int getCheckTimeMs() { return checkTimeMs; }
 
 	public final boolean getParseSuccess() { return (parseError == null); }
 
 	public final boolean getCleanupSuccess(boolean allowWarnings) { return getParseSuccess() && (cleanupError == null) && (allowWarnings || StringUtil.isNullOrEmpty(logText)); }
 
-	public final boolean getCompareSuccess() { return getCleanupSuccess(true) && (compareError == null); }
+	public final boolean getCheckSuccess() { return getCleanupSuccess(true) && (checkError == null); }
 
-	public final boolean getIntegrityTestSuccess() { return getCompareSuccess() && (integrityTestError == null); }
+	public final boolean getCompareSuccess() { return getCheckSuccess() && (compareError == null); }
 
 	public final boolean getSuccess() { return success; }
 	
@@ -88,13 +88,15 @@ public class Task implements IProgress {
 	public final String getLogText() { return logText; }
 
 	public final String getCalculationTimeInfo() {
-		return "parser: " + Cult.fromMillisec(parseTimeMs) + " + cleaner: " + Cult.fromMillisec(cleanupTimeMs) + " + comparer: " + Cult.fromMillisec(compareTimeMs)
-				+ ((integrityTestTimeMs > 0) ? " + integrity test: " + Cult.fromMillisec(integrityTestTimeMs) : "") + " = "
-				+ Cult.fromMillisec(getTotalProcessingTime_ms());
+		return "parse: " + Cult.fromMillisec(parseTimeMs) 
+			+ " + clean: " + Cult.fromMillisec(cleanupTimeMs) 
+			+ ((checkTimeMs > 0) ? " + check: " + Cult.fromMillisec(checkTimeMs) : "")
+			+ " + compare: " + Cult.fromMillisec(compareTimeMs) 
+			+ " = " + Cult.fromMillisec(getTotalProcessingTime_ms());
 	}
 
 	public final int getTotalProcessingTime_ms() {
-		return parseTimeMs + cleanupTimeMs + compareTimeMs + integrityTestTimeMs;
+		return parseTimeMs + cleanupTimeMs + checkTimeMs + compareTimeMs;
 	}
 
 	@Override
@@ -134,7 +136,7 @@ public class Task implements IProgress {
 			for (StressTestType stressTestType : stressTestParams.stressTestTypes) {
 				for (int index = stressTestParams.insertAfterTokenIndexMin; index <= stressTestParams.insertAfterTokenIndexMax; ++index) {
 					boolean continueStressTestType = run(stressTestType, index, cleanupParams, testMode);
-					if (wasCancelled || !getIntegrityTestSuccess()) {
+					if (wasCancelled || !getCheckSuccess()) {
 						return;
 					}
 					// if no stress test Tokens of the current StressTestType could be inserted at the current index, 
@@ -170,7 +172,10 @@ public class Task implements IProgress {
 
 		// test referential integrity to fail early, e.g. if a block is not closed
 		try {
-			resultingCode.testReferentialIntegrity(true); 
+			resultingCode.testReferentialIntegrity(true);
+			// .checkSyntax() can NOT be called here, because the RND Parser marks some Tokens as erroneous although 
+			// they do not provoke a syntax error:
+			// resultingCode.checkSyntax(false);
 		} catch (IntegrityBrokenException ex) {
 			ex.addToLog();
 			parseError = ex.getLineAndMessage(null);
@@ -239,6 +244,24 @@ public class Task implements IProgress {
 		}
 		cleanupTimeMs += stopwatch.getElapsedTimeMs();
 		
+		// check: test referential integrity and syntax
+		stopwatch.resetAndStart();
+		try {
+			resultingCode.testReferentialIntegrity(true, this);
+			if (stressTestType != StressTestType.COLON) {
+				resultingCode.checkSyntax(true);
+			}
+		} catch (IntegrityBrokenException ex) {
+			ex.addToLog(stressTestInfo);
+			checkError = ex.getLineAndMessage(stressTestInfo);
+			return false;
+		}
+		if (parentJob.isCancellationPending(true)) {
+			wasCancelled = true;
+			return false;
+		}
+		checkTimeMs += stopwatch.getElapsedTimeMs();
+
 		// compare (not necessary during stress test, which focuses on cleanup and integrity)
 		if (stressTestType == StressTestType.NONE) {
 			stopwatch.resetAndStart();
@@ -259,24 +282,6 @@ public class Task implements IProgress {
 			}
 			compareTimeMs += stopwatch.getElapsedTimeMs();
 		}
-
-		// test referential integrity
-		stopwatch.resetAndStart();
-		try {
-			resultingCode.testReferentialIntegrity(true, this);
-			if (stressTestType == StressTestType.NONE) {
-				resultingCode.checkSyntaxAfterCleanup();
-			}
-		} catch (IntegrityBrokenException ex) {
-			ex.addToLog(stressTestInfo);
-			integrityTestError = ex.getLineAndMessage(stressTestInfo);
-			return false;
-		}
-		if (parentJob.isCancellationPending(true)) {
-			wasCancelled = true;
-			return false;
-		}
-		integrityTestTimeMs += stopwatch.getElapsedTimeMs();
 
 		success = true;
 		return true;
@@ -309,9 +314,10 @@ public class Task implements IProgress {
 			if (msg == null) {
 				msg = getCompareError();
 				if (msg == null) {
-					msg = getIntegrityTestError();
-					if (msg == null)
+					msg = getCheckError();
+					if (msg == null) {
 						msg = "";
+					}
 				}
 			}
 		}

@@ -354,7 +354,7 @@ public class NeedlessSpacesTest extends RuleTestBase {
 		buildSrc("    SELECT * FROM any_table");
 		buildSrc("      WHERE   a   =  1");
 		buildSrc("        AND   b   =  2");
-		buildSrc("      INTO TABLE DATA(lt_result).");
+		buildSrc("      INTO TABLE @DATA(lt_result).");
 
 		copyExpFromSrc();
 

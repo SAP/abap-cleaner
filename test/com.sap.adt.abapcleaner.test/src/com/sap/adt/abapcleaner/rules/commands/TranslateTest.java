@@ -25,8 +25,8 @@ public class TranslateTest extends RuleTestBase {
 	@Test
 	void testTranslateToUpperAndLower() {
 		buildSrc("    DATA lv_text TYPE string VALUE `Any Text`.");
-		buildSrc("    TRANSLATE lv_text TO LOWER.");
-		buildSrc("    TRANSLATE is_struc-component TO UPPER.");
+		buildSrc("    TRANSLATE lv_text TO LOWER CASE.");
+		buildSrc("    TRANSLATE is_struc-component TO UPPER CASE.");
 
 		buildExp("    DATA lv_text TYPE string VALUE `Any Text`.");
 		buildExp("    lv_text = to_lower( lv_text ).");
@@ -40,8 +40,8 @@ public class TranslateTest extends RuleTestBase {
 	@Test
 	void testTranslateToUpperAndLowerWithCommentAndPragma() {
 		buildSrc("    DATA lv_text TYPE string VALUE `Any Text`.");
-		buildSrc("    TRANSLATE lv_text TO LOWER ##PRAGMA.");
-		buildSrc("    TRANSLATE is_struc-component TO UPPER. \" `ANY TEXT`");
+		buildSrc("    TRANSLATE lv_text TO LOWER CASE ##PRAGMA.");
+		buildSrc("    TRANSLATE is_struc-component TO UPPER CASE. \" `ANY TEXT`");
 
 		buildExp("    DATA lv_text TYPE string VALUE `Any Text`.");
 		buildExp("    lv_text = to_lower( lv_text ) ##PRAGMA.");
@@ -57,8 +57,8 @@ public class TranslateTest extends RuleTestBase {
 	   rule.configReplaceTranslateToUpperLower.setValue(false);
 
 	   buildSrc("    DATA lv_text TYPE string VALUE `Any Text`.");
-		buildSrc("    TRANSLATE lv_text TO LOWER. \" `any text`");
-		buildSrc("    TRANSLATE lv_text TO UPPER. \" `ANY TEXT`");
+		buildSrc("    TRANSLATE lv_text TO LOWER CASE. \" `any text`");
+		buildSrc("    TRANSLATE lv_text TO UPPER CASE. \" `ANY TEXT`");
 
 		copyExpFromSrc();
 

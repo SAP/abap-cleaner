@@ -118,7 +118,7 @@ class IndentTest extends RuleTestBase {
 		buildSrc("      WHERE any_field NE space.");
 		buildSrc("");
 		buildSrc("    SELECT MIN( aa ) AS a, MAX( bb ) AS b, SUM( cc ) AS c, \" comment");
-		buildSrc("           PRODUCT( dd ) AS d, STDDEV( ee ) AS e, CORR_SPEARMAN( ff, gg ) AS f");
+		buildSrc("           STDDEV( ee ) AS e, CORR_SPEARMAN( ff, gg ) AS f");
 		buildSrc("      FROM any_table");
 		buildSrc("      INTO CORRESPONDING FIELDS OF wa_test");
 		buildSrc("      WHERE kdauf NE space.");
@@ -152,7 +152,7 @@ class IndentTest extends RuleTestBase {
 		buildSrc("      INTO @wa_test3.");
 		buildSrc("");
 		buildSrc("    SELECT MIN( aa ), MAX( b ) AS bb, SUM( cc ), \" comment");
-		buildSrc("           PRODUCT( d ) AS dd, STDDEV( ee ), ff");
+		buildSrc("           STDDEV( ee ), ff");
 		buildSrc("      FROM my_table");
 		buildSrc("      INTO CORRESPONDING FIELDS OF wa_test");
 		buildSrc("      WHERE kdauf NE space.");
@@ -171,7 +171,7 @@ class IndentTest extends RuleTestBase {
 		buildExp("          INTO @wa_test3.");
 		buildExp("");
 		buildExp("          SELECT MIN( aa ), MAX( b ) AS bb, SUM( cc ), \" comment");
-		buildExp("                 PRODUCT( d ) AS dd, STDDEV( ee ), ff");
+		buildExp("                 STDDEV( ee ), ff");
 		buildExp("            FROM my_table");
 		buildExp("            INTO CORRESPONDING FIELDS OF wa_test");
 		buildExp("            WHERE kdauf NE space.");
@@ -194,12 +194,14 @@ class IndentTest extends RuleTestBase {
 		
 		buildSrc("    DO.");
 		buildSrc("    CALL FUNCTION 'FUNCTION_NAME'");
+		buildSrc("         STARTING NEW TASK name");
 		buildSrc("         DESTINATION mc_rfc_destination");
 		buildSrc("         CALLING on_end_of_rfc ON END OF TASK.");
 		buildSrc("    ENDDO.");
 	    
 		buildExp("    DO.");
 		buildExp("      CALL FUNCTION 'FUNCTION_NAME'");
+		buildExp("           STARTING NEW TASK name");
 		buildExp("           DESTINATION mc_rfc_destination");
 		buildExp("           CALLING on_end_of_rfc ON END OF TASK.");
 		buildExp("    ENDDO.");
@@ -701,16 +703,16 @@ class IndentTest extends RuleTestBase {
 
 	@Test
 	void testAuthorityCheckDisable() {
-		buildSrc("    AUTHORITY-CHECK DISABLE BEGIN CONTEXT any_context.");
+		buildSrc("    AUTHORITY-CHECK DISABLE BEGIN CONTEXT root~name.");
 		buildSrc("    AUTHORITY-CHECK OBJECT 'ANYOBJ' ID 'ANYID' DUMMY.");
-		buildSrc("    AUTHORITY-CHECK DISABLE BEGIN CONTEXT inner_context.");
+		buildSrc("    AUTHORITY-CHECK DISABLE BEGIN CONTEXT inner~name.");
 		buildSrc("    AUTHORITY-CHECK OBJECT 'OTHEROBJ' ID 'OTHERID' DUMMY.");
 		buildSrc("    AUTHORITY-CHECK DISABLE END.");
 		buildSrc("    AUTHORITY-CHECK DISABLE END.");
 
-		buildExp("    AUTHORITY-CHECK DISABLE BEGIN CONTEXT any_context.");
+		buildExp("    AUTHORITY-CHECK DISABLE BEGIN CONTEXT root~name.");
 		buildExp("      AUTHORITY-CHECK OBJECT 'ANYOBJ' ID 'ANYID' DUMMY.");
-		buildExp("      AUTHORITY-CHECK DISABLE BEGIN CONTEXT inner_context.");
+		buildExp("      AUTHORITY-CHECK DISABLE BEGIN CONTEXT inner~name.");
 		buildExp("        AUTHORITY-CHECK OBJECT 'OTHEROBJ' ID 'OTHERID' DUMMY.");
 		buildExp("      AUTHORITY-CHECK DISABLE END.");
 		buildExp("    AUTHORITY-CHECK DISABLE END.");
@@ -904,10 +906,10 @@ class IndentTest extends RuleTestBase {
 		buildSrc("             d16n`1.1` AS typed2,");
 		buildSrc("             dats`20230419` AS typed3,");
 		buildSrc("             cuky`EUR` AS typed4,");
-		buildSrc("             concat( char`abc`, @lc_text ) AS typed5,");
+		buildSrc("             concat( char`abc`, @lc_text ) AS typed5");
 		buildSrc("");
 		buildSrc("             \" ( 1 + @lc_any * COUNT( * ) ) AS aggr_func_used");
-		buildSrc("        FROM any_table INTO @DATA(ls_and).");
+		buildSrc("        FROM dtab INTO @DATA(ls_and).");
 		buildSrc("      ENDSELECT.");
 
 		buildExp("    SELECT +1 AS untyped1,");
@@ -920,10 +922,10 @@ class IndentTest extends RuleTestBase {
 		buildExp("           d16n`1.1` AS typed2,");
 		buildExp("           dats`20230419` AS typed3,");
 		buildExp("           cuky`EUR` AS typed4,");
-		buildExp("           concat( char`abc`, @lc_text ) AS typed5,");
+		buildExp("           concat( char`abc`, @lc_text ) AS typed5");
 		buildExp("");
 		buildExp("           \" ( 1 + @lc_any * COUNT( * ) ) AS aggr_func_used");
-		buildExp("      FROM any_table INTO @DATA(ls_and).");
+		buildExp("      FROM dtab INTO @DATA(ls_and).");
 		buildExp("    ENDSELECT.");
 
 		putAnyMethodAroundSrcAndExp();
@@ -947,7 +949,7 @@ class IndentTest extends RuleTestBase {
 		buildSrc("             concat( char`abc`, @lc_text ) AS typed5,");
 		buildSrc("");
 		buildSrc("             ( 1 + @lc_any * COUNT( * ) ) AS aggr_func_used");
-		buildSrc("        FROM any_table INTO @DATA(ls_and).");
+		buildSrc("        FROM dtab INTO @DATA(ls_and).");
 
 		buildExp("    SELECT +1 AS untyped1,");
 		buildExp("           -1 AS untyped2,");
@@ -962,7 +964,7 @@ class IndentTest extends RuleTestBase {
 		buildExp("           concat( char`abc`, @lc_text ) AS typed5,");
 		buildExp("");
 		buildExp("           ( 1 + @lc_any * COUNT( * ) ) AS aggr_func_used");
-		buildExp("      FROM any_table INTO @DATA(ls_and).");
+		buildExp("      FROM dtab INTO @DATA(ls_and).");
 
 		putAnyMethodAroundSrcAndExp();
 

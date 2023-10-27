@@ -332,14 +332,14 @@ class LogicalOperatorPositionTest extends RuleTestBase {
 
 	@Test
 	void testWhereInLoop() {
-		buildSrc("    LOOP AT lts_any_table WHERE");
+		buildSrc("    LOOP AT lts_any_table TRANSPORTING NO FIELDS WHERE");
 		buildSrc("         comp = 1 OR");
-		buildSrc("         comp = 2 TRANSPORTING NO FIELDS.");
+		buildSrc("         comp = 2.");
 		buildSrc("    ENDLOOP.");
 
-		buildExp("    LOOP AT lts_any_table");
+		buildExp("    LOOP AT lts_any_table TRANSPORTING NO FIELDS");
 		buildExp("         WHERE    comp = 1");
-		buildExp("               OR comp = 2 TRANSPORTING NO FIELDS.");
+		buildExp("               OR comp = 2.");
 		buildExp("    ENDLOOP.");
 
 		putAnyMethodAroundSrcAndExp();

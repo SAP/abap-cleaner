@@ -48,11 +48,11 @@ class ClosingBracketsPositionTest extends RuleTestBase {
 	@Test
 	void testParameterList() {
 		buildSrc("    any_operation( iv_param_a = 1");
-		buildSrc("    any_operation( iv_param_b = 2");
+		buildSrc("                   iv_param_b = 2");
 		buildSrc("                 ).");
 
 		buildExp("    any_operation( iv_param_a = 1");
-		buildExp("    any_operation( iv_param_b = 2 ).");
+		buildExp("                   iv_param_b = 2 ).");
 
 		putAnyMethodAroundSrcAndExp();
 		

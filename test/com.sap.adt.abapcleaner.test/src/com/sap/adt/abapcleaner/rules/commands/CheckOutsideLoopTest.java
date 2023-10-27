@@ -329,12 +329,12 @@ class CheckOutsideLoopTest extends RuleTestBase {
 	void testNegatingNot() {
 		buildSrc("    lv_value = 1.");
 		buildSrc("");
-		buildSrc("    CHECK a = b NOT EQUIV c = d.");
+		buildSrc("    CHECK NOT ( a = b EQUIV c = d ).");
 		buildSrc("    CHECK NOT line_exists( its_table[ 1 ] ).");
 
 		buildExp("    lv_value = 1.");
 		buildExp("");
-		buildExp("    IF a = b EQUIV c = d.");
+		buildExp("    IF ( a = b EQUIV c = d ).");
 		buildExp("      RETURN.");
 		buildExp("    ENDIF.");
 		buildExp("    IF line_exists( its_table[ 1 ] ).");

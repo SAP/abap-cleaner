@@ -28,14 +28,14 @@ class SpaceBeforePeriodTest extends RuleTestBase {
 		buildSrc("");
 		buildSrc("    TRY .");
 		buildSrc("        any_operation( ) .");
-		buildSrc("      CATCH .");
+		buildSrc("      CATCH cx_any .");
 		buildSrc("    ENDTRY .");
 
 		buildExp("    DATA lv_value TYPE i.");
 		buildExp("");
 		buildExp("    TRY.");
 		buildExp("        any_operation( ).");
-		buildExp("      CATCH.");
+		buildExp("      CATCH cx_any.");
 		buildExp("    ENDTRY.");
 
 		putAnyMethodAroundSrcAndExp();

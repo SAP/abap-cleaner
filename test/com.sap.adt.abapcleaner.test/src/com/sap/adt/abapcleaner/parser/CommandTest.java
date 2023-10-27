@@ -1087,22 +1087,22 @@ public class CommandTest {
 	void testRemoveAllFurtherChainColons() throws UnexpectedSyntaxAfterChanges {
 		// nothing to remove
 		Command command = buildCommand("DATA a TYPE i.");
-		command.removeAllFurtherChainColons();
+		command.removeAllChainColons();
 		assertEquals("DATA a TYPE i.", command.toString());
 
 		// multiple chain colons
 		command = buildCommand("DATA a : : TYPE :: i.");
-		command.removeAllFurtherChainColons();
+		command.removeAllChainColons();
 		assertEquals("DATA a TYPE i.", command.toString());
 
 		// except whitespace before last chain colon to be transferred to the period .
 		command = buildCommand("DATA a : TYPE : i \" comment" + SEP + "  : .");
-		command.removeAllFurtherChainColons();
+		command.removeAllChainColons();
 		assertEquals("DATA a TYPE i \" comment" + SEP + "  .", command.toString());
 
 		// except whitespace before period . to be kept
 		command = buildCommand("DATA a : TYPE : i \" comment" + SEP + "  :" + SEP + ".");
-		command.removeAllFurtherChainColons();
+		command.removeAllChainColons();
 		assertEquals("DATA a TYPE i \" comment" + SEP + ".", command.toString());
 	}
 	
