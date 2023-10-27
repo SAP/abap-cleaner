@@ -1285,9 +1285,15 @@ public class Command {
 
 	public final boolean splitOutLeadingCommentLines(Command originalCommand) throws UnexpectedSyntaxAfterChanges {
 		boolean splitOut = false;
+		Token firstCode = getFirstCodeToken();
+		int firstLineBreaks = (firstCode == null) ? 1 : firstCode.lineBreaks;
 		while (firstToken.isCommentLine() && tokenCount > 1) {
 			Token commentLine = firstToken;
 			commentLine.removeFromCommand(false, true); // skip the integrity test, as it will be performed below
+			
+			// the topmost comment line gets the number of line breaks from the first code Token, all others keep their number of line breaks
+			commentLine.lineBreaks = Math.max(splitOut ? commentLine.lineBreaks : firstLineBreaks, 1);
+			
 			Command newCommand = Command.create(commentLine, originalCommand);
 			try {
 				newCommand.finishBuild(getSourceTextStart(), getSourceTextEnd());
@@ -1300,8 +1306,11 @@ public class Command {
 			splitOut = true;
 		}
 
-		if (splitOut)
+		if (splitOut) {
+			if (firstCode != null)
+				firstCode.lineBreaks = 1;
 			testReferentialIntegrity(true);
+		}
 
 		return splitOut;
 	}
@@ -3087,7 +3096,7 @@ public class Command {
 		//   return changesSyField(ABAP.SyField.SUBRC) && SyFieldAnalyzer.getSyFieldReadersFor(ABAP.SyField.SUBRC, this).size() >= 2;
 		//   - getCommandsRelatedToPatternMatch() can then return SyFieldAnalyzer.getSyFieldReadersFor(ABAP.SyField.SUBRC, this);
 		
-		return firstToken.matchesDeep(true, TokenSearch.ASTERISK, "AUTHORITY-CHECK", "DISABLE", "BEGIN");
+		return false;
 	}
 	
 	public final ArrayList<Command> getCommandsRelatedToPatternMatch() {
