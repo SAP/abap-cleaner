@@ -67,6 +67,7 @@ class EmptyCommandTest extends RuleTestBase {
 
 		putAnyMethodAroundSrcAndExp();
 
+		deactivateSyntaxCheckAfterParse();
 		testRule();
 	}
 	

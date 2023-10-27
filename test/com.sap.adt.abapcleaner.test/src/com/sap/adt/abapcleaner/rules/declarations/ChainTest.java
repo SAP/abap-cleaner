@@ -235,6 +235,7 @@ class ChainTest extends RuleTestBase {
 
 		putAnyMethodAroundSrcAndExp();
 		
+		deactivateSyntaxCheckAfterParse();
 		testRule();
 	}
 

@@ -115,7 +115,7 @@ class ChainOfOneTest extends RuleTestBase {
 		rule.configExecuteOnLocalDeclarations.setValue(false);
 		rule.configExecuteOnNonDeclarations.setValue(false);
 
-		buildSrc("    INTERFACES: if_any_interface PARTIALLY IMPLEMENTED, if_other_interface");
+		buildSrc("    INTERFACES: if_any_interface PARTIALLY IMPLEMENTED, if_other_interface.");
 		buildSrc("    CONSTANTS: co_any_amount   TYPE ty_amount VALUE 1200,");
 		buildSrc("               co_other_amount TYPE ty_amount VALUE 1500.");
 		buildSrc("    CLASS-DATA: mv_value TYPE int8,");
@@ -265,6 +265,7 @@ class ChainOfOneTest extends RuleTestBase {
 
 		putAnyMethodAroundSrcAndExp();
 		
+		deactivateSyntaxCheckAfterParse();
 		testRule();
 	}
 

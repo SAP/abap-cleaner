@@ -365,6 +365,7 @@ public class ImplicitTypeTest extends RuleTestBase {
 
 		putAnyMethodAroundSrcAndExp();
 
+		deactivateSyntaxCheckAfterParse();
 		testRule();
 	}
 }

@@ -1354,6 +1354,19 @@ public class Token {
 		return maxIndex;
 	}
 
+	public final int getLineInCommand() {
+		Token token = parentCommand.firstToken.next;
+		int line = 0; // (token.lineBreaks == 0) ? 0 : -1;
+		while (token != null && token != this) {
+			line += token.lineBreaks;
+			token = token.next;
+		}
+		if (token == this) {
+			line += lineBreaks;
+		}
+		return line;
+	}
+	
 	/**
 	 * if the Token is an identifier of type "structure-component" or "&lt;field-symbol&gt;-component",
 	 * the structure or field-symbol variable is returned
@@ -2460,6 +2473,13 @@ public class Token {
 		if (next != null && next.isAttached() && !next.isCommaOrPeriod() && !next.isChainColon())
 			return false;
 
+		/*
+		// do not insert a comment, pragma (or even line break) between "OPEN CURSOR", otherwise RND Parser will show all
+		// commas in the SELECT field list as erroneous 
+		if (isKeyword("OPEN") && next != null && next.isKeyword("CURSOR"))
+			return false;
+		*/
+		
 		// if a pragma follows on the same line after a period, it must be considered as the "nextToken" here
 		Token nextCommandToken = null;
 		if (next == null && parentCommand.getNext() != null && parentCommand.getNext().firstToken.lineBreaks == 0)

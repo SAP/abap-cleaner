@@ -83,6 +83,8 @@ public class CreateObjectRule extends RuleForCommands {
 		Token firstToken = command.getFirstToken();
 		if (!firstToken.matchesOnSiblings(false, "CREATE", "OBJECT", TokenSearch.ANY_IDENTIFIER))
 			return false;
+		else if (command.isLateChain())
+			return false;
 
 		Token identifier = firstToken.getNext().getNext();
 		Token next = identifier.getNextCodeSibling();

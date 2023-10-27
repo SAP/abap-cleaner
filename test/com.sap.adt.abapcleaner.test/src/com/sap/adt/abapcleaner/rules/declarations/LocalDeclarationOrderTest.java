@@ -1115,12 +1115,12 @@ public class LocalDeclarationOrderTest extends RuleTestBase {
 		buildSrc("    CONSTANTS:");
 		buildSrc("      BEGIN OF lc_struc_a,");
 		buildSrc("        comp1 TYPE i VALUE 1,");
-		buildSrc("        comp2 TYPE i VALUE 2,");
+		buildSrc("        comp2 TYPE i VALUE 2.");
 		buildSrc("    CONSTANTS:");
 		buildSrc("      END OF lc_struc_a,");
 		buildSrc("      BEGIN OF lc_struc_b,");
 		buildSrc("        comp1 TYPE i VALUE 1,");
-		buildSrc("        comp2 TYPE i VALUE 2,");
+		buildSrc("        comp2 TYPE i VALUE 2.");
 		buildSrc("    CONSTANTS:");
 		buildSrc("      END OF lc_struc_b.");
 		buildSrc("");
@@ -1296,7 +1296,7 @@ public class LocalDeclarationOrderTest extends RuleTestBase {
 		
 		buildSrc("  METHOD any_method.");
 		buildSrc("    TYPES t3 TYPE SORTED   TABLE OF ty_s3 WITH KEY a b c.");
-		buildSrc("    TYPES t2 TYPE HASHED   TABLE OF ty_s2 WITH KEY a b.");
+		buildSrc("    TYPES t2 TYPE HASHED   TABLE OF ty_s2 WITH UNIQUE KEY a b.");
 		buildSrc("    TYPES t1 TYPE STANDARD TABLE OF ty_s1 WITH EMPTY KEY.");
 		buildSrc("");
 		buildSrc("    DATA t2 TYPE i.");
@@ -1315,7 +1315,7 @@ public class LocalDeclarationOrderTest extends RuleTestBase {
 
 		buildExp("  METHOD any_method.");
 		buildExp("    TYPES t3 TYPE SORTED   TABLE OF ty_s3 WITH KEY a b c.");
-		buildExp("    TYPES t2 TYPE HASHED   TABLE OF ty_s2 WITH KEY a b.");
+		buildExp("    TYPES t2 TYPE HASHED   TABLE OF ty_s2 WITH UNIQUE KEY a b.");
 		buildExp("    TYPES t1 TYPE STANDARD TABLE OF ty_s1 WITH EMPTY KEY.");
 		buildExp("");
 		buildExp("    DATA t1 TYPE i.");

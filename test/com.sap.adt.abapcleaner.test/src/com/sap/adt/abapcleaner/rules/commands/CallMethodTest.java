@@ -220,4 +220,23 @@ class CallMethodTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testPragmaAfterCallMethod() {
+		// ensure that the pragma between CALL METHOD and the identifier does not cause a syntax error 
+		
+		buildSrc("   CALL METHOD ##NO_TEXT");
+		buildSrc("     any_method( ");
+		buildSrc("       EXPORTING");
+		buildSrc("         param1 = value1");
+		buildSrc("       RECEIVING");
+		buildSrc("         result = result ).");
+
+		copyExpFromSrc();
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
 }

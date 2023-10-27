@@ -1,5 +1,6 @@
 package com.sap.adt.abapcleaner.parser;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import com.sap.adt.abapcleaner.base.ABAP;
@@ -85,24 +86,20 @@ public class TokenTypeRefinerRnd implements ITokenTypeRefiner {
 		return rndParser.parseSource(padFileResolver, code.toString());
 	}
 	
-	@Override
-	public void refine(Command command) throws ParseException {
+	public RndParseResult getRndParseResult(Command command) throws ParseException {
 		if (command.isCommentLine() || command.isEmpty() || !command.isAbap())
-			return;
+			return null;
 
-		// start with the results of the internal refiner that does not rely on the RND Parser; its results may then be 
-		// overwritten below by the results of the RND Parser, but are kept for code considered erroneous by the RND Parser
-		internalRefiner.refine(command);
-
+		ArrayList<RndTokenPair> tokenPairs = new ArrayList<>();
+		int errorCount = 0;
+		Token firstErrorToken = null;
+		
 		List<com.sap.rnd.rndrt.Token> rndTokens = getRndTokens(command);
 		
 		Token token = command.getFirstToken();
 		int textOffset = 0;
-		int errorCount = 0;
+
 		for (com.sap.rnd.rndrt.Token rndToken : rndTokens) {
-			if (rndToken.m_err_state == ErrorState.Erroneous) {
-				++errorCount;
-			}
 			// skip line breaks in RND Parser Tokens
 			if (rndToken.m_category == Category.CAT_WS && rndToken.m_lexem == "<NL>")
 				continue;
@@ -114,15 +111,27 @@ public class TokenTypeRefinerRnd implements ITokenTypeRefiner {
 			// if this is the last rndToken, check whether any ABAP cleaner Token is left
 			if (rndToken.m_category == Category.CAT_WS && rndToken.m_lexem == "#EOF#") {
 				if (token != null)
-					throw new ParseException(command.getParentCode(), command.getSourceLineNumStart(), "no further token expected");
+					throw createParseException(command, token, "no further token expected, but found '" + token.getText() + "'");
 				continue; // #EOF# should be the last rndToken, so "continue" should have the effect of "break"
 			} 
 			
 			// ensure there is an ABAP cleaner Token left to match the rndToken
 			if (token == null) 
-				throw new ParseException(command.getParentCode(), command.getSourceLineNumStart(), "no further token expected");
+				throw createParseException(command, token, "no further RND token expected, but found '" + rndToken.m_lexem + "'");
 
-			refine(command, token, rndToken);
+			if (rndToken.m_err_state == ErrorState.Erroneous) {
+				// suspicious Tokens (ErrorState.Suspicious) do NOT need to be reported - 
+				// typically, these are identifiers that look like keywords, e.g.
+				// - methods after removing CALL METHOD ("clear( )")
+				// - formal parameters after removing EXPORTING ("text = ...", "value = ...")
+				// - assignment targets after removing CREATE OBJECT ("input = NEW ..."), 
+				// - assignment targets after removing MOVE ... TO ("memory = ..."), 
+				if (errorCount == 0) 
+					firstErrorToken = token; 
+				++errorCount;
+			}
+
+			tokenPairs.add(new RndTokenPair(rndToken, token));
 
 			// skip the "!" escape character for identifiers such as !min, !its_table and !ls_struc-component, because the 
 			// RND token simply omits the "!". The escape char is typically found in method declarations, including with 
@@ -146,10 +155,30 @@ public class TokenTypeRefinerRnd implements ITokenTypeRefiner {
 					textOffset = 0;
 				}
 			} else {
-				throw new ParseException(command.getParentCode(), command.getSourceLineNumStart(), "code mismatch with RND Parser output");
+				throw createParseException(command, token, "code mismatch with RND Parser output at token '" + token.getText() + "' / RND token '" + rndToken.m_lexem + "'");
 			}
 		}
-		command.setErrorStateBeforeCleanup(errorCount);
+		return new RndParseResult(tokenPairs, errorCount, firstErrorToken);
+	}
+
+	private ParseException createParseException(Command command, Token token, String message) {
+		return new ParseException(command.getParentCode(), command.getSourceLineNumStart(), message);
+	}
+	
+	@Override
+	public void refine(Command command) throws ParseException {
+		// start with the results of the internal refiner that does not rely on the RND Parser; its results may then be 
+		// overwritten below by the results of the RND Parser, but are kept for code considered erroneous by the RND Parser
+		internalRefiner.refine(command);
+
+		RndParseResult rndParseResult = getRndParseResult(command);
+		if (rndParseResult == null)
+			return;
+		for (RndTokenPair pair : rndParseResult.tokenPairs) {
+			refine(command, pair.token, pair.rndToken);
+		}
+
+		command.setErrorStateBeforeCleanup(rndParseResult.errorTokenCount);
 	}
 
 	private void refine(Command command, Token token, com.sap.rnd.rndrt.Token rndToken) throws ParseException {
@@ -270,30 +299,8 @@ public class TokenTypeRefinerRnd implements ITokenTypeRefiner {
 				break;
 		}
 
-		if (throwException)
+		if (throwException) {
 			throw new ParseException(command.getParentCode(), command.getSourceLineNumStart(), "RND Parser categorizes '" + rndToken.m_lexem + "' as a " + rndToken.m_category.name());
-	}
-
-	/** parses the Command with the RND Parser and determines the number of tokens that are reported as erroneous */
-	public int getErrorTokenCount(Command command) {
-		if (command.isCommentLine() || command.isEmpty() || !command.isAbap())
-			return 0;
-
-		List<com.sap.rnd.rndrt.Token> rndTokens = getRndTokens(command);
-		
-		int errorCount = 0;
-		for (com.sap.rnd.rndrt.Token rndToken : rndTokens) {
-			// suspicious Tokens (ErrorState.Suspicious) do NOT need to be reported - 
-			// typically, these are identifiers that look like keywords, e.g.
-			// - methods after removing CALL METHOD ("clear( )")
-			// - formal parameters after removing EXPORTING ("text = ...", "value = ...")
-			// - assignment targets after removing CREATE OBJECT ("input = NEW ..."), 
-			// - assignment targets after removing MOVE ... TO ("memory = ..."), 
-			if (rndToken.m_err_state == ErrorState.Erroneous) {
-				++errorCount;
-			}
 		}
-		return errorCount;
 	}
-
 }

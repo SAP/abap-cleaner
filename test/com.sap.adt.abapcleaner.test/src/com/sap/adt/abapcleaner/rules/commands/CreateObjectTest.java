@@ -165,7 +165,7 @@ class CreateObjectTest extends RuleTestBase {
 	void testChainUnchanged() {
 		buildSrc("    CREATE OBJECT:lo_any_object,");
 		buildSrc("                  lo_other_object.");
-   	buildSrc("    CALL OBJECT lo_any_object");
+   	buildSrc("    CREATE OBJECT lo_any_object");
 		buildSrc("      EXPORTING");
 		buildSrc("        iv_param = : 1, 2.");
 
@@ -234,6 +234,22 @@ class CreateObjectTest extends RuleTestBase {
 		buildSrc("      'other.class'.");
 
 		copyExpFromSrc();
+
+		putAnyMethodAroundSrcAndExp();
+		
+		testRule();
+	}
+
+	@Test
+	void testPragmaBeforeExporting() {
+		// ensure that 'EXPORTING' is removed even if there is a pragma before it
+
+		buildSrc("    CREATE OBJECT mo_instance TYPE cl_any_class ##ANY_PRAGMA");
+		buildSrc("      EXPORTING");
+		buildSrc("        io_parent = me.");
+
+		buildExp("    mo_instance = NEW cl_any_class( ##ANY_PRAGMA");
+		buildExp("        io_parent = me ).");
 
 		putAnyMethodAroundSrcAndExp();
 		

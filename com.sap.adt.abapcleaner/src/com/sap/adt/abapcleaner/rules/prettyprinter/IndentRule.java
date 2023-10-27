@@ -77,7 +77,7 @@ public class IndentRule extends Rule {
 			+ LINE_SEP + "ENDCASE." 
 			+ LINE_SEP 
 			+ LINE_SEP + "\" comment on CATCH with an empty line above it" 
-			+ LINE_SEP + "CATCH." 
+			+ LINE_SEP + "CATCH cx_any." 
 			+ LINE_SEP + "\" no handler" 
 			+ LINE_SEP + "ENDTRY." 
 			+ LINE_SEP + "ENDLOOP." 

@@ -170,7 +170,7 @@ public class ChainOfOneRule extends RuleForCommands {
 		command.addIndent(nextNonComment.getStartIndexInLine() - oldIndentOfNextNonComment, oldIndentOfNextNonComment, nextNonComment);
 
 		// remove all further colons from the command (see comment inside the method) 
-		command.removeAllFurtherChainColons();
+		command.removeAllChainColons();
 
 		return true;
 	}

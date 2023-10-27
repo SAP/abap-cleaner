@@ -212,7 +212,7 @@ public class ChainRule extends RuleForCommands {
 		chainSign.removeFromCommand(moveFollowingLinesLeft);
 
 		// remove all further colons from the command (see comment inside this method) 
-		command.removeAllFurtherChainColons();	
+		command.removeAllChainColons();	
 		
 		do {
 			// if the chain colon was found directly after the first keyword (typically, a declaration keyword) or keyword collocation (like CALL METHOD) ...  

@@ -133,7 +133,9 @@ class AddToEtcTest extends RuleTestBase {
 		buildExp("                           name = 'abc']-component.");
 
 		putAnyMethodAroundSrcAndExp();
-		
+
+		// actually, calls or other expressions are NOT allowed in the obsolete commands!
+		deactivateSyntaxCheckAfterParse();
 		testRule();
 	}
 
@@ -159,6 +161,8 @@ class AddToEtcTest extends RuleTestBase {
 		
 		putAnyMethodAroundSrcAndExp();
 		
+		// actually, calls or other expressions are NOT allowed in the obsolete commands!
+		deactivateSyntaxCheckAfterParse();
 		testRule();
 	}
 
@@ -267,6 +271,8 @@ class AddToEtcTest extends RuleTestBase {
 
 		putAnyMethodAroundSrcAndExp();
 		
+		// actually, calls or other expressions are NOT allowed in the obsolete commands!
+		deactivateSyntaxCheckAfterParse();
 		testRule();
 	}
 
@@ -295,6 +301,8 @@ class AddToEtcTest extends RuleTestBase {
 		
 		putAnyMethodAroundSrcAndExp();
 		
+		// actually, calls or other expressions are NOT allowed in the obsolete commands!
+		deactivateSyntaxCheckAfterParse();
 		testRule();
 	}
 

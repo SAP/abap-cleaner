@@ -56,7 +56,7 @@ public class SpaceBeforePeriodRule extends RuleForCommands {
 			+ LINE_SEP 
 			+ LINE_SEP + "    TRY ." 
 			+ LINE_SEP + "        any_operation( ) ." 
-			+ LINE_SEP + "      CATCH ." 
+			+ LINE_SEP + "      CATCH cx_any ." 
 			+ LINE_SEP + "    ENDTRY ." 
 			+ LINE_SEP 
 			+ LINE_SEP + "    lv_value = 42 \" comment" 

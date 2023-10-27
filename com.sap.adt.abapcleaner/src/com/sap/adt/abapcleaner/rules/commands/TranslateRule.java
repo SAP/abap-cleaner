@@ -62,8 +62,8 @@ public class TranslateRule extends RuleForCommands {
 			+ LINE_SEP + "  METHOD replace_deprecated_translate." 
 			+ LINE_SEP + "    \" change text to lower and then to upper case"
 			+ LINE_SEP + "    DATA lv_text TYPE string VALUE `Any Text`." 
-			+ LINE_SEP + "    TRANSLATE lv_text TO LOWER. \" `any text`" 
-			+ LINE_SEP + "    TRANSLATE lv_text TO UPPER. \" `ANY TEXT`" 
+			+ LINE_SEP + "    TRANSLATE lv_text TO LOWER CASE. \" `any text`" 
+			+ LINE_SEP + "    TRANSLATE lv_text TO UPPER CASE. \" `ANY TEXT`" 
 			+ LINE_SEP + ""
 			+ LINE_SEP + "    \" replace a with b, A with B and back to get `Abracadabra`"
 			+ LINE_SEP + "    DATA lv_magic TYPE string VALUE `Barbcbdbarb`." 
@@ -111,7 +111,7 @@ public class TranslateRule extends RuleForCommands {
 		if (firstToken == null || !firstToken.isKeyword("TRANSLATE"))
 			return false;
 		
-		if (firstToken.matchesOnSiblings(false, "TRANSLATE", TokenSearch.ANY_IDENTIFIER, "TO", "UPPER|LOWER")) {
+		if (firstToken.matchesOnSiblings(false, "TRANSLATE", TokenSearch.ANY_IDENTIFIER, "TO", "UPPER|LOWER", "CASE")) {
 			if (configReplaceTranslateToUpperLower.getValue() && replaceTranslateToUpperOrLower(firstToken)) {
 				command.invalidateMemoryAccessType();
 				return true;
@@ -130,7 +130,8 @@ public class TranslateRule extends RuleForCommands {
 		Token identifier1 = firstToken.getNextCodeSibling();
 		Token toToken = identifier1.getNextCodeSibling();
 		Token upperLowerToken = toToken.getNextCodeSibling();
-		if (upperLowerToken.getNextCodeSibling() == null || !upperLowerToken.getNextCodeSibling().isPeriod())
+		Token caseToken = upperLowerToken.getNextCodeSibling();
+		if (caseToken.getNextCodeSibling() == null || !caseToken.getNextCodeSibling().isPeriod())
 			return false;
 		
 		int sourceLineNum = identifier1.sourceLineNum;
@@ -151,6 +152,7 @@ public class TranslateRule extends RuleForCommands {
 		
 		toToken.removeFromCommand();
 		upperLowerToken.removeFromCommand();
+		caseToken.removeFromCommand();
 		return true;
 	}
 	

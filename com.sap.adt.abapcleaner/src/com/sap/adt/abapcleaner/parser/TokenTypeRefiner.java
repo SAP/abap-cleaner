@@ -19,7 +19,7 @@ public class TokenTypeRefiner implements ITokenTypeRefiner {
 	@Override
 	public void refine(Command command) {
 		Token firstCode = command.getFirstCodeToken();
-		if (firstCode == null)
+		if (firstCode == null || !command.isAbap())
 			return;
 		
 		{

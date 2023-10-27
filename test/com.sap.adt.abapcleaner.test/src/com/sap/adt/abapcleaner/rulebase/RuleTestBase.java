@@ -57,6 +57,7 @@ public abstract class RuleTestBase {
 	protected StringBuilder sourceCodeBuilder = new StringBuilder();
 	protected StringBuilder expCodeBuilder = new StringBuilder();
 
+	private boolean checkSyntaxAfterParse = true;
 	private boolean checkRuleWasUsed = true;
 
 	protected RuleTestBase(RuleID ruleID) {
@@ -76,6 +77,38 @@ public abstract class RuleTestBase {
 		abapReleaseOfCode = ABAP.NEWEST_RELEASE; // unless deliberately changed with setAbapRelease()
 		releaseRestrictionFromUI = ABAP.NO_RELEASE_RESTRICTION; // unless deliberately changed with setReleaseRestriction()
 	}
+
+	// =========================================================================
+	// tests for each rule (executed once for each concrete child class of RuleTestBase)
+	
+	@Test
+	void testExampleCode() {
+		String sourceCode = getRule().getExample();
+		assertFalse(StringUtil.isNullOrEmpty(sourceCode));
+		
+		// ensure that the example can be parsed
+		Code code;
+		try {
+			code = Code.parse(null, ParseParams.createForTest(sourceCode, abapReleaseOfCode));
+		} catch (ParseException e) {
+			fail(e.getMessage());
+			return;
+		}
+
+		// test the referential integrity of the parse result of the example
+		try {
+			code.testReferentialIntegrity(true);
+			if (ruleID != RuleID.EMPTY_COMMAND && ruleID != RuleID.ADD_TO_ETC) {
+				code.checkSyntax(false);
+			}
+		} catch (IntegrityBrokenException e1) {
+			fail("Error after parsing source code: " + e1.getMessage());
+			return;
+		} 
+
+	}
+
+	// =========================================================================
 	
 	protected void setAbapReleaseOfCode(String abapReleaseOfCode) {
 		this.abapReleaseOfCode = abapReleaseOfCode;
@@ -124,6 +157,10 @@ public abstract class RuleTestBase {
 		expCodeBuilder.append(end);
 	}
 
+	protected void deactivateSyntaxCheckAfterParse() {
+		checkSyntaxAfterParse = false;
+	}
+	
 	protected void deactivateRuleUseCheck() {
 		checkRuleWasUsed = false;
 	}
@@ -166,8 +203,11 @@ public abstract class RuleTestBase {
 		// test the referential integrity of the parse result
 		try {
 			code.testReferentialIntegrity(true);
+			if (checkSyntaxAfterParse) {
+				code.checkSyntax(false);
+			}
 		} catch (IntegrityBrokenException e1) {
-			fail("Error after parsing source code:" + e1.getMessage());
+			fail("Error after parsing source code: " + e1.getMessage());
 			return;
 		} 
 
@@ -204,9 +244,9 @@ public abstract class RuleTestBase {
 		// test the referential integrity of the resulting objects (Code, Command, Token etc.)
 		try {
 			code.testReferentialIntegrity(true);
-			code.checkSyntaxAfterCleanup();
+			code.checkSyntax(true);
 		} catch (IntegrityBrokenException e1) {
-			fail("Error after executing rule '" + getRule().getDisplayName() + "':" + e1.getMessage());
+			fail("Error after executing rule '" + getRule().getDisplayName() + "': " + e1.getMessage());
 		} 
 
 		// ensure that buffered MemoryAccessType values are still valid (i.e. they match the freshly calculated values)
@@ -394,9 +434,11 @@ public abstract class RuleTestBase {
 		// test the referential integrity of the resulting objects (Code, Command, Token etc.)
 		try {
 			code.testReferentialIntegrity(true);
-			// code.checkSyntaxAfterCleanup();
+			if (stressTestType != StressTestType.COLON) {
+				code.checkSyntax(true);
+			}
 		} catch (IntegrityBrokenException e1) {
-			fail("Error after executing rule '" + getRule().getDisplayName() + "':" + e1.getMessage() + stressTestInfo);
+			fail("Error after executing rule '" + getRule().getDisplayName() + "': " + e1.getMessage() + stressTestInfo);
 		} 
 		return true;
 	}
@@ -572,7 +614,9 @@ public abstract class RuleTestBase {
 		}
 		diffNav.setBlockRuleInSelection(ruleID, true);
 		String error = diffNav.reprocessSelection(profile, releaseRestrictionFromUI, code.sourceName);
-		assertNull(error);
+		if (checkSyntaxAfterParse) {
+			assertNull(error);
+		}
 	}
 
 	private String getTextUntilLineEnd(String code, int start) {
