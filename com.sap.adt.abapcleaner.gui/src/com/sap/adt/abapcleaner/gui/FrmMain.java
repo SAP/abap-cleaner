@@ -1433,10 +1433,14 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 
 		// restore shell bounds
 		try {
+			// allow saved shell bounds to exceed screen size for a few pixels, which happens if the shell was 
+			// aligned to the left-hand or right-hand half of the screen, e.g. with .shellLeft = -8
+			final int TOLERANCE = 12;
 			shell.setMaximized(settings.shellMaximized);
 			if (!settings.shellMaximized && settings.areShellBoundsSpecified()) {
 				org.eclipse.swt.graphics.Rectangle displayBounds = shell.getDisplay().getBounds();
-				if (displayBounds.contains(settings.shellLeft, settings.shellTop) && displayBounds.contains(settings.getShellRight() - 1, settings.getShellBottom() - 1)) {
+				if (displayBounds.contains(settings.shellLeft + TOLERANCE, settings.shellTop + TOLERANCE) 
+						&& displayBounds.contains(settings.getShellRight() - 1 - TOLERANCE, settings.getShellBottom() - 1 - TOLERANCE)) {
 					shell.setBounds(settings.shellLeft, settings.shellTop, settings.shellWidth, settings.shellHeight);
 				}
 			}
