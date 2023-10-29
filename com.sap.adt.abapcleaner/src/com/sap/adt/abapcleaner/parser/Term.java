@@ -412,4 +412,27 @@ public class Term {
 		} while (true);
 		return false;
 	}
+
+	public boolean condense() {
+		if (firstToken == lastToken)
+			return false;
+		
+		boolean changed = false;
+
+		Token token = firstToken.getNext();
+		while (token != null) {
+			if (token.getPrev() != null && token.getPrev().isComment()) {
+				// skip this case 
+			} else if (token.isAttached()) {
+				// skip attached Tokens, too
+			} else if (token.setWhitespace()) {
+				changed = true;
+			}
+			
+			if (token == lastToken)
+				break;
+			token = token.getNext();
+		}
+		return changed;
+	}
 }

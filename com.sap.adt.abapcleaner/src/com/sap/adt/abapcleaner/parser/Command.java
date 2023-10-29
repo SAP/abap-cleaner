@@ -1978,13 +1978,14 @@ public class Command {
 			throw new NullPointerException("startToken");
 		
 		Token token = startToken.getNext();
-		while (token != endToken) {
+		while (token != null && token != endToken) {
 			if (token.lineBreaks > 0) {
 				if (!ignoreLineBreakAfterComma) 
 					return true;
 				Token prev = token.getPrevNonCommentToken();
-				if (prev == null || !prev.isComma())
+				if (prev == null || !prev.isComma()) {
 					return true;
+				}
 			}
 			token = token.getNext();
 		}
@@ -3080,6 +3081,22 @@ public class Command {
 
 	public void setErrorStateBeforeCleanup(int errorCount) {
 		this.errorCountBeforeCleanup = errorCount;
+	}
+	
+	public boolean containsKeywordOnSiblings(String keyword) {
+		if (firstToken.isKeyword(keyword)) {
+			return true;
+		} else { 
+			return (firstToken.getNextSiblingOfTypeAndText(TokenType.KEYWORD, keyword) != null);
+		}
+	}
+	
+	public boolean containsKeywordDeep(String keyword) {
+		if (firstToken.isKeyword(keyword)) {
+			return true;
+		} else { 
+			return (firstToken.getNextTokenOfTypeAndText(TokenType.KEYWORD, keyword) != null);
+		}
 	}
 	
 	/** Returns true if the Command matches a hard-coded pattern or condition.
