@@ -6,6 +6,21 @@ as well as bugfixes of reported issues, i.e. anything that enhances or changes t
 For a complete list of changes (including documentation, tests, refactoring etc.), please refer to 
 the list of [commits](../../../commits/main).
 
+## 2023-10-30 (version 1.9.0)
+
+Great **thanks** to [**StefanRutzmoser**](https://github.com/StefanRutzmoser), [**ConjuringCoffee**](https://github.com/ConjuringCoffee),
+ [**GKaschke**](https://github.com/GKaschke), [**thorsten79G**](https://github.com/thorsten79G), [**m-badura**](https://github.com/m-badura) and
+ [**conlutio**](https://github.com/conlutio) for their ideas and bug reports!
+
+* Added new rule '**Standardize CLASS ... DEFINITION**' ([#157](../../../issues/157))
+* Added new rule '**Remove needless CLEAR**' ([#61](../../../issues/61), [#111](../../../issues/111))
+* Added **syntax check** with RND Parser **after cleanup**
+* Enhanced 8 rules in **rule group 'COMMANDS'** with '**unchain**' option ([#120](../../../issues/120))
+* Fixed rule '**Replace CALL METHOD ...**' for 'CALL METHOD OF **ole**' ([#175](../../../issues/175))
+* Fixed rule '**Replace CREATE OBJECT ...**' for 'CREATE OBJECT **ole** class' ([#175](../../../issues/175))
+* Fixed rule '**Resolve equals sign chain ...**' for **implicit conversions** ([#173](../../../issues/173))
+* Fixed rule '**Delete unused variables**' for **table expression after CLEAR** ([#169](../../../issues/169))
+
 ## 2023-10-23 (version 1.8.0)
 
 **Great thanks** to [**PilotFlying**](https://github.com/PilotFlying), [**fmabap**](https://github.com/fmabap),

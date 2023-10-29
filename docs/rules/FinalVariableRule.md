@@ -1,4 +1,4 @@
-[<-- previous rule](ImplicitTypeRule.md) | [overview](../rules.md) | [next rule -->](EscapeCharForParametersRule.md)
+[<-- previous rule](ImplicitTypeRule.md) | [overview](../rules.md) | [next rule -->](ClassDefinitionRule.md)
 
 # Use FINAL for immutable variables
 

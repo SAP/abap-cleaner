@@ -17,6 +17,7 @@ This rule requires a NetWeaver version >= 7.54. For older syntax, the statements
 ## Options
 
 * If cleanup is restricted to NetWeaver < 7.54 syntax, \[replace with 'a = a \+ ...' etc.\]
+* \[X\] Unchain ADD:, SUBTRACT: etc. chains \(required for processing them with this rule\)
 
 ## Examples
 
@@ -25,17 +26,13 @@ This rule requires a NetWeaver version >= 7.54. For older syntax, the statements
 
   METHOD replace_obsolete_add_to_etc.
     ADD 1 TO ls_struc-component.
-    ADD lts_table[ num  = 5
-                   name = 'abc']-length TO lv_length.
+    ADD iv_value TO lv_length.
 
     SUBTRACT lo_typedesc->length FROM lv_length.
-    SUBTRACT class_name( )=>get_tool( )->get_value( iv_param  = 5
-                                                    iv_param2 = 'abc' ) FROM lv_length.
+    SUBTRACT is_struc-component FROM lv_length.
 
     SUBTRACT 1 FROM ls_any_structure-item_key.
     SUBTRACT lo_typedesc->length FROM lv_length.
-    SUBTRACT lts_table[ num  = 5
-                        name = 'abc']-length FROM lv_length.
 
     MULTIPLY iv_value BY 2.
     MULTIPLY lv_value BY lts_table[ num  = 5
@@ -44,6 +41,15 @@ This rule requires a NetWeaver version >= 7.54. For older syntax, the statements
     DIVIDE lv_value BY lo_struc-component.
     DIVIDE lv_value BY class_name( )=>get_tool( )->get_value( iv_param  = 5
                                                               iv_param2 = 'abc' ).
+
+    " chains can only be processed if they are first unchained
+    ADD 10 TO: lv_value, lv_other.
+
+    SUBTRACT: 1 FROM lv_value, 2 FROM lv_other.
+
+    MULTIPLY iv_value BY: 2, 3, 5.
+
+    DIVIDE iv_value: BY lv_any, BY lv_other.
   ENDMETHOD.
 ```
 
@@ -53,17 +59,13 @@ Resulting code:
 
   METHOD replace_obsolete_add_to_etc.
     ls_struc-component += 1.
-    lv_length += lts_table[ num  = 5
-                            name = 'abc']-length.
+    lv_length += iv_value.
 
     lv_length -= lo_typedesc->length.
-    lv_length -= class_name( )=>get_tool( )->get_value( iv_param  = 5
-                                                        iv_param2 = 'abc' ).
+    lv_length -= is_struc-component.
 
     ls_any_structure-item_key -= 1.
     lv_length -= lo_typedesc->length.
-    lv_length -= lts_table[ num  = 5
-                            name = 'abc']-length.
 
     iv_value *= 2.
     lv_value *= lts_table[ num  = 5
@@ -72,6 +74,20 @@ Resulting code:
     lv_value /= lo_struc-component.
     lv_value /= class_name( )=>get_tool( )->get_value( iv_param  = 5
                                                        iv_param2 = 'abc' ).
+
+    " chains can only be processed if they are first unchained
+    lv_value += 10.
+    lv_other += 10.
+
+    lv_value -= 1.
+    lv_other -= 2.
+
+    iv_value *= 2.
+    iv_value *= 3.
+    iv_value *= 5.
+
+    iv_value /= lv_any.
+    iv_value /= lv_other.
   ENDMETHOD.
 ```
 

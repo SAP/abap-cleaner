@@ -41,7 +41,7 @@ CLASS any_class IMPLEMENTATION.
 
     TRY .
         any_operation( ) .
-      CATCH .
+      CATCH cx_any .
     ENDTRY .
 
     lv_value = 42 " comment
@@ -75,7 +75,7 @@ CLASS any_class IMPLEMENTATION.
 
     TRY.
         any_operation( ).
-      CATCH.
+      CATCH cx_any.
     ENDTRY.
 
     lv_value = 42. " comment

@@ -1,4 +1,4 @@
-[<-- previous rule](ChainRule.md) | [overview](../rules.md) | [next rule -->](UnusedVariablesRule.md)
+[<-- previous rule](NeedlessClearRule.md) | [overview](../rules.md) | [next rule -->](UnusedVariablesRule.md)
 
 # Rearrange local declarations
 

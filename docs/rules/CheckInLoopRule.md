@@ -14,6 +14,7 @@ Converts CHECK inside a loop to IF NOT ... CONTINUE \(this applies to LOOP, DO a
 * Keep CHECK statement in LOOP: \[never\]
 * Negate logical expressions with NOT \( ... \): \[if multiple inner negations \(IS NOT, <>, ...\) can be avoided\]
 * \[X\] Convert abap\_false <-> abap\_true \(assuming abap\_undefined is never used\)
+* \[X\] Unchain CHECK: chains in loops \(required for processing them with this rule\)
 
 ## Examples
 
@@ -31,6 +32,10 @@ Converts CHECK inside a loop to IF NOT ... CONTINUE \(this applies to LOOP, DO a
         " the following CHECKs are considered to be at loop start (despite this comment)
         CHECK ls_row-min_id <> 0.
         CHECK ls_row-processed = abap_false.
+
+        " chains can only be processed if they are first unchained
+        CHECK: ls_row-max_id > 0,
+               ls_row-flag IS NOT INITIAL.
 
         WHILE lv_id < ls_row-max_id.
           lv_id += 1.
@@ -69,6 +74,14 @@ Resulting code:
           CONTINUE.
         ENDIF.
         IF ls_row-processed = abap_true.
+          CONTINUE.
+        ENDIF.
+
+        " chains can only be processed if they are first unchained
+        IF ls_row-max_id <= 0.
+          CONTINUE.
+        ENDIF.
+        IF ls_row-flag IS INITIAL.
           CONTINUE.
         ENDIF.
 

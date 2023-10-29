@@ -1,4 +1,4 @@
-[<-- previous rule](NeedlessSpacesRule.md) | [overview](../rules.md) | [next rule -->](LocalDeclarationOrderRule.md)
+[<-- previous rule](NeedlessSpacesRule.md) | [overview](../rules.md) | [next rule -->](NeedlessClearRule.md)
 
 # Unchain into multiple statements
 

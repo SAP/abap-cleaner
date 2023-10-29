@@ -18,6 +18,7 @@ Replaces the deprecated TRANSLATE statement with corresponding string processing
 * \[X\] Replace TRANSLATE ... TO UPPER|LOWER
 * \[X\] Replace TRANSLATE ... USING
 * \[X\] Replace TRANSLATE ... USING if mask has an uneven number of chars
+* \[X\] Unchain TRANSLATE: chains \(required for processing them with this rule\)
 
 ## Examples
 
@@ -27,8 +28,8 @@ Replaces the deprecated TRANSLATE statement with corresponding string processing
   METHOD replace_deprecated_translate.
     " change text to lower and then to upper case
     DATA lv_text TYPE string VALUE `Any Text`.
-    TRANSLATE lv_text TO LOWER. " `any text`
-    TRANSLATE lv_text TO UPPER. " `ANY TEXT`
+    TRANSLATE lv_text TO LOWER CASE. " `any text`
+    TRANSLATE lv_text TO UPPER CASE. " `ANY TEXT`
 
     " replace a with b, A with B and back to get `Abracadabra`
     DATA lv_magic TYPE string VALUE `Barbcbdbarb`.
@@ -49,6 +50,11 @@ Replaces the deprecated TRANSLATE statement with corresponding string processing
     " translate( ) must have FROM = `c`, since FROM = `c+`  TO = `C` would remove the `+`
     DATA lv_c_plus_plus TYPE string VALUE `c++`.
     TRANSLATE lv_c_plus_plus USING 'cC+'.
+
+    " chains can only be processed if they are first unchained
+    TRANSLATE: lv_text TO LOWER CASE, lv_other_text TO UPPER CASE.
+
+    TRANSLATE lv_abc USING: '1 2 3 ', 'a-b-c-'.
   ENDMETHOD.
 ```
 
@@ -89,6 +95,17 @@ Resulting code:
     lv_c_plus_plus = translate( val  = lv_c_plus_plus
                                 from = `c`
                                 to   = `C` ).
+
+    " chains can only be processed if they are first unchained
+    lv_text = to_lower( lv_text ).
+    lv_other_text = to_upper( lv_other_text ).
+
+    lv_abc = translate( val  = lv_abc
+                        from = `123`
+                        to   = `   ` ).
+    lv_abc = translate( val  = lv_abc
+                        from = `abc`
+                        to   = `---` ).
   ENDMETHOD.
 ```
 

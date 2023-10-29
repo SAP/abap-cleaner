@@ -13,6 +13,7 @@ Note that the class name must be adjusted to the respective application \(CX\_..
 ## Options
 
 * Assert class name: \[cx\_assert\]
+* \[X\] Unchain ASSERT: chains \(required for processing them with this rule\)
 
 ## Examples
 
@@ -27,7 +28,7 @@ CLASS cl_product_code IMPLEMENTATION.
     ASSERT is_parameters-component_name IS INITIAL.
     ASSERT io_any_instance IS NOT INITIAL.
 
-    ASSERT sy-subrc = 0. " defitem must exist
+    ASSERT sy-subrc = 0. " item must exist
     ASSERT sy-subrc = 4.
     ASSERT sy-subrc = get_expected_subrc_value( param_a = 'abc' 
                                                 param_b = 'def' ).
@@ -51,6 +52,11 @@ CLASS cl_product_code IMPLEMENTATION.
     ASSERT <ls_row>-item_key <= ms_parameters-last_item_key.
     ASSERT lv_quantity <= 100.
     ASSERT abs( <ls_any_field_symbol>-sum_quantity ) > 0.
+
+    " chains can only be processed if they are first unchained
+    ASSERT: sy-subrc = 0,
+            io_instance IS BOUND,
+            iv_is_valid = abap_false.
   ENDMETHOD.
 ENDCLASS.
 
@@ -106,7 +112,7 @@ CLASS cl_product_code IMPLEMENTATION.
     cx_assert=>assert_initial( is_parameters-component_name ).
     cx_assert=>assert_not_initial( io_any_instance ).
 
-    cx_assert=>assert_subrc( ). " defitem must exist
+    cx_assert=>assert_subrc( ). " item must exist
     cx_assert=>assert_subrc( 4 ).
     cx_assert=>assert_subrc( get_expected_subrc_value( param_a = 'abc'
                                                        param_b = 'def' ) ).
@@ -134,6 +140,11 @@ CLASS cl_product_code IMPLEMENTATION.
     cx_assert=>assert_true( xsdbool( <ls_row>-item_key <= ms_parameters-last_item_key ) ).
     cx_assert=>assert_true( xsdbool( lv_quantity <= 100 ) ).
     cx_assert=>assert_true( xsdbool( abs( <ls_any_field_symbol>-sum_quantity ) > 0 ) ).
+
+    " chains can only be processed if they are first unchained
+    cx_assert=>assert_subrc( ).
+    cx_assert=>assert_bound( io_instance ).
+    cx_assert=>assert_false( iv_is_valid ).
   ENDMETHOD.
 ENDCLASS.
 

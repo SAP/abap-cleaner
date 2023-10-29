@@ -16,7 +16,7 @@ Keeps CALL METHOD if dynamic typing is used for the method name, since no functi
 
 ## Options
 
-* \(no options available for this rule\)
+* \[X\] Unchain CALL METHOD: chains \(required for processing them with this rule\)
 
 ## Examples
 
@@ -46,6 +46,13 @@ Keeps CALL METHOD if dynamic typing is used for the method name, since no functi
 
     CALL METHOD (iv_dynamic_class_name)=>(iv_dynamic_method_name)
       EXPORTING iv_par = iv_par. 
+
+    " chains can only be processed if they are first unchained
+    CALL METHOD: any_method,
+                 other_method EXPORTING iv_value = iv_value,
+                 mo_any_instance->(iv_dynamic_method_name).
+
+    CALL METHOD third_method EXPORTING iv_name =: 'abc', 'def', 'ghi'.
   ENDMETHOD.
 ```
 
@@ -75,6 +82,15 @@ Resulting code:
 
     CALL METHOD (iv_dynamic_class_name)=>(iv_dynamic_method_name)
       EXPORTING iv_par = iv_par.
+
+    " chains can only be processed if they are first unchained
+    any_method( ).
+    other_method( iv_value = iv_value ).
+    CALL METHOD mo_any_instance->(iv_dynamic_method_name).
+
+    third_method( iv_name = 'abc' ).
+    third_method( iv_name = 'def' ).
+    third_method( iv_name = 'ghi' ).
   ENDMETHOD.
 ```
 
