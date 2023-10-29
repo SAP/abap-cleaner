@@ -372,4 +372,12 @@ public class NeedlessClearTest extends RuleTestBase {
 		testRule();
 	}
 	
+	@Test
+	void testEmptyMethod() {
+		copyExpFromSrc();
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }

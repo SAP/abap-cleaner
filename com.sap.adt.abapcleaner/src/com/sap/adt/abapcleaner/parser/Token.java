@@ -1512,6 +1512,17 @@ public class Token {
 		return result;
 	}
 
+	public final Token getNextSiblingOfTypeAndText(TokenType tokenType, String... texts) {
+		Token result = next;
+		while (result != null) {
+			if (result.type == tokenType && result.textEqualsAny(texts)) {
+				return result;
+			}
+			result = result.nextSibling;
+		}
+		return result;
+	}
+
 	public final Token getPrevTokenOfType(TokenType tokenType) {
 		Token result = prev;
 		while (result != null && result.type != tokenType)
