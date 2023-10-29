@@ -139,14 +139,17 @@ public class NeedlessClearTest extends RuleTestBase {
 
 	@Test
 	void testCommentsPragmaLinesAndAsserts() {
-		// ensure that CLEAR is processed across comments, pragma lines, and (at method start) ASSERTS;  
-		// however, at method end, CLEAR before ASSERT must NOT be processed
+		// ensure that CLEAR is processed across comments, pragma lines, and (at method start) 
+		// ASSERTs, BREAK-POINTs and LOG-POINTs; however, at method end, CLEAR before ASSERT, 
+		// BREAK-POINT or LOG-POINT must NOT be processed
 		
 		buildSrc("    DATA lv_any   TYPE i.");
 		buildSrc("    DATA lv_other TYPE string.");
 		buildSrc("    \" comment");
 		buildSrc("");
 		buildSrc("    CLEAR lv_any.");
+		buildSrc("    LOG-POINT ID any_id.");
+		buildSrc("    BREAK-POINT.");
 		buildSrc("* comment");
 		buildSrc("    ##ANY_PRAGMA");
 		buildSrc("    ASSERT it_table IS NOT INITIAL.");
@@ -170,6 +173,8 @@ public class NeedlessClearTest extends RuleTestBase {
 		buildExp("    DATA lv_other TYPE string.");
 		buildExp("    \" comment");
 		buildExp("");
+		buildExp("    LOG-POINT ID any_id.");
+		buildExp("    BREAK-POINT.");
 		buildExp("* comment");
 		buildExp("    ##ANY_PRAGMA");
 		buildExp("    ASSERT it_table IS NOT INITIAL.");
