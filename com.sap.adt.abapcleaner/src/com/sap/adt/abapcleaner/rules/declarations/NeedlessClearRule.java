@@ -133,7 +133,8 @@ public class NeedlessClearRule extends RuleForDeclarations {
 			Command next = command.getNext();
 			if (command.firstCodeTokenIsKeyword("CLEAR")) {
 				executeOnClear(code, command, localVariables, actionAtStart, true);
-			} else if (!command.isCommentLine() && !command.isPragmaLine() && !command.isDeclaration() && !command.firstCodeTokenIsAnyKeyword("ASSERT")) {
+			} else if (!command.isCommentLine() && !command.isPragmaLine() && !command.isDeclaration() 
+					&& !command.firstCodeTokenIsAnyKeyword("ASSERT", "BREAK-POINT", "LOG-POINT")) {
 				firstExecutable = command;
 				break;
 			}
@@ -143,7 +144,8 @@ public class NeedlessClearRule extends RuleForDeclarations {
 		if (command == methodEnd)
 			return;
 		
-		// remove CLEAR from method end, skipping comments, pragmas and declarations (but no ASSERTs, which could depend on CLEAR)
+		// remove CLEAR from method end, skipping comments, pragmas and declarations 
+		// (but no ASSERTs or LOG-POINTs, which could depend on CLEAR)
 		command = (methodEnd != null) ? methodEnd.getPrev() : code.lastCommand;
 		while (command != null && command != methodStart) {
 			Command prev = command.getPrev();
