@@ -60,7 +60,7 @@ iv_value += 3.
 ENDCASE.
 
 " comment on CATCH with an empty line above it
-CATCH.
+CATCH cx_any.
 " no handler
 ENDTRY.
 ENDLOOP.
@@ -108,7 +108,7 @@ Resulting code:
             ENDCASE.
 
           " comment on CATCH with an empty line above it
-          CATCH.
+          CATCH cx_any.
             " no handler
         ENDTRY.
       ENDLOOP.

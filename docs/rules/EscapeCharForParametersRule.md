@@ -1,4 +1,4 @@
-[<-- previous rule](FinalVariableRule.md) | [overview](../rules.md) | [next rule -->](EmptySectionsInClassDefRule.md)
+[<-- previous rule](ClassDefinitionRule.md) | [overview](../rules.md) | [next rule -->](EmptySectionsInClassDefRule.md)
 
 # Standardize escaping of \!parameters
 

@@ -12,7 +12,7 @@ This rule requires a NetWeaver version >= 7.40.
 
 ## Options
 
-* \(no options available for this rule\)
+* \[X\] Unchain CREATE OBJECT: chains \(required for processing them with this rule\)
 
 ## Examples
 
@@ -39,6 +39,14 @@ This rule requires a NetWeaver version >= 7.40.
       EXCEPTIONS
         cx_message     = 1
         others         = 2.
+
+    " chains can only be processed if they are first unchained
+    CREATE OBJECT: lx_message, lx_other_message.
+
+    CREATE OBJECT: lo_any TYPE cl_any_class,
+                   lo_other TYPE (lv_class_name),
+                   lo_third TYPE cl_othird_class
+                     EXPORTING io_contract = me.
   ENDMETHOD.
 ```
 
@@ -65,6 +73,15 @@ Resulting code:
       EXCEPTIONS
         cx_message     = 1
         others         = 2.
+
+    " chains can only be processed if they are first unchained
+    lx_message = NEW #( ).
+    lx_other_message = NEW #( ).
+
+    lo_any = NEW cl_any_class( ).
+    CREATE OBJECT lo_other TYPE (lv_class_name).
+    lo_third = NEW cl_othird_class(
+                      io_contract = me ).
   ENDMETHOD.
 ```
 

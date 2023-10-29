@@ -1,6 +1,6 @@
 # Available Cleanup Rules
 
-ABAP cleaner offers 60 cleanup rules with a total of 191 configuration options:
+ABAP cleaner offers 62 cleanup rules with a total of 212 configuration options:
 
 ## Empty Lines
 
@@ -19,11 +19,13 @@ ABAP cleaner offers 60 cleanup rules with a total of 191 configuration options:
 ## Declarations
 
 * [Unchain into multiple statements](rules/ChainRule.md)
+* [Remove needless CLEAR](rules/NeedlessClearRule.md)
 * [Rearrange local declarations](rules/LocalDeclarationOrderRule.md)
 * [Delete unused variables](rules/UnusedVariablesRule.md)
 * [Simplify a chain with one element](rules/ChainOfOneRule.md)
 * [Make implicit type explicit](rules/ImplicitTypeRule.md)
 * [Use FINAL for immutable variables](rules/FinalVariableRule.md)
+* [Standardize CLASS ... DEFINITION](rules/ClassDefinitionRule.md)
 * [Standardize escaping of \!parameters](rules/EscapeCharForParametersRule.md)
 * [Remove empty class definition SECTIONs](rules/EmptySectionsInClassDefRule.md)
 * [Add missing parameters to ABAP Doc](rules/AbapDocParametersRule.md)

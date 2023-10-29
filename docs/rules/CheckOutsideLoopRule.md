@@ -16,6 +16,7 @@ Converts CHECK that is found outside of loops \(LOOP, DO, WHILE\) to IF NOT ... 
 * Negate logical expressions with NOT \( ... \): \[if multiple inner negations \(IS NOT, <>, ...\) can be avoided\]
 * \[X\] Convert abap\_false <-> abap\_true \(assuming abap\_undefined is never used\)
 * \[X\] Allow CHECK after ASSERT, BREAK-POINT and LOG-POINT
+* \[X\] Unchain CHECK: chains outside loops \(required for processing them with this rule\)
 
 ## Examples
 
@@ -43,6 +44,10 @@ Converts CHECK that is found outside of loops \(LOOP, DO, WHILE\) to IF NOT ... 
 
     " CHECKs only preceded by declarations and CLEAR
     CHECK a = abap_false AND b > 3 OR a = abap_true AND b <= 10.
+
+    " chains can only be processed if they are first unchained
+    CHECK: a IS NOT INITIAL,
+           b < 5.
 
     lv_value = 1.
 
@@ -92,6 +97,14 @@ Resulting code:
 
     " CHECKs only preceded by declarations and CLEAR
     IF ( a = abap_true OR b <= 3 ) AND ( a = abap_false OR b > 10 ).
+      RETURN.
+    ENDIF.
+
+    " chains can only be processed if they are first unchained
+    IF a IS INITIAL.
+      RETURN.
+    ENDIF.
+    IF b >= 5.
       RETURN.
     ENDIF.
 

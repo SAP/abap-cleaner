@@ -12,7 +12,7 @@ Replaces obsolete MOVE ... TO and MOVE ... ?TO statements with the more general 
 
 ## Options
 
-* \[X\] Process MOVE: chains
+* \[X\] Unchain MOVE: chains \(required for processing them with this rule\)
 
 ## Examples
 
@@ -39,6 +39,10 @@ Replaces obsolete MOVE ... TO and MOVE ... ?TO statements with the more general 
       " another comment
       EXACT iv_data TO ev_data,
       io_instance ?TO eo_instance.
+
+    " with the MOVE chain, get_next_value( ) is also called 3 times,
+    " but without the chain, that's much clearer:
+    MOVE get_next_value( ) TO: ev_any, ev_other, ev_third.
   ENDMETHOD.
 ```
 
@@ -65,6 +69,12 @@ Resulting code:
     " another comment
     ev_data = EXACT #( iv_data ).
     eo_instance ?= io_instance.
+
+    " with the MOVE chain, get_next_value( ) is also called 3 times,
+    " but without the chain, that's much clearer:
+    ev_any = get_next_value( ).
+    ev_other = get_next_value( ).
+    ev_third = get_next_value( ).
   ENDMETHOD.
 ```
 
