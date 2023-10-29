@@ -2,14 +2,14 @@
 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0">
   <modelVersion>4.0.0</modelVersion>
   <artifactId>com.sap.adt.abapcleaner.updatesite</artifactId>
-  <version>1.9.0</version>
+  <version>1.9.1-SNAPSHOT</version>
   <name>ABAP Cleaner for ABAP Development Tools (ADT)</name>
   <packaging>eclipse-repository</packaging>
 
   <parent>
     <artifactId>parent</artifactId>
     <groupId>com.sap.adt.abapcleaner</groupId>
-    <version>1.9.0</version>
+    <version>1.9.1-SNAPSHOT</version>
     <relativePath>../</relativePath>
   </parent>
 
