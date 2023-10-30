@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 
 import com.sap.adt.abapcleaner.base.ABAP;
 import com.sap.adt.abapcleaner.base.StringUtil;
@@ -59,7 +60,8 @@ public abstract class RuleTestBase {
 
 	private boolean checkSyntaxAfterParse = true;
 	private boolean checkRuleWasUsed = true;
-
+	private HashSet<Integer> commandIndicesToBlock = new HashSet<>();
+	
 	protected RuleTestBase(RuleID ruleID) {
 		this.ruleID = ruleID;
 		this.abapReleaseOfCode = ABAP.NEWEST_RELEASE;
@@ -82,7 +84,7 @@ public abstract class RuleTestBase {
 	// tests for each rule (executed once for each concrete child class of RuleTestBase)
 	
 	@Test
-	void testExampleCode() {
+	void testExampleCode() { 
 		String sourceCode = getRule().getExample();
 		assertFalse(StringUtil.isNullOrEmpty(sourceCode));
 		
@@ -165,6 +167,10 @@ public abstract class RuleTestBase {
 		checkRuleWasUsed = false;
 	}
 	
+	protected void blockCommand(int commandIndex) {
+		commandIndicesToBlock.add(commandIndex);
+	}
+	
 	@Test
 	void testRuleInfo() {
 		Rule rule = getRule();
@@ -232,6 +238,9 @@ public abstract class RuleTestBase {
 			command = command.getNext();
 		}
 
+		// apply prepared blocking to specific commands
+		blockCommands(code);
+		
 		// call the Rule under test and get the actual result code
 		try {
 			getRule().executeIfAllowedOn(code, releaseRestrictionFromUI);
@@ -405,6 +414,20 @@ public abstract class RuleTestBase {
 		}
 	}
 	
+	private void blockCommands(Code code) {
+		if (commandIndicesToBlock.isEmpty())
+			return;
+		Command command = code.firstCommand;
+		int index = 0;
+		while (command != null) {
+			if (commandIndicesToBlock.contains(index)) {
+				command.getChangeControl().setBlockedRule(ruleID, true);
+			}
+			++index;
+			command = command.getNext();
+		}
+	}
+
 	private boolean runStressTest(StressTestType stressTestType, int insertAfterTokenIndex) {
 		// parse the source code
 		Code code = null;
@@ -413,6 +436,9 @@ public abstract class RuleTestBase {
 		} catch (ParseException e) {
 			fail(e.getMessage());
 		}
+		
+		// apply prepared blocking to specific commands
+		blockCommands(code);
 
 		String stressTestInfo = " [stress test: inserted " + stressTestType.description + " after token #" + String.valueOf(insertAfterTokenIndex) + "]";
 		try {

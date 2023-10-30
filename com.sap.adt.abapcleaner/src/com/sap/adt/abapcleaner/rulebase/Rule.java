@@ -20,7 +20,7 @@ import java.time.LocalDate;
 import java.util.*;
 
 public abstract class Rule {
-	public static final int RULE_COUNT = 62;
+	public static final int RULE_COUNT = 63;
 	public static final int RULE_GROUP_COUNT = 7;
 
 	protected static final String LINE_SEP = ABAP.LINE_SEPARATOR;
@@ -131,7 +131,8 @@ public abstract class Rule {
          new AlignClearFreeAndSortRule(profile),
          new AlignParametersRule(profile),
          new AlignLogicalExpressionsRule(profile),
-         new AlignCondExpressionsRule(profile)
+         new AlignCondExpressionsRule(profile),
+         new AlignFormDeclarationRule(profile)
       };
 
 		StringBuilder errors = new StringBuilder();
