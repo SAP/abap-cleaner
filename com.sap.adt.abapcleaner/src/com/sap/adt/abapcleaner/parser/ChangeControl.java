@@ -39,7 +39,7 @@ public class ChangeControl {
 		usedRules.clear();
 	}
 
-	/**  returns true if the setting was changed */
+	/** returns true if the setting was changed */
 	public final boolean setBlockedRule(RuleID ruleId, boolean blocked) {
 		if (blockedRules.get(ruleId.getValue()) == blocked) {
 			return false;
