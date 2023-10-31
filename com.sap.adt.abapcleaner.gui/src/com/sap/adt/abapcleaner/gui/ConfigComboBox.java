@@ -47,7 +47,7 @@ class ConfigComboBox extends ConfigControl {
       for (String item : items)
       	cboValue.add(item);
       cboValue.select(configValue.getValue());
-}
+   }
 
     @Override
    protected void detachControls() {

@@ -836,7 +836,7 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 		new Label(pnlOptionsInfo, SWT.NONE);
 		new Label(pnlOptionsInfo, SWT.NONE);
 		new Label(pnlOptionsInfo, SWT.NONE);
-		
+	
 		pnlRuleOptions = new Composite(pnlRule, SWT.NONE);
 		GridLayout gl_pnlRuleOptions = new GridLayout(3, false);
 		gl_pnlRuleOptions.marginWidth = 0;
