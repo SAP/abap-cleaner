@@ -8,7 +8,7 @@ import com.sap.adt.abapcleaner.rulebase.*;
 /**
  * Removes multiple spaces from empty parentheses and adds missing spaces between parentheses and character literals.
  */
-public class SpacesInEmptyBracketsRule extends RuleForTokens {
+public class SpaceAroundTextLiteralRule extends RuleForTokens {
 	private final static RuleReference[] references = new RuleReference[] {
 			new RuleReference(RuleSource.ABAP_STYLE_GUIDE, "Condense your code", "#condense-your-code") };
 
@@ -19,13 +19,13 @@ public class SpacesInEmptyBracketsRule extends RuleForTokens {
 	public RuleGroupID getGroupID() { return RuleGroupID.SPACES; }
 
 	@Override
-	public String getDisplayName() { return "Standardize spaces next to parentheses"; }
+	public String getDisplayName() { return "Put spaces around text literals"; }
 
 	@Override
-	public String getDescription() { return "Removes multiple spaces from empty parentheses and adds missing spaces between parentheses and character literals."; }
+	public String getDescription() { return "Adds missing spaces before and after text field literals '...' and text string literals `...`."; }
 
 	@Override
-	public LocalDate getDateCreated() { return LocalDate.of(2021, 1, 3); }
+	public LocalDate getDateCreated() { return LocalDate.of(2023, 5, 30); }
 
 	@Override
 	public RuleReference[] getReferences() { return references; }
@@ -36,12 +36,7 @@ public class SpacesInEmptyBracketsRule extends RuleForTokens {
 	@Override
    public String getExample() {
       return "" 
-			+ LINE_SEP + "  METHOD standardize_spaces_in_parens." 
-			+ LINE_SEP + "    ev_result = cl_any_factory=>get(     )->get_utility(   )->get_value(      )." 
-			+ LINE_SEP 
-			+ LINE_SEP + "    get_util(    )->any_method( iv_any_param   = get_default_value(    )"
-			+ LINE_SEP + "                                iv_other_param = VALUE #(       ) )."
-			+ LINE_SEP 
+			+ LINE_SEP + "  METHOD space_around_text_literal." 
 			+ LINE_SEP + "    \" these cases are syntactically correct even without spaces:" 
 			+ LINE_SEP + "    any_method('text field literal')." 
 			+ LINE_SEP + "    any_method('other literal' )." 
@@ -63,6 +58,7 @@ public class SpacesInEmptyBracketsRule extends RuleForTokens {
 			+ LINE_SEP 
 			+ LINE_SEP + "    \" introducing spaces here would be a syntax error:"
 			+ LINE_SEP + "    CALL METHOD lo_instance->('METHOD_NAME')." 
+			+ LINE_SEP + "    CALL METHOD ('CLASS_NAME')=>('METHOD_NAME')." 
 			+ LINE_SEP + "    ls_struc-('COMPONENT_NAME') = 1." 
 			+ LINE_SEP + "    lr_data_ref->('COMPONENT_NAME') = 1." 
 			+ LINE_SEP 
@@ -77,16 +73,18 @@ public class SpacesInEmptyBracketsRule extends RuleForTokens {
 			+ LINE_SEP + "  ENDMETHOD.";
    }
 
-	final ConfigBoolValue configRemoveMultiSpaceIfEmpty = new ConfigBoolValue(this, "RemoveMultiSpaceIfEmpty", "Remove multiple spaces from empty parentheses", true);
+	// old setting (from when this rule was called SpacesInEmptyBracketsRule), now moved to RuleID.NEEDLESS_SPACES, option 'ProcessEmptyBrackets' (see Profile.load())
+	public final ConfigBoolValue configRemoveMultiSpaceIfEmpty_MOVED = new ConfigBoolValue(this, "RemoveMultiSpaceIfEmpty", "Remove multiple spaces from empty parentheses", true);
+
 	final ConfigBoolValue configSeparateFromCharLiterals = new ConfigBoolValue(this, "SeparateFromCharLiterals", "Add space between parentheses and character literals", true, false, LocalDate.of(2023, 5, 30));
 	final ConfigBoolValue configSeparateCondensedCases = new ConfigBoolValue(this, "SeparateCondensedCases", "Add space in condensed cases with single character literal: ...('...')", true, false, LocalDate.of(2023, 5, 30));
 
-	private final ConfigValue[] configValues = new ConfigValue[] { configRemoveMultiSpaceIfEmpty, configSeparateFromCharLiterals, configSeparateCondensedCases };
+	private final ConfigValue[] configValues = new ConfigValue[] { configSeparateFromCharLiterals, configSeparateCondensedCases };
 
 	@Override
 	public ConfigValue[] getConfigValues() { return configValues; }
 
-	public SpacesInEmptyBracketsRule(Profile profile) {
+	public SpaceAroundTextLiteralRule(Profile profile) {
 		super(profile);
 		initializeConfiguration();
 	}
@@ -127,16 +125,6 @@ public class SpacesInEmptyBracketsRule extends RuleForTokens {
 				command.addIndent(1, startIndex, closingBracket, null, true);
 				changed = true;
 			}
-
-		} else if (!token.hasChildren() && configRemoveMultiSpaceIfEmpty.getValue()) {
-			if (next == closingBracket && next.lineBreaks == 0 && next.spacesLeft > 1) {
-				// remove multiple spaces in empty parentheses
-				int startIndex = next.getStartIndexInLine();
-				int addIndent = 1 - next.spacesLeft;
-				next.spacesLeft = 1;
-				command.addIndent(addIndent, startIndex, next, null, true);
-				changed = true;
-			}			
 		}
 		return changed;
 	}

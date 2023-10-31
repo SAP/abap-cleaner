@@ -14,7 +14,7 @@ public enum RuleID  {
    EMPTY_LINES_IN_CLASS_DEFINITION,
    
    // Spaces 
-   SPACES_IN_EMPTY_BRACKETS,
+   SPACES_IN_EMPTY_BRACKETS, // for compatibility, this old RuleID is kept, while the class was renamed from SpacesInEmptyBracketsRule to SpaceAroundTextLiteralRule
    CLOSING_BRACKETS_POSITION,  
    SPACE_BEFORE_PERIOD,
    SPACE_AROUND_COMMENT_SIGN, // merged version of SPACE_BEFORE_COMMENT_SIGN and SPACE_AFTER_COMMENT_SIGN 
