@@ -632,7 +632,7 @@ public class CodeTest extends CodeTestBase {
 
 		try {
 			Code code = Code.parse(null, ParseParams.createForWholeCode("test", codeText, ABAP.NEWEST_RELEASE));
-			CleanupResult cleanupResult = code.toCleanupResult();
+			CleanupResult cleanupResult = code.toCleanupResult(LINE_SEP);
 			assertTrue(cleanupResult.hasCleanedCode());
 			assertEquals(codeText, cleanupResult.getCleanedCode());
 			assertFalse(cleanupResult.hasLineSelection());
@@ -640,13 +640,17 @@ public class CodeTest extends CodeTestBase {
 			assertEquals("", cleanupResult.getSelectedText());
 			
 			code = Code.parse(null, ParseParams.createForCleanupRange("test", codeText, ABAP.NEWEST_RELEASE, CleanupRange.create(1, 4, false), CleanupRangeExpandMode.FULL_METHOD));
-			cleanupResult = code.toCleanupResult();
+			cleanupResult = code.toCleanupResult(LINE_SEP);
 			assertTrue(cleanupResult.hasCleanedCode());
 			assertEquals(codeText, cleanupResult.getCleanedCode());
 			assertTrue(cleanupResult.hasLineSelection());
 			assertFalse(cleanupResult.hasErrorMessage());
 			assertEquals("  IF a = 1." + LINE_SEP + "    RETURN." + LINE_SEP + "  ENDIF.", cleanupResult.getSelectedText());
-			
+
+			final String LF = ABAP.LINE_SEP_FOR_COMMAND_LINE;
+			cleanupResult = code.toCleanupResult(LF);
+			assertEquals("  IF a = 1." + LF + "    RETURN." + LF + "  ENDIF.", cleanupResult.getSelectedText());
+
 		} catch (ParseException e) {
 			fail();
 		}

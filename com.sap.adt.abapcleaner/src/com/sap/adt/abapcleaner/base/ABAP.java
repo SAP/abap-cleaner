@@ -59,6 +59,7 @@ public final class ABAP {
    }
 
    public static final String LINE_SEPARATOR = "\r\n";
+   public static final String LINE_SEP_FOR_COMMAND_LINE = "\n";
    public static final char COMPONENT_SELECTOR = '-';
    public static final String COMPONENT_SELECTOR_STRING = "-";
    public static final char COMMENT_SIGN = '\"';

@@ -447,9 +447,13 @@ public class Token {
 
 	@Override
 	public String toString() {
+		return toString(ABAP.LINE_SEPARATOR);
+	}
+	
+	public String toString(String lineSeparator) {
 		StringBuilder result = new StringBuilder();
 		for (int i = 0; i < lineBreaks; ++i)
-			result.append(ABAP.LINE_SEPARATOR);
+			result.append(lineSeparator);
 		if (spacesLeft > 0)
 			result.append(StringUtil.repeatChar(' ', spacesLeft));
 		result.append(text);

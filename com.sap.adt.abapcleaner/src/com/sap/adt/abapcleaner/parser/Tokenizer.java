@@ -17,6 +17,8 @@ import com.sap.adt.abapcleaner.programbase.UnexpectedSyntaxException;
  * {@link #changeToNonAbapLanguage(Token, Language, String)}.</p>
  */
 public class Tokenizer {
+	/** regardless of ABAP.LINE_SEPARATOR, contains all possible chars with which lines could be separated */ 
+	private final static String lineSeparatorChars = "\r\n";
 	private final static String spaceChars = " ";
 	private final static char[] lineFeedChars = new char[] { '\r', '\n' };
 	
@@ -73,7 +75,7 @@ public class Tokenizer {
 		int spaceCount;
 		do {
 			// count line separators (tolerating both \r\n and \n)
-			while (readPos < text.length() && ABAP.LINE_SEPARATOR.indexOf(text.charAt(readPos)) >= 0) {
+			while (readPos < text.length() && lineSeparatorChars.indexOf(text.charAt(readPos)) >= 0) {
 				if (text.charAt(readPos) == '\n') {
 					++lineFeedCount;
 					++lineNum;
@@ -89,7 +91,7 @@ public class Tokenizer {
 			}
 
 			// in sample code, lines never end with spaces or tabs; if such a line is encountered, ignore such trailing spaces
-		} while (readPos < text.length() && ABAP.LINE_SEPARATOR.indexOf(text.charAt(readPos)) >= 0);
+		} while (readPos < text.length() && lineSeparatorChars.indexOf(text.charAt(readPos)) >= 0);
 
 		// ignore final line feed
 		if (readPos == text.length() && lineFeedCount == 1 && spaceCount == 0)

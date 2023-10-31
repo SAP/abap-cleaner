@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import com.sap.adt.abapcleaner.base.ABAP;
+
 public class CommandLineArgsTest {
 	private PersistencyDouble persistency;
 	
@@ -63,6 +65,7 @@ public class CommandLineArgsTest {
 		assertNull(args.profileData);
 		assertNull(args.abapRelease);
 
+		assertEquals(ABAP.LINE_SEP_FOR_COMMAND_LINE, args.lineSeparator);
 		assertNull(args.targetPath); 
 		assertFalse(args.overwrite);
 		assertFalse(args.partialResult);
@@ -71,8 +74,9 @@ public class CommandLineArgsTest {
 		assertEquals("", args.errors);
 		assertFalse(args.showHelp);
 
-		assertTrue(args.writesResultCodeToOutput());
 		assertFalse(args.hasErrors());
+		assertTrue(args.isInSingleSourceMode());
+		assertTrue(args.writesResultCodeToOutput());
 	}
 
 	@Test
@@ -89,6 +93,7 @@ public class CommandLineArgsTest {
 				"--linerange", "20-35", 
 				"--profile", profilePath, 
 				"--release", "757", 
+				"--crlf",
 				"--targetfile", targetPath, 
 				"--overwrite", "--partialresult", "--stats", "--usedrules"} );
 	
@@ -99,6 +104,7 @@ public class CommandLineArgsTest {
 		assertEquals(anyProfileData, args.profileData);
 		assertEquals("757", args.abapRelease);
 		
+		assertEquals("\r\n", args.lineSeparator);
 		assertEquals(targetPath, args.targetPath); 
 		assertTrue(args.overwrite);
 		assertTrue(args.partialResult);
@@ -107,8 +113,9 @@ public class CommandLineArgsTest {
 		assertEquals("", args.errors);
 		assertFalse(args.showHelp);
 
-		assertFalse(args.writesResultCodeToOutput());
 		assertFalse(args.hasErrors());
+		assertTrue(args.isInSingleSourceMode());
+		assertFalse(args.writesResultCodeToOutput());
 	}
 	
 	@Test
@@ -138,7 +145,10 @@ public class CommandLineArgsTest {
 
 		assertEquals(1, args.sourcePaths.length);
 		assertTrue(args.overwrite);
+		
 		assertFalse(args.hasErrors());
+		assertFalse(args.isInSingleSourceMode());
+		assertFalse(args.writesResultCodeToOutput());
 	}
 	
 	@Test
@@ -239,6 +249,23 @@ public class CommandLineArgsTest {
 				"--sourcedir", "src" } );
 		
 		assertErrorsContain(args, "Source directory src does not exist!");
+	}
+	
+	@Test
+	void testCreateErrorSourceFileAndSourceDir() {
+		String sourcePath = persistency.getTempPath("any_source.txt");
+
+		persistency.prepareFile(sourcePath, anySourceCode);
+		persistency.prepareDirectory("src");
+
+		CommandLineArgs args = CommandLineArgs.create(persistency, new String[] {
+				"--sourcefile", sourcePath, 
+				"--sourcedir", "src" } );
+		
+		assertErrorsContain(args, "Source was supplied multiple times");
+		assertErrorsContain(args, "--sourcefile");
+		assertErrorsContain(args, "--source");
+		assertErrorsContain(args, "--sourcedir");
 	}
 	
 	@Test

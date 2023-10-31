@@ -1095,15 +1095,14 @@ public class CommandTest {
 		command.removeAllChainColons();
 		assertEquals("DATA a TYPE i.", command.toString());
 
-		// except whitespace before last chain colon to be transferred to the period .
+		// expect whitespace before last chain colon to be transferred to the period .
 		command = buildCommand("DATA a : TYPE : i \" comment" + SEP + "  : .");
 		command.removeAllChainColons();
 		assertEquals("DATA a TYPE i \" comment" + SEP + "  .", command.toString());
 
-		// except whitespace before period . to be kept
-		command = buildCommand("DATA a : TYPE : i \" comment" + SEP + "  :" + SEP + ".");
+		command = buildCommand("DATA a : TYPE : i \" comment" + SEP + "  : .");
 		command.removeAllChainColons();
-		assertEquals("DATA a TYPE i \" comment" + SEP + ".", command.toString());
+		assertEquals("DATA a TYPE i \" comment" + SEP + "  .", command.toString());
 	}
 	
 	@Test
@@ -1545,4 +1544,24 @@ public class CommandTest {
 		buildCommand("EXEC SQL." + SEP + " SQL." + SEP + "ENDEXEC.");
 		assertFalse(commands[1].insertStressTestTokenAt(0, StressTestType.COLON));
 	}
+
+	@Test
+	void testToString() throws UnexpectedSyntaxAfterChanges {
+		// ensure that the Command can be parsed with any line separator, 
+		// and that .toString(String) returns a result with the supplied line separator
+
+		final String CRLF = "\r\n";
+		final String LF = "\n";
+		
+		Command command = buildCommand("DATA: a TYPE i," + CRLF + "      b TYPE string.");
+		assertEquals("DATA: a TYPE i," + ABAP.LINE_SEPARATOR + "      b TYPE string.", command.toString());
+		assertEquals("DATA: a TYPE i," + CRLF + "      b TYPE string.", command.toString(CRLF));
+		assertEquals("DATA: a TYPE i," + LF + "      b TYPE string.", command.toString(LF));
+
+		command = buildCommand("DATA: a TYPE i," + LF + "      b TYPE string.");
+		assertEquals("DATA: a TYPE i," + ABAP.LINE_SEPARATOR + "      b TYPE string.", command.toString());
+		assertEquals("DATA: a TYPE i," + CRLF + "      b TYPE string.", command.toString(CRLF));
+		assertEquals("DATA: a TYPE i," + LF + "      b TYPE string.", command.toString(LF));
+	}
+	
 }

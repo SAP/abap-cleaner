@@ -1378,10 +1378,14 @@ public class Command {
 
 	@Override
 	public String toString() {
+		return toString(ABAP.LINE_SEPARATOR);
+	}
+	
+	public String toString(String lineSeparator) {
 		StringBuilder result = new StringBuilder();
 		Token token = firstToken;
 		while (token != null) {
-			result.append(token.toString());
+			result.append(token.toString(lineSeparator));
 			token = token.getNext();
 		}
 		return result.toString();

@@ -27,6 +27,7 @@ import org.eclipse.ui.part.MultiPageEditorPart;
 import org.eclipse.ui.statushandlers.StatusManager;
 import org.osgi.framework.FrameworkUtil;
 
+import com.sap.adt.abapcleaner.base.ABAP;
 import com.sap.adt.abapcleaner.gui.CodeDisplayColors;
 import com.sap.adt.abapcleaner.gui.FrmMain;
 import com.sap.adt.abapcleaner.parser.CleanupRange;
@@ -97,7 +98,7 @@ public abstract class AbapCleanerHandlerBase extends AbstractAdtEditorHandler {
 				CodeDisplayColors codeDisplayColors = createCodeDisplayColors(); 
 				result = FrmMain.cleanInteractively(oldSource, abapRelease, cleanupRange, true, adtSourcePage.getTitle(), codeDisplayColors, readOnly);
 			} else {
-				result = FrmMain.cleanAutomatically(oldSource, abapRelease, cleanupRange, null, false);
+				result = FrmMain.cleanAutomatically(oldSource, abapRelease, cleanupRange, null, false, ABAP.LINE_SEPARATOR);
 			}
 
 			if (result == null) 
