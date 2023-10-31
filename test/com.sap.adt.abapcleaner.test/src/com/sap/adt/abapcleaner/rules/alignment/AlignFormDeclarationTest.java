@@ -244,4 +244,36 @@ public class AlignFormDeclarationTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testComments() {
+		// ensure that comments in weird places won't break anything
+
+		buildSrc("FORM \" comment1");
+		buildSrc("  other_form \" comment2");
+		buildSrc("  USING \" commment3");
+		buildSrc("  iv_any_value TYPE \" comment4");
+		buildSrc("  i iv_other_value \" comment5");
+		buildSrc("  TYPE string CHANGING cv_third_value \" comment6");
+		buildSrc("  TYPE i \" comment7");
+		buildSrc("  .");
+		buildSrc("  \" other FORM implementation");
+		buildSrc("ENDFORM.");
+
+		buildExp("FORM \" comment1");
+		buildExp("     other_form \" comment2");
+		buildExp("                USING \" commment3");
+		buildExp("                         iv_any_value   TYPE \" comment4");
+		buildExp("                           i");
+		buildExp("                         iv_other_value \" comment5");
+		buildExp("                                        TYPE string");
+		buildExp("                CHANGING cv_third_value \" comment6");
+		buildExp("                                        TYPE i \" comment7");
+		buildExp("  .");
+		buildExp("");
+		buildExp("  \" other FORM implementation");
+		buildExp("ENDFORM.");
+
+		testRule();
+	}
 }

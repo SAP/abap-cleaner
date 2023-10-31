@@ -26,14 +26,14 @@ public class AlignCellTerm extends AlignCell {
 
 	@Override
 	int getMultiLineWidth() { 
-		return additionalIndent + ((overrideTextWidth < 0) ? term.getMaxEndIndexInAnyLine() - term.firstToken.getStartIndexInLine() : overrideTextWidth); 
+		return additionalIndent + ((overrideTextWidth < 0) ? term.getMaxEndIndexInAnyLine(false) - term.firstToken.getStartIndexInLine() : overrideTextWidth); 
 	}
 
 	@Override
 	int getStartIndexInFirstLine() { return term.firstToken.getStartIndexInLine(); }
 
 	@Override
-	int getMaxEndIndexInAnyLine() { return term.getMaxEndIndexInAnyLine(); }
+	int getMaxEndIndexInAnyLine() { return term.getMaxEndIndexInAnyLine(false); }
 
 	@Override
 	int getEndIndexInLastLine() { return term.lastToken.getEndIndexInLine(); }

@@ -116,13 +116,15 @@ public abstract class AlignMethodsWithoutParamsRuleBase extends AlignDeclaration
 			// configure the AlignColumn to force a line break (required by AlignTable.align() method) 
 			if (forceLineBreak) {
 				column.setForceLineBreakAfter(forceLineBreak);
-				// if there is a line break after 'METHODS method_name', FOR TESTING or REDEFINITION is indented below 
-				// METHODS (NOT below method_name), except in a chain
+				// if there is a line break after 'METHODS method_name' (and we're not in a chain), FOR TESTING or REDEFINITION  
+				// is indented below METHODS (NOT below method_name, unless we break after METHODS, too)
 				if (colIndex == CommonColumns.METHOD_NAME.getValue() && !isChain) {
-					int accessColumnIndent = ABAP.INDENT_STEP;
-					if (table.getColumn(CommonColumns.KEYWORD.getValue()).getForceLineBreakAfter())
-						accessColumnIndent += ABAP.INDENT_STEP;
-					table.getColumn(CommonColumns.FOR_TESTING_OR_REDEFINITION.getValue()).setForceIndent(accessColumnIndent);
+					AlignColumn forTestingCol = table.getColumn(CommonColumns.FOR_TESTING_OR_REDEFINITION.getValue()); 
+					if (table.getColumn(CommonColumns.KEYWORD.getValue()).getForceLineBreakAfter()) {
+						forTestingCol.setForceIndent(CommonColumns.METHOD_NAME.getValue(), ABAP.INDENT_STEP);
+					} else {
+						forTestingCol.setForceIndent(CommonColumns.KEYWORD.getValue(), ABAP.INDENT_STEP);
+					}
 				}
 			}
 

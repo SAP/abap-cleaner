@@ -292,12 +292,24 @@ public class Term {
 		return result;
 	}
 
-	public final int getMaxEndIndexInAnyLine() {
+	public final int getMaxEndIndexInAnyLine(boolean considerComments) {
 		int result = 0;
 		Token token = firstToken;
+
+		// if the Term only consists of one Token, return its end index, even if it is a comment 
+		if (token == lastToken) 
+			return token.getEndIndexInLine();
+
 		while (token != null) {
-			if (token == lastToken || (token.getNext() != null && token.getNext().lineBreaks > 0))
-				result = Math.max(result, token.getEndIndexInLine());
+			// determine the next Token, unless it is a comment and comments shall be ignored
+			Token next = token.getNext();
+			if (considerComments || !token.isComment()) {
+				boolean isLastInLine = (next == null || next.lineBreaks > 0 || (!considerComments && next.isComment()));
+				if (token == lastToken || isLastInLine) {
+					result = Math.max(result, token.getEndIndexInLine());
+				}
+			}
+
 			if (token == lastToken)
 				break;
 			token = token.getNext();
@@ -305,8 +317,8 @@ public class Term {
 		return result;
 	}
 
-	public final int getCurrentWidth() { 
-		return getMaxEndIndexInAnyLine() - firstToken.getStartIndexInLine(); 
+	public final int getCurrentWidth(boolean considerComments) { 
+		return getMaxEndIndexInAnyLine(considerComments) - firstToken.getStartIndexInLine(); 
 	}
 
 	public final int getSumTextAndSpaceWidth() { return getSumTextAndSpaceWidth(false); }

@@ -12,8 +12,12 @@ public class AlignColumn {
 	private boolean forceLineBreakAfter;
 	private boolean overrideWidthWith1;
 	private int minimumWidth;
-	/** the forced indent of the column, to which the basicIndent is added **/
-	private int forceIndent = -1;
+	/** the AlignColumn on which the forcedIndentOffset is based, using its effective indent; 
+	 * if this is null, basicIndent will be used as the offset**/
+	private AlignColumn forceIndentBaseColumn;
+	/** the forced indent offset, which is added to the effective indent of the forceIndentBaseColumn 
+	 * (or if that is null, to the basicIndent) **/
+	private int forceIndentOffset = -1;
 
 	// variables that are updated on .addCell() and may be recalculated with .recalculate()
 	private boolean isValid;
@@ -34,7 +38,9 @@ public class AlignColumn {
 
 	public final boolean getForceLineBreakAfter() { return forceLineBreakAfter; }
 
-	public final int getForceIndent() { return forceIndent; }
+	public final AlignColumn getForceIndentBaseColumn() { return forceIndentBaseColumn; }
+
+	public final int getForceIndentOffset() { return forceIndentOffset; }
 
 	public final int getEffectiveIndent() { return effectiveIndent; }
 
@@ -154,12 +160,40 @@ public class AlignColumn {
 		invalidate();
 	}
 
+	public void setForceLineBreakAfter(boolean overrideWidthWith1, int offsetForNextColumn) {
+		this.forceLineBreakAfter = true;
+		this.overrideWidthWith1 = overrideWidthWith1;
+		parentTable.getColumn(index + 1).setForceIndent(this, offsetForNextColumn);
+		invalidate();
+	}
+
 	/**
-	 * forces the indent of this column to be basicIndent + value
+	 * forces the indent of this column to be basicIndent + offset
 	 * @param value
 	 */
-	public void setForceIndent(int value) {
-		forceIndent = value;
+	public void setForceIndent(int offset) {
+		forceIndentBaseColumn = null;
+		forceIndentOffset = offset;
+		invalidate();
+	}
+	
+	/**
+	 * forces the indent of this column to be the effective indent of the supplied baseColumn + offset
+	 * @param value
+	 */
+	public void setForceIndent(AlignColumn baseColumn, int offset) {
+		forceIndentBaseColumn = baseColumn;
+		forceIndentOffset = offset;
+		invalidate();
+	}
+	
+	/**
+	 * forces the indent of this column to be the effective indent of the supplied baseColumn + offset
+	 * @param value
+	 */
+	public void setForceIndent(int baseColumnIndex, int offset) {
+		forceIndentBaseColumn = parentTable.getColumn(baseColumnIndex);
+		forceIndentOffset = offset;
 		invalidate();
 	}
 	

@@ -827,7 +827,7 @@ public class AlignParametersRule extends RuleForCommands {
 			if (token.textEquals("(")) {
 				try {
 					Term term = Term.createForTokenRange(token, token.getNextSibling());
-					int rowWidth = term.getCurrentWidth();
+					int rowWidth = term.getCurrentWidth(false);
 					// if the row is on one line, only consider its length if it has a chance of remaining on one line 
 					if (!term.isOnSingleLine() || minimumIndent + rowWidth <= configMaxLineLengthForSingleLine.getValue())
 						tableWidth = Math.max(tableWidth, rowWidth);

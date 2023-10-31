@@ -47,7 +47,6 @@ public class AlignPerformTest extends RuleTestBase {
 		testRule();
 	}
 
-
 	@Test
 	void testBreakAfterPerform() {
 		rule.configParamCountAfterPerform.setValue(2);
@@ -318,6 +317,33 @@ public class AlignPerformTest extends RuleTestBase {
 
 		copyExpFromSrc();
 
+		testRule();
+	}
+
+	@Test
+	void testComments() {
+		// ensure that comments in weird places won't break anything
+
+		buildSrc("  PERFORM \" comment1");
+		buildSrc("  third_subr IN \" comment2");
+		buildSrc("  PROGRAM any_program \" comment3");
+		buildSrc("    TABLES \" comment4");
+		buildSrc("    lt_any_table \" comment5");
+		buildSrc("    lt_other_table \" comment 6");
+		buildSrc("    USING lv_other_value \" comment7");
+		buildSrc("    .");
+
+		buildExp("  PERFORM \" comment1");
+		buildExp("  third_subr IN \" comment2");
+		buildExp("  PROGRAM any_program \" comment3");
+		buildExp("                      TABLES \" comment4");
+		buildExp("                             lt_any_table \" comment5");
+		buildExp("                             lt_other_table \" comment 6");
+		buildExp("                      USING  lv_other_value \" comment7");
+		buildExp("    .");
+
+		putAnyFormAroundSrcAndExp();
+		
 		testRule();
 	}
 }
