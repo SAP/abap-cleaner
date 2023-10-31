@@ -540,12 +540,15 @@ public class AlignMethodsDeclarationRule extends AlignDeclarationSectionRuleBase
 			// configure the AlignColumn to force a line break (required by AlignTable.align() method) 
 			if (forceLineBreak) {
 				column.setForceLineBreakAfter(forceLineBreak);
-				// if there is a line break after 'METHODS method_name', the ACCESS parameters (IMPORTING etc.) are indented below METHODS (NOT below method_name) 
+				// if there is a line break after 'METHODS method_name', the ACCESS parameters (IMPORTING etc.) are indented below 
+				// METHODS (NOT below method_name, unless we break after METHODS, too) 
 				if (colIndex == Columns.METHOD_NAME.getValue()) {
-					int accessColumnIndent = ABAP.INDENT_STEP;
-					if (table.getColumn(Columns.KEYWORD.getValue()).getForceLineBreakAfter())
-						accessColumnIndent += ABAP.INDENT_STEP;
-					table.getColumn(Columns.ACCESS.getValue()).setForceIndent(accessColumnIndent);
+					AlignColumn accessCol = table.getColumn(Columns.ACCESS.getValue()); 
+					if (table.getColumn(Columns.KEYWORD.getValue()).getForceLineBreakAfter()) {
+						accessCol.setForceIndent(Columns.METHOD_NAME.getValue(), ABAP.INDENT_STEP);
+					} else {
+						accessCol.setForceIndent(Columns.KEYWORD.getValue(), ABAP.INDENT_STEP);
+					}
 				}
 			}
 

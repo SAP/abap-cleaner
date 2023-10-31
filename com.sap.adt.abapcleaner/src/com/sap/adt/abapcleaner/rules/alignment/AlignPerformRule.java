@@ -271,18 +271,13 @@ public class AlignPerformRule extends RuleForCommands {
 			return;
 		
 		boolean breakAfterPerformSubr = (table.getLineCount() > configParamCountAfterPerform.getValue());
-		int paramGroupIndent; 
 		if (breakAfterPerformSubr || hasAdditions && configBreakAfterAdditions.getValue()) {
-			table.getColumn(Columns.PERFORM_SUBR.getValue()).setForceLineBreakAfter(false);
-			paramGroupIndent = (configAlignWithFormName.getValue() ? "PERFORM".length() + 1 : ABAP.INDENT_STEP);
-			table.getColumn(Columns.PARAMETER_GROUP.getValue()).setForceIndent(paramGroupIndent);
-		} else {
-			paramGroupIndent = performSubrTerm.getSumTextAndSpaceWidth() + 1;
+			int offsetForParamGroup = (configAlignWithFormName.getValue() ? "PERFORM".length() + 1 : ABAP.INDENT_STEP);
+			table.getColumn(Columns.PERFORM_SUBR.getValue()).setForceLineBreakAfter(false, offsetForParamGroup);
 		}
 		
 		if (!configContinueAfterParamGroupKeyword.getValue()) {
-			table.getColumn(Columns.PARAMETER_GROUP.getValue()).setForceLineBreakAfter(false);
-			table.getColumn(Columns.PARAMETER_NAME.getValue()).setForceIndent(paramGroupIndent + ABAP.INDENT_STEP);
+			table.getColumn(Columns.PARAMETER_GROUP.getValue()).setForceLineBreakAfter(false, ABAP.INDENT_STEP);
 		}
 	}
 

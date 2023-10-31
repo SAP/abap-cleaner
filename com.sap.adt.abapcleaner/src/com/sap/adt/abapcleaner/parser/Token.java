@@ -1032,7 +1032,7 @@ public class Token {
 			throw new NullPointerException("newTerm");
 
 		int oldStartIndex = moveFollowingLinesRight ? this.next.getEndIndexInLine() + 1 : 0; // save performance if information is not needed below
-		int newTermWidth = newTerm.getCurrentWidth();
+		int newTermWidth = newTerm.getCurrentWidth(false);
 
 		Token lastTokenInNewTerm = newTerm.lastToken.lastChild != null ? newTerm.lastToken.lastChild : newTerm.lastToken; // TODO: can newTerm.lastToken have child Tokens at all?
 

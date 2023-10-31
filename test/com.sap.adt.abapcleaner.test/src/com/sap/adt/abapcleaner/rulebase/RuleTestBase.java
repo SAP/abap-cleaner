@@ -41,7 +41,7 @@ import com.sap.adt.abapcleaner.programbase.UnexpectedSyntaxBeforeChanges;
 
 public abstract class RuleTestBase {
 	/** -1 to deactivate stress test; 7 for medium (+ 50% duration), 31 for thorough (+ 100% duration) stress test */
-	private static final int STRESS_TEST_TOKEN_INDEX_MAX = 7;  
+	private static final int STRESS_TEST_TOKEN_INDEX_MAX = 31;  
 	private static final String LINE_SEP = ABAP.LINE_SEPARATOR;
 
 	protected static Profile profile = Profile.createDefault();
@@ -152,7 +152,7 @@ public abstract class RuleTestBase {
 	}
 
 	protected void putAnyFormAroundSrcAndExp() {
-		putAroundSrcAndExp("  FORM any_form." + LINE_SEP, LINE_SEP + "  ENDFORM.");
+		putAroundSrcAndExp("FORM any_form." + LINE_SEP, LINE_SEP + "ENDFORM.");
 	}
 	
 	private void putAroundSrcAndExp(String start, String end) {

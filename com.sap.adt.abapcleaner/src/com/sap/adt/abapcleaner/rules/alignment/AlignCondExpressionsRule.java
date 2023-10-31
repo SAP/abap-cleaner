@@ -339,8 +339,9 @@ public class AlignCondExpressionsRule extends RuleForCommands {
 			elseValueColumn.removeLineBreaksBefore();
 			if (thenIndent == CondValueIndent.ADD_7) {
 				AlignCell elseValueCell = elseValueColumn.getLastNonEmptyCell();
-				if (elseValueCell != null)
+				if (elseValueCell != null) {
 					elseValueCell.setAdditionalIndent(2);
+				}
 			}
 		} else {
 			elseColumn.setForceLineBreakAfter(false);

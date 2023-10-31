@@ -191,13 +191,11 @@ public class AlignFormDeclarationRule extends RuleForCommands {
 		
 		boolean breakAfterFormName = (table.getLineCount() > configParamCountBehindFormName.getValue());
 		if (breakAfterFormName) {
-			table.getColumn(Columns.FORM_NAME.getValue()).setForceLineBreakAfter(false);
-			table.getColumn(Columns.PARAMETER_GROUP.getValue()).setForceIndent(ABAP.INDENT_STEP);
+			table.getColumn(Columns.FORM_NAME.getValue()).setForceLineBreakAfter(false, ABAP.INDENT_STEP);
+			table.getColumn(Columns.PARAMETER_GROUP.getValue()).setForceIndent(Columns.FORM.getValue(), ABAP.INDENT_STEP);
 		}
 		if (!configContinueAfterParamGroupKeyword.getValue()) {
-			table.getColumn(Columns.PARAMETER_GROUP.getValue()).setForceLineBreakAfter(false);
-			int paramGroupIndent = (breakAfterFormName ? ABAP.INDENT_STEP : formKeyword.getTextLength() + 1 + formName.getTextLength() + 1);
-			table.getColumn(Columns.PARAMETER_NAME.getValue()).setForceIndent(paramGroupIndent + ABAP.INDENT_STEP);
+			table.getColumn(Columns.PARAMETER_GROUP.getValue()).setForceLineBreakAfter(false, ABAP.INDENT_STEP);
 		}
 		if (!configAlignTypes.getValue()) {
 			try {

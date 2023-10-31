@@ -189,8 +189,9 @@ public class AlignTable {
 			
 			int columnIndent = basicIndent;
 			for (AlignColumn column : columns) {
-				if (column.getForceIndent() >= 0) {
-					columnIndent = basicIndent + column.getForceIndent();
+				if (column.getForceIndentOffset() >= 0) {
+					AlignColumn baseColumn = column.getForceIndentBaseColumn();
+					columnIndent = (baseColumn == null ? basicIndent : baseColumn.getEffectiveIndent()) + column.getForceIndentOffset();
 					spacesLeft = columnIndent;
 				}
 				column.setEffectiveIndent(columnIndent);

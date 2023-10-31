@@ -98,14 +98,15 @@ class AlignParametersTest extends RuleTestBase {
 	@Test
 	void testValueConstructorInsideParamList() {
 		rule.configAllowContentLeftOfAssignOp.setEnumValue(ContentLeftOfAssignOp.NEVER);
+		rule.configMaxLineLength.setValue(90);
 
-		buildSrc("    DATA(lo_instance) = ltd_any_test_double=>create_double( is_param_with_long_name = VALUE #( price = '1320.00' \" very long comment that adds to line length");
+		buildSrc("    DATA(lo_instance) = ltd_any_test_double=>create_double( is_param_with_long_name = VALUE #( price = '1320.00' \" very long comment that is irrelevant for max line length");
 		buildSrc("                                                                                      amount = '1200.00' \" more comment");
 		buildSrc("                                                                                      range_amount = '360.00'  \" third comment");
 		buildSrc("                                                                                      quantity = 100 ) ).");
 
 		buildExp("    DATA(lo_instance) = ltd_any_test_double=>create_double(");
-		buildExp("                            is_param_with_long_name = VALUE #( price        = '1320.00' \" very long comment that adds to line length");
+		buildExp("                            is_param_with_long_name = VALUE #( price        = '1320.00' \" very long comment that is irrelevant for max line length");
 		buildExp("                                                               amount       = '1200.00' \" more comment");
 		buildExp("                                                               range_amount = '360.00'  \" third comment");
 		buildExp("                                                               quantity     = 100 ) ).");
@@ -118,14 +119,15 @@ class AlignParametersTest extends RuleTestBase {
 	@Test
 	void testMoveParamLeftOfAssignOp() {
 		rule.configAllowContentLeftOfAssignOp.setEnumValue(ContentLeftOfAssignOp.TO_KEEP_MAX_LINE_LENGTH);
+		rule.configMaxLineLength.setValue(90);
 
-		buildSrc("    DATA(lo_instance_with_long_name) = ltd_any_test_double=>create_method_with_long_name( is_param_with_long_name = VALUE #( price = '1320.00' \" very long comment that adds to line length");
+		buildSrc("    DATA(lo_instance_with_long_name) = ltd_any_test_double=>create_method_with_long_name( is_param_with_long_name = VALUE #( price = '1320.00' \" very long comment that is irrelevant for max line length");
 		buildSrc("                                                                                                                     amount = '1200.00' \" more comment");
 		buildSrc("                                                                                                                     range_amount = '360.00'  \" third comment");
 		buildSrc("                                                                                                                     quantity = 100 ) ).");
 
 		buildExp("    DATA(lo_instance_with_long_name) = ltd_any_test_double=>create_method_with_long_name(");
-		buildExp("        is_param_with_long_name = VALUE #( price        = '1320.00' \" very long comment that adds to line length");
+		buildExp("        is_param_with_long_name = VALUE #( price        = '1320.00' \" very long comment that is irrelevant for max line length");
 		buildExp("                                           amount       = '1200.00' \" more comment");
 		buildExp("                                           range_amount = '360.00'  \" third comment");
 		buildExp("                                           quantity     = 100 ) ).");
