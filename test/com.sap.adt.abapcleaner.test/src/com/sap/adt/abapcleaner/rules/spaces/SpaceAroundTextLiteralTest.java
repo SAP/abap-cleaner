@@ -17,9 +17,145 @@ class SpaceAroundTextLiteralTest extends RuleTestBase {
 	@BeforeEach
 	void setUp() {
 		// setup default test configuration (may be modified in the individual test methods)
-		rule.configRemoveMultiSpaceIfEmpty_MOVED.setValue(true);
-		rule.configSeparateFromCharLiterals.setValue(true);
-		rule.configSeparateCondensedCases.setValue(true);
+		rule.configSeparateFromKeywords.setValue(true);
+		rule.configSeparateFromOperators.setValue(true);
+		rule.configSeparateFromComments.setValue(true);
+		rule.configSeparateFromBrackets.setValue(true);
+		rule.configSeparateFromBracketPairs.setValue(true);
+	}
+
+	@Test
+	void testDetachFromKeywords() {
+		buildSrc("    DATA lv_any TYPE string VALUE`abc`.");
+		buildSrc("    DATA lv_other TYPE string VALUE'abc'.");
+		buildSrc("");
+		buildSrc("    ASSERT lv_any EQ`abc`.");
+		buildSrc("    ASSERT lv_any EQ'abc'.");
+
+		buildExp("    DATA lv_any TYPE string VALUE `abc`.");
+		buildExp("    DATA lv_other TYPE string VALUE 'abc'.");
+		buildExp("");
+		buildExp("    ASSERT lv_any EQ `abc`.");
+		buildExp("    ASSERT lv_any EQ 'abc'.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		deactivateSyntaxCheckAfterParse();
+		testRule();
+	}
+
+	@Test
+	void testDoNotDetachFromKeywords() {
+		rule.configSeparateFromKeywords.setValue(false);
+
+		buildSrc("    DATA lv_any TYPE string VALUE`abc`.");
+		buildSrc("    DATA lv_other TYPE string VALUE'abc'.");
+		buildSrc("");
+		buildSrc("    ASSERT lv_any EQ`abc`.");
+		buildSrc("    ASSERT lv_any EQ'abc'.");
+
+		copyExpFromSrc();
+
+		putAnyMethodAroundSrcAndExp();
+
+		deactivateSyntaxCheckAfterParse();
+		testRule();
+	}
+
+	@Test
+	void testDetachFromOperators() {
+		buildSrc("    lv_any =`abc` &&`def`.");
+		buildSrc("    lv_any ='abc' &&'def'.");
+		buildSrc("    lv_any =:`abc`,`def`.");
+		buildSrc("    lv_any =:'abc','def'.");
+		buildSrc("");
+		buildSrc("    lv_any =`abc`\"comment");
+		buildSrc("          &&`def`.");
+		buildSrc("    lv_any ='abc'\"comment");
+		buildSrc("          &&'def'.");
+
+		buildExp("    lv_any = `abc` && `def`.");
+		buildExp("    lv_any = 'abc' && 'def'.");
+		buildExp("    lv_any =: `abc`, `def`.");
+		buildExp("    lv_any =: 'abc', 'def'.");
+		buildExp("");
+		buildExp("    lv_any = `abc` \"comment");
+		buildExp("          && `def`.");
+		buildExp("    lv_any = 'abc' \"comment");
+		buildExp("          && 'def'.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		deactivateSyntaxCheckAfterParse();
+		testRule();
+	}
+
+	@Test
+	void testDoNotDetachFromOperators() {
+		rule.configSeparateFromOperators.setValue(false);
+
+		buildSrc("    lv_any =`abc` &&`def`.");
+		buildSrc("    lv_any ='abc' &&'def'.");
+		buildSrc("    lv_any =:`abc`,`def`.");
+		buildSrc("    lv_any =:'abc','def'.");
+		buildSrc("");
+		buildSrc("    lv_any =`abc`\"comment");
+		buildSrc("          &&`def`.");
+		buildSrc("    lv_any ='abc'\"comment");
+		buildSrc("          &&'def'.");
+
+		buildExp("    lv_any =`abc` &&`def`.");
+		buildExp("    lv_any ='abc' &&'def'.");
+		buildExp("    lv_any =:`abc`,`def`.");
+		buildExp("    lv_any =:'abc','def'.");
+		buildExp("");
+		buildExp("    lv_any =`abc` \"comment");
+		buildExp("          &&`def`.");
+		buildExp("    lv_any ='abc' \"comment");
+		buildExp("          &&'def'.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		deactivateSyntaxCheckAfterParse();
+		testRule();
+	}
+
+	@Test
+	void testDetachFromComments() {
+		buildSrc("    lv_any =`abc`\"comment");
+		buildSrc("          &&`def`.");
+		buildSrc("    lv_any ='abc'\"comment");
+		buildSrc("          &&'def'.");
+
+		buildExp("    lv_any = `abc` \"comment");
+		buildExp("          && `def`.");
+		buildExp("    lv_any = 'abc' \"comment");
+		buildExp("          && 'def'.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		deactivateSyntaxCheckAfterParse();
+		testRule();
+	}
+
+	@Test
+	void testDoNotDetachFromComments() {
+		rule.configSeparateFromComments.setValue(false);
+
+		buildSrc("    lv_any =`abc`\"comment");
+		buildSrc("          &&`def`.");
+		buildSrc("    lv_any ='abc'\"comment");
+		buildSrc("          &&'def'.");
+
+		buildExp("    lv_any = `abc`\"comment");
+		buildExp("          && `def`.");
+		buildExp("    lv_any = 'abc'\"comment");
+		buildExp("          && 'def'.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		deactivateSyntaxCheckAfterParse();
+		testRule();
 	}
 	
 	@Test
@@ -47,7 +183,7 @@ class SpaceAroundTextLiteralTest extends RuleTestBase {
 
 	@Test
 	void testTextFieldLiteralsUnchanged() {
-		rule.configSeparateFromCharLiterals.setValue(false);
+		rule.configSeparateFromBrackets.setValue(false);
 
 		buildSrc("    any_method( 'text field literal' ).");
 		buildSrc("    any_method('other literal' ).");
@@ -69,9 +205,11 @@ class SpaceAroundTextLiteralTest extends RuleTestBase {
 		// introducing spaces in the following dynamic examples would be a syntax error
 		buildSrc("    CALL METHOD ('METHOD_NAME').");
 		buildSrc("    CALL METHOD lo_instance->('METHOD_NAME').");
+		buildSrc("    CALL METHOD ('CLASS_NAME')=>('METHOD_NAME').");
 		buildSrc("");
 		buildSrc("    CALL METHOD (`METHOD_NAME`).");
 		buildSrc("    CALL METHOD lo_instance->(`METHOD_NAME`).");
+		buildSrc("    CALL METHOD (`CLASS_NAME`)=>(`METHOD_NAME`).");
 		buildSrc("");
 		buildSrc("    ASSIGN ('(FUNC_GRP_NAME)TABLE[]') TO <lt_table>.");
 		buildSrc("");
@@ -79,6 +217,11 @@ class SpaceAroundTextLiteralTest extends RuleTestBase {
 		buildSrc("    <ls_struc>-('COMPONENT_NAME') = 1.");
 		buildSrc("    lt_table[ 1 ]-('COMPONENT_NAME') = 1.");
 		buildSrc("    lr_data_ref->('COMPONENT_NAME') = 1.");
+		buildSrc("");
+		buildSrc("    ls_struc-(`COMPONENT_NAME`) = 1.");
+		buildSrc("    <ls_struc>-(`COMPONENT_NAME`) = 1.");
+		buildSrc("    lt_table[ 1 ]-(`COMPONENT_NAME`) = 1.");
+		buildSrc("    lr_data_ref->(`COMPONENT_NAME`) = 1.");
 		
 		copyExpFromSrc();
 		
@@ -112,7 +255,7 @@ class SpaceAroundTextLiteralTest extends RuleTestBase {
 
 	@Test
 	void testTextStringLiteralsUnchanged() {
-		rule.configSeparateFromCharLiterals.setValue(false);
+		rule.configSeparateFromBrackets.setValue(false);
 
 		buildSrc("    other_method( `text string literal` ).");
 		buildSrc("    other_method(`other literal` ).");
@@ -131,7 +274,7 @@ class SpaceAroundTextLiteralTest extends RuleTestBase {
 
 	@Test
 	void testKeepCondensedCases() {
-		rule.configSeparateCondensedCases.setValue(false);
+		rule.configSeparateFromBracketPairs.setValue(false);
 
 		buildSrc("    any_method('text field literal').");
 		buildSrc("    other_method(`text string literal`).");
@@ -149,7 +292,7 @@ class SpaceAroundTextLiteralTest extends RuleTestBase {
 
 	@Test
 	void testChangeCondensedCases() {
-		rule.configSeparateCondensedCases.setValue(true);
+		rule.configSeparateFromBracketPairs.setValue(true);
 
 		buildSrc("    any_method('text field literal').");
 		buildSrc("    other_method(`text string literal`).");
@@ -167,6 +310,34 @@ class SpaceAroundTextLiteralTest extends RuleTestBase {
 
 		putAnyMethodAroundSrcAndExp();
 
+		testRule();
+	}
+
+	@Test
+	void testNotDetachedFromSqlLiteralType() {
+		buildSrc("    UPDATE demo_ddic_types");
+		buildSrc("      SET int1 = int1`255`,");
+		buildSrc("          int2 = int2`32767`,");
+		buildSrc("          int4 = int4`2147483647`,");
+		buildSrc("      WHERE id = char`Y`.");
+
+		putAnyClassDefAroundSrcAndExp();
+		
+		copyExpFromSrc();
+
+		deactivateSyntaxCheckAfterParse();
+		testRule();
+	}
+
+	@Test
+	void testDetachedFromComparisonOperator() {
+		buildSrc("  IF iv_any =`abc` OR iv_any EQ`def` OR iv_any <=`abc` OR`abc` >=`def`.");
+		buildSrc("  ENDIF.");
+
+		buildExp("  IF iv_any = `abc` OR iv_any EQ `def` OR iv_any <= `abc` OR `abc` >= `def`.");
+		buildExp("  ENDIF.");
+
+		deactivateSyntaxCheckAfterParse();
 		testRule();
 	}
 }

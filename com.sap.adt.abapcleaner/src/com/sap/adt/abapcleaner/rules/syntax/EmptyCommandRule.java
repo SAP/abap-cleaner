@@ -44,7 +44,7 @@ public class EmptyCommandRule extends RuleForCommands {
 			+ LINE_SEP + "    .. iv_primary = 7.." 
 			+ LINE_SEP + "    :,. iv_primary = 11." 
 			+ LINE_SEP 
-			+ LINE_SEP + "    ::::. iv_primary = 13. ::::." 
+			+ LINE_SEP + "    ::::. iv_primary = 13. ::::." // compilable syntax error 
 			+ LINE_SEP + "    .:.:,.:,.iv_primary = 17.:.:,.:,." 
 			+ LINE_SEP + "    ... iv_primary = 19... iv_primary = 23... iv_primary = 29..." 
 			+ LINE_SEP 
