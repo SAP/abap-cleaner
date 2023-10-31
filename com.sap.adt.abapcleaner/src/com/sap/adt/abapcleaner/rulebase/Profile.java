@@ -3,7 +3,9 @@ package com.sap.adt.abapcleaner.rulebase;
 import com.sap.adt.abapcleaner.base.*;
 import com.sap.adt.abapcleaner.parser.*;
 import com.sap.adt.abapcleaner.programbase.*;
+import com.sap.adt.abapcleaner.rules.spaces.NeedlessSpacesRule;
 import com.sap.adt.abapcleaner.rules.spaces.SpaceAroundCommentSignRule;
+import com.sap.adt.abapcleaner.rules.spaces.SpaceAroundTextLiteralRule;
 
 import java.io.IOException;
 import java.util.*;
@@ -325,6 +327,15 @@ public class Profile {
 				}
 			}
 			// other cases may need rule.updateSettingFrom(unknownRulesSettings, oldRuleId, oldSettingName, newSettingName);
+		}
+		if (reader.getFileVersion() < 24) {
+			// from SpaceAroundTextLiteralRule (SPACES_IN_EMPTY_BRACKETS), transfer activation and option 'RemoveMultiSpaceIfEmpty'    
+			// to rule NEEDLESS_SPACES option 'ProcessEmptyBrackets' 
+			SpaceAroundTextLiteralRule spaceAroundTextLiteralRule = (SpaceAroundTextLiteralRule)getRule(RuleID.SPACES_IN_EMPTY_BRACKETS); 
+			NeedlessSpacesRule needlessSpacesRule = (NeedlessSpacesRule)getRule(RuleID.NEEDLESS_SPACES);
+			if (spaceAroundTextLiteralRule != null && needlessSpacesRule != null) {
+				needlessSpacesRule.configProcessEmptyBrackets.setValue(spaceAroundTextLiteralRule.isActive && spaceAroundTextLiteralRule.configRemoveMultiSpaceIfEmpty_MOVED.getValue());
+			}
 		}
 	}
 	

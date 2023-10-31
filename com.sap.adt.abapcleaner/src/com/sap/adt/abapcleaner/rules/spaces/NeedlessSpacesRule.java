@@ -90,15 +90,15 @@ public class NeedlessSpacesRule extends Rule {
 			+ LINE_SEP + "                        third_comp." 
 			+ LINE_SEP 
 			+ LINE_SEP + "    \" these assignments contain needless spaces, but also intentional alignment" 
-			+ LINE_SEP + "    a           =   1." 
-			+ LINE_SEP + "    bbb         =   3." 
+			+ LINE_SEP + "    a           =   1.     \" comment A" 
+			+ LINE_SEP + "    bbb         =   3.     \" comment B" 
 			+ LINE_SEP 
-			+ LINE_SEP + "    ccccc       =   5." 
+			+ LINE_SEP + "    ccccc       =   5.     \" comment C" 
 			+ LINE_SEP 
 			+ LINE_SEP + "    \" the next two assignments may also be intentionally aligned with previous ones," 
 			+ LINE_SEP + "    \" however, with a comment in between, they may as well be aligned independently"
-			+ LINE_SEP + "    ddddddd     =   7." 
-			+ LINE_SEP + "    eeeeeeeee   =   9." 
+			+ LINE_SEP + "    ddddddd     =   7.      \" comment D" 
+			+ LINE_SEP + "    eeeeeeeee   =   9.      \" comment E" 
 			+ LINE_SEP 
 			+ LINE_SEP + "    \" existing right-alignment of assignment operators is kept:" 
 			+ LINE_SEP + "    lv_instance     ?=   get_utility( )." 
@@ -111,14 +111,22 @@ public class NeedlessSpacesRule extends Rule {
 			+ LINE_SEP + "    lts_table[ 2 ]-value    =    -100." 
 			+ LINE_SEP + "    lts_table[ 3 ]-value    =      '3.1415'." 
 			+ LINE_SEP + "    lts_table[ 4 ]-value    =    '-12.34'." 
+			+ LINE_SEP 
+			+ LINE_SEP + "    ev_result = cl_any_factory=>get(     )->get_utility(   )->get_value(      )." 
+			+ LINE_SEP 
+			+ LINE_SEP + "    get_util(    )->any_method( iv_any_param   = get_default_value(    )"
+			+ LINE_SEP + "                                iv_other_param = VALUE #(       ) )."
+			+ LINE_SEP 
 			+ LINE_SEP + "  ENDMETHOD.";
    }
 
 	final ConfigBoolValue configSearchAcrossEmptyLines = new ConfigBoolValue(this, "SearchAcrossEmptyLines", "Search for intended alignment across empty lines", true);
 	final ConfigBoolValue configSearchAcrossCommentLines = new ConfigBoolValue(this, "SearchAcrossCommentLines", "Search for intended alignment across comment lines", true);
 	final ConfigBoolValue configProcessLineEndComments = new ConfigBoolValue(this, "ProcessLineEndComments", "Process line-end comments, too", false);
+	// option was moved from SpaceAroundTextLiteralRule (formerly SpacesInEmptyBracketsRule), option "RemoveMultiSpaceIfEmpty"
+	public final ConfigBoolValue configProcessEmptyBrackets = new ConfigBoolValue(this, "ProcessEmptyBrackets", "Remove multiple spaces from empty parentheses", true, false, LocalDate.of(2023, 10, 31));
 
-	private final ConfigValue[] configValues = new ConfigBoolValue[] { configSearchAcrossEmptyLines, configSearchAcrossCommentLines, configProcessLineEndComments };
+	private final ConfigValue[] configValues = new ConfigBoolValue[] { configSearchAcrossEmptyLines, configSearchAcrossCommentLines, configProcessLineEndComments, configProcessEmptyBrackets };
 
 	@Override
 	public ConfigValue[] getConfigValues() { return configValues; }
@@ -190,6 +198,9 @@ public class NeedlessSpacesRule extends Rule {
 			} while (true);
 			
 			if (containsNonBlockedCommand) {
+				if (configProcessEmptyBrackets.getValue()) {
+					removeSpacesFromEmptyBrackets(startCommand, command);
+				}
 				HashMap<Integer, Token> firstTokenOfLine = new HashMap<>();
 				HashMap<Integer, ArrayList<TokenPos>> tokensOfXPos = groupTokensByXPos(startCommand, command, firstTokenOfLine);
 				executeOn(code, tokensOfXPos, firstTokenOfLine);
@@ -235,6 +246,33 @@ public class NeedlessSpacesRule extends Rule {
 		return false;
 	}
 
+	private void removeSpacesFromEmptyBrackets(Command startCommand, Command endCommand) {
+		Command command = startCommand;
+
+		while (command != endCommand) {
+			if (isCommandBlocked(command)) {
+				command = command.getNext();
+				continue;
+			}
+
+			Token token = command.getFirstToken();
+			while (token != null) {
+				Token next = token.getNext();
+				if (token.getOpensLevel() && !token.isLiteral() && next != null
+						&& next == token.getNextSibling() && next.lineBreaks == 0 && next.spacesLeft > 1) {
+					
+					int startIndex = next.getStartIndexInLine();
+					int addIndent = 1 - next.spacesLeft;
+					next.spacesLeft = 1;
+					command.addIndent(addIndent, startIndex, next, null, true);
+					command.getParentCode().addRuleUse(this, command);
+				}
+				token = token.getNext();
+			}
+			command = command.getNext();
+		}		
+	}
+	
 	private HashMap<Integer, ArrayList<TokenPos>> groupTokensByXPos(Command startCommand, Command endCommand, HashMap<Integer, Token> firstTokenOfLine) {
 		HashMap<Integer, ArrayList<TokenPos>> tokensOfXPos = new HashMap<>();
 
@@ -327,7 +365,8 @@ public class NeedlessSpacesRule extends Rule {
 		if (token.getOpensLevel() && prev != null && prev.isAnyKeyword("COND", "SWITCH")) 
 			return token.getNextSibling();
 
-		// skip scope of SpacesInEmptyBracketsRule
+		// skip empty parentheses and brackets, because they are handled in a dedicated section 
+		// (since 'skip scope of AlignParametersRule' above will skip inner cases)
 		if (token.getOpensLevel() && token.getNext() == token.getNextSibling()) 
 			return token.getNext();
 

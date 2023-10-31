@@ -63,7 +63,7 @@ public abstract class Rule {
          new EmptyLinesOutsideMethodsRule(profile),
          
          // spaces
-         new SpacesInEmptyBracketsRule(profile),
+         new SpaceAroundTextLiteralRule(profile),
          new ClosingBracketsPositionRule(profile),
          new SpaceBeforePeriodRule(profile),
          new SpaceAroundCommentSignRule(profile),
@@ -303,7 +303,7 @@ public abstract class Rule {
 
 	final static String getOldSettingKey(ObsoleteRuleID obsoleteRuleId, String oldSettingName) {
 		// for persistency, using RuleID.name() is more stable than RuleID.toString()
-		return getOldSettingKey(obsoleteRuleId.name() ,oldSettingName);
+		return getOldSettingKey(obsoleteRuleId.name(), oldSettingName);
 	}
 	final static String getOldSettingKey(String obsoleteRuleId, String oldSettingName) {
 		return obsoleteRuleId + "." + oldSettingName;
@@ -332,7 +332,7 @@ public abstract class Rule {
 		return unknownRulesSettings.containsKey(oldKey) && getBool(unknownRulesSettings, oldKey);
 	}
 
-	final void updateSettingFrom(HashMap<String, String> unknownRulesSettings, ObsoleteRuleID obsoleteRuleId, String oldSettingName, String newSettingName) {
+	public final void updateSettingFrom(HashMap<String, String> unknownRulesSettings, ObsoleteRuleID obsoleteRuleId, String oldSettingName, String newSettingName) {
 		String oldKey = getOldSettingKey(obsoleteRuleId, oldSettingName);
 		if (unknownRulesSettings.containsKey(oldKey)) {
 			setString(newSettingName, getString(unknownRulesSettings, oldKey));
