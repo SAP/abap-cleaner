@@ -27,14 +27,16 @@ class ConfigLabel extends ConfigControl {
       lblDescription = new Label(parent, SWT.NONE);
       lblDescription.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false, 3, 1));
       lblDescription.setText(configValue.description);
-      if (configValue.isWarning)
+      if (configValue.isWarning) {
       	lblDescription.setForeground(new Color(255, 0, 0));
+      }
    }
 
    @Override
    protected void detachControls() {
-      if (lblDescription != null)
+      if (lblDescription != null) {
          lblDescription = null;
+      }
    }
 
    @Override
@@ -43,8 +45,13 @@ class ConfigLabel extends ConfigControl {
 
    @Override
    public void setEnabled(boolean enabled) {
-   	lblDescription.setText(enabled ? configValue.description : " ");
-   	if (enabled)
-   		lblDescription.requestLayout();
+   	String newText = enabled ? configValue.description : " ";
+   	// avoid layout request when the Control is first created to avoid issues with background color in dark theme 
+   	if (!newText.equals(lblDescription.getText())) {
+	   	lblDescription.setText(newText);
+	   	if (enabled) {
+	   		lblDescription.requestLayout();
+	   	}
+   	}
    }
 }
