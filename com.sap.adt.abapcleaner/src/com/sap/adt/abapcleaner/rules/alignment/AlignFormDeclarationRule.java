@@ -50,7 +50,7 @@ public class AlignFormDeclarationRule extends RuleForCommands {
 	public String getDisplayName() { return "Align FORM declarations"; }
 
 	@Override
-	public String getDescription() { return "Aligns (obsolete) FORM declarations."; }
+	public String getDescription() { return "Aligns obsolete subroutine declarations with FORM."; }
 
 	@Override
 	public LocalDate getDateCreated() { return LocalDate.of(2023, 10, 31); }
@@ -60,32 +60,32 @@ public class AlignFormDeclarationRule extends RuleForCommands {
 
    @Override
    public String getExample() {
-      return  LINE_SEP + "FORM any_form USING iv_any_value TYPE string." 
+      return  LINE_SEP + "FORM any_subroutine USING iv_any_value TYPE string." 
 				+ LINE_SEP 
-				+ LINE_SEP + "  \" any FORM implementation" 
+				+ LINE_SEP + "  \" any subroutine implementation" 
 				+ LINE_SEP + "ENDFORM." 
 				+ LINE_SEP 
 				+ LINE_SEP 
-				+ LINE_SEP + "FORM other_form USING iv_any_value TYPE i iv_other_value TYPE string CHANGING cv_third_value TYPE i." 
-				+ LINE_SEP + "  \" other FORM implementation" 
+				+ LINE_SEP + "FORM other_subroutine USING iv_any_value TYPE i iv_other_value TYPE string CHANGING cv_third_value TYPE i." 
+				+ LINE_SEP + "  \" other subroutine implementation" 
 				+ LINE_SEP + "ENDFORM." 
 				+ LINE_SEP 
 				+ LINE_SEP 
-				+ LINE_SEP + "FORM third_form_with_a_long_name TABLES it_any_table STRUCTURE ty_s_any_struc" 
+				+ LINE_SEP + "FORM third_subr_with_a_long_name TABLES it_any_table STRUCTURE ty_s_any_struc" 
 				+ LINE_SEP + "  it_other_table TYPE STANDARD TABLE it_third_table it_fourth_table TYPE ty_tt_any" 
 				+ LINE_SEP + "  CHANGING ct_table TYPE ty_tt_table cs_struc TYPE LINE OF ty_tt_any cs_other_struc LIKE cs_any" 
 				+ LINE_SEP + "    cs_third_struc LIKE LINE OF ct_table." 
-				+ LINE_SEP + "  \" third FORM implementation" 
+				+ LINE_SEP + "  \" third subroutine implementation" 
 				+ LINE_SEP + "ENDFORM." 
 				+ LINE_SEP 
 				+ LINE_SEP 
-				+ LINE_SEP + "FORM fourth_form" 
+				+ LINE_SEP + "FORM fourth_subroutine" 
 				+ LINE_SEP + "  USING" 
 				+ LINE_SEP + "    VALUE(iv_any) TYPE string" 
 				+ LINE_SEP + "    iv_other TYPE REF TO object" 
 				+ LINE_SEP + "  RAISING" 
 				+ LINE_SEP + "    cx_any_exception RESUMABLE(cx_other_exception) cx_third_exception." 
-				+ LINE_SEP + "  \" fourth FORM implementation" 
+				+ LINE_SEP + "  \" fourth subroutine implementation" 
 				+ LINE_SEP + "ENDFORM.";
    }
 
@@ -120,7 +120,7 @@ public class AlignFormDeclarationRule extends RuleForCommands {
 
 		// add FORM name
 		Token formName = formKeyword.getNextCodeSibling();
-		if (!formName.isIdentifier())
+		if (!formName.isIdentifier()) // pro forma
 			return false;
 		line.setCell(Columns.FORM_NAME.getValue(), new AlignCellToken(formName));
 
@@ -189,15 +189,14 @@ public class AlignFormDeclarationRule extends RuleForCommands {
 		if (table.getLineCount() > 1 && line.getCell(Columns.PARAMETER_NAME.getValue()) == null)
 			table.removeLastLine();
 		
-		int basicIndent = command.getFirstToken().spacesLeft;
 		boolean breakAfterFormName = (table.getLineCount() > configParamCountBehindFormName.getValue());
 		if (breakAfterFormName) {
 			table.getColumn(Columns.FORM_NAME.getValue()).setForceLineBreakAfter(false);
-			table.getColumn(Columns.PARAMETER_GROUP.getValue()).setForceIndent(basicIndent + ABAP.INDENT_STEP);
+			table.getColumn(Columns.PARAMETER_GROUP.getValue()).setForceIndent(ABAP.INDENT_STEP);
 		}
 		if (!configContinueAfterParamGroupKeyword.getValue()) {
 			table.getColumn(Columns.PARAMETER_GROUP.getValue()).setForceLineBreakAfter(false);
-			int paramGroupIndent = basicIndent + (breakAfterFormName ? ABAP.INDENT_STEP : formKeyword.getTextLength() + 1 + formName.getTextLength() + 1);
+			int paramGroupIndent = (breakAfterFormName ? ABAP.INDENT_STEP : formKeyword.getTextLength() + 1 + formName.getTextLength() + 1);
 			table.getColumn(Columns.PARAMETER_NAME.getValue()).setForceIndent(paramGroupIndent + ABAP.INDENT_STEP);
 		}
 		if (!configAlignTypes.getValue()) {
@@ -208,6 +207,7 @@ public class AlignFormDeclarationRule extends RuleForCommands {
 			}
 		}
 		
+		int basicIndent = command.getFirstToken().spacesLeft;
 		int firstLineBreaks = command.getFirstToken().lineBreaks;
 		Command[] changedCommands = table.align(basicIndent, firstLineBreaks, false, true);
 		for (Command changedCommand : changedCommands) {

@@ -323,6 +323,15 @@ public class AlignTable {
 		}
 	}
 	
+	public void removeAllLinesWithOutCellIn(int columnIndex) {
+		for (int i = lines.size() - 1; i >= 0; --i) {
+			AlignLine line = lines.get(i);
+			if (line.getCell(columnIndex) == null) {
+				removeLineAt(i);
+			}
+		}
+	}
+	
 	public final void setMaxLineLength(int maxLineLength) {
 		this.maxLineLength = maxLineLength;
 	}

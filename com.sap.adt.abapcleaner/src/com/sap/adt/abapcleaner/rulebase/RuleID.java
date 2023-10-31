@@ -92,7 +92,8 @@ public enum RuleID  {
    ALIGN_PARAMETERS, 
    ALIGN_LOGICAL_EXPRESSIONS,
    ALIGN_COND_EXPRESSIONS,
-   ALIGN_FORM_DECLARATION;
+   ALIGN_FORM_DECLARATION,
+   ALIGN_PERFORM;
 
 	public static final int SIZE = java.lang.Integer.SIZE;
 
