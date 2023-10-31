@@ -151,6 +151,10 @@ public abstract class RuleTestBase {
 		putAroundSrcAndExp("INTERFACE if_any_interface PUBLIC." + LINE_SEP, LINE_SEP + "ENDINTERFACE.");
 	}
 
+	protected void putAnyFormAroundSrcAndExp() {
+		putAroundSrcAndExp("  FORM any_form." + LINE_SEP, LINE_SEP + "  ENDFORM.");
+	}
+	
 	private void putAroundSrcAndExp(String start, String end) {
 		sourceCodeBuilder.insert(0, start);
 		sourceCodeBuilder.append(end);

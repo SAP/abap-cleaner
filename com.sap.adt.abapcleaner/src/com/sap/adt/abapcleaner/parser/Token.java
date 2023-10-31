@@ -2586,4 +2586,37 @@ public class Token {
 	public boolean isSqlTypeInCast() {
 		return textEqualsAny(ABAP.abapSqlLiteralTypes) && parent != null && parent.textEquals("CAST(") && getPrevCodeSibling() != null && getPrevCodeSibling().isKeyword("AS");
 	}
+	
+	public boolean condenseUpTo(Token last, int maxLineLength, int indent) {
+		Token token = this;
+		if (token == last)
+			return false;
+		
+		boolean changed = false;
+		int indexInLine = token.getEndIndexInLine();
+		token = token.getNext();
+		while (token != null) {
+			// if needed, move Token to the next line, otherwise directly behind the previous Token
+			int spacesLeft = (token.isAttached() || token.isCommaOrPeriod() || token.isChainColon()) ? 0 : 1;
+			if (token.isAsteriskCommentLine()) {
+				// do nothing
+			} else if (token.getPrev().isComment() || indexInLine + spacesLeft + token.getTextLength() > maxLineLength) {
+				if (token.setWhitespace(1, indent)) {
+					changed = true;
+				}
+				indexInLine = indent + token.getTextLength();
+			} else {
+				if (token.setWhitespace(0, spacesLeft)) {
+					changed = true;
+				}
+				indexInLine += spacesLeft + token.getTextLength();
+			}
+			
+			if (token == last) {
+				break;
+			}
+			token = token.getNext();
+		}
+		return changed;
+	}
 }

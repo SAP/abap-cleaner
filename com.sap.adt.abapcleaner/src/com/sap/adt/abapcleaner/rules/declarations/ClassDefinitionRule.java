@@ -442,6 +442,7 @@ public class ClassDefinitionRule extends RuleForCommands {
 					isFirstFriend = false;
 				} else {
 					boolean nextLine = (oneLinerAction == ClassDefOneLinerAction.SPLIT && distinctLineForFriendNames
+											|| friend.getPrev().isComment() // in case this will be supported in the future
 											|| friend.getPrev().getEndIndexInLine() + 1 + friend.getTextLength() > maxLineLength);
 					if (friend.setWhitespace(nextLine ? 1 : 0, nextLine ? friendIndent : 1)) {
 						changed = true;
