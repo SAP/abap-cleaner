@@ -126,10 +126,14 @@ public class Code {
 
 	@Override
 	public String toString() {
+		return toString(ABAP.LINE_SEPARATOR);
+	}
+	
+	public String toString(String lineSeparator) {
 		StringBuilder result = new StringBuilder();
 		Command command = firstCommand;
 		while (command != null) {
-			result.append(command.toString());
+			result.append(command.toString(lineSeparator));
 			command = command.getNext();
 		}
 		return result.toString();
@@ -478,9 +482,9 @@ public class Code {
 		return null;
 	}
 
-	public CleanupResult toCleanupResult() {
+	public CleanupResult toCleanupResult(String lineSeparator) {
 		if (!hasCleanupRange())
-			return CleanupResult.createWithoutRange(this.toString());
+			return CleanupResult.createWithoutRange(this.toString(lineSeparator));
 			
 		int startLine = -1;
 		int endLine = -1;
@@ -493,7 +497,7 @@ public class Code {
 
 		// determine the char and line range of the selection that was cleaned up 
 		while (command != null) {
-			int commandLength = command.toString().length();
+			int commandLength = command.toString(lineSeparator).length();
 
 			// since Rules like IfBlockAtLineEndRule / IfBlockAtMethodEndRule may change the sequence of Commands, 
 			// it is not guaranteed that the Commands that are in the cleanup range are still consecutive; 
@@ -503,7 +507,7 @@ public class Code {
 					// do not include the initial line breaks in the selection 
 					int firstTokenLineBreaks = command.getFirstTokenLineBreaks();
 					startLine = line + firstTokenLineBreaks;
-					startPos = pos + 2 * firstTokenLineBreaks;
+					startPos = pos + lineSeparator.length() * firstTokenLineBreaks;
 				}
 				endLine = line;
 				endPos = pos + commandLength;
@@ -514,7 +518,7 @@ public class Code {
 			command = command.getNext();
 		}
 
-		return CleanupResult.createForRange(this.toString(), startLine, endLine, startPos, endPos - startPos);
+		return CleanupResult.createForRange(toString(lineSeparator), startLine, endLine, startPos, endPos - startPos);
 	}
 	
 	public void expandCleanupRange(CleanupRangeExpandMode mode) {

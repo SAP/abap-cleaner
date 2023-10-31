@@ -1,5 +1,6 @@
 package com.sap.adt.abapcleaner.programbase;
 
+import com.sap.adt.abapcleaner.base.ABAP;
 import com.sap.adt.abapcleaner.base.StringUtil;
 import com.sap.adt.abapcleaner.parser.CleanupRange;
 
@@ -19,12 +20,14 @@ public class CommandLineArgs {
 	private static final String OPT_PROFILE = "--profile";
 	private static final String OPT_PROFILE_DATA = "--profiledata";
 	private static final String OPT_RELEASE = "--release";
+
+	private static final String OPT_CRLF = "--crlf";
 	private static final String OPT_OVERWRITE = "--overwrite";
 	private static final String OPT_PARTIAL_RESULT = "--partialresult";
 	private static final String OPT_STATS = "--stats";
 	private static final String OPT_USED_RULES = "--usedrules";
 
-	private static final String[] allOptions = new String[] { OPT_SOURCE_FILE, OPT_SOURCE_CODE, OPT_LINE_RANGE, OPT_TARGET_FILE, OPT_SOURCE_DIR, OPT_RECURSIVE, OPT_TARGET_DIR, OPT_FILE_FILTER, OPT_PROFILE, OPT_PROFILE_DATA, OPT_RELEASE, OPT_OVERWRITE, OPT_PARTIAL_RESULT, OPT_STATS, OPT_USED_RULES };
+	private static final String[] allOptions = new String[] { OPT_SOURCE_FILE, OPT_SOURCE_CODE, OPT_LINE_RANGE, OPT_TARGET_FILE, OPT_SOURCE_DIR, OPT_RECURSIVE, OPT_TARGET_DIR, OPT_FILE_FILTER, OPT_PROFILE, OPT_PROFILE_DATA, OPT_RELEASE, OPT_CRLF, OPT_OVERWRITE, OPT_PARTIAL_RESULT, OPT_STATS, OPT_USED_RULES };
 
 	private static final String EXECUTABLE_NAME = ".\\abap-cleanerc.exe"; 
 	private static final String OPT_HELP_WINDOWS = "/?";
@@ -60,6 +63,7 @@ public class CommandLineArgs {
 
 		String profileData = null;
 		String abapRelease = null;
+		String lineSeparator = ABAP.LINE_SEP_FOR_COMMAND_LINE;
 		boolean overwrite = false;
 		boolean partialResult = false;
 		boolean showStats = false;
@@ -130,6 +134,9 @@ public class CommandLineArgs {
 			} else if (arg.equals(OPT_RELEASE)) {
 				abapRelease = nextArg;
 
+			} else if (arg.equals(OPT_CRLF)) {
+				lineSeparator = "\r\n";
+
 			} else if (arg.equals(OPT_TARGET_FILE)) {
 				targetPath = nextArg;
 
@@ -196,9 +203,9 @@ public class CommandLineArgs {
 		}
 		
 		if (sourceCode != null) {
-			return new CommandLineArgs(sourceCode, targetPath, cleanupRange, profileData, abapRelease, overwrite, partialResult, showStats, showUsedRules, errors.toString(), showHelp);
+			return new CommandLineArgs(sourceCode, targetPath, cleanupRange, profileData, abapRelease, lineSeparator, overwrite, partialResult, showStats, showUsedRules, errors.toString(), showHelp);
 		} else {
-			return new CommandLineArgs(sourceDir, sourcePaths, targetDir, profileData, abapRelease, overwrite, showStats, showUsedRules, errors.toString(), showHelp);
+			return new CommandLineArgs(sourceDir, sourcePaths, targetDir, profileData, abapRelease, lineSeparator, overwrite, showStats, showUsedRules, errors.toString(), showHelp);
 		}
 	}
 
@@ -223,6 +230,7 @@ public class CommandLineArgs {
 		sb.append(" [" + OPT_RELEASE + " release]");
 		sb.append(LINE_SEP);
 		sb.append(spacePrefix);
+		sb.append(" [" + OPT_CRLF + "]");
 		sb.append(" [" + OPT_TARGET_FILE + " targetfile");
 		sb.append(" [" + OPT_OVERWRITE + "]]");
 		sb.append(" [" + OPT_PARTIAL_RESULT + "]");
@@ -297,6 +305,7 @@ public class CommandLineArgs {
 		sb.append(getOptionHelp(OPT_RELEASE, "ABAP release to restrict syntax of cleanup changes, e.g. \"758\""));
 		sb.append(getOptionHelp(null, "Without this option, the latest ABAP syntax will be allowed."));
 		sb.append(LINE_SEP);
+		sb.append(getOptionHelp(OPT_CRLF, "Use CRLF = \"\\r\\n\" as line separator (default: LF = \"\\n\")."));
 		sb.append(getOptionHelp(OPT_TARGET_FILE, "Target file name to which the cleanup result will be saved."));
 		sb.append(getOptionHelp(null, "Without this option, the cleanup result will be written to the standard output."));
 		sb.append(getOptionHelp(OPT_TARGET_DIR, "Target directory name to which the cleanup files will be saved"));
@@ -336,6 +345,8 @@ public class CommandLineArgs {
 
 	public final String profileData;
 	public final String abapRelease;
+	
+	public final String lineSeparator;
 	public final boolean overwrite;
 	public final boolean partialResult;
 	public final boolean showStats;
@@ -343,13 +354,13 @@ public class CommandLineArgs {
 	public final String errors;
 	public final boolean showHelp;
 	
-	public boolean writesResultCodeToOutput() { return isInSingleSourceMode() && StringUtil.isNullOrEmpty(targetPath); }
+	public boolean hasErrors() { return !StringUtil.isNullOrEmpty(errors); }
 	
 	public boolean isInSingleSourceMode() { return sourceDir == null; }
 
-	public boolean hasErrors() { return !StringUtil.isNullOrEmpty(errors); }
+	public boolean writesResultCodeToOutput() { return isInSingleSourceMode() && StringUtil.isNullOrEmpty(targetPath); }
 	
-	private CommandLineArgs(String sourceCode, String targetPath, CleanupRange cleanupRange, String profileData, String abapRelease, boolean overwrite, boolean partialResult, boolean showStats, boolean showUsedRules, String errors, boolean showHelp) {
+	private CommandLineArgs(String sourceCode, String targetPath, CleanupRange cleanupRange, String profileData, String abapRelease, String lineSeparator, boolean overwrite, boolean partialResult, boolean showStats, boolean showUsedRules, String errors, boolean showHelp) {
 		this.sourceCode = sourceCode;
 		this.targetPath = targetPath;
 		this.cleanupRange = cleanupRange;
@@ -360,6 +371,8 @@ public class CommandLineArgs {
 
 		this.profileData = profileData;
 		this.abapRelease = abapRelease;
+		
+		this.lineSeparator = lineSeparator;
 		this.overwrite = overwrite;
 		this.partialResult = partialResult;
 		this.showStats = showStats;
@@ -369,7 +382,7 @@ public class CommandLineArgs {
 
 	}
 
-	private CommandLineArgs(String sourceDir, String[] sourcePaths, String targetDir, String profileData, String abapRelease, boolean overwrite, boolean showStats, boolean showUsedRules, String errors, boolean showHelp) {
+	private CommandLineArgs(String sourceDir, String[] sourcePaths, String targetDir, String profileData, String abapRelease, String lineSeparator, boolean overwrite, boolean showStats, boolean showUsedRules, String errors, boolean showHelp) {
 		this.sourceCode = null;
 		this.cleanupRange = null;
 		this.targetPath = null;
@@ -380,6 +393,8 @@ public class CommandLineArgs {
 
 		this.profileData = profileData;
 		this.abapRelease = abapRelease;
+		
+		this.lineSeparator = lineSeparator;
 		this.overwrite = overwrite;
 		this.partialResult = false;
 		this.showStats = showStats;
