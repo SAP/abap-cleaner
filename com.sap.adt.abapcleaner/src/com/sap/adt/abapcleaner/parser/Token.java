@@ -1133,7 +1133,7 @@ public class Token {
 		return false;
 	}
 
-	final boolean textStartsWithAny(String... prefixes) {
+	public final boolean textStartsWithAny(String... prefixes) {
 		for (String prefix : prefixes) {
 			if (textStartsWith(prefix))
 				return true;
@@ -1141,7 +1141,7 @@ public class Token {
 		return false;
 	}
 
-	final boolean textEndsWithAny(String... suffixes) {
+	public final boolean textEndsWithAny(String... suffixes) {
 		for (String suffix : suffixes) {
 			if (textEndsWith(suffix))
 				return true;

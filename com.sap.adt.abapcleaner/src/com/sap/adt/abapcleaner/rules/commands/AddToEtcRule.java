@@ -57,12 +57,10 @@ public class AddToEtcRule extends RuleForCommands {
 			+ LINE_SEP + "    SUBTRACT lo_typedesc->length FROM lv_length." 
 			+ LINE_SEP 
 			+ LINE_SEP + "    MULTIPLY iv_value BY 2." 
-			+ LINE_SEP + "    MULTIPLY lv_value BY lts_table[ num  = 5" 
-			+ LINE_SEP + "                                    name = 'abc']-component." 
+			+ LINE_SEP + "    MULTIPLY lv_value BY ls_any_structure-component." 
 			+ LINE_SEP 
-			+ LINE_SEP + "    DIVIDE lv_value BY lo_struc-component." 
-			+ LINE_SEP + "    DIVIDE lv_value BY class_name( )=>get_tool( )->get_value( iv_param  = 5" 
-			+ LINE_SEP + "                                                              iv_param2 = 'abc' )." 
+			+ LINE_SEP + "    DIVIDE lv_value BY lo_instance->attribute." 
+			+ LINE_SEP + "    DIVIDE lv_value BY lo_instance->ms_structure-component." 
 			+ LINE_SEP 
 			+ LINE_SEP + "    \" chains can only be processed if they are first unchained" 
 			+ LINE_SEP + "    ADD 10 TO: lv_value, lv_other." 

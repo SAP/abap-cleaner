@@ -100,8 +100,15 @@ public abstract class RuleTestBase {
 		// test the referential integrity of the parse result of the example
 		try {
 			code.testReferentialIntegrity(true);
-			if (ruleID != RuleID.EMPTY_COMMAND && ruleID != RuleID.ADD_TO_ETC) {
-				code.checkSyntax(false);
+			switch (ruleID) {
+				// some rules deliberately contain examples that can be compiled and executed, but some Tokens are marked  
+				// as syntax errors (red text color in ADT) by the RND Parser (see comments in getExample() methods) 
+				case EMPTY_COMMAND:
+				case SPACES_IN_EMPTY_BRACKETS:
+					break;
+				default:
+					code.checkSyntax(false);
+					break;
 			}
 		} catch (IntegrityBrokenException e1) {
 			fail("Error after parsing source code: " + e1.getMessage());

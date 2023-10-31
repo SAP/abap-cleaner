@@ -180,8 +180,9 @@ public class Profile {
 		this.autoActivateNewFeatures = model.autoActivateNewFeatures;
 		
 		initializeRules();
-		for (Rule rule : rules)
+		for (Rule rule : rules) {
 			rule.copyFrom(model.getRule(rule.getID()));
+		}
 	}
 
 	private void initializeRules() {
@@ -340,23 +341,27 @@ public class Profile {
 	}
 	
 	public final void activateAllRules() {
-		for (int i = 0; i < Rule.RULE_COUNT; ++i)
+		for (int i = 0; i < Rule.RULE_COUNT; ++i) {
 			rules[i].isActive = true;
+		}
 	}
 
 	public final void activateDefaultRulesOnly() {
-		for (int i = 0; i < Rule.RULE_COUNT; ++i)
+		for (int i = 0; i < Rule.RULE_COUNT; ++i) {
 			rules[i].isActive = rules[i].isActiveByDefault();
+		}
 	}
 
 	public final void activateEssentialRulesOnly() {
-		for (int i = 0; i < Rule.RULE_COUNT; ++i)
+		for (int i = 0; i < Rule.RULE_COUNT; ++i) {
 			rules[i].isActive = rules[i].isEssential();
+		}
 	}
 
 	public final void deactivateAllRules() {
-		for (int i = 0; i < Rule.RULE_COUNT; ++i)
+		for (int i = 0; i < Rule.RULE_COUNT; ++i) {
 			rules[i].isActive = false;
+		}
 	}
 
 	public final Rule[] getRulesSortedByGroup() {
@@ -374,8 +379,9 @@ public class Profile {
 	public int getActiveRuleCount() {
 		int activeRuleCount = 0;
 		for (int i = 0; i < Rule.RULE_COUNT; ++i) {
-			if (rules[i].isActive)
+			if (rules[i].isActive) {
 				++activeRuleCount;
+			}
 		}
 		return activeRuleCount;
 	}
@@ -384,10 +390,11 @@ public class Profile {
 		Rule activeRule = null;
 		for (int i = 0; i < Rule.RULE_COUNT; ++i) {
 			if (rules[i].isActive) {
-				if (activeRule == null)
+				if (activeRule == null) {
 					activeRule = rules[i];
-				else
+				} else {
 					return null;
+				}
 			}
 		}
 		return activeRule;
