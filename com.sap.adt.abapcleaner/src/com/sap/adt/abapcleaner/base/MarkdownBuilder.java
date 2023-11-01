@@ -56,7 +56,7 @@ public class MarkdownBuilder {
 		return result.toString();
 	}
 
-	public void startNewHeading(String text, int level) {
+	public MarkdownBuilder startNewHeading(String text, int level) {
 		if (level < MIN_LEVEL || level > MAX_LEVEL)
 			throw new IllegalArgumentException(ILLEGAL_LEVEL_MSG);
 		
@@ -64,15 +64,17 @@ public class MarkdownBuilder {
 		sb.append(StringUtil.repeatChar(HEADER_CHAR, level)).append(' ');
 		sb.append(escapeText(text));
 		endParagraphText = LINE_SEPARATOR + LINE_SEPARATOR;
+		return this;
 	}
 
-	public void startNewParagraph() {
+	public MarkdownBuilder startNewParagraph() {
 		finishPreviousParagraph(false);
 		isInList = false;
 		endParagraphText = LINE_SEPARATOR + LINE_SEPARATOR;
+		return this;
 	}
 
-	public void startNewBlockQuote(String text, int level) {
+	public MarkdownBuilder startNewBlockQuote(String text, int level) {
 		if (level < MIN_LEVEL || level > MAX_LEVEL)
 			throw new IllegalArgumentException(ILLEGAL_LEVEL_MSG);
 		
@@ -80,6 +82,7 @@ public class MarkdownBuilder {
 		sb.append(StringUtil.repeatChar(BLOCK_QUOTE_CHAR, level)).append(' ');
 		sb.append(escapeText(text));
 		endParagraphText = LINE_SEPARATOR + LINE_SEPARATOR;
+		return this;
 	}
 
 	/**
@@ -87,15 +90,16 @@ public class MarkdownBuilder {
 	 * @param code - the code to show in the code block
 	 * @param languageName - see <a href="https://github.com/github/linguist/blob/master/lib/linguist/languages.yml">list of languages known to GitHub</a> 
 	 */
-	public void startNewCodeBlock(String code, String languageName) {
+	public MarkdownBuilder startNewCodeBlock(String code, String languageName) {
 		finishPreviousParagraph(false);
 		sb.append(TOGGLE_CODE_BLOCK).append(languageName).append(LINE_SEPARATOR);
 		sb.append(code); // escapeText(code) is not necessary here (but wouldn't harm, either) 
 		isInList = false;
 		endParagraphText = LINE_SEPARATOR + TOGGLE_CODE_BLOCK + LINE_SEPARATOR + LINE_SEPARATOR;
+		return this;
 	}
 
-	public void startNewBullet(int level) {
+	public MarkdownBuilder startNewBullet(int level) {
 		if (level < MIN_LEVEL || level > MAX_LEVEL)
 			throw new IllegalArgumentException(ILLEGAL_LEVEL_MSG);
 		finishPreviousParagraph(true);
@@ -104,9 +108,10 @@ public class MarkdownBuilder {
 		sb.append(UNORDERED_LIST_START);
 		isInList = true;
 		endParagraphText = LINE_SEPARATOR;
+		return this;
 	}
 
-	public void startNewOrderedListItem(int level) {
+	public MarkdownBuilder startNewOrderedListItem(int level) {
 		if (level < MIN_LEVEL || level > MAX_LEVEL)
 			throw new IllegalArgumentException(ILLEGAL_LEVEL_MSG);
 		finishPreviousParagraph(true);
@@ -115,10 +120,12 @@ public class MarkdownBuilder {
 		sb.append(ORDERED_LIST_START);
 		isInList = true;
 		endParagraphText = LINE_SEPARATOR;
+		return this;
 	}
 
-	public void finishBuild() {
+	public MarkdownBuilder finishBuild() {
 		finishPreviousParagraph(false);
+		return this;
 	}
 
 	private void finishPreviousParagraph(boolean startingListItem) {
@@ -130,43 +137,51 @@ public class MarkdownBuilder {
 		endParagraphText = null;
 	}
 
-	public void appendText(String text) {
+	public MarkdownBuilder appendText(String text) {
 		sb.append(escapeText(text));
+		return this;
 	}
 	
-	public void appendBoldText(String text) {
+	public MarkdownBuilder appendBoldText(String text) {
 		sb.append(TOGGLE_BOLD).append(escapeText(text)).append(TOGGLE_BOLD);
+		return this;
 	}
 	
-	public void appendItalicText(String text) {
+	public MarkdownBuilder appendItalicText(String text) {
 		sb.append(TOGGLE_ITALIC).append(escapeText(text)).append(TOGGLE_ITALIC);
+		return this;
 	}
 	
-	public void appendLink(String url) {
+	public MarkdownBuilder appendLink(String url) {
 		sb.append(url);
+		return this;
 	}
 	
-	public void appendLink(String text, String url) {
+	public MarkdownBuilder appendLink(String text, String url) {
 		sb.append(LINK_TEXT_START).append(escapeText(text)).append(LINK_TEXT_END);
 		sb.append(LINK_URL_START).append(url).append(LINK_URL_END);
+		return this;
 	}
 	
-	public void appendBoldLink(String text, String url) {
+	public MarkdownBuilder appendBoldLink(String text, String url) {
 		sb.append(LINK_TEXT_START).append(TOGGLE_BOLD).append(escapeText(text)).append(TOGGLE_BOLD).append(LINK_TEXT_END);
 		sb.append(LINK_URL_START).append(url).append(LINK_URL_END);
+		return this;
 	}
 	
-	public void appendImage(String altText, String url, String hoverText) {
+	public MarkdownBuilder appendImage(String altText, String url, String hoverText) {
 		sb.append(IMAGE_START).append(LINK_TEXT_START).append(escapeText(altText)).append(LINK_TEXT_END);
 		sb.append(LINK_URL_START).append(url);
 		if (!StringUtil.isNullOrEmpty(hoverText)) {
 			sb.append(IMAGE_HOVER_TEXT_START).append(escapeText(hoverText)).append(IMAGE_HOVER_TEXT_END);
 		}
 		sb.append(LINK_URL_END);
+		return this;
 	}
 	
-	public void appendInlineCode(String code) {
+	public MarkdownBuilder appendInlineCode(String code) {
 		sb.append(INLINE_CODE_START).append(code).append(INLINE_CODE_END);
+		return this;
 	}
 	
 	@Override

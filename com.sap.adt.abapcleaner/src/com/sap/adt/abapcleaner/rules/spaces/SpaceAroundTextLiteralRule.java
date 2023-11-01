@@ -5,12 +5,8 @@ import java.time.LocalDate;
 import com.sap.adt.abapcleaner.parser.*;
 import com.sap.adt.abapcleaner.rulebase.*;
 
-/**
- * Removes multiple spaces from empty parentheses and adds missing spaces between parentheses and character literals.
- */
 public class SpaceAroundTextLiteralRule extends RuleForTokens {
-	private final static RuleReference[] references = new RuleReference[] {
-			new RuleReference(RuleSource.ABAP_STYLE_GUIDE, "Condense your code", "#condense-your-code") };
+	private final static RuleReference[] references = new RuleReference[] { new RuleReference(RuleSource.ABAP_CLEANER) };
 
 	@Override
 	public RuleID getID() { return RuleID.SPACES_IN_EMPTY_BRACKETS; }
@@ -29,9 +25,6 @@ public class SpaceAroundTextLiteralRule extends RuleForTokens {
 
 	@Override
 	public RuleReference[] getReferences() { return references; }
-
-	@Override
-	public boolean isEssential() { return true; }
 
 	@Override
    public String getExample() {

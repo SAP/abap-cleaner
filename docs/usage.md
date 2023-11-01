@@ -104,7 +104,7 @@ from the command line with the following arguments for cleaning either a single 
 Usage for single file:
     .\abap-cleanerc.exe {--sourcefile sourcefile / --source sourcecode } [--linerange linerange]
                         [{ --profile profile / --profiledata profiledata }] [--release release]
-                        [--targetfile targetfile [--overwrite]] [--partialresult]
+                        [--crlf] [--targetfile targetfile [--overwrite]] [--partialresult]
                         [--stats] [--usedrules]
 
 Example for single file:
@@ -137,6 +137,7 @@ Options:
     --release           ABAP release to restrict syntax of cleanup changes, e.g. "758"
                         Without this option, the latest ABAP syntax will be allowed.
 
+    --crlf              Use CRLF = "\r\n" as line separator (default: LF = "\n").
     --targetfile        Target file name to which the cleanup result will be saved.
                         Without this option, the cleanup result will be written to the standard output.
     --targetdir         Target directory name to which the cleanup files will be saved

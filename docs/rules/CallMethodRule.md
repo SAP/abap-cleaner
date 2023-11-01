@@ -6,6 +6,8 @@ Replaces obsolete CALL METHOD statements with functional calls, adding parenthes
 
 Keeps CALL METHOD if dynamic typing is used for the method name, since no function equivalent is available here.
 
+This rule is part of the **essential** profile, as it is explicitly demanded by the [Clean ABAP Styleguide](https://github.com/SAP/styleguides/blob/main/clean-abap/CleanABAP.md).
+
 ## References
 
 * [Clean ABAP Styleguide: Prefer functional to procedural calls](https://github.com/SAP/styleguides/blob/main/clean-abap/CleanABAP.md#prefer-functional-to-procedural-calls)

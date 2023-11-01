@@ -4,6 +4,8 @@
 
 Aligns assignments to the same object, e.g. to various components of the same structure.
 
+This rule is part of the **essential** profile, as it is explicitly demanded by the [Clean ABAP Styleguide](https://github.com/SAP/styleguides/blob/main/clean-abap/CleanABAP.md).
+
 ## References
 
 * [Clean ABAP Styleguide: Align assignments to the same object, but not to different ones](https://github.com/SAP/styleguides/blob/main/clean-abap/CleanABAP.md#align-assignments-to-the-same-object-but-not-to-different-ones)

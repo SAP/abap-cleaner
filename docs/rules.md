@@ -1,6 +1,6 @@
 # Available Cleanup Rules
 
-ABAP cleaner offers 62 cleanup rules with a total of 212 configuration options:
+ABAP cleaner offers 64 cleanup rules with a total of 226 configuration options:
 
 ## Empty Lines
 
@@ -10,7 +10,7 @@ ABAP cleaner offers 62 cleanup rules with a total of 212 configuration options:
 
 ## Spaces
 
-* [Standardize spaces next to parentheses](rules/SpacesInEmptyBracketsRule.md)
+* [Put spaces around text literals](rules/SpaceAroundTextLiteralRule.md)
 * [Close brackets at line end](rules/ClosingBracketsPositionRule.md)
 * [Remove space before commas and period](rules/SpaceBeforePeriodRule.md)
 * [Put spaces around " comment sign](rules/SpaceAroundCommentSignRule.md)
@@ -84,6 +84,8 @@ ABAP cleaner offers 62 cleanup rules with a total of 212 configuration options:
 * [Align parameters and components](rules/AlignParametersRule.md)
 * [Align logical expressions](rules/AlignLogicalExpressionsRule.md)
 * [Align conditional expressions](rules/AlignCondExpressionsRule.md)
+* [Align FORM declarations](rules/AlignFormDeclarationRule.md)
+* [Align PERFORM parameters](rules/AlignPerformRule.md)
 
 [**Back to first page**](../README.md)
 

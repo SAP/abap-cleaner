@@ -6,6 +6,8 @@ Replaces obsolete pseudo comments \("\#EC ...\) for the Extended Program Check \
 
 This rule requires a NetWeaver version >= 7.0 EhP2. Note that pseudo comments for Code Inspector \("\#EC CI\_...\) are kept, as they have not been replaced by pragmas yet.
 
+This rule is part of the **essential** profile, as it is explicitly demanded by the [Clean ABAP Styleguide](https://github.com/SAP/styleguides/blob/main/clean-abap/CleanABAP.md).
+
 ## References
 
 * [Clean ABAP Styleguide: Prefer pragmas to pseudo comments](https://github.com/SAP/styleguides/blob/main/clean-abap/CleanABAP.md#prefer-pragmas-to-pseudo-comments)

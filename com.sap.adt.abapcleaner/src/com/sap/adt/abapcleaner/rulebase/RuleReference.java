@@ -4,7 +4,7 @@ import com.sap.adt.abapcleaner.programbase.*;
 import com.sap.adt.abapcleaner.base.StringUtil;
 
 public class RuleReference {
-	private static String baseLink(RuleSource source) {
+	public static String baseLink(RuleSource source) {
 		switch (source) {
 			case CODE_PAL_FOR_ABAP:
 				return "https://github.com/SAP/code-pal-for-abap/blob/master/docs/checks/";
@@ -19,6 +19,23 @@ public class RuleReference {
 		}
 	}
 
+	public static String sourceName(RuleSource source) {
+		switch (source) {
+			case CODE_PAL_FOR_ABAP:
+				return "Clean Code Checks";
+			case ABAP_STYLE_GUIDE:
+				return "Clean ABAP Styleguide";
+			case ABAP_KEYWORD_DOCU:
+				return "ABAP Keyword Documentation";
+			case ABAP_CLEANER:
+				return Program.PRODUCT_NAME;
+			default:
+				throw new IndexOutOfBoundsException("Unknown RuleSource!");
+		}
+	}
+
+	// -------------------------------------------------------------------------
+	
 	public final RuleSource source;
 	public final String chapterTitle;
 	private String subLink;
@@ -47,18 +64,7 @@ public class RuleReference {
 
 	public final String getSourceText() {
 		String prefix = isContradicting ? "<-> " : "";
-		switch (source) {
-			case CODE_PAL_FOR_ABAP:
-				return prefix + "Clean Code Checks";
-			case ABAP_STYLE_GUIDE:
-				return prefix + "Clean ABAP Styleguide";
-			case ABAP_KEYWORD_DOCU:
-				return prefix + "ABAP Keyword Documentation";
-			case ABAP_CLEANER:
-				return prefix + Program.PRODUCT_NAME;
-			default:
-				throw new IndexOutOfBoundsException("Unknown RuleSource!");
-		}
+		return prefix + sourceName(source);
 	}
 
 	@Override

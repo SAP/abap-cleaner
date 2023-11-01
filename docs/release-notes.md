@@ -6,6 +6,19 @@ as well as bugfixes of reported issues, i.e. anything that enhances or changes t
 For a complete list of changes (including documentation, tests, refactoring etc.), please refer to 
 the list of [commits](../../../commits/main).
 
+## 2023-11-01 (version 1.10.0)
+
+**Thanks a lot**, [**ConjuringCoffee**](https://github.com/ConjuringCoffee), [**csopaki**](https://github.com/csopaki), 
+[**fmabap**](https://github.com/fmabap) and [**bnichell**](https://github.com/bnichell) for the ideas behind these new features and fixes!
+
+* Added new rule '**Align PERFORM parameters**' ([#83](../../../issues/83))
+* Added new rule '**Align FORM declarations**' ([#84](../../../issues/84))
+* Added **command line option --CRLF**, changed default line separator to LF ([#177](../../../issues/177))
+* Moved handling of spaces in empty brackets to rule '**Remove needless spaces**' ([#143](../../../issues/143))
+* Enhanced rule '**Put spaces around text literals**' (renamed) for keywords, operators and comments ([#143](../../../issues/143))
+* Enhanced rule '**Remove needless CLEAR**' for CLEAR **after BREAK-POINT and LOG-POINT**
+* Fixed rule '**Standardize CLASS ... DEFINITION**' for dark theme ([#179](../../../issues/179))
+
 ## 2023-10-30 (version 1.9.0)
 
 Great **thanks** to [**StefanRutzmoser**](https://github.com/StefanRutzmoser), [**ConjuringCoffee**](https://github.com/ConjuringCoffee),

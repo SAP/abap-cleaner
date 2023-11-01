@@ -4,6 +4,8 @@
 
 Replaces calls to cl\_abap\_unit\_assert=>assert\_equals with more concise calls to the dedicated method assert\_subrc, where applicable.
 
+This rule is part of the **essential** profile, as it is explicitly demanded by the [Clean ABAP Styleguide](https://github.com/SAP/styleguides/blob/main/clean-abap/CleanABAP.md).
+
 ## References
 
 * [Clean ABAP Styleguide: Use the right assert type](https://github.com/SAP/styleguides/blob/main/clean-abap/CleanABAP.md#use-the-right-assert-type)

@@ -4,6 +4,8 @@
 
 Resolves a chain \(DATA:, FIELD-SYMBOLS:, ASSERT: etc.\) into multiple standalone statements. The chain is kept, however, for declarations with BEGIN OF ... END OF blocks.
 
+This rule is part of the **essential** profile, as it is explicitly demanded by the [Clean ABAP Styleguide](https://github.com/SAP/styleguides/blob/main/clean-abap/CleanABAP.md).
+
 ## References
 
 * [Clean ABAP Styleguide: Do not chain up-front declarations](https://github.com/SAP/styleguides/blob/main/clean-abap/CleanABAP.md#do-not-chain-up-front-declarations)
