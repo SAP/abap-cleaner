@@ -4,6 +4,8 @@
 
 Replaces \* comments with " comments, if the comment contains English text \(rather than ABAP code\). If consecutive lines have different indents, relative indents are kept.
 
+This rule is part of the **essential** profile, as it is explicitly demanded by the [Clean ABAP Styleguide](https://github.com/SAP/styleguides/blob/main/clean-abap/CleanABAP.md).
+
 ## References
 
 * [Clean ABAP Styleguide: Comment with ", not with \*](https://github.com/SAP/styleguides/blob/main/clean-abap/CleanABAP.md#comment-with--not-with-)

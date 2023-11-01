@@ -4,6 +4,8 @@
 
 Removes the optional EXPORTING keyword from method calls that do not use any other keyword \(IMPORTING, CHANGING, RECEIVING, or EXCEPTIONS\).
 
+This rule is part of the **essential** profile, as it is explicitly demanded by the [Clean ABAP Styleguide](https://github.com/SAP/styleguides/blob/main/clean-abap/CleanABAP.md).
+
 ## References
 
 * [Clean ABAP Styleguide: Omit the optional keyword EXPORTING](https://github.com/SAP/styleguides/blob/main/clean-abap/CleanABAP.md#omit-the-optional-keyword-exporting)

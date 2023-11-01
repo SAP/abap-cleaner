@@ -6,6 +6,8 @@ Moves all commands and comments to the correct indentation.
 
 Relative indents within the lines of a command \(or command chain\) are not changed by this rule.
 
+This rule is part of the **essential** profile, as it is explicitly demanded by the [Clean ABAP Styleguide](https://github.com/SAP/styleguides/blob/main/clean-abap/CleanABAP.md).
+
 ## References
 
 * [Clean ABAP Styleguide: Use the Pretty Printer before activating](https://github.com/SAP/styleguides/blob/main/clean-abap/CleanABAP.md#use-the-pretty-printer-before-activating)

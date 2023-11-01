@@ -6,6 +6,8 @@ Removes comments after ENDCLASS, ENDMETHOD, ENDLOOP, ENDIF etc., esp. if they ar
 
 Pseudo-comments are always kept.
 
+This rule is part of the **essential** profile, as it is explicitly demanded by the [Clean ABAP Styleguide](https://github.com/SAP/styleguides/blob/main/clean-abap/CleanABAP.md).
+
 ## References
 
 * [Clean ABAP Styleguide: Don't add method signature and end-of comments](https://github.com/SAP/styleguides/blob/main/clean-abap/CleanABAP.md#dont-add-method-signature-and-end-of-comments)

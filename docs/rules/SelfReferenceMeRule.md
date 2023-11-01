@@ -6,6 +6,8 @@ Removes the self-reference me->.
 
 Note that for attributes, me-> cannot be removed if ABAP cleaner cannot 'see' the method signature \(e.g. for inherited or interface methods\), because a parameter could have the same name.
 
+This rule is part of the **essential** profile, as it is explicitly demanded by the [Clean ABAP Styleguide](https://github.com/SAP/styleguides/blob/main/clean-abap/CleanABAP.md).
+
 ## References
 
 * [Clean ABAP Styleguide: Omit the self-reference me when calling an instance attribute or method](https://github.com/SAP/styleguides/blob/main/clean-abap/CleanABAP.md#omit-the-self-reference-me-when-calling-an-instance-attribute-or-method)

@@ -2,6 +2,7 @@ package com.sap.adt.abapcleaner.gui;
 
 import java.io.IOException;
 import java.io.PrintStream;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 import org.eclipse.wb.swt.SWTResourceManager;
@@ -2223,7 +2224,13 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		}
 
 		StringBuilder header = new StringBuilder();
-		header.append("## " + Cult.getReverseDate(LocalDateTime.now(), "-") + " (version #.#.#)");
+		header.append("## " + Cult.getReverseDate(LocalDateTime.now(), "-"));
+		Release[] releases = Program.getReleases();
+		if (releases != null && releases.length > 0 && !releases[0].releaseDate.isBefore(LocalDate.now())) {
+			header.append(" (version " + releases[0].version.toString() + ")");
+		} else {
+			header.append(" (version #.#.#)");
+		}
 		header.append(SEP + SEP);
 		header.append(thanks[new Random().nextInt(thanks.length)]);
 		int contributorCount = 0;

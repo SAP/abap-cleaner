@@ -435,6 +435,14 @@ public abstract class Rule {
 			mb.appendText(getHintsAndRestrictions());
 		}
 		
+		// essential rules
+		if (isEssential()) {
+			mb.startNewParagraph();
+			mb.appendText("This rule is part of the ").appendBoldText("essential").appendText(" profile, ");
+			mb.appendText("as it is explicitly demanded by the ");
+			mb.appendLink(RuleReference.sourceName(RuleSource.ABAP_STYLE_GUIDE), RuleReference.baseLink(RuleSource.ABAP_STYLE_GUIDE)).appendText(".");
+		}
+		
 		// references with links
 		RuleReference[] references = getReferences();
 		boolean hasReference = false;

@@ -1,4 +1,4 @@
-[<-- previous rule](AlignLogicalExpressionsRule.md) | [overview](../rules.md) | next rule -->
+[<-- previous rule](AlignLogicalExpressionsRule.md) | [overview](../rules.md) | [next rule -->](AlignFormDeclarationRule.md)
 
 # Align conditional expressions
 

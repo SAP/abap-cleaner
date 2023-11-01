@@ -4,6 +4,8 @@
 
 Removes spaces before chain commas and before the period at the end of a statement.
 
+This rule is part of the **essential** profile, as it is explicitly demanded by the [Clean ABAP Styleguide](https://github.com/SAP/styleguides/blob/main/clean-abap/CleanABAP.md).
+
 ## References
 
 * [Clean ABAP Styleguide: Condense your code](https://github.com/SAP/styleguides/blob/main/clean-abap/CleanABAP.md#condense-your-code)

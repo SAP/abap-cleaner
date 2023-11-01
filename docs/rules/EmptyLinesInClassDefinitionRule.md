@@ -1,4 +1,4 @@
-[<-- previous rule](EmptyLinesOutsideMethodsRule.md) | [overview](../rules.md) | [next rule -->](SpacesInEmptyBracketsRule.md)
+[<-- previous rule](EmptyLinesOutsideMethodsRule.md) | [overview](../rules.md) | [next rule -->](SpaceAroundTextLiteralRule.md)
 
 # Standardize empty lines in class definitions
 

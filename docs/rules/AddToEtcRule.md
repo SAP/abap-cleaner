@@ -6,6 +6,8 @@ Replaces obsolete ADD TO, SUBTRACT FROM, MULTIPLY BY and DIVIDE BY statements wi
 
 This rule requires a NetWeaver version >= 7.54. For older syntax, the statements can be replaced with a = a \+ ... etc. \(see options\)
 
+This rule is part of the **essential** profile, as it is explicitly demanded by the [Clean ABAP Styleguide](https://github.com/SAP/styleguides/blob/main/clean-abap/CleanABAP.md).
+
 ## References
 
 * [Clean ABAP Styleguide: Prefer functional to procedural language constructs](https://github.com/SAP/styleguides/blob/main/clean-abap/CleanABAP.md#prefer-functional-to-procedural-language-constructs)
@@ -35,12 +37,10 @@ This rule requires a NetWeaver version >= 7.54. For older syntax, the statements
     SUBTRACT lo_typedesc->length FROM lv_length.
 
     MULTIPLY iv_value BY 2.
-    MULTIPLY lv_value BY lts_table[ num  = 5
-                                    name = 'abc']-component.
+    MULTIPLY lv_value BY ls_any_structure-component.
 
-    DIVIDE lv_value BY lo_struc-component.
-    DIVIDE lv_value BY class_name( )=>get_tool( )->get_value( iv_param  = 5
-                                                              iv_param2 = 'abc' ).
+    DIVIDE lv_value BY lo_instance->attribute.
+    DIVIDE lv_value BY lo_instance->ms_structure-component.
 
     " chains can only be processed if they are first unchained
     ADD 10 TO: lv_value, lv_other.
@@ -68,12 +68,10 @@ Resulting code:
     lv_length -= lo_typedesc->length.
 
     iv_value *= 2.
-    lv_value *= lts_table[ num  = 5
-                           name = 'abc']-component.
+    lv_value *= ls_any_structure-component.
 
-    lv_value /= lo_struc-component.
-    lv_value /= class_name( )=>get_tool( )->get_value( iv_param  = 5
-                                                       iv_param2 = 'abc' ).
+    lv_value /= lo_instance->attribute.
+    lv_value /= lo_instance->ms_structure-component.
 
     " chains can only be processed if they are first unchained
     lv_value += 10.

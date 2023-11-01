@@ -1,8 +1,10 @@
-[<-- previous rule](SpacesInEmptyBracketsRule.md) | [overview](../rules.md) | [next rule -->](SpaceBeforePeriodRule.md)
+[<-- previous rule](SpaceAroundTextLiteralRule.md) | [overview](../rules.md) | [next rule -->](SpaceBeforePeriodRule.md)
 
 # Close brackets at line end
 
 Closes brackets at line end by moving one or many \) \] . to the previous line.
+
+This rule is part of the **essential** profile, as it is explicitly demanded by the [Clean ABAP Styleguide](https://github.com/SAP/styleguides/blob/main/clean-abap/CleanABAP.md).
 
 ## References
 

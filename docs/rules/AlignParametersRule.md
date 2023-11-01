@@ -4,6 +4,8 @@
 
 Aligns parameter assignments in method calls, as well as component assignments in VALUE expressions, table expressions, table keys etc.
 
+This rule is part of the **essential** profile, as it is explicitly demanded by the [Clean ABAP Styleguide](https://github.com/SAP/styleguides/blob/main/clean-abap/CleanABAP.md).
+
 ## References
 
 * [Clean ABAP Styleguide: Align parameters](https://github.com/SAP/styleguides/blob/main/clean-abap/CleanABAP.md#align-parameters)

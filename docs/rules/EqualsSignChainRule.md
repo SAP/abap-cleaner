@@ -6,6 +6,8 @@ Resolves assignments to multiple variables with assignment operator chaining \(a
 
 Since different \(implicit\) conversion rules may apply to the assignments, the rightmost term can not be repeated, even if it is a literal.
 
+This rule is part of the **essential** profile, as it is explicitly demanded by the [Clean ABAP Styleguide](https://github.com/SAP/styleguides/blob/main/clean-abap/CleanABAP.md).
+
 ## References
 
 * [Clean ABAP Styleguide: Don't chain assignments](https://github.com/SAP/styleguides/blob/main/clean-abap/CleanABAP.md#dont-chain-assignments)
