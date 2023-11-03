@@ -897,11 +897,11 @@ public class Token {
 		// ensure newToken is not placed behind a comment
 		if (prev != null && prev.isComment() && newToken.lineBreaks == 0 && lineBreaks > 0) {
 			newToken.copyWhitespaceFrom(this);
-			this.setWhitespace();
+			setWhitespace();
 		}
 		// if newToken is a comment, ensure a line break before this Token
 		if (newToken.isComment() && lineBreaks == 0) {
-			this.setWhitespace(1, parentCommand.getIndent() + ABAP.INDENT_STEP);
+			ensureLineBreak();
 		}
 		
 		++parentCommand.tokenCount;
@@ -939,6 +939,17 @@ public class Token {
 		return newToken;
 	}
 
+	private void ensureLineBreak() {
+		if (lineBreaks == 0) {
+			Token prevCode = getPrevCodeSibling();
+			if (prevCode != null && prevCode.isComma()) {
+				setWhitespace(1, parentCommand.firstToken.getStartIndexInLine() + ABAP.INDENT_STEP);
+			} else {
+				setWhitespace(1, getStartIndexInLine());
+			}
+		}
+	}
+	
 	/**
 	 * inserts the supplied Token as the next sibling, or first child after this Token
 	 * 
@@ -952,6 +963,19 @@ public class Token {
 			return firstChild.insertLeftSibling(newToken);
 		} else {
 			return insertFirstChild(newToken);
+		}
+	}
+
+	/**
+	 * inserts the supplied Term as the next sibling, or first child after this Token
+	 */
+	public final void insertNext(Term newTerm) throws IntegrityBrokenException {
+		if (!opensLevel) {
+			insertRightSibling(newTerm, false);
+		} else if (hasChildren()) {
+			firstChild.insertLeftSibling(newTerm);
+		} else {
+			insertFirstChild(newTerm);
 		}
 	}
 
@@ -975,8 +999,28 @@ public class Token {
 	public final Token insertRightSibling(Token newToken, boolean moveFollowingLinesRight) throws IntegrityBrokenException {
 		if (newToken == null)
 			throw new NullPointerException("newToken");
+		if (opensLevel)
+			throw new IntegrityBrokenException(this, "cannot insert a right sibling to a token that opens a level");
 
-		int oldStartIndex = moveFollowingLinesRight ? this.next.getEndIndexInLine() + 1 : 0; // save performance if information is not needed below
+		int oldStartIndex = moveFollowingLinesRight ? getEndIndexInLine() + 1 : 0; // save performance if information is not needed below
+
+		// ensure newToken is not placed behind a comment
+		if (isComment() && newToken.lineBreaks == 0) {
+			if (next == null) {
+				newToken.setWhitespace(1, parentCommand.getIndent() + ABAP.INDENT_STEP);
+			} else {
+				newToken.copyWhitespaceFrom(next);
+				if (newToken.isComment()) {
+					next.lineBreaks = 1;
+				} else {
+					next.setWhitespace();
+				}
+			}
+		}
+		// if newToken is a comment, ensure a line break before the next Token
+		if (newToken.isComment() && next != null && next.lineBreaks == 0) {
+			next.ensureLineBreak();
+		}
 
 		++parentCommand.tokenCount;
 
@@ -1034,11 +1078,31 @@ public class Token {
 	public final void insertRightSibling(Term newTerm, boolean moveFollowingLinesRight) throws IntegrityBrokenException {
 		if (newTerm == null)
 			throw new NullPointerException("newTerm");
+		if (opensLevel)
+			throw new IntegrityBrokenException(this, "cannot insert a right sibling to a token that opens a level");
 
-		int oldStartIndex = moveFollowingLinesRight ? this.next.getEndIndexInLine() + 1 : 0; // save performance if information is not needed below
+		int oldStartIndex = moveFollowingLinesRight ? getEndIndexInLine() + 1 : 0; // save performance if information is not needed below
 		int newTermWidth = newTerm.getCurrentWidth(false);
 
 		Token lastTokenInNewTerm = newTerm.lastToken.lastChild != null ? newTerm.lastToken.lastChild : newTerm.lastToken; // TODO: can newTerm.lastToken have child Tokens at all?
+
+		// ensure newTerm is not placed behind a comment
+		if (isComment() && newTerm.firstToken.lineBreaks == 0) {
+			if (next == null) {
+				newTerm.firstToken.setWhitespace(1, parentCommand.getIndent() + ABAP.INDENT_STEP);
+			} else {
+				newTerm.firstToken.copyWhitespaceFrom(next);
+				if (newTerm.lastToken.isComment()) {
+					next.lineBreaks = 1; // keep next.spacesLeft
+				} else {
+					next.setWhitespace();
+				}
+			}
+		}
+		// if newTerm ends with a comment, ensure a line break before the next Token
+		if (newTerm.lastToken.isComment() && next != null && next.lineBreaks == 0) {
+			next.ensureLineBreak();
+		}
 
 		parentCommand.tokenCount += newTerm.getTokenCountWithChildren();
 
@@ -1077,7 +1141,23 @@ public class Token {
 	public final void insertLeftSibling(Term newTerm) throws IntegrityBrokenException {
 		if (newTerm == null)
 			throw new NullPointerException("newTerm");
+		if (closesLevel)
+			throw new IntegrityBrokenException(this, "cannot insert a left sibling to a token that closes a level");
 
+		// ensure newTerm is not placed behind a comment
+		if (prev != null && prev.isComment() && newTerm.firstToken.lineBreaks == 0 && lineBreaks > 0) {
+			newTerm.firstToken.copyWhitespaceFrom(this);
+			if (newTerm.lastToken.isComment()) {
+				lineBreaks = 1; // keep spacesLeft
+			} else {
+				setWhitespace();
+			}
+		}
+		// if newTerm ends with a comment, ensure a line break before this Token
+		if (newTerm.lastToken.isComment() && lineBreaks == 0) {
+			setWhitespace(1, getStartIndexInLine());
+		}
+		
 		parentCommand.tokenCount += newTerm.getTokenCountWithChildren();
 
 		newTerm.setParentCommand(parentCommand);
@@ -2251,7 +2331,7 @@ public class Token {
 			// e.g. DATA(lv_variable) or lv_any(5) or lv_any+5(*)
 			return null; 
 
-		} else if (textEqualsAny("boolc(", " boolx(", " xsdbool(")) {
+		} else if (textEqualsAny("boolc(", "boolx(", "xsdbool(")) {
 			// skip built-in functions for logical expressions; also skip "boolx( bool = log_exp bit = bit )", 
 			// because parameters that expect a log_exp are not yet considered in AlignParametersRule. 
 			return null;
@@ -2456,13 +2536,18 @@ public class Token {
 		}
 
 		// - in a declaration, e.g. DATA dobj TYPE STANDARD TABLE OF REF TO type (including declaration of a dependent type with TYPES)
-		if (parentCommand.isDeclaration()) { // CONSTANTS, DATA, FIELD-SYMBOLS, TYPES, CLASS-DATA, STATICS
+		if (parentCommand.isDeclaration() || parentCommand.isDeclarationInClassDef()) { // CONSTANTS, DATA, FIELD-SYMBOLS, TYPES, CLASS-DATA, STATICS
 			// the identifier represents a type if it is preceded by a sequence of keywords that starts with TYPE (NOT with LIKE)
 			return (firstKeyword != null && firstKeyword.isKeyword("TYPE"));
 		} else if (parentCommand.firstCodeTokenIsKeyword("INCLUDE")) {
 			// the identifier represents a type if it is preceded by "INCLUDE TYPE" (NOT by "INCLUDE STRUCTURE", which is followed by a data object)
 			return (firstKeyword != null && firstKeyword.matchesOnSiblings(true, "INCLUDE", "TYPE"));
+		} else if (parentCommand.firstCodeTokenIsKeyword("CATCH")) {
+			// CATCH [BEFORE UNWIND] cx_class1 cx_class2 ... [INTO oref].
+			// for DATA(lx_any), prevSibling will be null (so it is excluded); for cx_class2, firstKeyword will be null; 
+			return prevSibling != null && (firstKeyword == null || firstKeyword.isKeyword("CATCH"));
 		}
+		
 		
 		return false;
 	}
@@ -2565,6 +2650,13 @@ public class Token {
 		if (firstChild != null)
 			throw new IntegrityBrokenException(this, "child token already exists");
 		
+		// since 'this' Token opens a level, it cannot be a comment; however, newToken may be: 
+		if (newToken.isComment() && next != null && next.lineBreaks == 0) {
+			next.ensureLineBreak();
+		}
+
+		++parentCommand.tokenCount;
+
 		newToken.parentCommand = parentCommand;
 		newToken.parent = this;
 		newToken.prev = this;
@@ -2581,6 +2673,33 @@ public class Token {
 		parentCommand.onTokenInserted(newToken);
 		parentCommand.testReferentialIntegrity(true);
 		return newToken;
+	}
+
+	private void insertFirstChild(Term newTerm) throws IntegrityBrokenException {
+		if (firstChild != null)
+			throw new IntegrityBrokenException(this, "child token already exists");
+
+		// since 'this' Token opens a level, it cannot be a comment; however, newToken may end with a comment: 
+		if (newTerm.lastToken.isComment() && next != null && next.lineBreaks == 0) {
+			next.ensureLineBreak();
+		}
+
+		parentCommand.tokenCount += newTerm.getTokenCountWithChildren();
+		newTerm.setParentCommand(parentCommand);
+		newTerm.setParent(this);
+		newTerm.firstToken.prev = this;
+		newTerm.lastToken.next = next;
+		newTerm.firstToken.prevSibling = null;
+		newTerm.lastToken.nextSibling = null;
+
+		if (next != null) 
+			next.prev = newTerm.lastToken;
+		next = newTerm.firstToken;
+		firstChild = newTerm.firstToken;
+		lastChild = newTerm.lastToken;
+
+		parentCommand.onTermInserted(newTerm);
+		parentCommand.testReferentialIntegrity(true);
 	}
 
 	public boolean isSqlLiteralType() {

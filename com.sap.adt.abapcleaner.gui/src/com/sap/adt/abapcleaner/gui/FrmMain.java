@@ -754,8 +754,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		mmuExtrasStressTestAllRulesOnFolder4.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				testDirectory(
-						new CleanupBatchJob(CleanupParams.createForProfile(curProfile, true, ABAP.NO_RELEASE_RESTRICTION), StressTestParams.create(0, 3, StressTestType.getAll())));
+				testDirectory(new CleanupBatchJob(getCleanupParamsForStressTest(), StressTestParams.create(0, 3, StressTestType.getAll())));
 			}
 		});
 		mmuExtrasStressTestAllRulesOnFolder4.setText("Insert Comment/Pragma/Colon After Token 0..3");
@@ -764,8 +763,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		mmuExtrasStressTestAllRulesOnFolder8.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				testDirectory(
-						new CleanupBatchJob(CleanupParams.createForProfile(curProfile, true, ABAP.NO_RELEASE_RESTRICTION), StressTestParams.create(0, 7, StressTestType.getAll())));
+				testDirectory(new CleanupBatchJob(getCleanupParamsForStressTest(), StressTestParams.create(0, 7, StressTestType.getAll())));
 			}
 		});
 		mmuExtrasStressTestAllRulesOnFolder8.setText("Insert Comment/Pragma/Colon After Token 0..7");
@@ -774,8 +772,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		mmuExtrasStressTestAllRulesOnFolder16.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				testDirectory(
-						new CleanupBatchJob(CleanupParams.createForProfile(curProfile, true, ABAP.NO_RELEASE_RESTRICTION), StressTestParams.create(0, 15, StressTestType.getAll())));
+				testDirectory(new CleanupBatchJob(getCleanupParamsForStressTest(), StressTestParams.create(0, 15, StressTestType.getAll())));
 			}
 		});
 		mmuExtrasStressTestAllRulesOnFolder16.setText("Insert Comment/Pragma/Colon After Token 0..15");
@@ -784,8 +781,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		mmuExtrasStressTestAllRulesOnFolder32.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				testDirectory(
-						new CleanupBatchJob(CleanupParams.createForProfile(curProfile, true, ABAP.NO_RELEASE_RESTRICTION), StressTestParams.create(0, 31, StressTestType.getAll())));
+				testDirectory(new CleanupBatchJob(getCleanupParamsForStressTest(), StressTestParams.create(0, 31, StressTestType.getAll())));
 			}
 		});
 		mmuExtrasStressTestAllRulesOnFolder32.setText("Insert Comment/Pragma/Colon After Token 0..31");
@@ -905,27 +901,57 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		});
 		mmuExtrasPrevPatternMatch.setText(getMenuItemTextWithAccelerator("Open Previous Pattern Match", SWT.CTRL + SWT.F5));
 
-		MenuItem mmuExtrasPatternMatchesBeforeCleanupToClip = new MenuItem(menuExtras, SWT.NONE);
+		MenuItem mmuExtrasPatternMatchesToClip = new MenuItem(menuExtras, SWT.CASCADE);
+		mmuExtrasPatternMatchesToClip.setText("Copy Pattern Matches to Clipboard (all Files)");
+
+		Menu menuExtrasPatternMatchesToClip = new Menu(shell, SWT.DROP_DOWN);
+		mmuExtrasPatternMatchesToClip.setMenu(menuExtrasPatternMatchesToClip);
+
+		MenuItem mmuExtrasPatternMatchesBeforeCleanupToClip = new MenuItem(menuExtrasPatternMatchesToClip, SWT.PUSH);
 		mmuExtrasPatternMatchesBeforeCleanupToClip.setToolTipText(
 				"Fills the clipboard with all commands from the code files in the /user/code folder (and subfolders) that satisfy the hard-coded Command.patternMatch() before cleanup.");
 		mmuExtrasPatternMatchesBeforeCleanupToClip.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				patternMatchesToClip(false);
+				patternMatchesToClip(false, false);
 			}
 		});
-		mmuExtrasPatternMatchesBeforeCleanupToClip.setText("Copy Pattern Matches Before Cleanup to Clipboard (all Files)");
+		mmuExtrasPatternMatchesBeforeCleanupToClip.setText("Pattern Matches Before Cleanup");
 
-		MenuItem mmuExtrasPatternMatchesAfterCleanupToClip = new MenuItem(menuExtras, SWT.NONE);
+		MenuItem mmuExtrasPatternMatchesAfterCleanupToClip = new MenuItem(menuExtrasPatternMatchesToClip, SWT.PUSH);
 		mmuExtrasPatternMatchesAfterCleanupToClip.setToolTipText(
 				"Fills the clipboard with all commands from the code files in the /user/code folder (and subfolders) that satisfy the hard-coded Command.patternMatch() after cleanup with the current profile.");
 		mmuExtrasPatternMatchesAfterCleanupToClip.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				patternMatchesToClip(true);
+				patternMatchesToClip(true, false);
 			}
 		});
-		mmuExtrasPatternMatchesAfterCleanupToClip.setText("Copy Pattern Matches After Cleanup to Clipboard (all Files)");
+		mmuExtrasPatternMatchesAfterCleanupToClip.setText("Pattern Matches After Cleanup");
+
+		MenuItem mmuExtrasPatternMatchOriginalsAfterCleanupToClip = new MenuItem(menuExtrasPatternMatchesToClip, SWT.PUSH);
+		mmuExtrasPatternMatchOriginalsAfterCleanupToClip.setToolTipText(
+				"Fills the clipboard with all (original) commands from the code files in the /user/code folder (and subfolders) that satisfy the hard-coded Command.patternMatch() after cleanup with the current profile.");
+		mmuExtrasPatternMatchOriginalsAfterCleanupToClip.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				patternMatchesToClip(true, true);
+			}
+		});
+		mmuExtrasPatternMatchOriginalsAfterCleanupToClip.setText("Original Code Of Pattern Matches After Cleanup");
+
+		new MenuItem(menuExtras, SWT.SEPARATOR);
+
+		MenuItem mmuExtrasCommandStrucFrequencyToClip = new MenuItem(menuExtras, SWT.NONE);
+		mmuExtrasCommandStrucFrequencyToClip.setToolTipText(
+				"Fills the clipboard with a frequency list of structure-identical commands (after obfuscation).");
+		mmuExtrasCommandStrucFrequencyToClip.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				commandStrucFrequencyToClip();
+			}
+		});
+		mmuExtrasCommandStrucFrequencyToClip.setText("Copy Command Structure Frequency to Clipboard");
 
 		new MenuItem(menuExtras, SWT.SEPARATOR);
 
@@ -1623,6 +1649,18 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 			return refreshCode(sourceName, path, codeText, ABAP.NEWEST_RELEASE, true);
 	}
 
+	private CleanupParams getCleanupParamsForStressTest() { // TODO Auto-generated method stub
+		// if a profile is named "stress test", use that profile, otherwise the current profile
+		Profile useProfile = curProfile;
+		for (Profile profile : profiles) {
+			if (profile.name.equalsIgnoreCase("stress test")) {
+				useProfile = profile;
+				break;
+			}
+		}
+		return CleanupParams.createForProfile(useProfile, true, ABAP.NO_RELEASE_RESTRICTION);
+	}
+
 	private void testDirectory(IBatchJob batchJob) {
 		String dir = showDirDialog(defaultCodeDirectory, batchJob.getDescription());
 		String[] paths = getAllPaths(dir, FileType.CODE, true, true);
@@ -1978,7 +2016,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		Message.show("None of the " + String.valueOf(paths.length) + " files contains a Command that satisfies the Command.matchesPattern() condition.", shell);
 	}
 
-	private void patternMatchesToClip(boolean doCleanup) {
+	private void patternMatchesToClip(boolean doCleanup, boolean useOriginalCode) {
 		String dir = defaultCodeDirectory;
 		String LINE_SEP = System.lineSeparator();
 
@@ -2000,6 +2038,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 
 			boolean matchInFile = false;
 			Code code = result.getResultingCode();
+			Code originalCode = null;
 			Command command = code.firstCommand;
 			while (command != null) {
 				if (command.matchesPattern()) {
@@ -2008,16 +2047,34 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 						++fileCount;
 						matchInFile = true;
 					}
+					// if the original code before cleanup shall be used, try to find the corresponding Command in the original code
+					if (doCleanup && useOriginalCode && originalCode == null) {
+						// lazy parsing 
+						BackgroundJob parseOnlyJob = new BackgroundJob(ParseParams.createForWholeCode(sourceName, codeText, ABAP.NEWEST_RELEASE), null);
+						originalCode = runJobWithProgressUiIfNeeded(parseOnlyJob).getResultingCode();
+					}
+					Command useCommand = command;
+					boolean isAfterCleanup = doCleanup;
+					if (doCleanup && useOriginalCode) {
+						int sourceLine = (command.originalCommand == null) ? command.getSourceLineNumStart() : command.originalCommand.getSourceLineNumStart();
+						Command originalCommand = originalCode.searchCommandAt(sourceLine);
+						if (originalCommand != null) {
+							useCommand = originalCommand;
+							isAfterCleanup = false;
+						}
+					}
+
 					String folderFile = testPath.substring(dir.length());
 					folderFile = StringUtil.removeSuffix(folderFile, persistency.getExtension(testPath), true);
 					sb.append(LINE_SEP);
-					sb.append(ABAP.COMMENT_SIGN_STRING + " " + folderFile + ": line " + Cult.format(command.getSourceLineNumStart()) + LINE_SEP);
+					sb.append(ABAP.COMMENT_SIGN_STRING + " " + folderFile + ": line " + Cult.format(useCommand.getSourceLineNumStart()));
+					sb.append(isAfterCleanup ? " (after cleanup)" : " (before cleanup)").append(LINE_SEP);
 
 					// append the Command itself and the corresponding opening / closing Command
-					addPatternMatch(sb, command, false);
+					addPatternMatch(sb, useCommand, false);
 
 					// append related commands, if any
-					ArrayList<Command> relatedCommands = command.getCommandsRelatedToPatternMatch();
+					ArrayList<Command> relatedCommands = useCommand.getCommandsRelatedToPatternMatch();
 					if (relatedCommands != null) {
 						for (Command relatedCommand : relatedCommands) {
 							sb.append(System.lineSeparator());
@@ -2321,5 +2378,37 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		}
 
 		return result;
+	}
+	
+	private void commandStrucFrequencyToClip() {
+   	Obfuscator obfuscator = new Obfuscator(false, false, true, true, true, true);
+   	Code code;
+   	try {
+   		code = obfuscator.obfuscate(resultCode.toString());
+		} catch (ParseException | UnexpectedSyntaxAfterChanges e) {
+			Message.show(e.getMessage(), shell);
+			return;
+		}
+   	
+   	HashMap<String, Integer> freqOfTexts = new HashMap<>();
+   	Command command = code.firstCommand;
+   	while (command != null) {
+   		String text = command.toStringForErrorMessage(true);
+   		if (!freqOfTexts.containsKey(text)) {
+   			freqOfTexts.put(text, 1);
+   		} else {
+   			freqOfTexts.put(text, freqOfTexts.get(text) + 1);
+   		}
+   		command = command.getNext();
+   	}
+   	
+   	StringBuilder sb = new StringBuilder();
+   	for (String text : freqOfTexts.keySet()) {
+   		int count = freqOfTexts.get(text);
+   		sb.append(String.valueOf(count)).append('\t').append(text).append(System.lineSeparator());
+   	}
+   	SystemClipboard.setText(sb.toString());
+   	String summary = Cult.format(freqOfTexts.size()) + " different structures were found in " + Cult.format(code.commandCount) + " commands.";
+   	Message.show(summary + " The result was copied to the clipboard.", "frequency list of structure-identical commands", shell);
 	}
 }

@@ -207,7 +207,13 @@ class CleanupMetrics {
 					cleanupSummary.append(Cult.format(cleanupWarningCount) + " warnings, ");
 				cleanupSummary.append(Cult.format(cleanupSuccessCount) + " OK.");
 			}
-	
+			if (cleanupParams.executeAllRules) {
+				cleanupSummary.append(" (all rules");
+			} else {
+				cleanupSummary.append(" (" + Cult.format(cleanupParams.profile.getActiveRuleCount()) + " rules");
+			}
+			cleanupSummary.append(" with profile '" + cleanupParams.getProfileName() + "')");
+			
 			// check result
 			if (checkExceptionCount == 0) {
 				checkSummary.append("OK!");

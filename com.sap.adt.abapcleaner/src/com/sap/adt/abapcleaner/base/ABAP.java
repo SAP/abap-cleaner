@@ -93,7 +93,9 @@ public final class ABAP {
    public static final char CLOSING_PARENTHESIS = ')';
    public static final String CLOSING_PARENTHESIS_STRING = ")";
    public static final char FIELD_SYMBOL_START_SIGN = '<';
+   public static final String FIELD_SYMBOL_START_STRING = "<";
    public static final char FIELD_SYMBOL_END_SIGN = '>';
+   public static final String FIELD_SYMBOL_END_STRING = ">";
    public static final char ASSOCIATION_PREFIX = '\\';
    public static final String ASSOCIATION_PREFIX_STRING = "\\";
    public static final char TILDE = '~';
@@ -943,9 +945,17 @@ public final class ABAP {
 	/** splits composed identifiers such as "any_class=>any_structure-any_component", or "any_class=>any_method(", 
 	 * or "any_interface~any_method" etc. into an array of identifiers, e.g. ["any_class", "=>", "any_structure", "-", "any_component"] 
 	 * or ["any_class", "=>", "any_method", "("] etc. */
-	public static ArrayList<String> splitIdentifier(String identifier) {
+	public static ArrayList<String> splitIdentifier(String identifier, boolean allowFieldSymbols) {
 		ArrayList<String> results = new ArrayList<String>();
+		if (StringUtil.isNullOrEmpty(identifier))
+			return results;
 		int start = 0;
+		// a field symbol could only be at the beginning, e.g. '<ls_any>-obj_ref->attribute'
+		if (allowFieldSymbols && identifier.charAt(0) == ABAP.FIELD_SYMBOL_START_SIGN) {
+			String fieldSymbol = readTillEndOfVariableName(identifier, start, true);
+			results.add(fieldSymbol);
+			start += fieldSymbol.length();
+		}
 		while (start < identifier.length()) {
 			boolean isVarName = isCharAllowedForVariableNames(identifier.charAt(start), true, false); 
 			int end = start + 1;

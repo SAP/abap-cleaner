@@ -47,6 +47,7 @@ public enum RuleID  {
    COMPARISON_OPERATOR,  
    NOT_IS,
    LOGICAL_OPERATOR_POSITION,
+   NEEDLESS_PARENTHESES,
    // - empty commands
    EMPTY_COMMAND,
    // - VALUE statements

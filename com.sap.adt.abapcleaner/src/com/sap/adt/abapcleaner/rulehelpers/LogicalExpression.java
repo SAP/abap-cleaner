@@ -111,11 +111,11 @@ public class LogicalExpression {
 		boolean ignoreNextAnd = false;
 		while (token != null && token != end) {
 			// if the ternary comparison operator "BETWEEN" is found, ignore the next "AND", since it is NOT a logical operator: "operand [NOT] BETWEEN operand1 AND operand2"
-			if (token.isComparisonOperator("BETWEEN"))
+			if (token.isComparisonOperator("BETWEEN")) {
 				ignoreNextAnd = true;
-			else if (ignoreNextAnd && token.textEquals("AND"))
+			} else if (ignoreNextAnd && token.textEquals("AND")) {
 				ignoreNextAnd = false;
-			else if (token.isKeyword()) {
+			} else if (token.isKeyword()) {
 				BindingLevel tokenBindingLevel = getBindingLevelOfToken(token, isFirst);
 				if (tokenBindingLevel != BindingLevel.UNKNOWN && tokenBindingLevel.getValue() < minBindingLevel.getValue())
 					minBindingLevel = tokenBindingLevel;
@@ -134,12 +134,12 @@ public class LogicalExpression {
 			token = start;
 			while (token != null && token != end) {
 				// if the ternary comparison operator "BETWEEN" is found, ignore the next "AND", since it is NOT a logical operator
-				if (token.isComparisonOperator("BETWEEN"))
+				if (token.isComparisonOperator("BETWEEN")) {
 					ignoreNextAnd = true;
-				else if (ignoreNextAnd && token.textEquals("AND"))
+				} else if (ignoreNextAnd && token.textEquals("AND")) {
 					ignoreNextAnd = false;
 
-				else if (token.isKeyword(keyword)) {
+				} else if (token.isKeyword(keyword)) {
 					if (token == start && bindingLevel != BindingLevel.NOT)
 						throw new UnexpectedSyntaxException(token, "unexpected position of ABAP keyword '" + keyword + "'");
 					if (token != start)
@@ -178,8 +178,9 @@ public class LogicalExpression {
 	private void addInnerExpression(Token start, Token end) throws UnexpectedSyntaxException {
 		LogicalExpression newInnerExpression = LogicalExpression.createInner(this, start, end);
 		innerExpressions.add(newInnerExpression); // for debugging, add the newInnerExpression even if it is not supported
-		if (!newInnerExpression.isSupported)
+		if (!newInnerExpression.isSupported) {
 			isSupported = false;
+		}
 	}
 
 	private Token findComparisonOrPredicateKeyword() {
@@ -603,5 +604,102 @@ public class LogicalExpression {
 				throw new IndexOutOfBoundsException("unexpected BindingLevel!");
 		}
 
+	}
+
+	public boolean removeAllNeedlessParentheses(boolean removeAroundAll, boolean removeAroundRelExpr, boolean removeOrParenthesisAnd, boolean removeAroundSameOp, boolean removeAroundNot) throws IntegrityBrokenException {
+		boolean changed = false;
+		LogicalExpression logExpr = this;
+		Command command = firstToken.getParentCommand();
+		do {
+			Token prevToken = logExpr.firstToken.getPrev();
+			Token endToken = logExpr.endToken;
+			if (logExpr.removeFirstNeedlessParentheses(removeAroundAll, removeAroundRelExpr, removeOrParenthesisAnd, removeAroundSameOp, removeAroundNot)) {
+				changed = true;
+				Token newFirstToken = (prevToken == null) ? command.getFirstToken() : prevToken.getNext();
+				Token newLastToken = (endToken == null) ? command.getLastToken() : endToken.getPrev();
+				try {
+					logExpr = LogicalExpression.create(newFirstToken, newLastToken);
+				} catch (UnexpectedSyntaxException e) {
+					throw new IntegrityBrokenException(command, e.getMessage());
+				}
+			} else {
+				break;
+			}
+		} while(true);
+		return changed;
+	}
+	
+	private boolean removeFirstNeedlessParentheses(boolean removeAroundAll, boolean removeAroundRelExpr, boolean removeOrParenthesisAnd, boolean removeAroundSameOp, boolean removeAroundNot) throws IntegrityBrokenException {
+		boolean removeParentheses = false;
+
+		if (!isValid)
+			throw new IllegalStateException("This logical expression instance is no longer valid!");
+
+		if (isInParentheses && firstToken.textEquals("(") && lastToken.textEquals(")") && firstToken.hasChildren()) {
+			if (parentExpression == null) {
+				// 61% of all cases found in sample code: ( ... )
+				removeParentheses = removeAroundAll;
+
+			} else if ((parentExpression.bindingLevel == BindingLevel.OR || parentExpression.bindingLevel == BindingLevel.AND) 
+					&& bindingLevel == BindingLevel.COMPARISON_OR_PREDICATE) {
+				// 11% of all cases found in sample code: OR/AND ( a < b ), OR/AND ( c IS INITIAL) 
+				removeParentheses = removeAroundRelExpr;
+			
+			} else if (parentExpression.bindingLevel == BindingLevel.OR && bindingLevel == BindingLevel.AND) {
+				// 26% of all cases found in sample code: OR ( ... AND ... ) 
+				removeParentheses = removeOrParenthesisAnd;
+			
+			} else if (parentExpression.bindingLevel == BindingLevel.OR && bindingLevel == BindingLevel.OR
+					  || parentExpression.bindingLevel == BindingLevel.AND && bindingLevel == BindingLevel.AND) {
+				// 1% of all cases found in sample code: OR ( ... OR ... ) / AND ( ... AND ... )
+				removeParentheses =  removeAroundSameOp;
+			
+			} else if (bindingLevel == BindingLevel.NOT) {
+				// close to 0% of all cases found in sample code: OR/AND ( NOT ... ), therefore, 
+				// removeAroundNot is currently NOT exposed on the UI, but always set to false
+				removeParentheses = removeAroundNot;
+				
+			} else {
+				// neglect all other cases (which were anyways never found in sample code), namely: 
+				// - EQUIV ( ... )
+				// - NOT ( COMPARISON_OR_PREDICATE )
+				// - ( ( ... ) ), which is currently not supported by LogicalExpression
+				removeParentheses = false;
+			}
+		} 
+
+		if (removeParentheses) {
+			Term codeInParens;
+			Term parentheses;
+			try {
+				codeInParens = Term.createForTokenRange(firstToken.getNext(), lastToken.getPrev());
+				parentheses = Term.createForTokenRange(firstToken, lastToken);
+			} catch (UnexpectedSyntaxException e) {
+				return false;
+			}
+			
+			// remove the code from inside the parentheses and insert it left of the opening "("  
+			codeInParens.removeFromCommand(true);
+			codeInParens.firstToken.copyWhitespaceFrom(parentheses.firstToken);
+			parentheses.firstToken.setWhitespace();
+			parentheses.firstToken.insertLeftSibling(codeInParens);
+			parentheses.removeFromCommand(true);
+			
+			// invalidate this LogicalExpression: in order to search for further needless (inner) parentheses,
+			// the caller must create a new LogicalExpression from the changed expression! 
+			isValid = false;
+			return true;
+
+		} else {
+			// recursively call inner expressions
+			for (LogicalExpression innerExpression : innerExpressions) {
+				if (innerExpression.removeFirstNeedlessParentheses(removeAroundAll, removeAroundRelExpr, removeOrParenthesisAnd, removeAroundSameOp, removeAroundNot)) {
+					// invalidate the whole LogicalExpression once any needless (inner) parentheses were removed (see comment above) 
+					isValid = false;
+					return true;
+				}
+			}
+			return false;
+		}
 	}
 }

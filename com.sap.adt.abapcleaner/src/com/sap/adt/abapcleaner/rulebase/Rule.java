@@ -20,7 +20,7 @@ import java.time.LocalDate;
 import java.util.*;
 
 public abstract class Rule {
-	public static final int RULE_COUNT = 64;
+	public static final int RULE_COUNT = 65;
 	public static final int RULE_GROUP_COUNT = 7;
 
 	protected static final String LINE_SEP = ABAP.LINE_SEPARATOR;
@@ -94,6 +94,7 @@ public abstract class Rule {
          new ComparisonOperatorRule(profile),
          new NotIsRule(profile),
          new LogicalOperatorPositionRule(profile),
+         new NeedlessParenthesesRule(profile),
          new EmptyCommandRule(profile),
          new ValueStatementRule(profile),
          new SelfReferenceMeRule(profile),
@@ -343,15 +344,17 @@ public abstract class Rule {
 		if (model == null)
 			return;
 		isActive = model.isActive;
-		for (Map.Entry<String, String> kvp : model.settings.entrySet()) 
+		for (Map.Entry<String, String> kvp : model.settings.entrySet()) { 
 			settings.put(kvp.getKey(), kvp.getValue());
+		}
 	}
 
 	protected final void initializeConfiguration() {
 		ConfigValue[] configValues = this.getConfigValues();
 		if (configValues != null) {
-			for (ConfigValue configValue : configValues)
+			for (ConfigValue configValue : configValues) {
 				configValue.setDefault();
+			}
 		}
 	}
 	

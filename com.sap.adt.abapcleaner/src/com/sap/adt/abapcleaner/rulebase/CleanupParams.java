@@ -57,6 +57,10 @@ public class CleanupParams {
 		return (rule != null);
 	}
 	
+	public String getProfileName() {
+		return (profile == null) ? "" : profile.name;
+	}
+	
 	/**
 	 * Returns the rules to be (potentially) executed according to these CleanupParams.
 	 * Note that execution still depends on CleanupParams.executeAllRules || rule.isActive. 

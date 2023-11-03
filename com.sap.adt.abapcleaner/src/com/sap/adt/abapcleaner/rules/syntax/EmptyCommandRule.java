@@ -34,19 +34,19 @@ public class EmptyCommandRule extends RuleForCommands {
 			+ LINE_SEP + "    \" although this method contains syntactically correct ABAP code," 
 			+ LINE_SEP + "    \" we hope you'll never see anything like this in real life!" 
 			+ LINE_SEP 
-			+ LINE_SEP + "    DATA iv_primary TYPE i..." 
+			+ LINE_SEP + "    DATA lv_primary TYPE i..." 
 			+ LINE_SEP 
-			+ LINE_SEP + "    iv_primary = 2." 
+			+ LINE_SEP + "    lv_primary = 2." 
 			+ LINE_SEP + "    . . ." 
-			+ LINE_SEP + "    iv_primary = 3." 
+			+ LINE_SEP + "    lv_primary = 3." 
 			+ LINE_SEP 
-			+ LINE_SEP + "    . iv_primary = 5." 
-			+ LINE_SEP + "    .. iv_primary = 7.." 
-			+ LINE_SEP + "    :,. iv_primary = 11." 
+			+ LINE_SEP + "    . lv_primary = 5." 
+			+ LINE_SEP + "    .. lv_primary = 7.." 
+			+ LINE_SEP + "    :,. lv_primary = 11." 
 			+ LINE_SEP 
-			+ LINE_SEP + "    ::::. iv_primary = 13. ::::." // compilable syntax error 
-			+ LINE_SEP + "    .:.:,.:,.iv_primary = 17.:.:,.:,." 
-			+ LINE_SEP + "    ... iv_primary = 19... iv_primary = 23... iv_primary = 29..." 
+			+ LINE_SEP + "    ::::. lv_primary = 13. ::::." // compilable syntax error 
+			+ LINE_SEP + "    .:.:,.:,.lv_primary = 17.:.:,.:,." 
+			+ LINE_SEP + "    ... lv_primary = 19... lv_primary = 23... lv_primary = 29..." 
 			+ LINE_SEP 
 			+ LINE_SEP + "    : \" comment 1" 
 			+ LINE_SEP + "*   comment 2" 
