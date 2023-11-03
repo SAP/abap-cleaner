@@ -27,7 +27,7 @@ public class ChainRule extends RuleForCommands {
 
 	@Override
 	public String getDescription() {
-		return "Resolves a chain (DATA:, FIELD-SYMBOLS:, ASSERT: etc.) into multiple standalone statements. The chain is kept, however, for declarations with BEGIN OF ... END OF blocks.";
+		return "Resolves a chain (DATA:, FIELD-SYMBOLS:, ASSERT: etc.) into multiple standalone statements. The chain is kept, however, for structure declarations with BEGIN OF ... END OF.";
 	}
 
 	@Override
@@ -63,12 +63,18 @@ public class ChainRule extends RuleForCommands {
  			+ LINE_SEP + "    CONSTANTS: any_constant TYPE i VALUE 1,"
  			+ LINE_SEP + "               other_constant TYPE i VALUE 2."
  			+ LINE_SEP 
-			+ LINE_SEP + "    \" BEGIN OF ... END OF blocks are always kept as a chain:" 
+			+ LINE_SEP + "    \" BEGIN OF ... END OF blocks are kept as a chain, however other types around" 
+			+ LINE_SEP + "    \" them are unchained; tables using the structure can be kept in the chain:" 
 			+ LINE_SEP + "    TYPES: " 
-			+ LINE_SEP + "      BEGIN of xy," 
-			+ LINE_SEP + "        a TYPE x," 
-			+ LINE_SEP + "        b TYPE y," 
-			+ LINE_SEP + "      END OF xy." 
+			+ LINE_SEP + "      ty_any_type TYPE string," 
+			+ LINE_SEP + "      BEGIN of ty_s_any," 
+			+ LINE_SEP + "        a TYPE i," 
+			+ LINE_SEP + "        b TYPE string," 
+			+ LINE_SEP + "      END OF ty_s_any," 
+			+ LINE_SEP + "      ty_tt_any TYPE STANDARD TABLE OF ty_s_any WITH EMPTY KEY," 
+			+ LINE_SEP + "      ty_ts_any TYPE SORTED TABLE OF ty_s_any WITH UNIQUE KEY a," 
+			+ LINE_SEP + "      ty_other_type TYPE i," 
+			+ LINE_SEP + "      ty_third_type TYPE i." 
  			+ LINE_SEP 
  			+ LINE_SEP + "    METHODS:" 
  			+ LINE_SEP + "      setup," 
@@ -119,10 +125,11 @@ public class ChainRule extends RuleForCommands {
    final ConfigBoolValue configExecuteOnInterfaces = new ConfigBoolValue(this, "ExecuteOnInterfaces", "Unchain declarations in interfaces", true, false, LocalDate.of(2023, 5, 21));
    final ConfigBoolValue configExecuteOnClassDefinitionSections = new ConfigBoolValue(this, "ExecuteOnClassDefinitionSections", "Unchain declarations in CLASS ... DEFINITION sections", true, false, LocalDate.of(2022, 4, 9));
    final ConfigBoolValue configExecuteOnLocalDeclarations = new ConfigBoolValue(this, "ExecuteOnLocalDeclarations", "Unchain declarations in methods etc.", true);
+   final ConfigBoolValue configKeepTablesWithStructures = new ConfigBoolValue(this, "KeepTablesWithStructures", "After TYPES: BEGIN OF ... END OF, keep tables chained with their structure", true, false, LocalDate.of(2023, 11, 3));
    final ConfigBoolValue configExecuteOnSimpleCommands = new ConfigBoolValue(this, "ExecuteOnSimpleCommands", "Unchain simple commands (chain after first keyword, e.g. ASSERT:, CHECK:, CLEAR:, FREE:) except WRITE:", false, false, LocalDate.of(2022, 4, 9));
    final ConfigBoolValue configExecuteOnComplexCommands = new ConfigBoolValue(this, "ExecuteOnComplexCommands", "Unchain complex commands (a += : 1,2,3 etc.)", true, false, LocalDate.of(2022, 4, 9));
 
-   private final ConfigValue[] configValues = new ConfigValue[] { configExecuteOnInterfaces, configExecuteOnClassDefinitionSections, configExecuteOnLocalDeclarations, configExecuteOnSimpleCommands, configExecuteOnComplexCommands };
+   private final ConfigValue[] configValues = new ConfigValue[] { configExecuteOnInterfaces, configExecuteOnClassDefinitionSections, configExecuteOnLocalDeclarations, configKeepTablesWithStructures, configExecuteOnSimpleCommands, configExecuteOnComplexCommands };
 
 	@Override
 	public ConfigValue[] getConfigValues() { return configValues; }
@@ -171,10 +178,19 @@ public class ChainRule extends RuleForCommands {
 		Token comma = chainSign.getLastTokenOnSiblings(true, TokenSearch.ASTERISK, ABAP.COMMA_SIGN_STRING);
 		if (comma == null)
 			return false;
-
-		// TODO: chains that just *contain* a BEGIN OF ... END OF section may nevertheless be partly unchained ...
-		if (command.getFirstToken().matchesOnSiblings(true, TokenSearch.ASTERISK, "BEGIN OF"))
+		if (command.getBlockLevelDiff() != 0)
 			return false;
+
+		// skip the Command if it only contains a single BEGIN OF ... END OF section (and possibly related table types using the structure);
+		// otherwise, we are sure that at least something can be unchained
+		Token strucStart = command.getFirstToken().getLastTokenOnSiblings(true, TokenSearch.ASTERISK, "BEGIN", "OF");
+		if (strucStart != null) {
+			strucStart = strucStart.getPrevCodeSibling(); // move to "BEGIN"
+			Token strucEnd = findEndOfStructure(strucStart);
+			if (strucEnd == null || strucEnd.isPeriod() && !strucStart.getPrevCodeSibling().isComma()) {
+				return false;
+			}
+		}
 
 		Command originalCommand = (command.originalCommand != null) ? command.originalCommand : command;
 		command.originalCommand = originalCommand;
@@ -210,7 +226,7 @@ public class ChainRule extends RuleForCommands {
 		
 		boolean moveFollowingLinesLeft = (chainSign.getNextNonCommentToken().lineBreaks == 0); // i.e. if the code continues behind the ":", not below it
 		chainSign.removeFromCommand(moveFollowingLinesLeft);
-
+ 
 		// remove all further colons from the command (see comment inside this method) 
 		command.removeAllChainColons();	
 		
@@ -232,7 +248,11 @@ public class ChainRule extends RuleForCommands {
 			if (firstTokenOfPartB.lineBreaks == 0 && firstTokenOfPartB.spacesLeft == 0)
 				firstTokenOfPartB.spacesLeft = 1;
 
-			Token periodOrComma = lastTokenOfPartA.getLastTokenOnSiblings(true, TokenSearch.ASTERISK, ",|.");
+			// find the end of the chain element - or the end of the BEGIN OF ... END OF block (possibly including related table types)
+			Token firstCodeTokenOfPartB = firstTokenOfPartB.getThisOrNextCodeToken(); // move behind a pragma
+			boolean isStruc = firstCodeTokenOfPartB.matchesOnSiblings(true, "BEGIN", "OF");
+			Token periodOrComma = isStruc ? findEndOfStructure(firstCodeTokenOfPartB) : lastTokenOfPartA.getLastTokenOnSiblings(true, TokenSearch.ASTERISK, ",|.");
+			
 			if (periodOrComma.isComma()) {
 				// determine the end of the section
 
@@ -262,6 +282,9 @@ public class ChainRule extends RuleForCommands {
 					int lineBreaks = useStartLineBreaks ? startLineBreaks : Math.max(firstTokenOfPartB.lineBreaks, 1);
 					newCommand = command.copyTokenRangeToNewCommand(firstTokenOfPartA, lastTokenOfPartA.getNext(), lineBreaks, indent);
 					useStartLineBreaks = false;
+					// for BEGIN OF ... END OF, create a chain sign
+					if (isStruc) 
+						newCommand.getLastToken().addNext(Token.createForAbap(0, 0, ":", chainSign.sourceLineNum));
 					// create a Term for part B (reusing same try block)
 					partB = Term.createForTokenRange(firstTokenOfPartB, lastTokenOfPartB);
 				} catch (UnexpectedSyntaxException ex) {
@@ -297,8 +320,11 @@ public class ChainRule extends RuleForCommands {
 				// continue with loop
 
 			} else {
-				// last element: simply move the identifier behind the keyword
+				// for BEGIN OF ... END OF, introduce a chain sign again
+				if (isStruc) 
+					firstTokenOfPartA.insertRightSibling(Token.createForAbap(0, 0, ":", chainSign.sourceLineNum), false);
 				firstTokenOfPartA.lineBreaks = useStartLineBreaks ? startLineBreaks : Math.max(firstTokenOfPartB.lineBreaks, 1);
+				// last element: simply move the identifier behind the keyword
 				int oldIndent = firstTokenOfPartB.getStartIndexInLine();
 				if (firstTokenOfPartB.isPeriod() && startLineBreaksPartB == 0)
 					firstTokenOfPartB.setWhitespace(0, 0);
@@ -313,5 +339,49 @@ public class ChainRule extends RuleForCommands {
 				return true;
 			}
 		} while (true);
+	}
+
+	private Token findEndOfStructure(Token strucStart) {
+		// determine the structure name, allowing for BEGIN OF ENUM and BEGIN OF MESH
+		Token strucName = strucStart.getNextCodeSibling().getNextCodeSibling();
+		if (strucName.isAnyKeyword("ENUM", "MESH"))
+			strucName = strucName.getNextCodeSibling();
+		if (!strucName.isIdentifier())
+			return null;
+
+		Token token = strucStart;
+		int level = 1;
+		do {
+			Token commaOrPeriod = token.getLastTokenOnSiblings(true, TokenSearch.ASTERISK, ",|.");
+			if (commaOrPeriod.isPeriod())
+				return null;
+			token = commaOrPeriod.getNextCodeSibling();
+			if (token.matchesOnSiblings(true, "BEGIN", "OF")) {
+				++level;
+			} else if (token.matchesOnSiblings(true, "END", "OF")) {
+				--level;
+			}
+		} while(level > 0);
+		
+		Token strucEnd = token.getLastTokenOnSiblings(true, TokenSearch.ASTERISK, ".|,");
+		
+		// possibly include further lines that directly use the newly defined structure
+		if (configKeepTablesWithStructures.getValue()) {
+			Token test = strucEnd.getNextCodeSibling();
+			boolean found = false;
+			while (test != null) {
+				if (test.isIdentifier() && test.textEquals(strucName.getText())) {
+					found = true;
+				} else if (test.isCommaOrPeriod()) {
+					if (!found) 
+						break;
+					// extend strucEnd to this chain element and reset 'found' for the next chain element
+					strucEnd = test;
+					found = false;
+				}
+				test = test.getNextCodeSibling();
+			}
+		}
+		return strucEnd;
 	}
 }
