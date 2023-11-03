@@ -124,6 +124,14 @@ public class LogicalExpressionTest {
 	}
 	
 	@Test
+	void testComparisonInParentheses() {
+		testLogicalExpression(
+				"( a = b )", 
+				"( a !=! b )", 
+				"( a <> b )");
+	}
+	
+	@Test
 	void testComparisonWithoutNot() {
 		// ensure that NegationStyle.ALWAYS_WITH_AND_OR has NO effect here
 		testLogicalExpression(NegationStyle.ALWAYS_WITH_AND_OR,

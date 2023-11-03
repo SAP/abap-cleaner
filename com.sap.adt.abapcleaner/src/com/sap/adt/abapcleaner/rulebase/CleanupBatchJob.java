@@ -23,13 +23,15 @@ public class CleanupBatchJob implements IBatchJob {
 	
 	@Override
 	public String getDescription() { 
-		return (cleanupParams.executeCleanup() ? "Test Parser, Cleaner and Comparer" : "Test Parser" ) + ", applying all rules to all code files in folder"; 
+		String test = cleanupParams.executeCleanup() ? "Test Parser, Cleaner (profile '" + cleanupParams.getProfileName() + "') and Comparer" 
+																   : "Test Parser"; 
+		return test + ", applying all rules to all code files in folder"; 
 	}
 	
 	@Override
 	public String getTitle(String codeFileInfo) { 
 		if (cleanupParams.executeCleanup())
-			return "Parser, Cleaner (" + String.valueOf(cleanupParams.getRules().length) + " rules), and Comparer result for " + codeFileInfo;
+			return "Parser, Cleaner (" + String.valueOf(cleanupParams.getRules().length) + " rules with profile '" + cleanupParams.getProfileName() + "'), and Comparer result for " + codeFileInfo;
 		else
 			return "Parser result for " + codeFileInfo;
 	 }

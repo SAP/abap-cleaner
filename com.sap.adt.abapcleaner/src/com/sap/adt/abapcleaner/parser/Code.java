@@ -680,4 +680,20 @@ public class Code {
 		}
 		return found;
 	}
+	
+	public Command searchCommandAt(int sourceLineNum) {
+		Command command = firstCommand;
+		while (command != null) {
+			if (command.getSourceLineNumStart() <= sourceLineNum && command.getSourceLineNumEnd() >= sourceLineNum) {
+				return command;
+			} 
+			// for performance, move to next sibling, if possible
+			if (command.getNextSibling() != null && command.getNextSibling().getSourceLineNumStart() <= sourceLineNum) {
+				command = command.getNextSibling();
+			} else {
+				command = command.getNext();
+			}
+		}
+		return command;
+	}
 }

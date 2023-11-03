@@ -41,8 +41,11 @@ import java.util.*;
 
 import com.sap.adt.abapcleaner.base.*;
 import com.sap.adt.abapcleaner.comparer.*;
+import com.sap.adt.abapcleaner.parser.Code;
+import com.sap.adt.abapcleaner.parser.Obfuscator;
 import com.sap.adt.abapcleaner.programbase.*;
 import com.sap.adt.abapcleaner.rulebase.*;
+
 import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.events.ModifyEvent;
@@ -107,6 +110,7 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
    private Combo cboHighlight;
    private Label lblFilter;
    private Text txtFilter;
+   private Button btnObfuscate;
    private Button btnGenerateUnitTest;
    private Button btnGenerateExample;
    private Composite pngProfileImportExport;
@@ -319,6 +323,7 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
       for (Label lblRuleChapter : lblRuleChapters) 
       	lblRuleChapter.setText("");
       
+      btnObfuscate.setVisible(Program.showDevFeatures());
       btnGenerateUnitTest.setVisible(Program.showDevFeatures());
       btnGenerateExample.setVisible(Program.showDevFeatures());
 
@@ -883,7 +888,7 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 		
 		Composite cpsHighlightCancelOk = new Composite(pnlRule, SWT.NONE);
 		cpsHighlightCancelOk.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
-		GridLayout gl_cpsHighlightCancelOk = new GridLayout(8, false);
+		GridLayout gl_cpsHighlightCancelOk = new GridLayout(9, false);
 		gl_cpsHighlightCancelOk.marginWidth = 0;
 		cpsHighlightCancelOk.setLayout(gl_cpsHighlightCancelOk);
 		
@@ -933,12 +938,26 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 				boolean highlight = chkHighlightWritePositions.getSelection();
 				if (settings != null)
 					settings.profilesHighlightWritePositions = highlight; 
-				if (codeDisplay != null && !codeDisplay.isDisposed())
+				if (codeDisplay != null && !codeDisplay.isDisposed()) {
 					codeDisplay.setHighlightWritePositions(highlight);
+				}
 			}
 		});
 		chkHighlightWritePositions.setText("&Write positions");
 		
+		btnObfuscate = new Button(cpsHighlightCancelOk, SWT.NONE);
+		btnObfuscate.setToolTipText("Obfuscate code in left display. Shift+Click to obfuscate each statement individually; Ctrl+Click to get minimal, simplified identifiers and remove all comments.");
+		btnObfuscate.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				boolean methodScope = ((e.stateMask & SWT.SHIFT) == 0);
+				boolean simplify = ((e.stateMask & SWT.CONTROL) != 0);
+		   	Obfuscator obfuscator = new Obfuscator(methodScope, simplify, simplify, simplify, simplify, true);
+				obfuscateExampleCode(obfuscator );
+			}
+		});
+		btnObfuscate.setText("Obfuscate");
+
 		btnGenerateUnitTest = new Button(cpsHighlightCancelOk, SWT.NONE);
 		btnGenerateUnitTest.setToolTipText("Generate Java code for Unit Test from code selection (left and right display)");
 		btnGenerateUnitTest.addSelectionListener(new SelectionAdapter() {
@@ -1820,5 +1839,21 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 		// update the profiles from read-only directories (all other would have been moved along with the own profile directory) 
 		Profile.updateReadOnlyProfiles(profiles, settings.readOnlyProfileDirs);
 		refreshProfileList(curProfileName);
+   }
+   
+   private void obfuscateExampleCode(Obfuscator obfuscator) {
+   	Code code;
+   	try {
+   		code = obfuscator.obfuscate(curExampleCode);
+			obfuscator.obfuscate(code);
+		} catch (UnexpectedSyntaxAfterChanges | ParseException e) {
+			Message.show(e.getMessage(), shell);
+			return;
+		}
+   	
+		boolean parseSuccess = refreshExample(curRule, code.toString());
+      if (!parseSuccess) {
+      	refreshExample(curRule, curRule.getExample());
+      }
    }
 }

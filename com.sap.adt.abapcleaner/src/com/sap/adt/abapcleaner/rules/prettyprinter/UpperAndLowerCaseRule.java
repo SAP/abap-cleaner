@@ -332,7 +332,7 @@ public class UpperAndLowerCaseRule extends RuleForCommands {
 		// split composed identifiers "any_class=>any_structure-any_component", or "any_class=>any_method(" into multiple parts
 		// in order to apply the rule to each part; otherwise, "IF_ANY_INTERFACE~any_method" would be considered a 'mixed case'
 		StringBuilder changedTextBuilder = new StringBuilder();
-		ArrayList<String> textBits = ABAP.splitIdentifier(text);
+		ArrayList<String> textBits = ABAP.splitIdentifier(text, false);
 
 		for (String textBit : textBits) {
 			// since mixed case identifiers should be kept in this method, only change the text if it is 

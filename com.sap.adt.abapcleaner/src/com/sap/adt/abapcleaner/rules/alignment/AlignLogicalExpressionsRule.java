@@ -112,10 +112,11 @@ public class AlignLogicalExpressionsRule extends RuleForLogicalExpressions {
 	}
 
 	public final boolean alignLogicalExpression(Code code, Command command, Token keyword, Token end, boolean testRuleBlocked, int releaseRestriction) throws UnexpectedSyntaxAfterChanges {
-		if (testRuleBlocked && isCommandBlocked(command))
+		if (testRuleBlocked && isCommandBlocked(command)) {
 			return false;
-		else
+		} else {
 			return executeOn(code, command, keyword, end, releaseRestriction);
+		}
 	}
 
 	@Override

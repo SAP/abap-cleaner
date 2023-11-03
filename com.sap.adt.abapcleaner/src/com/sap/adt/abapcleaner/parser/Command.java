@@ -545,7 +545,7 @@ public class Command {
 				if (belongsToMacroDefinition()) { 
 					msg += "Macro definitions with incomplete code blocks are currently not supported by " + Program.PRODUCT_NAME + ". ";
 				}
-				msg += "Opening command (line " + Cult.format(this.sourceLineNumStart) + "): " + this.toStringForErrorMessage();
+				msg += "Opening command (line " + Cult.format(this.sourceLineNumStart) + "): " + this.toStringForErrorMessage(false);
 				throw new UnexpectedSyntaxException(this, msg);
 			} else {
 				// remove an optional level closer that does not apply in this case, e.g. 'DEFINE any_macro. CLASS &1 DEFINITION.'
@@ -1391,14 +1391,14 @@ public class Command {
 		return result.toString();
 	}
 
-	private String toStringForErrorMessage() {
+	public String toStringForErrorMessage(boolean showLineBreaks) {
 		StringBuilder result = new StringBuilder();
 		Token token = firstToken;
 		result.append(token.text);
 		while (token.getNext() != null) {
 			token = token.getNext();
 			if (!token.isComment()) {
-				String sep = token.isAttached() ? "" : " ";
+				String sep = token.isAttached() ? "" : (showLineBreaks && token.lineBreaks > 0 ? " | " : " ");
 				result.append(sep + token.text);
 			}
 		}
@@ -1710,8 +1710,9 @@ public class Command {
 		prevSibling = null;
 		nextSibling = null;
 
-		if (parentTemp != null)
+		if (parentTemp != null) {
 			parentTemp.testReferentialIntegrity(false);
+		}
 	}
 
 	/**
@@ -3118,7 +3119,7 @@ public class Command {
 		//   return changesSyField(ABAP.SyField.SUBRC) && SyFieldAnalyzer.getSyFieldReadersFor(ABAP.SyField.SUBRC, this).size() >= 2;
 		//   - getCommandsRelatedToPatternMatch() can then return SyFieldAnalyzer.getSyFieldReadersFor(ABAP.SyField.SUBRC, this);
 		
-		return false;
+		return changeControl.wasRuleUsed(RuleID.NEEDLESS_PARENTHESES);
 	}
 	
 	public final ArrayList<Command> getCommandsRelatedToPatternMatch() {

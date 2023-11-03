@@ -55,7 +55,7 @@ public class SpaceAroundTextLiteralRule extends RuleForTokens {
 			+ LINE_SEP + "                            ( '222' )" 
 			+ LINE_SEP + "                            ( '333') )." 
 			+ LINE_SEP 
-			+ LINE_SEP + "    lt_value = lt_other_table[ name = 'abc']-value." 
+			+ LINE_SEP + "    lt_value = lt_other_table[ name ='abc' ]-value." 
 			+ LINE_SEP + "    lt_any[`1` ]-num =`a`."  // compilable error at `a`
 			+ LINE_SEP + "    lt_any['1' ]-num ='a'." 
 			+ LINE_SEP  
