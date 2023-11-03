@@ -20,6 +20,7 @@ class ChainTest extends RuleTestBase {
 		rule.configExecuteOnInterfaces.setValue(true);
 		rule.configExecuteOnClassDefinitionSections.setValue(true);
 		rule.configExecuteOnLocalDeclarations.setValue(true);
+		rule.configKeepTablesWithStructures.setValue(true);
 		rule.configExecuteOnSimpleCommands.setValue(false);
 		rule.configExecuteOnComplexCommands.setValue(true);
 	}
@@ -129,26 +130,6 @@ class ChainTest extends RuleTestBase {
 		buildExp("    FIELD-SYMBOLS <ls_item_data> TYPE ty_s_item_data.");
 		buildExp("    FIELD-SYMBOLS <ls_param>     LIKE LINE OF mt_parameter.");
 
-		putAnyMethodAroundSrcAndExp();
-		
-		testRule();
-	}
-
-	@Test
-	void testStructureDeclarationUnchanged() {
-		rule.configExecuteOnClassDefinitionSections.setValue(false);
-
-		buildSrc("    \" BEGIN OF ... END OF blocks are kept as a chain");
-		buildSrc("    TYPES:");
-		buildSrc("      ty_ts_xyz TYPE SORTED TABLE OF ty_s_xyz,");
-		buildSrc("      BEGIN of xyz,");
-		buildSrc("        a TYPE x,");
-		buildSrc("        b TYPE y,");
-		buildSrc("        c TYPE z,");
-		buildSrc("      END OF xyz.");
-
-		copyExpFromSrc();
-		
 		putAnyMethodAroundSrcAndExp();
 		
 		testRule();
@@ -406,4 +387,235 @@ class ChainTest extends RuleTestBase {
 		testRule();
 	}
 
+	@Test
+	void testTypesBeginOfBetweenUnrelatedTypes() {
+		buildSrc("    TYPES:");
+		buildSrc("      first_type TYPE i,");
+		buildSrc("      BEGIN OF ty_s_any,");
+		buildSrc("        i1 TYPE i,");
+		buildSrc("        i2 TYPE i,");
+		buildSrc("      END OF ty_s_any,");
+		buildSrc("      next_type TYPE i,");
+		buildSrc("      last_type TYPE string.");
+
+		buildExp("    TYPES first_type TYPE i.");
+		buildExp("    TYPES: BEGIN OF ty_s_any,");
+		buildExp("             i1 TYPE i,");
+		buildExp("             i2 TYPE i,");
+		buildExp("           END OF ty_s_any.");
+		buildExp("    TYPES next_type TYPE i.");
+		buildExp("    TYPES last_type TYPE string.");
+
+		testRule();
+	}
+
+	@Test
+	void testTypesBeginOfKeepingTableInChain() {
+		buildSrc("    TYPES: BEGIN OF t_struct1,");
+		buildSrc("             col1 TYPE i,");
+		buildSrc("           END OF t_struct1,");
+		buildSrc("           BEGIN OF t_struct2,");
+		buildSrc("             col1 TYPE i,");
+		buildSrc("           END OF t_struct2,");
+		buildSrc("           t_itab TYPE TABLE OF t_struct2 WITH EMPTY KEY.");
+
+		buildExp("    TYPES: BEGIN OF t_struct1,");
+		buildExp("             col1 TYPE i,");
+		buildExp("           END OF t_struct1.");
+		buildExp("    TYPES: BEGIN OF t_struct2,");
+		buildExp("             col1 TYPE i,");
+		buildExp("           END OF t_struct2,");
+		buildExp("           t_itab TYPE TABLE OF t_struct2 WITH EMPTY KEY.");
+
+		testRule();
+	}
+
+
+	@Test
+	void testTypesBeginOfMovingTableOutOfChain() {
+		rule.configKeepTablesWithStructures.setValue(false);
+
+		buildSrc("    TYPES: BEGIN OF t_struct1,");
+		buildSrc("             col1 TYPE i,");
+		buildSrc("           END OF t_struct1,");
+		buildSrc("           BEGIN OF t_struct2,");
+		buildSrc("             col1 TYPE i,");
+		buildSrc("           END OF t_struct2,");
+		buildSrc("           t_itab TYPE TABLE OF t_struct2 WITH EMPTY KEY.");
+
+		buildExp("    TYPES: BEGIN OF t_struct1,");
+		buildExp("             col1 TYPE i,");
+		buildExp("           END OF t_struct1.");
+		buildExp("    TYPES: BEGIN OF t_struct2,");
+		buildExp("             col1 TYPE i,");
+		buildExp("           END OF t_struct2.");
+		buildExp("    TYPES t_itab TYPE TABLE OF t_struct2 WITH EMPTY KEY.");
+
+		testRule();
+	}
+
+	@Test
+	void testMultiTypesBeginOfWithRelatedAndUnrelated() {
+		buildSrc("    TYPES:");
+		buildSrc("      ty_first TYPE i,");
+		buildSrc("      BEGIN OF ty_s_any,");
+		buildSrc("        i1 TYPE i,");
+		buildSrc("        i2 TYPE i,");
+		buildSrc("      END OF ty_s_any,");
+		buildSrc("      ty_ts_any TYPE SORTED TABLE OF ty_s_any WITH UNIQUE KEY i1,");
+		buildSrc("      ty_th_any TYPE HASHED TABLE OF ty_s_any WITH UNIQUE KEY i1 i2,");
+		buildSrc("      ty_second TYPE char30,");
+		buildSrc("      BEGIN OF ty_s_other,");
+		buildSrc("        s1 TYPE string,");
+		buildSrc("        s2 TYPE string,");
+		buildSrc("      END OF ty_s_other,");
+		buildSrc("      ty_ts_other TYPE SORTED TABLE OF ty_s_other WITH UNIQUE KEY s1,");
+		buildSrc("      ty_tt_any TYPE STANDARD TABLE OF ty_s_any WITH EMPTY KEY,");
+		buildSrc("      ty_third TYPE i,");
+		buildSrc("      ty_last TYPE string.");
+
+		buildExp("    TYPES ty_first TYPE i.");
+		buildExp("    TYPES: BEGIN OF ty_s_any,");
+		buildExp("             i1 TYPE i,");
+		buildExp("             i2 TYPE i,");
+		buildExp("           END OF ty_s_any,");
+		buildExp("           ty_ts_any TYPE SORTED TABLE OF ty_s_any WITH UNIQUE KEY i1,");
+		buildExp("           ty_th_any TYPE HASHED TABLE OF ty_s_any WITH UNIQUE KEY i1 i2.");
+		buildExp("    TYPES ty_second TYPE char30.");
+		buildExp("    TYPES: BEGIN OF ty_s_other,");
+		buildExp("             s1 TYPE string,");
+		buildExp("             s2 TYPE string,");
+		buildExp("           END OF ty_s_other,");
+		buildExp("           ty_ts_other TYPE SORTED TABLE OF ty_s_other WITH UNIQUE KEY s1.");
+		buildExp("    TYPES ty_tt_any TYPE STANDARD TABLE OF ty_s_any WITH EMPTY KEY.");
+		buildExp("    TYPES ty_third TYPE i.");
+		buildExp("    TYPES ty_last TYPE string.");
+
+		testRule();
+	}
+
+	@Test
+	void testMultiTypesBeginOfMovingTablesOut() {
+		rule.configKeepTablesWithStructures.setValue(false);
+
+		buildSrc("    TYPES:");
+		buildSrc("      ty_first TYPE i,");
+		buildSrc("      BEGIN OF ty_s_any,");
+		buildSrc("        i1 TYPE i,");
+		buildSrc("        i2 TYPE i,");
+		buildSrc("      END OF ty_s_any,");
+		buildSrc("      ty_ts_any TYPE SORTED TABLE OF ty_s_any WITH UNIQUE KEY i1,");
+		buildSrc("      ty_th_any TYPE HASHED TABLE OF ty_s_any WITH UNIQUE KEY i1 i2,");
+		buildSrc("      ty_second TYPE char30,");
+		buildSrc("      BEGIN OF ty_s_other,");
+		buildSrc("        s1 TYPE string,");
+		buildSrc("        s2 TYPE string,");
+		buildSrc("      END OF ty_s_other,");
+		buildSrc("      ty_ts_other TYPE SORTED TABLE OF ty_s_other WITH UNIQUE KEY s1,");
+		buildSrc("      ty_tt_any TYPE STANDARD TABLE OF ty_s_any WITH EMPTY KEY,");
+		buildSrc("      ty_third TYPE i,");
+		buildSrc("      ty_last TYPE string.");
+
+		buildExp("    TYPES ty_first TYPE i.");
+		buildExp("    TYPES: BEGIN OF ty_s_any,");
+		buildExp("             i1 TYPE i,");
+		buildExp("             i2 TYPE i,");
+		buildExp("           END OF ty_s_any.");
+		buildExp("    TYPES ty_ts_any TYPE SORTED TABLE OF ty_s_any WITH UNIQUE KEY i1.");
+		buildExp("    TYPES ty_th_any TYPE HASHED TABLE OF ty_s_any WITH UNIQUE KEY i1 i2.");
+		buildExp("    TYPES ty_second TYPE char30.");
+		buildExp("    TYPES: BEGIN OF ty_s_other,");
+		buildExp("             s1 TYPE string,");
+		buildExp("             s2 TYPE string,");
+		buildExp("           END OF ty_s_other.");
+		buildExp("    TYPES ty_ts_other TYPE SORTED TABLE OF ty_s_other WITH UNIQUE KEY s1.");
+		buildExp("    TYPES ty_tt_any TYPE STANDARD TABLE OF ty_s_any WITH EMPTY KEY.");
+		buildExp("    TYPES ty_third TYPE i.");
+		buildExp("    TYPES ty_last TYPE string.");
+
+		testRule();
+	}
+
+	@Test
+	void testNonZeroBlockLevelDiffUnchanged() {
+		// ensure that TYPES chains which increase or decrease block level are not changed
+
+		buildSrc("    TYPES:");
+		buildSrc("      BEGIN OF ty_s_any,");
+		buildSrc("        any TYPE i,");
+		buildSrc("        BEGIN OF ty_s_inner,");
+		buildSrc("          i1 TYPE i.");
+		buildSrc("    INCLUDE any_type.");
+		buildSrc("    TYPES: i2 TYPE i,");
+		buildSrc("           i3 TYPE i,");
+		buildSrc("        END OF ty_s_inner,");
+		buildSrc("      END OF ty_s_any.");
+
+		copyExpFromSrc();
+
+		testRule();
+	}
+
+	@Test
+	void testNonZeroInitialBlockLevelUnchanged() {
+		// ensure that the second TYPES in unchanged, although it does not contain any BEGIN OF or END OF
+
+		buildSrc("    TYPES: BEGIN OF ty_s_any,");
+		buildSrc("             any TYPE i,");
+		buildSrc("             BEGIN OF ty_s_inner,");
+		buildSrc("               i1 TYPE i.");
+		buildSrc("    INCLUDE    any_type.");
+		buildSrc("    TYPES:     i2 TYPE i,");
+		buildSrc("               i3 TYPE i.");
+		buildSrc("    TYPES:   END OF ty_s_inner,");
+		buildSrc("           END OF ty_s_any.");
+
+		copyExpFromSrc();
+
+		testRule();
+	}
+
+	@Test
+	void testNestedBeginOfChanged() {
+		// ensure that a nested structure that starts at block level 0 is changed
+		rule.configKeepTablesWithStructures.setValue(false);
+
+		buildSrc("    TYPES: BEGIN OF ty_s_any,");
+		buildSrc("             any TYPE i,");
+		buildSrc("             BEGIN OF ty_s_inner,");
+		buildSrc("               i1 TYPE i,");
+		buildSrc("               i2 TYPE i,");
+		buildSrc("             END OF ty_s_inner,");
+		buildSrc("           END OF ty_s_any,");
+		buildSrc("           ty_tt_any TYPE STANDARD TABLE OF ty_s_any WITH EMPTY KEY.");
+
+		buildExp("    TYPES: BEGIN OF ty_s_any,");
+		buildExp("             any TYPE i,");
+		buildExp("             BEGIN OF ty_s_inner,");
+		buildExp("               i1 TYPE i,");
+		buildExp("               i2 TYPE i,");
+		buildExp("             END OF ty_s_inner,");
+		buildExp("           END OF ty_s_any.");
+		buildExp("    TYPES ty_tt_any TYPE STANDARD TABLE OF ty_s_any WITH EMPTY KEY.");
+
+		testRule();
+	}
+
+	@Test
+	void testTypesBeginOfEnum() {
+		buildSrc("    TYPES:");
+		buildSrc("      BEGIN OF ENUM number,");
+		buildSrc("        n0, n1, n2, n3,");
+		buildSrc("      END OF ENUM number,");
+		buildSrc("      ty_first TYPE STANDARD TABLE OF number WITH DEFAULT KEY,");
+		buildSrc("      ty_second TYPE char30.");
+
+		buildExp("    TYPES: BEGIN OF ENUM number,");
+		buildExp("             n0, n1, n2, n3,");
+		buildExp("           END OF ENUM number,");
+		buildExp("           ty_first TYPE STANDARD TABLE OF number WITH DEFAULT KEY.");
+		buildExp("    TYPES ty_second TYPE char30.");
+
+		testRule();
+	}
 }

@@ -3118,8 +3118,8 @@ public class Command {
 		// - is a certain system field modified with at least 2 reads on this system field in subsequent program flow?
 		//   return changesSyField(ABAP.SyField.SUBRC) && SyFieldAnalyzer.getSyFieldReadersFor(ABAP.SyField.SUBRC, this).size() >= 2;
 		//   - getCommandsRelatedToPatternMatch() can then return SyFieldAnalyzer.getSyFieldReadersFor(ABAP.SyField.SUBRC, this);
-		
-		return changeControl.wasRuleUsed(RuleID.NEEDLESS_PARENTHESES);
+
+		return false;
 	}
 	
 	public final ArrayList<Command> getCommandsRelatedToPatternMatch() {
