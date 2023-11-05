@@ -1975,6 +1975,13 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 					CleanupParams.createForProfile(curProfile, false, settings.releaseRestriction));
 			Task result = runJobWithProgressUiIfNeeded(job);
 
+			String errorMsg = result.getErrorMessage();
+			if (!StringUtil.isNullOrEmpty(errorMsg)) {
+				String msg = "Error in " + sourceName + ": " + errorMsg + System.lineSeparator() + System.lineSeparator() + "Do you want to open the source file in a text editor?"; 
+				if (Message.show(msg, "Error in " + sourceName, SWT.YES | SWT.NO | SWT.ICON_QUESTION, shell) == SWT.YES) 
+					ProgramLauncher.startProcess(testPath);
+				continue;
+			}
 			RuleStats[] ruleStats = result.getResultingDiffDoc().getRuleStats(curProfile);
 			for (RuleStats ruleStat : ruleStats) {
 				if (ruleStat.isUsed()) {
