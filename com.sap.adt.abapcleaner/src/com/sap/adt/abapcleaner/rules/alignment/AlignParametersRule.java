@@ -11,7 +11,7 @@ import java.time.LocalDate;
 import java.util.*;
 
 public class AlignParametersRule extends RuleForCommands {
-	private enum Columns {
+	public enum Columns {
 		// LET ... IN expressions
 		LET_KEYWORD, 
 		LET_PARAMETER, 
@@ -27,10 +27,9 @@ public class AlignParametersRule extends RuleForCommands {
 		
 		public int getValue() { return this.ordinal(); }
 	}
+	public static final int MAX_COLUMN_COUNT = 9;
 
-	private static final int MAX_COLUMN_COUNT = 9;
-
-	private enum ContentType {
+	public enum ContentType {
 		FUNCTIONAL_CALL_PARAMS, 
 		PROCEDURAL_CALL_PARAMS, 
 		TABLE_KEY, 
@@ -432,6 +431,7 @@ public class AlignParametersRule extends RuleForCommands {
 			do {
 				parentTokens.add(curParent);
 				buildAlignTable(table, curParent, curEnd, contentType, otherLineStarts);
+				setForcedLineBreaks(table, contentType);
 
 				// in case of a table constructor, search the parentheses for the next row
 				if (contentType != ContentType.ROW_IN_VALUE_OR_NEW_CONSTRUCTOR || !alignAcrossTableRows)
@@ -605,7 +605,7 @@ public class AlignParametersRule extends RuleForCommands {
 		return null;
 	}
 	
-	private void buildAlignTable(AlignTable table, Token parentToken, Token end, ContentType contentType, ArrayList<Token> otherLineStarts) throws UnexpectedSyntaxException {
+	public static void buildAlignTable(AlignTable table, Token parentToken, Token end, ContentType contentType, ArrayList<Token> otherLineStarts) throws UnexpectedSyntaxException {
 		table.getColumn(Columns.ASSIGNMENT_OP.getValue()).rightAlign = true; // if both = and ?= appear, align the "=" and make the "?" stand out
 
 		Token token = parentToken.getNext(); // parentToken is the opening parenthesis or bracket
@@ -631,7 +631,6 @@ public class AlignParametersRule extends RuleForCommands {
 		
 		// find assignments within the siblings inside the parentheses or brackets
 		boolean isInLetExpression = false;
-		boolean hasLetExpression = false;
 		boolean continueLastLine = false;
 		boolean tableEndsWithOtherLine = false; 
 		boolean isInExceptions = false;
@@ -655,7 +654,6 @@ public class AlignParametersRule extends RuleForCommands {
 						// keep keyword
 					} else if (keyword.isKeyword("LET")) { // for LET expressions, e.g. "VALUE #( LET a = 1 IN ... )"
 						isInLetExpression = true;
-						hasLetExpression = true;
 					} else {
 						keyword = null;
 					}
@@ -764,6 +762,10 @@ public class AlignParametersRule extends RuleForCommands {
 				table.getLastLine().addWidthToEnd(addWidth); 
 			}
 		}
+	}
+	
+	private void setForcedLineBreaks(AlignTable table, ContentType contentType) {
+		boolean hasLetExpression = !table.getColumn(Columns.LET_KEYWORD.getValue()).isEmpty();
 
 		if (hasLetExpression) {
 			table.getColumn(Columns.LET_EXPRESSION.getValue()).setForceLineBreakAfter(false);

@@ -20,7 +20,7 @@ import java.time.LocalDate;
 import java.util.*;
 
 public abstract class Rule {
-	public static final int RULE_COUNT = 65;
+	public static final int RULE_COUNT = 66;
 	public static final int RULE_GROUP_COUNT = 7;
 
 	protected static final String LINE_SEP = ABAP.LINE_SEPARATOR;
@@ -115,6 +115,7 @@ public abstract class Rule {
          new AssertEqualsBooleanRule(profile),
          new AssertEqualsSubrcRule(profile),
          new AssertClassRule(profile),
+         new AssertParameterOrderRule(profile),
          
          // pretty printer
          new UpperAndLowerCaseRule(profile),

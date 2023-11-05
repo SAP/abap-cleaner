@@ -9,6 +9,8 @@ import com.sap.adt.abapcleaner.programbase.*;
 import com.sap.adt.abapcleaner.rulebase.*;
 
 public class AssertClassRule extends RuleForCommands {
+	public static final String displayName = "Use assert class instead of ASSERT";
+	
 	private static final String METHOD_NAME_BOUND = "assert_bound";
 	private static final String METHOD_NAME_NOT_BOUND = "assert_not_bound";
 	private static final String METHOD_NAME_INITIAL = "assert_initial";
@@ -29,7 +31,7 @@ public class AssertClassRule extends RuleForCommands {
 	public RuleGroupID getGroupID() { return RuleGroupID.COMMANDS; }
 
 	@Override
-	public String getDisplayName() { return "Use assert class instead of ASSERT"; }
+	public String getDisplayName() { return displayName; }
 
 	@Override
 	public String getDescription() { return "Replaces ASSERT statements (in product code) with static calls to an assert class to make the error cases testable, too."; }
