@@ -2,7 +2,7 @@
 
 # Unchain into multiple statements
 
-Resolves a chain \(DATA:, FIELD-SYMBOLS:, ASSERT: etc.\) into multiple standalone statements. The chain is kept, however, for declarations with BEGIN OF ... END OF blocks.
+Resolves a chain \(DATA:, FIELD-SYMBOLS:, ASSERT: etc.\) into multiple standalone statements. The chain is kept, however, for structure declarations with BEGIN OF ... END OF.
 
 This rule is part of the **essential** profile, as it is explicitly demanded by the [Clean ABAP Styleguide](https://github.com/SAP/styleguides/blob/main/clean-abap/CleanABAP.md).
 
@@ -17,6 +17,7 @@ This rule is part of the **essential** profile, as it is explicitly demanded by 
 * \[X\] Unchain declarations in interfaces
 * \[X\] Unchain declarations in CLASS ... DEFINITION sections
 * \[X\] Unchain declarations in methods etc.
+* \[X\] After TYPES: BEGIN OF ... END OF, keep tables chained with their structure
 * \[ \] Unchain simple commands \(chain after first keyword, e.g. ASSERT:, CHECK:, CLEAR:, FREE:\) except WRITE:
 * \[X\] Unchain complex commands \(a \+= : 1,2,3 etc.\)
 
@@ -40,12 +41,18 @@ CLASS cl_unchaining DEFINITION.
     CONSTANTS: any_constant TYPE i VALUE 1,
                other_constant TYPE i VALUE 2.
 
-    " BEGIN OF ... END OF blocks are always kept as a chain:
+    " BEGIN OF ... END OF blocks are kept as a chain, however other types around
+    " them are unchained; tables using the structure can be kept in the chain:
     TYPES: 
-      BEGIN of xy,
-        a TYPE x,
-        b TYPE y,
-      END OF xy.
+      ty_any_type TYPE string,
+      BEGIN of ty_s_any,
+        a TYPE i,
+        b TYPE string,
+      END OF ty_s_any,
+      ty_tt_any TYPE STANDARD TABLE OF ty_s_any WITH EMPTY KEY,
+      ty_ts_any TYPE SORTED TABLE OF ty_s_any WITH UNIQUE KEY a,
+      ty_other_type TYPE i,
+      ty_third_type TYPE i.
 
     METHODS:
       setup,
@@ -111,12 +118,17 @@ CLASS cl_unchaining DEFINITION.
     CONSTANTS any_constant TYPE i VALUE 1.
     CONSTANTS other_constant TYPE i VALUE 2.
 
-    " BEGIN OF ... END OF blocks are always kept as a chain:
-    TYPES:
-      BEGIN of xy,
-        a TYPE x,
-        b TYPE y,
-      END OF xy.
+    " BEGIN OF ... END OF blocks are kept as a chain, however other types around
+    " them are unchained; tables using the structure can be kept in the chain:
+    TYPES ty_any_type TYPE string.
+    TYPES: BEGIN of ty_s_any,
+             a TYPE i,
+             b TYPE string,
+           END OF ty_s_any,
+           ty_tt_any TYPE STANDARD TABLE OF ty_s_any WITH EMPTY KEY,
+           ty_ts_any TYPE SORTED TABLE OF ty_s_any WITH UNIQUE KEY a.
+    TYPES ty_other_type TYPE i.
+    TYPES ty_third_type TYPE i.
 
     METHODS setup.
     METHODS unchain.

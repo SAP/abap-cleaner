@@ -1,4 +1,4 @@
-[<-- previous rule](AssertClassRule.md) | [overview](../rules.md) | [next rule -->](IndentRule.md)
+[<-- previous rule](AssertParameterOrderRule.md) | [overview](../rules.md) | [next rule -->](IndentRule.md)
 
 # Convert upper and lower case
 

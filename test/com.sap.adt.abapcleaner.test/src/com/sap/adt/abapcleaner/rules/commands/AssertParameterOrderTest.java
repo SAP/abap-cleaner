@@ -385,4 +385,17 @@ public class AssertParameterOrderTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testCommentInExpression() {
+		buildSrc("    cl_abap_unit_assert=>assert_equals( act = lv_act_value");
+		buildSrc("                                        exp = 2 * \" comment");
+		buildSrc("                                                  lv_any_value ).");
+
+		buildExp("    cl_abap_unit_assert=>assert_equals( exp = 2 * \" comment");
+		buildExp("                                                  lv_any_value");
+		buildExp("                                        act = lv_act_value ).");
+
+		testRule();
+	}
 }

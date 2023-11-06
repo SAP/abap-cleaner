@@ -138,7 +138,7 @@ public class Term {
 		// cp. for the following: Term.isFirstTokenAllowed(Token)
 		if (firstToken.isAnyKeyword(ABAP.constructorOperators)) {
 			// constructor expression, see ABAP Reference, "Constructor Operators for Constructor Expressions", https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/index.htm?file=abenconstructor_expressions.htm
-			token = token.getNext();
+			token = token.getNextCodeToken();
 		} else if (firstToken.isAnyKeyword("DATA(", "FINAL(")) {
 			// continue below
 		} else if (firstToken.isKeyword() && firstToken.textStartsWith("TEXT-")) {
@@ -165,18 +165,18 @@ public class Term {
 			}
 		}
 
-		// optionally, continue reading if token.getNext() is a binary operator (e.g. if called from ValueStatementRule.createTableFromAssignmentSequence())
+		// optionally, continue reading if token is followed by a binary operator (e.g. if called from ValueStatementRule.createTableFromAssignmentSequence())
 		// like in the parameter assignment "amount = <ls_tdc_ev_pob>-event_based-list_price_per_unit * <ls_tdc_ev_pob>-event_based-qty / 2"
 		if (expandWithArithmeticOps) {
-			while (token.getNext() != null && token.getNext().textEqualsAny(binaryOperators)) {
-				token = token.getNext().getNext();
+			while (token.getNextCodeToken() != null && token.getNextCodeToken().textEqualsAny(binaryOperators)) {
+				token = token.getNextCodeToken().getNextCodeToken();
 				if (token.startsStringTemplate()) {
 					while (!token.endsStringTemplate()) {
 						token = token.getNextSibling();
 					}
 				} else {
 					if (token.isAnyKeyword(ABAP.constructorOperators)) // e.g. "... + COND any_data_element( WHEN ... THEN ... )
-						token = token.getNext();
+						token = token.getNextCodeToken();
 					while (token.getOpensLevel()) {
 						token = token.getNextSibling(); // the next sibling closes the level again, but might open another level
 					}

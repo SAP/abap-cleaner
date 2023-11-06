@@ -6,6 +6,15 @@ as well as bugfixes of reported issues, i.e. anything that enhances or changes t
 For a complete list of changes (including documentation, tests, refactoring etc.), please refer to 
 the list of [commits](../../../commits/main).
 
+## 2023-11-06 (version 1.11.0)
+
+**Thanks** a lot to [**jan-jezek**](https://github.com/jan-jezek), [**jelliottp**](https://github.com/jelliottp) and
+ [**ConjuringCoffee**](https://github.com/ConjuringCoffee) for opening the issues that led to these new features!
+
+* Added new rule '**Remove needless parentheses**' ([#105](../../../issues/105))
+* Added new rule '**Standardize assertion parameter order**' ([#85](../../../issues/85))
+* Enhanced rule '**Unchain into multiple statements**' for **TYPES: BEGIN OF** and related table types ([#94](../../../issues/94))
+
 ## 2023-11-01 (version 1.10.0)
 
 **Thanks a lot**, [**ConjuringCoffee**](https://github.com/ConjuringCoffee), [**csopaki**](https://github.com/csopaki), 
