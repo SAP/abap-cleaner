@@ -1,6 +1,6 @@
 # Available Cleanup Rules
 
-ABAP cleaner offers 64 cleanup rules with a total of 226 configuration options:
+ABAP cleaner offers 66 cleanup rules with a total of 235 configuration options:
 
 ## Empty Lines
 
@@ -43,6 +43,7 @@ ABAP cleaner offers 64 cleanup rules with a total of 226 configuration options:
 * [Prefer =, <>, <= etc. to EQ, NE, LE etc.](rules/ComparisonOperatorRule.md)
 * [Prefer IS NOT to NOT IS](rules/NotIsRule.md)
 * [Move AND/OR etc. from line end to next line start](rules/LogicalOperatorPositionRule.md)
+* [Remove needless parentheses](rules/NeedlessParenthesesRule.md)
 * [Remove empty commands](rules/EmptyCommandRule.md)
 * [Shorten VALUE statements](rules/ValueStatementRule.md)
 * [Remove the self-reference me->](rules/SelfReferenceMeRule.md)
@@ -64,6 +65,7 @@ ABAP cleaner offers 64 cleanup rules with a total of 226 configuration options:
 * [Use assert\_true and assert\_false](rules/AssertEqualsBooleanRule.md)
 * [Use assert\_subrc instead of assert\_equals](rules/AssertEqualsSubrcRule.md)
 * [Use assert class instead of ASSERT](rules/AssertClassRule.md)
+* [Standardize assertion parameter order](rules/AssertParameterOrderRule.md)
 
 ## Pretty Printer
 

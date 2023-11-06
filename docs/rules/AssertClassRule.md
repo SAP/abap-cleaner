@@ -1,4 +1,4 @@
-[<-- previous rule](AssertEqualsSubrcRule.md) | [overview](../rules.md) | [next rule -->](UpperAndLowerCaseRule.md)
+[<-- previous rule](AssertEqualsSubrcRule.md) | [overview](../rules.md) | [next rule -->](AssertParameterOrderRule.md)
 
 # Use assert class instead of ASSERT
 

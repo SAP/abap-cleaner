@@ -41,7 +41,7 @@ public class NeedlessParenthesesRule extends RuleForLogicalExpressions {
 	public String getHintsAndRestrictions() { return "If parentheses are removed, '" + AlignLogicalExpressionsRule.DEFAULT_NAME + "' is executed, even if it is otherwise deactivated."; }
 
 	@Override
-	public LocalDate getDateCreated() { return LocalDate.of(2023, 11, 1); }
+	public LocalDate getDateCreated() { return LocalDate.of(2023, 11, 2); }
 
 	@Override
 	public RuleReference[] getReferences() { return references; }

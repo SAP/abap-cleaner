@@ -43,7 +43,7 @@ Adds missing spaces before and after text field literals '...' and text string l
                             ( '222' )
                             ( '333') ).
 
-    lt_value = lt_other_table[ name = 'abc']-value.
+    lt_value = lt_other_table[ name ='abc' ]-value.
     lt_any[`1` ]-num =`a`.
     lt_any['1' ]-num ='a'.
 
@@ -102,7 +102,7 @@ Resulting code:
                             ( '222' )
                             ( '333' ) ).
 
-    lt_value = lt_other_table[ name = 'abc']-value.
+    lt_value = lt_other_table[ name = 'abc' ]-value.
     lt_any[ `1` ]-num = `a`.
     lt_any[ '1' ]-num = 'a'.
 
