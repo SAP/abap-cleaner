@@ -715,11 +715,11 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
       
 		Label lblRuleDescriptionTitle = new Label(pnlRule, SWT.NONE);
 		lblRuleDescriptionTitle.setFont(SWTResourceManager.getFont("Segoe UI", 9, SWT.BOLD));
-		lblRuleDescriptionTitle.setLayoutData(new GridData(SWT.RIGHT, SWT.TOP, false, false, 1, 1));
+		lblRuleDescriptionTitle.setLayoutData(new GridData(SWT.LEFT, SWT.TOP, false, false, 1, 1));
 		lblRuleDescriptionTitle.setText("Description:");
 		
 		pnlRuleDescription = new Composite(pnlRule, SWT.NONE);
-		pnlRuleDescription.setLayoutData(new GridData(SWT.FILL, SWT.TOP, false, false, 1, 1));
+		pnlRuleDescription.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false, 1, 1));
 		GridLayout gl_pnlRuleDescription = new GridLayout(1, false);
 		gl_pnlRuleDescription.marginHeight = 0;
 		gl_pnlRuleDescription.verticalSpacing = 2;
@@ -880,6 +880,46 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 		});
 		btnDefaultExample.setText("Default");
 
+		new Label(pnlExamplesInfo, SWT.NONE);
+
+		btnObfuscate = new Button(pnlExamplesInfo, SWT.NONE);
+		btnObfuscate.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
+		btnObfuscate.setToolTipText("Obfuscate code in left display. Shift+Click to obfuscate each statement individually; Ctrl+Click to get minimal, simplified identifiers and remove all comments.");
+		btnObfuscate.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				boolean methodScope = ((e.stateMask & SWT.SHIFT) == 0);
+				boolean simplify = ((e.stateMask & SWT.CONTROL) != 0);
+		   	Obfuscator obfuscator = new Obfuscator(methodScope, simplify, simplify, simplify, simplify, true);
+				obfuscateExampleCode(obfuscator );
+			}
+		});
+		btnObfuscate.setText("Obfusc.");
+
+		btnGenerateUnitTest = new Button(pnlExamplesInfo, SWT.NONE);
+		btnGenerateUnitTest.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
+		btnGenerateUnitTest.setToolTipText("Generate Java code for Unit Test from code selection (left and right display)");
+		btnGenerateUnitTest.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				boolean showMessage = ((e.stateMask & SWT.SHIFT) == 0);
+				codeDisplay.generateUnitTest(true, showMessage);
+			}
+		});
+		btnGenerateUnitTest.setText("Gen. &UT");
+
+		btnGenerateExample = new Button(pnlExamplesInfo, SWT.NONE);
+		btnGenerateExample.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
+		btnGenerateExample.setToolTipText("Generate Java code for rule example from code selection (left display)");
+		btnGenerateExample.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				boolean showMessage = ((e.stateMask & SWT.SHIFT) == 0);
+				codeDisplay.generateExample(true, showMessage);
+			}
+		});
+		btnGenerateExample.setText("Gen. &Ex.");
+
 		codeDisplay = new CodeDisplay(pnlRule, SWT.NONE);
 		codeDisplay.setColors(codeDisplayColors);
 		codeDisplay.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1));
@@ -945,41 +985,6 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 		});
 		chkHighlightWritePositions.setText("&Write positions");
 		
-		btnObfuscate = new Button(cpsHighlightCancelOk, SWT.NONE);
-		btnObfuscate.setToolTipText("Obfuscate code in left display. Shift+Click to obfuscate each statement individually; Ctrl+Click to get minimal, simplified identifiers and remove all comments.");
-		btnObfuscate.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				boolean methodScope = ((e.stateMask & SWT.SHIFT) == 0);
-				boolean simplify = ((e.stateMask & SWT.CONTROL) != 0);
-		   	Obfuscator obfuscator = new Obfuscator(methodScope, simplify, simplify, simplify, simplify, true);
-				obfuscateExampleCode(obfuscator );
-			}
-		});
-		btnObfuscate.setText("Obfuscate");
-
-		btnGenerateUnitTest = new Button(cpsHighlightCancelOk, SWT.NONE);
-		btnGenerateUnitTest.setToolTipText("Generate Java code for Unit Test from code selection (left and right display)");
-		btnGenerateUnitTest.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				boolean showMessage = ((e.stateMask & SWT.SHIFT) == 0);
-				codeDisplay.generateUnitTest(true, showMessage);
-			}
-		});
-		btnGenerateUnitTest.setText("Generate &Unit Test");
-
-		btnGenerateExample = new Button(cpsHighlightCancelOk, SWT.NONE);
-		btnGenerateExample.setToolTipText("Generate Java code for rule example from code selection (left display)");
-		btnGenerateExample.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				boolean showMessage = ((e.stateMask & SWT.SHIFT) == 0);
-				codeDisplay.generateExample(true, showMessage);
-			}
-		});
-		btnGenerateExample.setText("Generate &Example");
-
 		Button btnCancel = new Button(cpsHighlightCancelOk, SWT.NONE);
 		btnCancel.addSelectionListener(new SelectionAdapter() {
 			@Override
