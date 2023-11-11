@@ -30,10 +30,11 @@ public class CleanupBatchJob implements IBatchJob {
 	
 	@Override
 	public String getTitle(String codeFileInfo) { 
-		if (cleanupParams.executeCleanup())
+		if (cleanupParams.executeCleanup()) {
 			return "Parser, Cleaner (" + String.valueOf(cleanupParams.getRules().length) + " rules with profile '" + cleanupParams.getProfileName() + "'), and Comparer result for " + codeFileInfo;
-		else
+		} else {
 			return "Parser result for " + codeFileInfo;
+		}
 	 }
 
 
@@ -57,8 +58,8 @@ public class CleanupBatchJob implements IBatchJob {
 	}
 
 	@Override
-	public void finish(int duration_ms) {
-		batchCleanupMetrics.buildFinish(duration_ms);
+	public void finish(int duration_ms, boolean wasCancelled) {
+		batchCleanupMetrics.buildFinish(duration_ms, wasCancelled);
 	}
 
 	@Override

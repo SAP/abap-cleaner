@@ -83,7 +83,7 @@ public class CleanupBatchJobTest {
 	}
 	
 	private void assertHasSummaryAndDetails(String... sourceNames) {
-		batchJob.finish(1);
+		batchJob.finish(1, false);
 
 		String summary = batchJob.getSummary();
 		String details = batchJob.getDetails();

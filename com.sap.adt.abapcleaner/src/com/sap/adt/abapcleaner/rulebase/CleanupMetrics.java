@@ -174,14 +174,15 @@ class CleanupMetrics {
 				}
 	
 				appendRuleUseCount(ruleUseCount, "");
-				for (int i = 0; i < Rule.RULE_COUNT; ++i) 
+				for (int i = 0; i < Rule.RULE_COUNT; ++i) {
 					totalRuleUseCount[i] += ruleUseCount[i];
+				}
 			}
 		}
 		details.append(lineSep);
 	}
 	
-	void buildFinish(int duration_ms) {
+	void buildFinish(int duration_ms, boolean wasCancelled) {
 		StringBuilder parseSummary = new StringBuilder();
 		StringBuilder cleanupSummary = new StringBuilder();
 		StringBuilder checkSummary = new StringBuilder();
@@ -231,7 +232,7 @@ class CleanupMetrics {
 			}
 		}
 			
-		summary.append(codeMetrics.getSummary(duration_ms, 0));
+		summary.append(codeMetrics.getSummary(duration_ms, 0, wasCancelled));
 
 		// add summary of three steps to output
 		summary.append(lineSep);

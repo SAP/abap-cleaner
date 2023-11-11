@@ -8,6 +8,7 @@ public class AbapKeywordFreqBatchJob implements IBatchJob {
 	private CodeMetrics codeMetrics; 
 	private int parseExceptionCount;
 	private int duration_ms;
+	private boolean wasCancelled;
 	
 	public AbapKeywordFreqBatchJob() {
 	}
@@ -48,18 +49,19 @@ public class AbapKeywordFreqBatchJob implements IBatchJob {
 	}
 
 	@Override
-	public void finish(int duration_ms) {
+	public void finish(int duration_ms, boolean wasCancelled) {
+		this.wasCancelled = wasCancelled;
 		this.duration_ms = duration_ms;
 	}
 
 	@Override
 	public String getSummary() { 
-		return codeMetrics.getSummary(duration_ms, parseExceptionCount); 
+		return codeMetrics.getSummary(duration_ms, parseExceptionCount, wasCancelled); 
 	}
 
 	@Override
 	public String getDetails() { 
-		return codeMetrics.getKeywordMetricsDetails(); 
+		return codeMetrics.getKeywordMetricsDetails(wasCancelled); 
 	}
 
 }

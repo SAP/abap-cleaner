@@ -11,7 +11,7 @@ public interface IBatchJob {
 	
 	void initialize();
 	void addTaskResult(String sourceCode, String sourceName, Task task);
-	void finish(int duration_ms);
+	void finish(int duration_ms, boolean wasCancelled);
 	
 	String getSummary();
 	String getDetails();

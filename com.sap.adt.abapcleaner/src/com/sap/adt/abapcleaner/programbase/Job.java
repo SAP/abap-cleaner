@@ -138,12 +138,12 @@ public class Job implements ICancelable {
 			task.readAndFlushLog();
 			if (task.wasCancelled()) {
 				wasCancelled = true; 
-				return;
+				break;
 			} 
 			batchJob.addTaskResult(sourceCode, sourceName, task);
 		}
 
-		batchJob.finish(stopwatch.getElapsedTimeMs()); 
+		batchJob.finish(stopwatch.getElapsedTimeMs(), wasCancelled); 
 
 		batchSummary = batchJob.getSummary(); 
 		batchDetails = batchJob.getDetails();
