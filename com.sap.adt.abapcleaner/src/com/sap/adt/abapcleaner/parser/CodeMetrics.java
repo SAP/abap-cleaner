@@ -74,8 +74,10 @@ public class CodeMetrics {
 		}
 	}
 
-	public final String getSummary(double processingDuration_ms, int parseExceptionCount) {
+	public final String getSummary(double processingDuration_ms, int parseExceptionCount, boolean wasCancelled) {
 		StringBuilder summary = new StringBuilder();
+		if (wasCancelled)
+			summary.append("CANCELLED: ");
 		summary.append("Processed " + Cult.format(fileCount) + " files");
 		summary.append(" with " + Cult.format(tokenSum) + " tokens");
 		summary.append(" in " + Cult.format(commandSum) + " commands");
@@ -91,10 +93,12 @@ public class CodeMetrics {
 		return summary.toString();
 	}
 	
-	public String getKeywordMetricsDetails() {
+	public String getKeywordMetricsDetails(boolean wasCancelled) {
 		String lineSep = System.lineSeparator();
 		
 		StringBuilder result = new StringBuilder();
+		if (wasCancelled)
+			result.append("CANCELLED: ");
 		result.append("Frequency of keywords at command start").append(lineSep);
 		result.append(lineSep);
 		result.append("Start keyword\tInstance count\tFirst instance\tFrequency of further keywords in command").append(lineSep);

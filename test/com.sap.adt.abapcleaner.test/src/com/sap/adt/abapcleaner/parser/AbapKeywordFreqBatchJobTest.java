@@ -46,7 +46,7 @@ public class AbapKeywordFreqBatchJobTest {
 	}
 	
 	private void assertHasSummaryAndDetails(boolean expAnySourceName, String... sourceNames) {
-		batchJob.finish(1);
+		batchJob.finish(1, false);
 
 		String summary = batchJob.getSummary();
 		String details = batchJob.getDetails();

@@ -93,7 +93,7 @@ public class CheckOutsideLoopRule extends CheckStatementRuleBase {
    }
 
    final ConfigEnumValue<KeepCheckOutsideLoopCondition> configKeepCondition = new ConfigEnumValue<KeepCheckOutsideLoopCondition>(this, "KeepCondition", "Keep CHECK statement:", new String[] { "never", "at method start", "after declarations", "after declarations and CLEAR statements" }, KeepCheckOutsideLoopCondition.KEEP_AFTER_DECLARATIONS);
-	final ConfigBoolValue configAllowCheckAfterCheckpoints = new ConfigBoolValue(this, "AllowCheckAfterCheckpoints", "Allow CHECK after ASSERT, BREAK-POINT and LOG-POINT", true, false, LocalDate.of(2023, 10, 10));
+	final ConfigBoolValue configAllowCheckAfterCheckpoints = new ConfigBoolValue(this, "AllowCheckAfterCheckpoints", "Allow CHECK after ASSERT, BREAK-POINT and LOG-POINT", true, false, LocalDate.of(2023, 10, 9));
 	final ConfigBoolValue configProcessChains = new ConfigBoolValue(this, "ProcessChains", "Unchain CHECK: chains outside loops (required for processing them with this rule)", true, false, LocalDate.of(2023, 10, 27));
 
 	private final ConfigValue[] configValues = new ConfigValue[] { configKeepCondition, configNegationStyle, configConvertAbapFalseAndAbapTrue, configAllowCheckAfterCheckpoints, configProcessChains };
@@ -144,10 +144,11 @@ public class CheckOutsideLoopRule extends CheckStatementRuleBase {
 			if (isInsideMethod && !isCommandBlocked(command) && command.firstCodeTokenIsKeyword("CHECK") && keepCondition.getValue() <= convertUpTo.getValue())
 				executeOn(code, command, false, processChains, negationStyle, convertAbapFalseAndAbapTrue, releaseRestriction);
 
-			if (command.getOpensLevel() && command.firstCodeTokenIsAnyKeyword(ABAP.loopKeywords))
+			if (command.getOpensLevel() && command.firstCodeTokenIsAnyKeyword(ABAP.loopKeywords)) {
 				command = command.getNextSibling();
-			else
+			} else {
 				command = command.getNext();
+			}
 		}
 	}
 }

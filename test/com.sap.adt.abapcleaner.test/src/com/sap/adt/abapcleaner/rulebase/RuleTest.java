@@ -333,4 +333,23 @@ class RuleTest {
 			}
 		}
 	}
+	
+	@Test
+	void testDateCreatedNotOnReleaseDate() {
+		// ensure that the creation dates of rules and configuration options are not equal to release dates, 
+		// otherwise it would not be clear in which release they were added
+		Rule[] rules = Profile.createDefault().getAllRules();
+		Release[] releases = Program.getReleases();
+		
+		for (Release release : releases) {
+			for (Rule rule : rules) {
+				assertFalse(release.releaseDate.equals(rule.getDateCreated()), "Rule '" + rule.getDisplayName() + "' was created on release date " + release.releaseDate.toString() + " of version " + release.version.toString());
+
+				for (ConfigValue configValue : rule.getConfigValues()) {
+					assertFalse(release.releaseDate.equals(configValue.dateCreated), "Rule '" + rule.getDisplayName() + "', option '" + configValue.settingName + "' was created on release date " + release.releaseDate.toString() + " of version " + release.version.toString());
+				}
+			}
+		}
+		
+	}
 }

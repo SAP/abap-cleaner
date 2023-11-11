@@ -979,6 +979,18 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		});
 		mmuExtrasCreateReleaseNoteDocu.setText("Create Release Note Documentation From Git Log");
 
+		MenuItem mmuExtrasCreateRuleCountTimeline = new MenuItem(menuExtras, SWT.NONE);
+		mmuExtrasCreateRuleCountTimeline.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				try {
+					createRuleTimeline();
+				} catch (Exception ex) {
+				}
+			}
+		});
+		mmuExtrasCreateRuleCountTimeline.setText("Create Timeline of Rule and Option Count");
+
 		MenuItem mmuHelp = new MenuItem(mnsMain, SWT.CASCADE);
 		mmuHelp.setText("&Help");
 
@@ -2271,6 +2283,18 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 					line = line.substring(0, namePos) + "rule '**" + rule.getDisplayName() + "**'" + line.substring(nameEnd);
 				}
 			}
+			
+			// replace 'Added new rule "..." ...' with 'Added new rule '**...**' ...'
+			String newRulePrefix = "new rule \"";
+			String newRuleSuffix = "\"";
+			int newRulePos = line.indexOf(newRulePrefix);
+			if (newRulePos >= 0) {
+				newRulePos += newRulePrefix.length();
+				int newRuleEnd = line.indexOf(newRuleSuffix, newRulePos);
+				if (newRuleEnd >= 0) {
+					line = line.substring(0, newRulePos - 1) + "'**" + line.substring(newRulePos, newRuleEnd) + "**'" + line.substring(newRuleEnd + 1);
+				}
+			}
 
 			// replace issue reference
 			final String ISSUE_REF_START = " (#";
@@ -2316,6 +2340,117 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 			SystemClipboard.setText(header.toString() + result.toString());
 			Message.show("The release note documentation was copied to the clipboard.", shell);
 		}
+	}
+
+	private class RuleTimeline {
+		public final LocalDate date;
+		public int addedRuleCount;
+		public int addedConfigCount;
+		public int totalRuleCount;
+		public int totalConfigCount;
+		public String addedRuleNames = "";
+		public String addedTechnicalRuleNames = "";
+		public String addedConfigNames = "";
+		public RuleTimeline(LocalDate date) {
+			this.date = date;
+		}
+		public void addRule(Rule rule) {
+			String ruleName = rule.getDisplayName();
+			String technicalRuleName = rule.getClass().getSimpleName();
+			++addedRuleCount;
+			if (StringUtil.isNullOrEmpty(addedRuleNames)) {
+				addedRuleNames = ruleName;
+				addedTechnicalRuleNames = technicalRuleName;
+			} else {
+				addedRuleNames += ", " + ruleName;
+				addedTechnicalRuleNames += ", " + technicalRuleName;
+			}
+		}
+		public void addConfigValue(Rule rule, ConfigValue configValue) {
+			String technicalRuleName = rule.getClass().getSimpleName();
+			String configName = configValue.settingName;
+			++addedConfigCount;
+			String addName = technicalRuleName + "_" + configName;
+			if (StringUtil.isNullOrEmpty(addedConfigNames)) {
+				addedConfigNames = addName;
+			} else {
+				addedConfigNames += ", " + addName;
+			}
+		}
+		public void finalize(RuleTimeline prevRuleTimeline) {
+			totalRuleCount = addedRuleCount + ((prevRuleTimeline == null) ? 0 : prevRuleTimeline.totalRuleCount);
+			totalConfigCount = addedConfigCount + ((prevRuleTimeline == null) ? 0 : prevRuleTimeline.totalConfigCount);
+		}
+		public String toHeaderLine() {
+			StringBuilder sb = new StringBuilder();
+			sb.append("date");
+			sb.append('\t').append("added rule count");
+			sb.append('\t').append("added configuration count");
+			sb.append('\t').append("total rule count");
+			sb.append('\t').append("total configuration count");
+			sb.append('\t').append("added rule names");
+			sb.append('\t').append("added technical rule names");
+			sb.append('\t').append("added configuration names");
+			return sb.toString();
+		}
+		public String toLine() {
+			StringBuilder sb = new StringBuilder();
+			sb.append(date.toString());
+			sb.append('\t').append(String.valueOf(addedRuleCount));
+			sb.append('\t').append(String.valueOf(addedConfigCount));
+			sb.append('\t').append(String.valueOf(totalRuleCount));
+			sb.append('\t').append(String.valueOf(totalConfigCount));
+			sb.append('\t').append(String.valueOf(addedRuleNames));
+			sb.append('\t').append(String.valueOf(addedTechnicalRuleNames));
+			sb.append('\t').append(String.valueOf(addedConfigNames));
+			return sb.toString();
+		}
+	}
+	private class RuleTimelineComparator implements Comparator<RuleTimeline> {
+		@Override
+		public int compare(RuleTimeline o1, RuleTimeline o2) {
+			if (o1.date.isBefore(o2.date)) {
+				return -1;
+			} else if (o1.date.isAfter(o2.date)) {
+				return 1;
+			} else {
+				return 0;
+			}
+		}
+	}
+	private void createRuleTimeline() {
+		HashMap<LocalDate, RuleTimeline> ruleTimeline = new HashMap<>();
+		LocalDate projectStart = LocalDate.of(2020, 12, 19);
+		ruleTimeline.put(projectStart, new RuleTimeline(projectStart));
+		for (Rule rule : curProfile.getAllRules()) {
+			LocalDate dateCreated = rule.getDateCreated();
+			if (!ruleTimeline.containsKey(dateCreated))
+				ruleTimeline.put(dateCreated, new RuleTimeline(dateCreated));
+			ruleTimeline.get(dateCreated).addRule(rule);
+
+			for (ConfigValue configValue : rule.getConfigValues()) {
+				if (configValue instanceof ConfigInfoValue)
+					continue;
+				LocalDate dateConfigCreated = (configValue.dateCreated == null) ? dateCreated : configValue.dateCreated;
+				if (!ruleTimeline.containsKey(dateConfigCreated))
+					ruleTimeline.put(dateConfigCreated, new RuleTimeline(dateConfigCreated));
+				ruleTimeline.get(dateConfigCreated).addConfigValue(rule, configValue);
+			}
+		}
+		ArrayList<RuleTimeline> ruleTimelineSorted = new ArrayList<>(ruleTimeline.values());
+		ruleTimelineSorted.sort(new RuleTimelineComparator());
+		RuleTimeline prevRuleStat = null;
+		for (RuleTimeline ruleStat : ruleTimelineSorted) {
+			ruleStat.finalize(prevRuleStat);
+			prevRuleStat = ruleStat;
+		}
+		StringBuilder sbResult = new StringBuilder();
+		sbResult.append(ruleTimelineSorted.get(0).toHeaderLine()).append(System.lineSeparator());
+		for (RuleTimeline ruleStat : ruleTimelineSorted) {
+			sbResult.append(ruleStat.toLine()).append(System.lineSeparator());
+		}
+		SystemClipboard.setText(sbResult.toString());
+		Message.show("The rule and configuration count timeline was copied to the clipboard", shell);
 	}
 
 	private void openProfilesFolder() {
