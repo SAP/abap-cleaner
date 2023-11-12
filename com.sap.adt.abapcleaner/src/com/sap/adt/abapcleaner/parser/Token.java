@@ -1254,6 +1254,19 @@ public class Token {
 		return true;
 	}
 
+	/**
+	 * returns true if whitespace was changed
+	 * 
+	 * @param lineBreaks
+	 * @return
+	 */
+	public final boolean setLineBreaks(int lineBreaks) {
+		if (this.lineBreaks == lineBreaks)
+			return false;
+		this.lineBreaks = lineBreaks;
+		return true;
+	}
+
 	public final boolean setSpacesLeftAdjustingIndent(int newSpacesLeft) {
 		if (newSpacesLeft == spacesLeft)
 			return false;

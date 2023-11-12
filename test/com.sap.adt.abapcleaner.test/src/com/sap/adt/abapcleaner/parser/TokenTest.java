@@ -1541,4 +1541,15 @@ public class TokenTest {
 		// ensure that the type of the '*' token is corrected from COMMENT to OTHER_OP (see Token.addNext)
 		assertTrue(buildCommand("lv_any+4(*) = lv_other.", 1).isOtherOp());
 	}
+	
+	@Test
+	void testSetLineBreaks() {
+		assertFalse(buildCommand("a = 1.", 1).setLineBreaks(0));
+		assertTrue(buildCommand("a = 1.", 1).setLineBreaks(1));
+		assertTrue(buildCommand("a = 1.", 1).setLineBreaks(2));
+
+		assertTrue(buildCommand("a" + SEP + " = 1.", 1).setLineBreaks(0));
+		assertFalse(buildCommand("a" + SEP + " = 1.", 1).setLineBreaks(1));
+		assertTrue(buildCommand("a" + SEP + " = 1.", 1).setLineBreaks(2));
+	}
 }
