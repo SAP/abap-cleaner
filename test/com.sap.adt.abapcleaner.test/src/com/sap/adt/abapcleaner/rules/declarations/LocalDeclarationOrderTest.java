@@ -1367,4 +1367,58 @@ public class LocalDeclarationOrderTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testTwoEmptyLinesKept() {
+		// ensure that the two empty lines before the executable command are kept
+		buildSrc("METHOD any_method.");
+		buildSrc("  DATA lv_other TYPE i.");
+		buildSrc("  DATA lv_any TYPE i.");
+		buildSrc("");
+		buildSrc("");
+		buildSrc("  rv_result = lv_any + lv_other.");
+		buildSrc("ENDMETHOD.");
+
+		buildExp("METHOD any_method.");
+		buildExp("  DATA lv_any TYPE i.");
+		buildExp("  DATA lv_other TYPE i.");
+		buildExp("");
+		buildExp("");
+		buildExp("  rv_result = lv_any + lv_other.");
+		buildExp("ENDMETHOD.");
+
+		testRule();
+	}
+
+	@Test
+	void testTwoEmptyLinesInBlock() {
+		// ensure that the two empty lines after IF are kept, while only one empty line is introduced 
+		// between DATA and the next executable command
+		
+		rule.configDataOrder.setEnumValue(LocalDeclarationOrder.ENCLOSING_BLOCK_CHANGE_ORDER);
+
+		buildSrc("METHOD any_method.");
+		buildSrc("  DATA lv_any TYPE i.");
+		buildSrc("");
+		buildSrc("  IF iv_any_condition = abap_true.");
+		buildSrc("");
+		buildSrc("");
+		buildSrc("    lv_any = 1.");
+		buildSrc("    rv_result = lv_any.");
+		buildSrc("  ENDIF.");
+		buildSrc("ENDMETHOD.");
+
+		buildExp("METHOD any_method.");
+		buildExp("  IF iv_any_condition = abap_true.");
+		buildExp("");
+		buildExp("");
+		buildExp("    DATA lv_any TYPE i.");
+		buildExp("");
+		buildExp("    lv_any = 1.");
+		buildExp("    rv_result = lv_any.");
+		buildExp("  ENDIF.");
+		buildExp("ENDMETHOD.");
+
+		testRule();
+	}
 }

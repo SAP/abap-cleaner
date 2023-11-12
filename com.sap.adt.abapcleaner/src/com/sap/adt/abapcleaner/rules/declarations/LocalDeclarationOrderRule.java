@@ -429,6 +429,7 @@ public class LocalDeclarationOrderRule extends RuleForDeclarations {
 		}
 		Token firstToken = section.firstCommand.getFirstToken(); 
 
+		boolean wasSectionMoved = false;
 		if (section.contains(writePos)) {
 			// for sections that are already in the right place, keep existing empty lines; after rearranging declarations 
 			// once, this allows for purposefully introducing extra lines which are then kept
@@ -483,7 +484,8 @@ public class LocalDeclarationOrderRule extends RuleForDeclarations {
 			// move the section to its new place
 			section.removeFromCode();
 			writePos.insertLeftSibling(section);
-
+			wasSectionMoved = true;
+			
 			code.addRuleUses(this, section);
 		}
 
@@ -494,7 +496,13 @@ public class LocalDeclarationOrderRule extends RuleForDeclarations {
 			// if the next Command is not a declaration, always put an empty line
 			Command nextNonCommentSibling = section.lastCommand.getNextNonCommentSibling();
 			if (nextNonCommentSibling != null && !nextNonCommentSibling.isDeclaration()) {
-				lineBreaks = 2;
+				if (wasSectionMoved) {
+					// if the section was just moved in front of the next Command, put exactly one empty line 
+					lineBreaks = 2;
+				} else {
+					// if the next Command was there already, ensure an empty line, but possibly keep more 
+					lineBreaks = Math.max(nextSibling.getFirstToken().lineBreaks, 2);
+				}
 			} else {
 				// find the last declaration command of the section (.lastCommand may be a pragma line)
 				Command lastDeclaration = section.lastCommand;
@@ -695,10 +703,11 @@ public class LocalDeclarationOrderRule extends RuleForDeclarations {
 			// adjust whitespace of declaration after the term before it is moved
 			Token tokenAfterTerm = term.lastToken.getNext();
 			if (tokenAfterTerm != null) {
-				if (tokenAfterTerm.isAsteriskCommentLine())
+				if (tokenAfterTerm.isAsteriskCommentLine()) {
 					tokenAfterTerm.lineBreaks = 1;
-				else
+				} else {
 					tokenAfterTerm.setWhitespace(1, indent);
+				}
 			}
 			
 			// if the term ends with a period, change that into a comma, and change the previous comma into a period  
@@ -724,10 +733,11 @@ public class LocalDeclarationOrderRule extends RuleForDeclarations {
 		// adjust whitespace of the declaration that is now behind the term
 		Token next = term.lastToken.getNext();
 		if (next != null) {
-			if (next.isAsteriskCommentLine())
+			if (next.isAsteriskCommentLine()) {
 				next.lineBreaks = 1;
-			else
+			} else {
 				next.setWhitespace(1, indent);
+			}
 		}
 	}
 
