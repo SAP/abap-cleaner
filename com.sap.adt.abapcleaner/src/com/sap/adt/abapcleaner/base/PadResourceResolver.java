@@ -11,8 +11,7 @@ public class PadResourceResolver implements IPadFileResolver {
 	// only to differentiate keywords from identifiers.
 	// 
 	// To update the resource to the latest ABAP grammar,
-	// - download the grammar file, e.g. from https://ldcier1.wdf.sap.corp:44300/sap/bc/adt/abapsource/parsers/rnd/grammar 
-	//   (if required, adjust system ID '...er1' in this link) 
+	// - download the current grammar file 
 	// - update \com.sap.adt.abapcleaner\resources\grammar.txt from that file (keeping the name), and
 	// - adjust the release number returned by getRelease() below
 	

@@ -18,18 +18,19 @@ import com.sap.adt.abapcleaner.programbase.UnexpectedSyntaxException;
 public class TokenTest {
 	private static final String SEP = ABAP.LINE_SEPARATOR;
 	private Token[] tokens;
-
+	private Code code;
+	
 	private Command buildCommand(String codeText) {
 		try {
-			Code code = Code.parse(null, ParseParams.createForTest(codeText, ABAP.NEWEST_RELEASE));
+			code = Code.parse(null, ParseParams.createForTest(codeText, ABAP.NEWEST_RELEASE));
 
-			Command firstCommand = code.firstCommand;
-			tokens = new Token[firstCommand.tokenCount];
-			tokens[0] = firstCommand.firstToken;
-			for (int i = 1; i < firstCommand.tokenCount; ++i)
+			Command command = code.firstCommand;
+			tokens = new Token[command.tokenCount];
+			tokens[0] = command.firstToken;
+			for (int i = 1; i < command.tokenCount; ++i)
 				tokens[i] = tokens[i - 1].getNext();
 
-			return firstCommand;
+			return command;
 		} catch (ParseException e) {
 			fail();
 			return null;
@@ -1270,6 +1271,8 @@ public class TokenTest {
 	void testGetNextSiblingOfType() {
 		assertNextSiblingOfType("IF a = 1 AND ( b IS INITIAL OR b = 3 ) AND c < 4.", "=", TokenType.COMPARISON_OP, "<");
 		assertNextSiblingOfType("CLEAR lv_any.", ".", TokenType.KEYWORD, null);
+
+		assertNextSiblingOfType("any_method( a = 2 * ( 3 + 5 ) )->other_method( ).", "any_method(", TokenType.IDENTIFIER, ")->other_method(");
 	}
 
 	private void assertPrevSiblingOfType(String commandText, String startTokenText, TokenType tokenType, String expResultTokenText) {
@@ -1281,6 +1284,19 @@ public class TokenTest {
 	void testGetPrevSiblingOfType() {
 		assertPrevSiblingOfType("IF a = 1 AND ( b IS INITIAL OR b <> 3 ) AND c < 4.", "<", TokenType.COMPARISON_OP, "=");
 		assertPrevSiblingOfType("CLEAR lv_any.", "CLEAR", TokenType.KEYWORD, null);
+		assertPrevSiblingOfType("any_method( a = 2 ).", ")", TokenType.IDENTIFIER, "any_method(");
+	}
+
+	private void assertNextSiblingOfTypeAndText(String commandText, String startTokenText, TokenType tokenType, String expResultTokenText, String... texts) {
+		Token startToken = buildCommand(commandText, startTokenText);
+		assertTextEquals(expResultTokenText, startToken.getNextSiblingOfTypeAndText(tokenType, texts));
+	}
+	
+	@Test
+	void testGetNextSiblingOfTypeAndText() {
+		assertNextSiblingOfTypeAndText("CALL METHOD any_method EXPORTING iv_any = 1 IMPORTING ev_any = lv_any CHANGING cv_any = lv_other.", "CALL", TokenType.KEYWORD, "IMPORTING", "IMPORTING", "CHANGING");
+		assertNextSiblingOfTypeAndText("GET RUNTIME FIELD DATA(a).", "GET", TokenType.KEYWORD, "FIELD", "FIELD", "FIELDS");
+		assertNextSiblingOfTypeAndText("RETURN.", ".", TokenType.KEYWORD, null, "RETURN", "CLEAR");
 	}
 
 	@Test
@@ -1551,5 +1567,284 @@ public class TokenTest {
 		assertTrue(buildCommand("a" + SEP + " = 1.", 1).setLineBreaks(0));
 		assertFalse(buildCommand("a" + SEP + " = 1.", 1).setLineBreaks(1));
 		assertTrue(buildCommand("a" + SEP + " = 1.", 1).setLineBreaks(2));
+	}
+	
+	@Test
+	void testInsertNextCommentAsFirstChild() throws UnexpectedSyntaxException, IntegrityBrokenException {
+		Command firstCommand = buildCommand("any_method( ).");
+		Token comment = Token.createForAbap(0, 1, "\" comment", 0);
+		firstCommand.firstToken.insertNext(comment);
+		assertEquals("any_method( \" comment" + SEP + "            ).", code.toString());
+	}
+	
+	@Test
+	void testInsertNextTermAsFirstChild() throws UnexpectedSyntaxException, IntegrityBrokenException {
+		Command firstCommand = buildCommand("any_method( ). other_method( a = 1 ).");
+		Command secondCommand = firstCommand.getNext();
+		Term assignment = Term.createForTokenRange(secondCommand.firstToken.getNext(), secondCommand.lastToken.getPrev().getPrev());
+		assignment.removeFromCommand(false);
+		firstCommand.firstToken.insertNext(assignment);
+		assertEquals("any_method( a = 1 ). other_method( ).", code.toString());
+	}
+	
+	@Test
+	void testInsertNextCommentTermAsFirstChild() throws UnexpectedSyntaxException, IntegrityBrokenException {
+		Command firstCommand = buildCommand("any_method( ).");
+		Token comment = Token.createForAbap(0, 1, "\" comment", 0);
+		Term term = Term.createForTokenRange(comment, comment);
+		firstCommand.firstToken.insertNext(term);
+		assertEquals("any_method( \" comment" + SEP + "            ).", code.toString());
+	}
+	
+	@Test
+	void testInsertNextTermBeforeExistingChild() throws UnexpectedSyntaxException, IntegrityBrokenException {
+		Command firstCommand = buildCommand("any_method( b = 2 ). other_method( a = 1 ).");
+		Command secondCommand = firstCommand.getNext();
+		Term assignment = Term.createForTokenRange(secondCommand.firstToken.getNext(), secondCommand.lastToken.getPrev().getPrev());
+		assignment.removeFromCommand(false);
+		firstCommand.firstToken.insertNext(assignment);
+		assertEquals("any_method( a = 1 b = 2 ). other_method( ).", code.toString());
+	}
+	
+	@Test
+	void testInsertNextTermAsSibling() throws UnexpectedSyntaxException, IntegrityBrokenException {
+		Command firstCommand = buildCommand("  ##NO_TEXT. other_method( a = 1 ).");
+		Command secondCommand = firstCommand.getNext();
+		Term assignment = Term.createForTokenRange(secondCommand.firstToken.getNext(), secondCommand.lastToken.getPrev().getPrev());
+		assignment.removeFromCommand(false);
+		firstCommand.firstToken.insertNext(assignment);
+		assertEquals("  ##NO_TEXT a = 1. other_method( ).", code.toString());
+	}
+	
+	@Test
+	void testInsertRightSiblingAfterLevelOpenerErr() {
+		boolean raisedException = false;
+		try {
+			buildCommand("any_method( ).", 0).insertRightSibling(Token.createForAbap(0, 1, "a", 0), false);
+		} catch (IntegrityBrokenException e) {
+			// expected case
+			raisedException = true;
+		}
+		assertTrue(raisedException);
+	}
+	
+	@Test
+	void testInsertRightSiblingAfterFinalCommentErr() {
+		boolean raisedException = false;
+		try {
+			buildCommand("a = 1. \" comment", 4).insertRightSibling(Token.createForAbap(0, 1, ".", 0), false);
+		} catch (IntegrityBrokenException e) {
+			// expected case
+			raisedException = true;
+		}
+		assertTrue(raisedException);
+	}
+	
+	@Test
+	void testInsertRightSiblingWithLineBreaksToComment() throws IntegrityBrokenException {
+		Token comment = buildCommand("  a = \" comment" + SEP + "  1.", 2);
+		comment.insertRightSibling(Token.createForAbap(2, 2, "-", 0), false);
+		assertEquals("  a = \" comment" + SEP + SEP + "  -" + SEP + "  1.", comment.getParentCommand().toString());
+	}
+	
+	@Test
+	void testInsertRightSiblingToComment() throws IntegrityBrokenException {
+		Token comment = buildCommand("  a = \" comment" + SEP + "  1.", 2);
+		comment.insertRightSibling(Token.createForAbap(0, 1, "-", 0), false);
+		assertEquals("  a = \" comment" + SEP + "  - 1.", comment.getParentCommand().toString());
+	}
+	
+	@Test
+	void testInsertRightSiblingCommentToComment() throws IntegrityBrokenException {
+		Token comment = buildCommand("  a = \" comment" + SEP + SEP + "  1.", 2);
+		comment.insertRightSibling(Token.createForAbap(0, 1, "\" new comment", 0), false);
+		assertEquals("  a = \" comment" + SEP + SEP + "  \" new comment" + SEP + "  1.", comment.getParentCommand().toString());
+	}
+	
+	@Test
+	void testInsertRightSiblingComment() throws IntegrityBrokenException {
+		Token equalsSign = buildCommand("  a = 1.", 1);
+		equalsSign.insertRightSibling(Token.createForAbap(0, 1, "\" comment", 0), false);
+		assertEquals("  a = \" comment" + SEP + "      1.", equalsSign.getParentCommand().toString());
+	}
+
+
+	@Test
+	void testInsertRightSiblingTermAfterLevelOpenerErr() throws UnexpectedSyntaxException {
+		boolean raisedException = false;
+		Token bToken = Token.createForAbap(0, 1, "b", 0);
+		Term term = Term.createForTokenRange(bToken, bToken);
+		try {
+			buildCommand("any_method( ).", 0).insertRightSibling(term, false);
+		} catch (IntegrityBrokenException e) {
+			// expected case
+			raisedException = true;
+		}
+		assertTrue(raisedException);
+	}
+	
+	@Test
+	void testInsertRightSiblingTermAfterFinalCommentErr() throws UnexpectedSyntaxException {
+		boolean raisedException = false;
+		Token bToken = Token.createForAbap(0, 1, "b", 0);
+		Term term = Term.createForTokenRange(bToken, bToken);
+		try {
+			buildCommand("a = 1. \" comment", 4).insertRightSibling(term, false);
+		} catch (IntegrityBrokenException e) {
+			// expected case
+			raisedException = true;
+		}
+		assertTrue(raisedException);
+	}
+	
+	@Test
+	void testInsertRightSiblingTermWithLineBreaksToComment() throws IntegrityBrokenException, UnexpectedSyntaxException {
+		Command firstCommand = buildCommand("  a = \" comment" + SEP + "  1. c = " + SEP + SEP + "  b + 1.");
+		Command secondCommand = firstCommand.getNext();
+
+		// remove Term "b +" from the second Command  
+		Token bToken = secondCommand.firstToken.getNext().getNext();
+		Term term = Term.createForTokenRange(bToken, bToken.getNext());
+		term.removeFromCommand(true);
+
+		// insert "b +" after the comment
+		Token comment = firstCommand.getFirstToken().getNext().getNext();
+		comment.insertRightSibling(term, false);
+		assertEquals("  a = \" comment" + SEP + SEP + "  b +" + SEP + "  1.", firstCommand.toString());
+	}
+	
+	@Test
+	void testInsertRightSiblingTermToComment() throws IntegrityBrokenException, UnexpectedSyntaxException {
+		Command firstCommand = buildCommand("  a = \" comment" + SEP + "  1. c = b + 1.");
+		Command secondCommand = firstCommand.getNext();
+
+		// remove Term "b +" from the second Command  
+		Token bToken = secondCommand.firstToken.getNext().getNext();
+		Term term = Term.createForTokenRange(bToken, bToken.getNext());
+		term.removeFromCommand(true);
+
+		// insert "b +" after the comment
+		Token comment = firstCommand.getFirstToken().getNext().getNext();
+		comment.insertRightSibling(term, false);
+		assertEquals("  a = \" comment" + SEP + "  b + 1.", firstCommand.toString());
+	}
+	
+	@Test
+	void testInsertRightSiblingTermAddIndent() throws IntegrityBrokenException, UnexpectedSyntaxException {
+		Command firstCommand = buildCommand("  a = \" comment" + SEP + "      1. c = b + 1.");
+		Command secondCommand = firstCommand.getNext();
+
+		// remove Term "b +" from the second Command  
+		Token bToken = secondCommand.firstToken.getNext().getNext();
+		Term term = Term.createForTokenRange(bToken, bToken.getNext());
+		term.removeFromCommand(true);
+
+		// insert "b +" after the comment
+		Token equalsSign = firstCommand.getFirstToken().getNext();
+		equalsSign.insertRightSibling(term, true);
+		assertEquals("  a = b + \" comment" + SEP + "          1.", firstCommand.toString());
+	}
+	
+	@Test
+	void testInsertRightSiblingTermCommentToComment() throws IntegrityBrokenException, UnexpectedSyntaxException {
+		Token newComment = Token.createForAbap(0, 1, "\" new comment", 0);
+		Term term = Term.createForTokenRange(newComment, newComment);
+		Token comment = buildCommand("  a = \" comment" + SEP + SEP + "  1.", 2);
+		comment.insertRightSibling(term, false);
+		assertEquals("  a = \" comment" + SEP + SEP + "  \" new comment" + SEP + "  1.", comment.getParentCommand().toString());
+	}
+	
+	@Test
+	void testInsertRightSiblingTermComment() throws IntegrityBrokenException, UnexpectedSyntaxException {
+		Token newComment = Token.createForAbap(0, 1, "\" comment", 0);
+		Term term = Term.createForTokenRange(newComment, newComment);
+		Token equalsSign = buildCommand("  a = 1.", 1);
+		equalsSign.insertRightSibling(term, false);
+		assertEquals("  a = \" comment" + SEP + "      1.", equalsSign.getParentCommand().toString());
+	}
+	
+	@Test
+	void testInsertLeftSiblingTermBeforeLevelCloserErr() throws UnexpectedSyntaxException {
+		boolean raisedException = false;
+		Token bToken = Token.createForAbap(0, 1, "b", 0);
+		Term term = Term.createForTokenRange(bToken, bToken);
+		try {
+			buildCommand("any_method( ).", 1).insertLeftSibling(term);
+		} catch (IntegrityBrokenException e) {
+			// expected case
+			raisedException = true;
+		}
+		assertTrue(raisedException);
+	}
+	
+	@Test
+	void testInsertLeftSiblingTermAfterComment() throws IntegrityBrokenException, UnexpectedSyntaxException {
+		Command firstCommand = buildCommand("  a = \" comment" + SEP + "      1. c = b + 1.");
+		Command secondCommand = firstCommand.getNext();
+
+		// remove Term "b +" from the second Command  
+		Token bToken = secondCommand.firstToken.getNext().getNext();
+		Term term = Term.createForTokenRange(bToken, bToken.getNext());
+		term.removeFromCommand(true);
+
+		// insert "b +" after the comment
+		Token oneToken = firstCommand.getLastToken().getPrev();
+		oneToken.insertLeftSibling(term);
+		assertEquals("  a = \" comment" + SEP + "      b + 1.", firstCommand.toString());
+	}
+	
+	@Test
+	void testInsertLeftSiblingCommentTermAfterComment() throws IntegrityBrokenException, UnexpectedSyntaxException {
+		Token comment = Token.createForAbap(0, 1, "\" new comment", 0);
+		Term term = Term.createForTokenRange(comment, comment);
+		Command command = buildCommand("  a = \" comment" + SEP + "      1.");
+		command.getLastToken().getPrev().insertLeftSibling(term);
+		assertEquals("  a = \" comment" + SEP + "      \" new comment" + SEP + "      1.", command.toString());
+	}
+	
+	@Test
+	void testGetLineInCommand() {
+		Command command = buildCommand("  a" + SEP + "  =" + SEP + SEP + "  1.");
+		Token firstToken = command.getFirstToken();
+		assertEquals(0, firstToken.getLineInCommand());
+		assertEquals(1, firstToken.getNext().getLineInCommand());
+		assertEquals(3, firstToken.getNext().getNext().getLineInCommand());
+
+		command = buildCommand("  RETURN.");
+		firstToken = command.getFirstToken();
+		assertEquals(0, firstToken .getLineInCommand());
+		assertEquals(0, firstToken .getNext().getLineInCommand());
+	}
+	
+	@Test
+	void testIsDeclarationKeyword() {
+		assertTrue(buildCommand("  DATA(a) TYPE i.", 0).isDeclarationKeyword());
+		assertTrue(buildCommand("  any_method( IMPORTING iv_any = DATA(lv_any) ).", 4).isDeclarationKeyword());
+		assertTrue(buildCommand("  FIELD-SYMBOLS <ls_any> TYPE ty_s_any.", 0).isDeclarationKeyword());
+		assertTrue(buildCommand("  METHODS any_method.", 0).isDeclarationKeyword());
+		assertTrue(buildCommand("  CLASS-DATA mv_any TYPE i.", 0).isDeclarationKeyword());
+
+		assertFalse(buildCommand("  ASSERT a = 1.", 0).isDeclarationKeyword());
+		assertFalse(buildCommand("  DATA(a) TYPE i.", 1).isDeclarationKeyword());
+		assertFalse(buildCommand("  FIELD-SYMBOLS <ls_any> TYPE ty_s_any.", 1).isDeclarationKeyword());
+		assertFalse(buildCommand("  CALL METHOD any_method.", 1).isDeclarationKeyword());
+	}
+	
+	@Test
+	void testGetPrevWhileComment() {
+		Command command = buildCommand("  a \" comment1" + SEP + "* comment2" + SEP + "  = 1.");
+		Token firstToken = command.getFirstToken();
+		assertEquals(firstToken, firstToken.getPrevWhileComment());
+		assertEquals(firstToken, firstToken.getNext().getPrevWhileComment());
+		assertEquals(firstToken, firstToken.getNext().getNext().getPrevWhileComment());
+		assertNotEquals(firstToken, firstToken.getNext().getNext().getNext().getPrevWhileComment());
+	}
+	
+	@Test
+	void testIsSqlTypeInCast() {
+		assertFalse(buildCommand("DATA a TYPE i.", 1).isSqlTypeInCast());
+		assertFalse(buildCommand("DATA int1 TYPE i.", 1).isSqlTypeInCast());
+		assertFalse(buildCommand("any_method( int1 = 1 ).", 1).isSqlTypeInCast());
+		assertFalse(buildCommand("a = CAST ty_any( int1 ).", 4).isSqlTypeInCast());
 	}
 }
