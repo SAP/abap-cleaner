@@ -6,6 +6,15 @@ as well as bugfixes of reported issues, i.e. anything that enhances or changes t
 For a complete list of changes (including documentation, tests, refactoring etc.), please refer to 
 the list of [commits](../../../commits/main).
 
+## 2023-11-14 (version 1.11.1)
+
+Great **thanks** to [**VladGhitulescu**](https://github.com/VladGhitulescu) and
+ [**Koch013**](https://github.com/Koch013) for reporting the bugs behind this release!
+
+* Fixed rule '**Align declarations**' for mixed **TYPE** clauses with **tables** ([#186](../../../issues/186))
+* Fixed rule '**Rearrange local declarations**' for multiple **empty lines** ([#195](../../../issues/195))
+* Fixed **Profiles editor** layout for **long descriptions** ([#197](../../../issues/197))
+
 ## 2023-11-06 (version 1.11.0)
 
 **Thanks** a lot to [**jan-jezek**](https://github.com/jan-jezek), [**jelliottp**](https://github.com/jelliottp) and
