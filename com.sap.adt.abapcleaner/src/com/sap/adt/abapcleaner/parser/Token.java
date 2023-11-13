@@ -1007,7 +1007,7 @@ public class Token {
 		// ensure newToken is not placed behind a comment
 		if (isComment() && newToken.lineBreaks == 0) {
 			if (next == null) {
-				newToken.setWhitespace(1, parentCommand.getIndent() + ABAP.INDENT_STEP);
+				throw new IntegrityBrokenException(this, "cannot insert a right sibling after the final comment in a command");
 			} else {
 				newToken.copyWhitespaceFrom(next);
 				if (newToken.isComment()) {
@@ -1089,7 +1089,7 @@ public class Token {
 		// ensure newTerm is not placed behind a comment
 		if (isComment() && newTerm.firstToken.lineBreaks == 0) {
 			if (next == null) {
-				newTerm.firstToken.setWhitespace(1, parentCommand.getIndent() + ABAP.INDENT_STEP);
+				throw new IntegrityBrokenException(this, "cannot insert a right sibling after the final comment in a command");
 			} else {
 				newTerm.firstToken.copyWhitespaceFrom(next);
 				if (newTerm.lastToken.isComment()) {
@@ -1132,7 +1132,7 @@ public class Token {
 		newTerm.getPrev().next = newTerm.firstToken;
 
 		if (moveFollowingLinesRight)
-			parentCommand.addIndent(newTerm.firstToken.spacesLeft + newTermWidth, oldStartIndex);
+			parentCommand.addIndent(newTerm.firstToken.spacesLeft + newTermWidth, oldStartIndex, newTerm.lastToken, null);
 
 		parentCommand.onTermInserted(newTerm);
 		parentCommand.testReferentialIntegrity(true);
@@ -1319,7 +1319,7 @@ public class Token {
 		}
 	}
 
-	private final boolean isDeclarationKeyword() {
+	public final boolean isDeclarationKeyword() {
 		if (!isKeyword())
 			return false;
 		
@@ -1452,6 +1452,8 @@ public class Token {
 	}
 
 	public final int getLineInCommand() {
+		if (this == parentCommand.firstToken)
+			return 0;
 		Token token = parentCommand.firstToken.next;
 		int line = 0; // (token.lineBreaks == 0) ? 0 : -1;
 		while (token != null && token != this) {
@@ -1603,14 +1605,14 @@ public class Token {
 	}
 
 	public final Token getNextSiblingOfType(TokenType tokenType) {
-		Token result = next;
+		Token result = nextSibling;
 		while (result != null && result.type != tokenType)
 			result = result.nextSibling;
 		return result;
 	}
 
 	public final Token getNextSiblingOfTypeAndText(TokenType tokenType, String... texts) {
-		Token result = next;
+		Token result = nextSibling;
 		while (result != null) {
 			if (result.type == tokenType && result.textEqualsAny(texts)) {
 				return result;
@@ -1628,7 +1630,7 @@ public class Token {
 	}
 
 	public final Token getPrevSiblingOfType(TokenType tokenType) {
-		Token result = prev;
+		Token result = prevSibling;
 		while (result != null && result.type != tokenType)
 			result = result.prevSibling;
 		return result;
