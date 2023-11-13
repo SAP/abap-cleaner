@@ -561,7 +561,11 @@ public class AlignDeclarationsRule extends AlignDeclarationSectionRuleBase {
 		// (not specifically considered here, but probably irrelevant, as they are skipped): [tabkeys], [INITIAL SIZE n] [WITH HEADER LINE]
 		Token typeStart = token;
 		Token typeEnd = token;
+		boolean isTable = false;
 		while (typeEnd != null && !typeEnd.isAnyKeyword("LENGTH", "DECIMALS", "VALUE", "READ-ONLY") && !typeEnd.textEqualsAny(".", ",")) {
+			if (typeEnd.isKeyword("TABLE")) 
+				isTable = true;
+
 			// do not align table declarations with "WITH ... KEY ..." sections, because they usually should not be put on a single line; 
 			// however, do accept the short cases of "WITH EMPTY KEY" and "WITH [UNIQUE | NON-UNIQUE] DEFAULT KEY" and "WITH [UNIQUE | NON-UNIQUE] KEY comp1 [comp2 [comp3]]" 
 			if (typeEnd.isKeyword("ASSOCIATION") 
@@ -574,13 +578,15 @@ public class AlignDeclarationsRule extends AlignDeclarationSectionRuleBase {
 				// only align up to (but excluding) "WITH" or "ASSOCIATION", thus leaving the WITH or ASSOCIATION section(s) unchanged 
 				// and keeping possible line breaks as well as manual alignment
 				Term typeInfo = Term.createForTokenRange(typeStart, typeEnd.getPrev());
-				line.setCell(Columns.TYPE.getValue(), new AlignCellTerm(typeInfo));
+				line.setCell(Columns.TYPE.getValue(), AlignCellTerm.createSpecial(typeInfo, 0, true));
 				return typeEnd.getLastTokenOnSiblings(true, TokenSearch.ASTERISK, ".|,");
 			}
 			typeEnd = typeEnd.getNextSibling();
 		}
+		// for TYPE ... TABLE OF ..., override text width with 1 to avoid expanding the TYPE column with this cell
 		Term typeInfo = Term.createForTokenRange(typeStart, typeEnd.getPrev());
-		line.setCell(Columns.TYPE.getValue(), new AlignCellTerm(typeInfo));
+		newCell = AlignCellTerm.createSpecial(typeInfo, 0, isTable);
+		line.setCell(Columns.TYPE.getValue(), newCell );
 		token = typeEnd;
 
 		// the remaining components only appear in DATA and TYPES, not with FIELD-SYMBOLS
