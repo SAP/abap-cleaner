@@ -58,6 +58,10 @@ public class Obfuscator {
 		}
 	}
 
+	private final static String getKey(String identifier) {
+		return identifier.toUpperCase();
+	}
+	
 	// -------------------------------------------------------------------------
 	
 	private final boolean methodScope;
@@ -68,6 +72,7 @@ public class Obfuscator {
 	private final boolean obfuscateLiterals;
 	
 	private HashMap<String, String> types = new HashMap<>();
+	private HashMap<String, String> builtInTypes = new HashMap<>();
 	private HashMap<String, String> variables = new HashMap<>();
 	private HashMap<String, String> components = new HashMap<>();
 	private HashMap<String, String> classes = new HashMap<>();
@@ -89,6 +94,16 @@ public class Obfuscator {
 		variables.clear();
 		components.clear();
 		
+		// only initialize builtInTypes the first time
+		if (builtInTypes.isEmpty()) {
+			for (String builtInAbapType : ABAP.builtInAbapTypes) {
+				builtInTypes.put(getKey(builtInAbapType), builtInAbapType);
+			}
+			for (String builtInDdicType : ABAP.builtInDdicTypes) { 
+				builtInTypes.put(getKey(builtInDdicType), builtInDdicType);
+			}
+		}
+
 		stringLiterals.clear();
 		stringLiterals.put(" ", " ");
 		stringLiterals.put("X", "X");
@@ -209,13 +224,13 @@ public class Obfuscator {
 				boolean oldTextMayBeVarName = ABAP.mayBeVariableName(oldText, false);
 				boolean prevIfFirstCode = (prevCode == command.getFirstCodeToken());
 				if (prevCode != null && prevCode.isAnyKeyword("METHOD", "METHODS") && oldTextMayBeVarName) {
-					newText = getNewNameFor(oldText, methods, "", IdentifierType.METHOD);
+					newText = getNewNameFor(getKey(oldText), methods, "", IdentifierType.METHOD);
 
 				} else if (prevCode != null && prevCode.isKeyword("CLASS") && prevIfFirstCode && oldTextMayBeVarName) {
-					newText = getTypeName(oldText, classes, "cl_");
+					newText = getTypeName(oldText, classes, "cl_", false);
 
 				} else if (prevCode != null && prevCode.isKeyword("INTERFACE") && prevIfFirstCode && oldTextMayBeVarName) {
-					newText = getTypeName(oldText, classes, "if_");
+					newText = getTypeName(oldText, classes, "if_", false);
 
 				} else {					
 					newText = obfuscateIdentifier(token);
@@ -246,7 +261,7 @@ public class Obfuscator {
 			boolean isLastBit = (i + 1 == bits.size());
 			String nextBit = isLastBit ? "" : bits.get(i + 1);
 			String newBit = null;
-			
+
 			sbKey.append(bit);
 
 			// if chains like 'lo_object->if_any~method(' shall be removed, simply skip if~, cl_any=>, cl_any->, struc- and proceed with the rest of the identifier
@@ -255,7 +270,7 @@ public class Obfuscator {
 				continue;
 			}
 			// if chains are removed, the key must consist of the whole chain, so 'cl_any=>method(' gets a different identifier than 'cl_other=>method('
-			String key = simplify ? sbKey.toString() : bit;
+			String key = getKey(simplify ? sbKey.toString() : bit);
 
 			if (ABAP.isFieldSymbol(bit)) {
 				newBit = ABAP.FIELD_SYMBOL_START_STRING + getVariableName(bit.substring(1, bit.length() - 1), variables, "ls_") + ABAP.FIELD_SYMBOL_END_STRING;
@@ -273,7 +288,7 @@ public class Obfuscator {
 				newBit = getNewNameFor(key, classes, "if_", IdentifierType.INTERFACE);
 
 			} else if (nextBit.equals("=>")) {
-				newBit = getTypeName(bit, classes, "cl_");
+				newBit = getTypeName(bit, classes, "cl_", false);
 
 			} else if (nextBit.equals("->")) {
 				if (AbapCult.stringEquals(bit, "me", true)) {
@@ -284,14 +299,14 @@ public class Obfuscator {
 			
 			} else if (nextBit.equals("(") && nextCode != null && !nextCode.isAttached()) {
 				if (token.isTypeIdentifier()) {
-					newBit = getTypeName(bit, types, "ty_");
+					newBit = getTypeName(bit, types, "ty_", false);
 				} else {
 					newBit = getNewNameFor(key, methods, "", IdentifierType.METHOD);
 				}
 			
 			} else if (prevBit.equals("~")) {
 				if (token.isTypeIdentifier()) {
-					newBit = getTypeName(bit, types, "ty_");
+					newBit = getTypeName(bit, types, "ty_", false);
 				} else {
 					newBit = getNewNameFor(key, methods, "", IdentifierType.METHOD);
 				}
@@ -326,7 +341,7 @@ public class Obfuscator {
 				
 			} else {
 				if (token.isTypeIdentifier()) {
-					newBit = getTypeName(bit, types, "ty_");
+					newBit = getTypeName(bit, types, "ty_", (bits.size() == 1));
 				} else if (simplify && sb.length() == 0) {
 					newBit = getVariableName(bit, variables, "lv_", key);
 				} else {
@@ -339,7 +354,7 @@ public class Obfuscator {
 	}
 	
 	private String getVariableName(String oldText, HashMap<String, String> variables, String defaultPrefix) {
-		return getVariableName(oldText, variables, defaultPrefix, oldText);
+		return getVariableName(oldText, variables, defaultPrefix, getKey(oldText));
 	}
 	
 	private String getVariableName(String oldText, HashMap<String, String> variables, String defaultPrefix, String key) {
@@ -395,14 +410,16 @@ public class Obfuscator {
 		return getNewNameFor(key, variables, prefix, identifierType);
 	}
 	
-	private String getTypeName(String oldText, HashMap<String, String> types, String defaultPrefix) {
-		return getTypeName(oldText, types, defaultPrefix, oldText);
+	private String getTypeName(String oldText, HashMap<String, String> types, String defaultPrefix, boolean mayBeBuiltInType) {
+		return getTypeName(oldText, types, defaultPrefix, mayBeBuiltInType, getKey(oldText));
 	}
 	
-	private String getTypeName(String oldText, HashMap<String, String> types, String defaultPrefix, String key) {
-		if (types.containsKey(oldText)) {
-			return types.get(oldText);
-		}
+	private String getTypeName(String oldText, HashMap<String, String> types, String defaultPrefix, boolean mayBeBuiltInType, String key) {
+		if (mayBeBuiltInType && builtInTypes.containsKey(key))
+			return builtInTypes.get(key);
+		if (types.containsKey(key)) 
+			return types.get(key);
+		
 
 		String prefix = determinePrefix(oldText, defaultPrefix, typePrefixes);
 

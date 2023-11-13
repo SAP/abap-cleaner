@@ -1587,4 +1587,23 @@ class AlignDeclarationsTest extends RuleTestBase {
 		testRule();
 	}
 
+
+	@Test
+	void testTypeTableAndLengthColumn() {
+		// ensure that the declaration TYPE STANDARD TABLE OF ... does NOT expand the TYPE column for the other declarations
+
+		buildSrc("DATA: gt_any_table TYPE STANDARD TABLE OF ty_any_type,");
+		buildSrc("      gv_any_value TYPE decfloat16 LENGTH 2 DECIMALS 3,");
+		buildSrc("      gv_other_value TYPE p LENGTH 2 DECIMALS 0,");
+		buildSrc("      gv_third_value TYPE abap_bool.");
+
+		buildExp("DATA: gt_any_table   TYPE STANDARD TABLE OF ty_any_type,");
+		buildExp("      gv_any_value   TYPE decfloat16 LENGTH 2 DECIMALS 3,");
+		buildExp("      gv_other_value TYPE p          LENGTH 2 DECIMALS 0,");
+		buildExp("      gv_third_value TYPE abap_bool.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }
