@@ -216,9 +216,15 @@ public class ChainRule extends RuleForCommands {
 		}
 		int startLineBreaksPartB = 0;
 		int startSpacesLeftPartB = 1;
+		int lineBreaksForStruc = 0;
+		int spacesLeftForStruc = 1;
 		if (!wasColonAfterInitialKeywords && (chainSign.lineBreaks > 0 || chainSign.getNextNonCommentToken().lineBreaks > 0)) {
 			startLineBreaksPartB = 1;
 			startSpacesLeftPartB = chainSign.getNextNonCommentToken().getStartIndexInLine();
+		} else if (wasColonAfterInitialKeywords && chainSign.getNext().lineBreaks > 0) {
+			// move BEGIN OF ... END OF definitions to the next line if there was a line break after the colon 
+			lineBreaksForStruc = 1;
+			spacesLeftForStruc = indent + ABAP.INDENT_STEP;
 		}
 		
 		// only now, after possible split-out of comments, determine the last token of the to-be-repeated 'part A' section
@@ -231,8 +237,23 @@ public class ChainRule extends RuleForCommands {
 		command.removeAllChainColons();	
 		
 		do {
+			// determine whether the next bit is a BEGIN OF ... END OF definition with at least one ABAP Doc comments to it;
+			// in such a case, the comments must NOT be split out, but must be kept behind the chain colon
+			boolean isStruc = lastTokenOfPartA.getNextCodeToken().matchesOnSiblings(true, "BEGIN", "OF");
+			boolean keepComments = false;
+			if (isStruc) {
+				Token test = lastTokenOfPartA.getNext();
+				while (test != null && test.isComment()) {
+					if (test.isAbapDocComment()) {
+						keepComments = true;
+						break;
+					}
+					test = test.getNext();
+				}
+			}
+
 			// if the chain colon was found directly after the first keyword (typically, a declaration keyword) or keyword collocation (like CALL METHOD) ...  
-			if (wasColonAfterInitialKeywords) {
+			if (wasColonAfterInitialKeywords && !keepComments) {
 				// move comment lines (or an initial line-end comment behind the keyword or the chain sign) into a new command
 				ArrayList<Command> newCommentCommands = command.splitOutCommentLinesAfter(lastTokenOfPartA); 
 				if (!newCommentCommands.isEmpty()) {
@@ -250,7 +271,6 @@ public class ChainRule extends RuleForCommands {
 
 			// find the end of the chain element - or the end of the BEGIN OF ... END OF block (possibly including related table types)
 			Token firstCodeTokenOfPartB = firstTokenOfPartB.getThisOrNextCodeToken(); // move behind a pragma
-			boolean isStruc = firstCodeTokenOfPartB.matchesOnSiblings(true, "BEGIN", "OF");
 			Token periodOrComma = isStruc ? findEndOfStructure(firstCodeTokenOfPartB) : lastTokenOfPartA.getLastTokenOnSiblings(true, TokenSearch.ASTERISK, ",|.");
 			
 			if (periodOrComma.isComma()) {
@@ -299,6 +319,8 @@ public class ChainRule extends RuleForCommands {
 				periodOrComma.type = TokenType.PERIOD;
 				if (firstTokenOfPartB.isPeriod() && startLineBreaksPartB == 0)
 					firstTokenOfPartB.setWhitespace(0, 0);
+				else if (keepComments) // or even 'if (isStruc)'?
+					firstTokenOfPartB.setWhitespace(lineBreaksForStruc, spacesLeftForStruc);
 				else
 					firstTokenOfPartB.setWhitespace(startLineBreaksPartB, startSpacesLeftPartB);
 				newCommand.getLastToken().insertRightSibling(partB);
@@ -328,6 +350,8 @@ public class ChainRule extends RuleForCommands {
 				int oldIndent = firstTokenOfPartB.getStartIndexInLine();
 				if (firstTokenOfPartB.isPeriod() && startLineBreaksPartB == 0)
 					firstTokenOfPartB.setWhitespace(0, 0);
+				else if (keepComments) // or even 'if (isStruc)'?
+					firstTokenOfPartB.setWhitespace(lineBreaksForStruc, spacesLeftForStruc);
 				else
 					firstTokenOfPartB.setWhitespace(startLineBreaksPartB, startSpacesLeftPartB);
 				int newIndent = firstTokenOfPartB.getStartIndexInLine();
