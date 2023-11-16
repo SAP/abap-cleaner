@@ -26,7 +26,8 @@ public class MethodInfo {
 	public final boolean isFinal;
 	public final boolean isRedefinition;
 	public final boolean isForTesting;
-
+	public final boolean isInOOContext;
+	
 	private HashMap<String, ParameterInfo> parameters;
 	private ArrayList<ParameterInfo> parametersInOrder;
 	
@@ -42,6 +43,7 @@ public class MethodInfo {
 		this.isFinal = isFinal;
 		this.isRedefinition = isRedefinition;
 		this.isForTesting = isForTesting;
+		this.isInOOContext = declarationToken.getParentCommand().isInOOContext();
 		
 		parameters = new HashMap<>();
 		parametersInOrder = new ArrayList<>();

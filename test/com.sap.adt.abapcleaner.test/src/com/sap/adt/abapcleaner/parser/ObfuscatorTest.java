@@ -112,8 +112,8 @@ public class ObfuscatorTest {
 				"ls_any_struc-any_comp = 1. ls_other_struc-any_comp = 2. ls_any_struc-other_comp = syst-datum.");
 		test("tab1[ comp1 = gc_const1 ]-comp2 = gc_const2. tab2[ comp2 = 3 ]-comp1 = 4.", 
 				"lt_any_table[ any_comp = gc_any_constant ]-other_comp = gc_other_constant. lt_other_table[ other_comp = 3 ]-any_comp = 4.");
-		test("lr_1 = REF #( lt_1 ). CLEAR lr_1->*", 
-				"lr_any_ref = REF #( lt_any_table ). CLEAR lr_any_ref->*");
+		test("METHOD a. lr_1 = REF #( lt_1 ). CLEAR lr_1->*. ENDMETHOD.",  // METHOD required for OO context
+				"METHOD any_method. lr_any_ref = REF #( lt_any_table ). CLEAR lr_any_ref->*. ENDMETHOD.");
 		test("a_1 = 42. any_2 = 42.", 
 				"lv_any_value = 42. lv_other_value = 42.");
 		test("ls_1 = VALUE t( b = a ).", 
@@ -175,8 +175,8 @@ public class ObfuscatorTest {
 				"s1-c1 = 1. s2-c1 = 2. s1-c2 = syst-datum.");
 		test("tab1[ comp1 = gc_const1 ]-comp2 = gc_const2. tab2[ comp2 = 3 ]-comp1 = 4.", 
 				"t1[ c1 = co1 ]-c2 = co2. t2[ c2 = 3 ]-c1 = 4.");
-		test("lr_1 = REF #( lt_1 ). CLEAR lr_1->*", 
-				"r1 = REF #( t1 ). CLEAR r1->*");
+		test("METHOD a. lr_1 = REF #( lt_1 ). CLEAR lr_1->*. ENDMETHOD.", // METHOD required for OO context 
+				"METHOD meth1. r1 = REF #( t1 ). CLEAR r1->*. ENDMETHOD.");
 		test("a_1 = 42. any_2 = 42.", 
 				"v1 = 42. v2 = 42.");
 		test("ls_1 = VALUE t( b = a ).", 

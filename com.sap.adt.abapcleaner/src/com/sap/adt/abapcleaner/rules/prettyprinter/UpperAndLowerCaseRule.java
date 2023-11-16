@@ -264,6 +264,7 @@ public class UpperAndLowerCaseRule extends RuleForCommands {
 		CaseStyle keywordStyle = isInDefinitionSection ? definitionKeywordStyle : implementationKeywordStyle;
 		CaseStyle identifierStyle = isInDefinitionSection ? definitionIdentifierStyle : implementationIdentifierStyle;
 		boolean keepMixedCaseIdentifiers = configKeepMixedCaseInIdentifiers.getValue();
+		boolean isInOOContext = command.isInOOContext();
 		
 		boolean changedCommand = false;
 		Token token = command.getFirstToken();
@@ -280,7 +281,7 @@ public class UpperAndLowerCaseRule extends RuleForCommands {
 				
 			} else if (token.type == TokenType.IDENTIFIER && identifierStyle != CaseStyle.UNCHANGED) {
 				if (keepMixedCaseIdentifiers) {
-					changedText = changeIdentifierKeepingMixedCase(text, identifierStyle);
+					changedText = changeIdentifierKeepingMixedCase(text, identifierStyle, isInOOContext);
 				} else {
 					changedText = (identifierStyle == CaseStyle.LOWER_CASE) ? AbapCult.toLower(text) : AbapCult.toUpper(text);
 				}
@@ -294,7 +295,7 @@ public class UpperAndLowerCaseRule extends RuleForCommands {
 				}
 				if (pragmaParameterStyle != CaseStyle.UNCHANGED && !StringUtil.isNullOrEmpty(parameters)) {
 					if (keepMixedCaseIdentifiers) {
-						parameters = changeIdentifierKeepingMixedCase(parameters, pragmaParameterStyle);
+						parameters = changeIdentifierKeepingMixedCase(parameters, pragmaParameterStyle, isInOOContext);
 					} else {
 						parameters = (pragmaParameterStyle == CaseStyle.LOWER_CASE) ? AbapCult.toLower(parameters) : AbapCult.toUpper(parameters);
 					}
@@ -328,11 +329,11 @@ public class UpperAndLowerCaseRule extends RuleForCommands {
 		return prefix + id;
 	}
 
-	private String changeIdentifierKeepingMixedCase(String text, CaseStyle identifierStyle) {
+	private String changeIdentifierKeepingMixedCase(String text, CaseStyle identifierStyle, boolean isInOOContext) {
 		// split composed identifiers "any_class=>any_structure-any_component", or "any_class=>any_method(" into multiple parts
 		// in order to apply the rule to each part; otherwise, "IF_ANY_INTERFACE~any_method" would be considered a 'mixed case'
 		StringBuilder changedTextBuilder = new StringBuilder();
-		ArrayList<String> textBits = ABAP.splitIdentifier(text, false);
+		ArrayList<String> textBits = ABAP.splitIdentifier(text, false, isInOOContext);
 
 		for (String textBit : textBits) {
 			// since mixed case identifiers should be kept in this method, only change the text if it is 

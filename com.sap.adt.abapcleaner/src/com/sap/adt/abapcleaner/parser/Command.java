@@ -3103,7 +3103,18 @@ public class Command {
 			return (firstToken.getNextTokenOfTypeAndText(TokenType.KEYWORD, keyword) != null);
 		}
 	}
-	
+
+	public boolean isInOOContext() {
+		Command command = this;
+		while (command != null) {
+			if (command.firstCodeTokenIsAnyKeyword("CLASS", "INTERFACE", "METHOD")) {
+				return true;
+			}
+			command = command.getParent();
+		}
+		return false;
+	}
+
 	/** Returns true if the Command matches a hard-coded pattern or condition.
 	 * This method can be used during development to search for examples in all sample code files. */
 	public final boolean matchesPattern() {

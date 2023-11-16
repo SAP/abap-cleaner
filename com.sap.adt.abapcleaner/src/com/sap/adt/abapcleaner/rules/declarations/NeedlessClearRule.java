@@ -179,6 +179,7 @@ public class NeedlessClearRule extends RuleForDeclarations {
 		
 		// for Commands that are completely removed, rule use will be set on the METHOD start
 		Command parentCommand = command.getParent();
+		boolean isInOOContext = command.isInOOContext();
 		
 		while (token != null && !command.wasRemovedFromCode()) {
 			Token chainElemEnd = token.getLastTokenOnSiblings(true, TokenSearch.ASTERISK, ",|.");
@@ -188,7 +189,7 @@ public class NeedlessClearRule extends RuleForDeclarations {
 			
 			// only process cases where the identifier is directly followed by the comma or period, i.e. 
 			// no cases with additions WITH NULL or WITH val [IN {CHARACTER|BYTE} MODE]
-			if (token.isIdentifier() && chainElemEnd == token.getNextCodeSibling() && canRemoveClear(token, localVariables, isAtStart)) {
+			if (token.isIdentifier() && chainElemEnd == token.getNextCodeSibling() && canRemoveClear(token, localVariables, isAtStart, isInOOContext)) {
 				try {
 					if (command.handleChainElement(token, action.getCorrespondingChainElementAction(), commentText)) {
 						code.addRuleUse(this, command.wasRemovedFromCode() ? parentCommand : command);
@@ -201,7 +202,7 @@ public class NeedlessClearRule extends RuleForDeclarations {
 		}
 	}
 	
-	private boolean canRemoveClear(Token token, LocalVariables localVariables, boolean isAtStart) {
+	private boolean canRemoveClear(Token token, LocalVariables localVariables, boolean isAtStart, boolean isInOOContext) {
 		// excluded cases where the variable is not defined locally (e.g. parameters or attributes), 
 		// as well as cases defined with DATA ... BEGIN OF
 		VariableInfo varInfo = localVariables.getVariableInfo(token, false);
@@ -215,7 +216,7 @@ public class NeedlessClearRule extends RuleForDeclarations {
 		// exclude cases where the Token after CLEAR contains more than the variable name, e.g. 
 		// ls_struc-component, lo_obj->attribute, lr_ref_to_data->*, lt_table[ 1 ] etc.
 		String text = token.textStartsWith(ABAP.OPERAND_ESCAPE_CHAR_STRING) ? token.getText().substring(1) : token.getText();
-		if (!text.equals(ABAP.readTillEndOfVariableName(text, 0, true)))
+		if (!text.equals(ABAP.readTillEndOfVariableName(text, 0, true, isInOOContext)))
 			return false;
 		
 		// exclude cases where the declaration contains a default non-initial VALUE, e.g. DATA lv_any TYPE i VALUE 42.

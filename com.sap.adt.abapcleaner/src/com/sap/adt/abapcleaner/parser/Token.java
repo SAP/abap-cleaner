@@ -1336,7 +1336,7 @@ public class Token {
 		return false;
 	}
 
-	final TextBit[] toTextBits(int startIndex) {
+	final TextBit[] toTextBits(int startIndex, boolean isInOOContext) {
 		boolean isSimpleCase = false;
 		
 		// in most cases, the whole Token is of one ColorType
@@ -1380,7 +1380,8 @@ public class Token {
 		boolean lastWasIdentifier = false;
 		for (int i = 0; i < text.length(); ++i) {
 			char c = text.charAt(i);
-			boolean isIdentifier = (type == TokenType.KEYWORD) ? ABAP.isCharAllowedForAnyKeyword(c) : ABAP.isCharAllowedForVariableNames(c);
+			boolean isIdentifier = (type == TokenType.KEYWORD) ? ABAP.isCharAllowedForAnyKeyword(c) 
+																				: ABAP.isCharAllowedForVariableNames(text, i, (i == 0), false, isInOOContext);
 			// in some cases, initial '/' does NOT start an identifier with a namespace, e.g. "ULINE AT /.", "ULINE AT /10(20)." or "ULINE at /pos(20)."
 			if (i == 0 && c == '/' && (text.length() <= 1 || text.indexOf('/', 1) < 0)) {
 				isIdentifier = false;

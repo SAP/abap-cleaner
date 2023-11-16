@@ -965,7 +965,7 @@ public class AlignParametersRule extends RuleForCommands {
 
 		int equalsSignPos = commentText.indexOf('=');
 		String[] asterisksAndParamName = StringUtil.split(commentText.substring(0, equalsSignPos), ' ', true);
-		if (asterisksAndParamName.length != 2 || !ABAP.mayBeVariableName(asterisksAndParamName[1], false))
+		if (asterisksAndParamName.length != 2 || !ABAP.mayBeVariableName(asterisksAndParamName[1], false, comment.getParentCommand().isInOOContext()))
 			return false;
 
 		// align the commented-out assignment

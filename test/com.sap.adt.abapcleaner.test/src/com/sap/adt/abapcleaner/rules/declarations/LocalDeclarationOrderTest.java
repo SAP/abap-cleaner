@@ -1421,4 +1421,91 @@ public class LocalDeclarationOrderTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testNamesWithSpecialChars() {
+		// ensure that the declaration and usage of the following variable names with special characters - 
+		// which are only allowed in a non-object-oriented context! - is correctly recognized, and therefore 
+		// order is changed accordingly; since the RND Parser marks identifiers starting with <... as erroneous 
+		// in the result = ... lines, these are NOT used here and therefore end up at the end of the DATA declarations
+
+		buildSrc("FORM any_form CHANGING result TYPE i.");
+		buildSrc("  DATA <a      TYPE i.");
+		buildSrc("  DATA <_a     TYPE i.");
+		buildSrc("  DATA <%$?*#  TYPE i.");
+		buildSrc("");
+		buildSrc("  DATA %a      TYPE i.");
+		buildSrc("  DATA %_a     TYPE i.");
+		buildSrc("  DATA a%b     TYPE i.");
+		buildSrc("  DATA a%      TYPE i.");
+		buildSrc("  DATA %       TYPE i.");
+		buildSrc("");
+		buildSrc("  DATA $a      TYPE i.");
+		buildSrc("  DATA $_a     TYPE i.");
+		buildSrc("  DATA a$b     TYPE i.");
+		buildSrc("  DATA a$      TYPE i.");
+		buildSrc("  DATA $       TYPE i.");
+		buildSrc("");
+		buildSrc("  DATA ?a      TYPE i.");
+		buildSrc("  DATA ?_a     TYPE i.");
+		buildSrc("  DATA a?b     TYPE i.");
+		buildSrc("  DATA a?      TYPE i.");
+		buildSrc("  DATA ?       TYPE i.");
+		buildSrc("");
+		buildSrc("  DATA *a      TYPE i.");
+		buildSrc("  DATA *_a     TYPE i.");
+		buildSrc("  DATA a*b     TYPE i.");
+		buildSrc("  DATA a*      TYPE i.");
+		buildSrc("");
+		buildSrc("  DATA &a      TYPE i.");
+		buildSrc("  DATA &_a     TYPE i.");
+		buildSrc("");
+		buildSrc("  DATA a#b     TYPE i.");
+		buildSrc("  DATA a#      TYPE i.");
+		buildSrc("");
+		buildSrc("  DATA a>      TYPE i.");
+		buildSrc("  DATA &%$?*#> TYPE i.");
+		buildSrc("");
+		buildSrc("  result = &%$?*#> + a> + a# + a#b + &_a + &a.");
+		buildSrc("  result += a* + a*b + *_a + *a + ? + a? + a?b + ?_a + ?a.");
+		buildSrc("  result += $ + a$ + a$b + $_a + $a + % + a% + a%b + %_a + %a.");
+		buildSrc("ENDFORM.");
+
+		buildExp("FORM any_form CHANGING result TYPE i.");
+		buildExp("  DATA &%$?*#> TYPE i.");
+		buildExp("  DATA a>      TYPE i.");
+		buildExp("  DATA a#      TYPE i.");
+		buildExp("  DATA a#b     TYPE i.");
+		buildExp("  DATA &_a     TYPE i.");
+		buildExp("  DATA &a      TYPE i.");
+		buildExp("  DATA a*      TYPE i.");
+		buildExp("  DATA a*b     TYPE i.");
+		buildExp("  DATA *_a     TYPE i.");
+		buildExp("  DATA *a      TYPE i.");
+		buildExp("  DATA ?       TYPE i.");
+		buildExp("  DATA a?      TYPE i.");
+		buildExp("  DATA a?b     TYPE i.");
+		buildExp("  DATA ?_a     TYPE i.");
+		buildExp("  DATA ?a      TYPE i.");
+		buildExp("  DATA $       TYPE i.");
+		buildExp("  DATA a$      TYPE i.");
+		buildExp("  DATA a$b     TYPE i.");
+		buildExp("  DATA $_a     TYPE i.");
+		buildExp("  DATA $a      TYPE i.");
+		buildExp("  DATA %       TYPE i.");
+		buildExp("  DATA a%      TYPE i.");
+		buildExp("  DATA a%b     TYPE i.");
+		buildExp("  DATA %_a     TYPE i.");
+		buildExp("  DATA %a      TYPE i.");
+		buildExp("  DATA <a      TYPE i.");
+		buildExp("  DATA <_a     TYPE i.");
+		buildExp("  DATA <%$?*#  TYPE i.");
+		buildExp("");
+		buildExp("  result = &%$?*#> + a> + a# + a#b + &_a + &a.");
+		buildExp("  result += a* + a*b + *_a + *a + ? + a? + a?b + ?_a + ?a.");
+		buildExp("  result += $ + a$ + a$b + $_a + $a + % + a% + a%b + %_a + %a.");
+		buildExp("ENDFORM.");
+
+		testRule();
+	}
 }
