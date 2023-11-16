@@ -874,7 +874,7 @@ public class TokenTest {
 			}
 			commandText.append(commandTextWithMarkers.substring(writePos, markerPos));
 			writePos = markerPos + 1;
-			String varName = ABAP.readTillEndOfVariableName(commandTextWithMarkers, writePos, true);
+			String varName = ABAP.readTillEndOfVariableName(commandTextWithMarkers, writePos, true, true);
 			if (StringUtil.isNullOrEmpty(varName)) {
 				// the marker is not meant as a marker, e.g. in 'VALUE #( ... )'
 				commandText.append(commandTextWithMarkers.charAt(markerPos));

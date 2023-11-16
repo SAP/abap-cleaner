@@ -61,13 +61,13 @@ public abstract class AlignCell {
 		return text.toString();
 	}
 
-	final boolean startsWithSameObjectAs(AlignCell other) {
+	final boolean startsWithSameObjectAs(AlignCell other, boolean isInOOContext) {
 		Token tokenA = getFirstToken();
 		Token tokenB = other.getFirstToken();
 		int startA = StringUtil.startsWith(tokenA.getText(), ABAP.OPERAND_ESCAPE_CHAR_STRING, false) ? 1 : 0;
 		int startB = StringUtil.startsWith(tokenB.getText(), ABAP.OPERAND_ESCAPE_CHAR_STRING, false) ? 1 : 0;
-		String tokenAObject = ABAP.readTillEndOfVariableName(tokenA.getText(), startA, true);
-		String tokenBObject = ABAP.readTillEndOfVariableName(tokenB.getText(), startB, true);
+		String tokenAObject = ABAP.readTillEndOfVariableName(tokenA.getText(), startA, true, isInOOContext);
+		String tokenBObject = ABAP.readTillEndOfVariableName(tokenB.getText(), startB, true, isInOOContext);
 		return AbapCult.stringEquals(tokenAObject, tokenBObject, true);
 	}
 

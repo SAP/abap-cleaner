@@ -10,12 +10,14 @@ import java.util.*;
 public class TreeAlign {
 	private final ArrayList<TreeAlignColumn> allColumns = new ArrayList<TreeAlignColumn>();
 
-	private LogicalExpression logicalExpression;
+	private final LogicalExpression logicalExpression;
+	private final boolean isInOOContext;
 	private TreeAlignColumn curCol; // the current column during build
 	private HashSet<Token> lastTokensOfAlignStopCells = new HashSet<Token>();
 
 	private TreeAlign(LogicalExpression logicalExpression) {
 		this.logicalExpression = logicalExpression;
+		this.isInOOContext = logicalExpression.getFirstToken().getParentCommand().isInOOContext();
 	}
 
 	public static TreeAlign createFrom(LogicalExpression logicalExpression) throws UnexpectedSyntaxAfterChanges, UnexpectedSyntaxException {
@@ -157,7 +159,7 @@ public class TreeAlign {
 						AlignCell prevCell = (i > 0) ? column.getCell(i - 1) : null;
 						AlignCell cell = column.getCell(i);
 						AlignCell nextCell = (i + 1 < cellCount) ? column.getCell(i + 1) : null;
-						if ((prevCell == null || !cell.startsWithSameObjectAs(prevCell)) && (nextCell == null || !cell.startsWithSameObjectAs(nextCell)))
+						if ((prevCell == null || !cell.startsWithSameObjectAs(prevCell, isInOOContext)) && (nextCell == null || !cell.startsWithSameObjectAs(nextCell, isInOOContext)))
 							stopAligningLineOf(cell);
 					}
 				}

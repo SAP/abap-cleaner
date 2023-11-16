@@ -152,6 +152,7 @@ public class Code {
 		Command command = firstCommand;
 		while (command != null) {
 
+			boolean isInOOContext = command.isInOOContext();
 			Token token = command.firstToken;
 			while (token != null) {
 				if (token.lineBreaks > 0) {
@@ -174,7 +175,7 @@ public class Code {
 				// add the Token's text, and the TextBits for coloring this text
 				int startIndex = line.length();
 				line.append(token.text);
-				textBits.addAll(Arrays.asList(token.toTextBits(startIndex)));
+				textBits.addAll(Arrays.asList(token.toTextBits(startIndex, isInOOContext)));
 
 				token = token.getNext();
 			}

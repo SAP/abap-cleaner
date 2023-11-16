@@ -19,7 +19,7 @@ public class LocalVariables {
       return (isType ? "~" : "") + AbapCult.toUpper(name);
    }
 
-	public static String getObjectName(String identifier) {
+	public static String getObjectName(String identifier, boolean isInOOContext) {
 		// remove the @ used in SQL statements, or the ! used for escaping identifiers
 		int start = AbapCult.stringStartsWithAny(identifier, "@", ABAP.OPERAND_ESCAPE_CHAR_STRING) ? 1 : 0;
 
@@ -27,14 +27,15 @@ public class LocalVariables {
 		// - get the structure variable in cases of "structure-component",
 		// - get the identifier of the instance in cases of "instance_var->member_var",
 		// - remove substring information like lv_date+4(2)
-		identifier = ABAP.readTillEndOfVariableName(identifier, start, true);
+		identifier = ABAP.readTillEndOfVariableName(identifier, start, true, isInOOContext);
 		return identifier;
 	}
 
 	// -------------------------------------------------------------------------
 	
-   private Rule rule;
-   private MethodInfo methodInfo;
+   private final Rule rule;
+   private final MethodInfo methodInfo;
+   private final boolean isInOOContext;
    private boolean methodUsesMacrosOrTestInjection;
    
 	public HashMap<String, VariableInfo> locals = new HashMap<String, VariableInfo>();
@@ -49,6 +50,7 @@ public class LocalVariables {
 	public LocalVariables(Rule rule, MethodInfo methodInfo) {
 		this.rule = rule;
 		this.methodInfo = methodInfo;
+		this.isInOOContext = (methodInfo == null) ? false : methodInfo.isInOOContext;
 	}
 
 	public boolean isMethodSignatureKnown() {
@@ -75,7 +77,7 @@ public class LocalVariables {
 		return localsInNonCommentUsageOrder;
 	}
 	
-	public VariableInfo addDeclaration(Token identifier, boolean isDeclaredInline, boolean isType, boolean isConstant, boolean isBoundStructuredData) throws UnexpectedSyntaxBeforeChanges {
+	public VariableInfo addDeclaration(Token identifier, boolean isDeclaredInline, boolean isType, boolean isConstant, boolean isBoundStructuredData, boolean isInOOContext) throws UnexpectedSyntaxBeforeChanges {
 		if (!identifier.isIdentifier())
 			throw new UnexpectedSyntaxBeforeChanges(rule, identifier, "Expected an identifier, but found " + identifier.getTypeAndTextForErrorMessage() + "!");
 
@@ -85,7 +87,7 @@ public class LocalVariables {
 		int start = StringUtil.startsWith(text, ABAP.OPERAND_ESCAPE_CHAR_STRING, false) ? 1 : 0;
 
 		// for declarations like "DATA lv_textdat1(20) TYPE c.", reduce the identifier to its first part;
-		text = ABAP.readTillEndOfVariableName(text, start, true);
+		text = ABAP.readTillEndOfVariableName(text, start, true, isInOOContext);
 
 		String key = getNameKey(text, isType);
 		if (locals.containsKey(key))
@@ -102,7 +104,7 @@ public class LocalVariables {
 	}
 
 	public VariableInfo getVariableInfo(Token identifier, boolean isType) {
-		return getVariableInfo(getObjectName(identifier.getText()), isType);
+		return getVariableInfo(getObjectName(identifier.getText(), isInOOContext), isType);
 	}
 
 	public boolean containsVariableInfo(String objectName, boolean isType) { 
@@ -146,7 +148,7 @@ public class LocalVariables {
 		// identifier is only null when this method is called from .setNeeded(), and then false is correct
 		boolean isType = (identifier != null && identifier.isTypeIdentifier());
 		
-		String key = getNameKey(getObjectName(name), isType);
+		String key = getNameKey(getObjectName(name, isInOOContext), isType);
 		VariableInfo varInfo = locals.get(key);
 		if (varInfo == null) 
 			return null;

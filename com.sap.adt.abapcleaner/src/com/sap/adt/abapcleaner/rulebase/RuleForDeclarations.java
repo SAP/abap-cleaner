@@ -311,6 +311,7 @@ public abstract class RuleForDeclarations extends Rule {
 		if (isChain)
 			token = token.getNextCodeToken();
 
+		boolean isInOOContext = command.isInOOContext();
 		while (token != null) {
 			boolean isBoundStructuredData = false;
 			do {
@@ -339,7 +340,7 @@ public abstract class RuleForDeclarations extends Rule {
 				
 				// add declaration
 				String varName = token.getText();
-				VariableInfo varInfo = localVariables.addDeclaration(token, false, isTypeDeclaration, isConstantsDeclaration, isBoundStructuredData);
+				VariableInfo varInfo = localVariables.addDeclaration(token, false, isTypeDeclaration, isConstantsDeclaration, isBoundStructuredData, isInOOContext);
 	
 				// if the declaration uses "LIKE ...", count that as a usage of that variable
 				Token next = token.getNextCodeSibling();
@@ -351,7 +352,7 @@ public abstract class RuleForDeclarations extends Rule {
 						token = token.getNextCodeSibling();
 					}
 					// the Token may contain more than the object name, e.g. 'DATA ls_struc LIKE LINE OF lr_ref->lt_table.'
-					String usedObjectName = LocalVariables.getObjectName(token.getText());
+					String usedObjectName = LocalVariables.getObjectName(token.getText(), isInOOContext);
 					localVariables.addUsageInLikeClause(token, usedObjectName, methodStart, varInfo);
 				}
 	
@@ -418,6 +419,7 @@ public abstract class RuleForDeclarations extends Rule {
 		// try to find any (write or read) access to host variables, e.g. in a line like "WHERE bukrs = :lv_company_code"; 
 		// note that for non-ABAP sections, each token may represent a full line
 		// TODO: SQL comments are NOT yet considered here
+		boolean isInOOContext = command.isInOOContext();
 		Token token = command.getFirstToken();
 		while (token != null) {
 			String text = token.getText();
@@ -427,7 +429,7 @@ public abstract class RuleForDeclarations extends Rule {
 				if (colonPos < 0)
 					break;
 				colonPos += hostVarEscape.length();
-				String varName = ABAP.readTillEndOfVariableName(text, colonPos, true);
+				String varName = ABAP.readTillEndOfVariableName(text, colonPos, true, isInOOContext);
 				if (!StringUtil.isNullOrEmpty(varName)) {
 					colonPos += varName.length();
 					localVariables.addUsage(token, varName);
@@ -445,6 +447,7 @@ public abstract class RuleForDeclarations extends Rule {
 
 		// determine whether the Command is an assignment (without inline declaration, which will be handled below) 
 		boolean isAssignmentCommand = command.isAssignment(false, true);
+		boolean isInOOContext = command.isInOOContext();
 
 		// determine the receiving variable of an assignment, e.g. "lv_receiver" or "ls_receiver" in statements like 
 		// - "lv_receiver = ..."
@@ -452,8 +455,8 @@ public abstract class RuleForDeclarations extends Rule {
 		// - "lv_receiver+4(2) = ..."
 		// note, however, that in "lo_instance->member = ...", lo_instance is NOT the receiver, because the assignment only happens to the memory 
 		// which is *referenced* by lo_instance (so, in this case, lo_instance is *used*, NOT assigned to)  
-		String assignedToVar = isAssignmentCommand ? LocalVariables.getObjectName(firstCode.getText()) : null;
-		if (assignedToVar != null && !isAccessToVarMemory(firstCode.getText(), assignedToVar.length())) // e.g. in "var->member = ...", "var" is not assigned to, but *used*
+		String assignedToVar = isAssignmentCommand ? LocalVariables.getObjectName(firstCode.getText(), command.isInOOContext()) : null;
+		if (assignedToVar != null && !isAccessToVarMemory(firstCode.getText(), assignedToVar.length(), isInOOContext)) // e.g. in "var->member = ...", "var" is not assigned to, but *used*
 			assignedToVar = null;
 
 		Token token = firstCode;
@@ -464,7 +467,7 @@ public abstract class RuleForDeclarations extends Rule {
 			} else if (token.opensInlineDeclaration()) {
 				// process inline declaration
 				token = token.getNext();
-				localVariables.addDeclaration(token, true, false, false, false);
+				localVariables.addDeclaration(token, true, false, false, false, isInOOContext);
 
 				// if the pragma ##NEEDED is defined for this variable, add a "usage" to prevent it from being commented out or deleted
 				if (isNeededPragmaOrPseudoCommentFound(token))
@@ -494,7 +497,7 @@ public abstract class RuleForDeclarations extends Rule {
 				// - get the structure variable in cases of "structure-component",
 				// - get the identifier of the instance in cases of "instance_var->member_var",
 				// - get the first part of a substring expression like lv_date+4(2)
-				String objectName = ABAP.readTillEndOfVariableName(tokenText, readPos, true);
+				String objectName = ABAP.readTillEndOfVariableName(tokenText, readPos, true, isInOOContext);
 				readPos += objectName.length();
 				
 				// determine from the tokenText and the context whether this is an assignment
@@ -513,7 +516,7 @@ public abstract class RuleForDeclarations extends Rule {
 						writesToReferencedMemory = accessType.mayWrite;
 					}
 					
-				} else if (isAccessToVarMemory(tokenText, readPos)) {
+				} else if (isAccessToVarMemory(tokenText, readPos, isInOOContext)) {
 					MemoryAccessType accessType = token.getMemoryAccessType();
 					if (accessType == MemoryAccessType.ASSIGN_TO_FS_OR_DREF) {
 						isAssignment = true;
@@ -535,7 +538,7 @@ public abstract class RuleForDeclarations extends Rule {
 				if (readPos < tokenText.length()) {
 					int substringPos = tokenText.indexOf(ABAP.SUBSTRING_OFFSET, readPos);
 					if (substringPos >= readPos) {
-						objectName = ABAP.readTillEndOfVariableName(tokenText, substringPos + 1, false);
+						objectName = ABAP.readTillEndOfVariableName(tokenText, substringPos + 1, false, isInOOContext);
 						if (!StringUtil.isNullOrEmpty(objectName)) {
 							localVariables.addUsage(token, objectName);
 							readPos = substringPos + objectName.length();
@@ -547,7 +550,7 @@ public abstract class RuleForDeclarations extends Rule {
 				
 				// in "var+offset(length)", "length" may also be an identifier
 				if (readPos > 0 && readPos < tokenText.length() && tokenText.charAt(readPos) == ABAP.SUBSTRING_LENGTH_OPEN) {
-					objectName = ABAP.readTillEndOfVariableName(tokenText, readPos + 1, false);
+					objectName = ABAP.readTillEndOfVariableName(tokenText, readPos + 1, false, isInOOContext);
 					if (!StringUtil.isNullOrEmpty(objectName)) {
 						localVariables.addUsage(token, objectName);
 					}
@@ -557,7 +560,7 @@ public abstract class RuleForDeclarations extends Rule {
 		}
 	}
 
-	private boolean isAccessToVarMemory(String tokenText, int readPosAfterObjName) {
+	private boolean isAccessToVarMemory(String tokenText, int readPosAfterObjName, boolean isInOOContext) {
 		if (readPosAfterObjName == tokenText.length()) {
 			// tokenText contains the object name only
 			return true;
@@ -567,7 +570,7 @@ public abstract class RuleForDeclarations extends Rule {
 			return true;
 			
 		} else if (tokenText.charAt(readPosAfterObjName) == ABAP.COMPONENT_SELECTOR && readPosAfterObjName + 1 < tokenText.length() 
-				&& ABAP.isCharAllowedForVariableNames(tokenText.charAt(readPosAfterObjName + 1), true, false)) {
+				&& ABAP.isCharAllowedForVariableNames(tokenText, readPosAfterObjName + 1, true, false, isInOOContext)) {
 			// tokenText defines a component of object name, e.g. "struc-component" - which also is an access to the memory represented by the variable
 			return true;
 			

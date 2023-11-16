@@ -113,8 +113,9 @@ public class SelfReferenceMeRule extends RuleForDeclarations {
 
 	private boolean executeOn(Code code, Command command, Token token, LocalVariables localVariables) throws UnexpectedSyntaxAfterChanges {
 		// determine the identifier behind 'me->'; note that token may contain expressions like 'me->mo_instance->any_method('
+		boolean isInOOContext = command.isInOOContext();
 		String expression = token.getText().substring(selfReferenceMe.length());
-		String identifier = LocalVariables.getObjectName(expression);
+		String identifier = LocalVariables.getObjectName(expression, isInOOContext);
 		boolean identifierIsMethodName = (expression.endsWith("(") && identifier.length() == expression.length() - ")".length());
 
 		boolean isMethodSignatureKnown = localVariables.isMethodSignatureKnown();
@@ -139,7 +140,7 @@ public class SelfReferenceMeRule extends RuleForDeclarations {
 				if (token.isFirstTokenInCommand() && token.getNext() != null && token.getNext().isAssignmentOperator()) {
 					Token valueToken = token.getNext().getNext();
 					while (valueToken != null) {
-						if (valueToken.isIdentifier() && AbapCult.stringEquals(identifier, LocalVariables.getObjectName(valueToken.getText()), true))
+						if (valueToken.isIdentifier() && AbapCult.stringEquals(identifier, LocalVariables.getObjectName(valueToken.getText(), isInOOContext), true))
 							return false;
 						valueToken = valueToken.getNext();
 					}

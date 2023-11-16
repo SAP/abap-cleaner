@@ -426,11 +426,10 @@ public final class ABAP {
 		return !StringUtil.isNullOrEmpty(text) && abapKeywordCollocationStarts.contains(getAbapKeywordKey(text));
 	}
 
-	public static boolean isCharAllowedForVariableNames(char c) {
-		return isCharAllowedForVariableNames(c, false, false);
-	}
-
-	public static boolean isCharAllowedForVariableNames(char c, boolean isFirstChar, boolean allowFieldSymbols) {
+	public static boolean isCharAllowedForVariableNames(String text, int pos, boolean isFirstChar, boolean allowFieldSymbols, boolean isInOOContext) {
+		char c = text.charAt(pos);
+		
+		// criteria valid both in the object-oriented context and outside of it: 
 		if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_' || c == NAMESPACE_SIGN) {
 			return true;
 		
@@ -439,21 +438,84 @@ public final class ABAP {
 		
 		} else if (allowFieldSymbols && ((isFirstChar && c == '<') || c == '>')) {
 			return true;
+			
+		} else if (c == '%' && pos + 1 < text.length() && text.charAt(pos + 1) == '_') {
+			// the special case of %_... is even allowed in an object-oriented context
+			return true;
+		} 
 		
-		} else {
+		// the remaining criteria are only valid in a non-object-oriented context:
+		if (isInOOContext) {
+			return false;
+
+		} else if (c == '%' || c == '$' || c == '*' || c == '?') {
+			return true;
+			
+		} else if (isFirstChar && (c == '&' || c == '<')) {
+			return true;
+			
+		} else if (!isFirstChar && c == '#') { 
+			return true;
+
+		} else if (c == '>' && (pos + 1 == text.length() || !isCharAllowedForVariableNames(text, pos + 1, false, allowFieldSymbols, isInOOContext))) {
+			// '>' is only allowed as the very last char in a non-OO context
+			return true;
+
+		} else { 
+			// * errors include the following ASCII chars: ! " ' ( ) + , . / : ; = @ [ \ ] ^ ` { | } ~ DEL
+			//   (ASCII codes: 21, 22, 27, 28, 29, 2B, 2C, 2E, 2F, 3A, 3B, 3D, 40, 5B, 5C, 5D, 5E, 60, 7B, 7C, 7D, 7E, 7F)
+			// * '-' would produce a warning (but no error) for data objects or procedure parameters; however, this is 
+			//   currently NOT supported due to possible confusions with the structure component selector, as in 'sy-subrc' or 'struc-comp1'. 
+			//   For procedure names in a non-OO context, '-' would be fine, but those are NOT covered by this method anyway.
 			return false;
 		}
 	}
 
-	public static boolean isCharAllowedForTypeNames(char c, boolean isFirstChar) {
+	public static boolean isCharAllowedForTypeNames(String text, int pos, boolean isFirstChar, boolean isInOOContext) {
+		char c = text.charAt(pos);
+
+		// criteria valid both in the object-oriented context and outside of it: 
 		if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_' || c == NAMESPACE_SIGN) {
 			return true;
 
-		} else if (!isFirstChar) {
+		} else if (!isFirstChar && (c >= '0' && c <= '9')) {
+			return true;
+			
+		} else if (!isFirstChar && c == '=' && pos + 1 < text.length() && text.charAt(pos + 1) == '>') {
 			// type names may contain =>, e.g. 'IF_ANY_INTERFACE=>TY_S_ANY_STRUCTURE'
-			return (c >= '0' && c <= '9') || c == '=' || c == '>';
+			return true;
+			
+		} else if (!isFirstChar && c == '>' && pos > 0 && text.charAt(pos - 1) == '=') {
+			// type names may contain =>, e.g. 'IF_ANY_INTERFACE=>TY_S_ANY_STRUCTURE'
+			return true;
+			
+		} else if (c == '%' && pos + 1 < text.length() && text.charAt(pos + 1) == '_') {
+			// the special case of %_... is even allowed in an object-oriented context
+			return true;
+		} 
 		
-		} else {
+		// the remaining criteria are only valid in a non-object-oriented context:
+		if (isInOOContext) {
+			return false;
+
+		} else if (c == '%' || c == '$' || c == '*' || c == '?') {
+			return true;
+			
+		} else if (isFirstChar && (c == '&' || c == '<')) {
+			return true;
+			
+		} else if (!isFirstChar && c == '#') { 
+			return true;
+
+		} else if (c == '>' && (pos + 1 == text.length() || !isCharAllowedForTypeNames(text, pos + 1, false, isInOOContext))) {
+			// '>' is only allowed as the very last char in a non-OO context
+			return true;
+			
+		} else { 
+			// * errors include the following ASCII chars: ! " ' ( ) + , . / : ; = @ [ \ ] ^ ` { | } ~ DEL
+			//   (ASCII codes: 21, 22, 27, 28, 29, 2B, 2C, 2E, 2F, 3A, 3B, 3D, 40, 5B, 5C, 5D, 5E, 60, 7B, 7C, 7D, 7E, 7F)
+			// * also, for data types(!), '-' is never allowed
+			// * however, in ABAP cleaner, type names may contain / (NAMESPACE SIGN) as well as '=' and '>'
 			return false;
 		}
 	}
@@ -765,13 +827,14 @@ public final class ABAP {
 	}
 	
 	public static String toVariableName(String name) {
+		// always assume an object-oriented context
+		final boolean isInOOContext = true;
 		if (name == null)
 			return "";
 		StringBuilder varName = new StringBuilder(name.length());
 		boolean isFirstChar = true;
-		char[] nameChars = name.toCharArray();
-		for (char c : nameChars) {
-			varName.append(isCharAllowedForVariableNames(c, isFirstChar, false) ? c : '_');
+		for (int pos = 0; pos < name.length(); ++pos) {
+			varName.append(isCharAllowedForVariableNames(name, pos, isFirstChar, false, isInOOContext) ? name.charAt(pos) : '_');
 			isFirstChar = false;
 			if (varName.length() >= MAX_VARIABLE_NAME_LENGTH)
 				break;
@@ -779,7 +842,7 @@ public final class ABAP {
 		return AbapCult.toLower(varName.toString());
 	}
 
-	public static boolean mayBeVariableName(String name, boolean allowFieldSymbols) {
+	public static boolean mayBeVariableName(String name, boolean allowFieldSymbols, boolean isInOOContext) {
 		if (name == null || name.length() == 0)
 			return false;
 		if (name.length() > MAX_VARIABLE_NAME_LENGTH)
@@ -796,13 +859,13 @@ public final class ABAP {
 		boolean isFirstChar = true;
 		int namespaceLength = 0; // is set to > 0 while reading a namespace '/.../' within the identifier
 		while (pos < name.length()) {
-			char c = name.charAt(pos);
-			if (!isCharAllowedForVariableNames(c, isFirstChar, allowFieldSymbols))
+			if (!isCharAllowedForVariableNames(name, pos, isFirstChar, allowFieldSymbols, isInOOContext))
 				return false;
 			
 			isFirstChar = false;
 
 			// ensure that in FIELD-SYMBOLS, < is only found at the beginning and > only at the end
+			char c = name.charAt(pos);
 			if ((c == FIELD_SYMBOL_START_SIGN && pos > 0) || (c == FIELD_SYMBOL_END_SIGN && pos != name.length() - 1))
 				return false;
 			
@@ -848,28 +911,28 @@ public final class ABAP {
 	 * @param allowFieldSymbols - true if field symbols are allowed as variables
 	 * @return - the variable name that was identified, or null if start position exceeded line length
 	 */
-	public static String readTillEndOfVariableName(String line, int start, boolean allowFieldSymbols) {
+	public static String readTillEndOfVariableName(String line, int start, boolean allowFieldSymbols, boolean isInOOContext) {
 		if (line == null)
 			return null;
 		if (start >= line.length())
 			return null;
 		boolean isFirstChar = true;
 		int end = start;
-		while (end < line.length() && isCharAllowedForVariableNames(line.charAt(end), isFirstChar, allowFieldSymbols)) {
+		while (end < line.length() && isCharAllowedForVariableNames(line, end, isFirstChar, allowFieldSymbols, isInOOContext)) {
 			isFirstChar = false;
 			++end;
 		}
 		return line.substring(start, end);
 	}
 
-	public static String readTillEndOfTypeName(String line, int start) {
+	public static String readTillEndOfTypeName(String line, int start, boolean isInOOContext) {
 		int end = start;
 		if (line == null)
 			return null;
 		if (start >= line.length())
 			return null;
 		boolean isFirstChar = true;
-		while (end < line.length() && isCharAllowedForTypeNames(line.charAt(end), isFirstChar)) {
+		while (end < line.length() && isCharAllowedForTypeNames(line, end, isFirstChar, isInOOContext)) {
 			isFirstChar = false;
 			++end;
 		}
@@ -948,21 +1011,21 @@ public final class ABAP {
 	/** splits composed identifiers such as "any_class=>any_structure-any_component", or "any_class=>any_method(", 
 	 * or "any_interface~any_method" etc. into an array of identifiers, e.g. ["any_class", "=>", "any_structure", "-", "any_component"] 
 	 * or ["any_class", "=>", "any_method", "("] etc. */
-	public static ArrayList<String> splitIdentifier(String identifier, boolean allowFieldSymbols) {
+	public static ArrayList<String> splitIdentifier(String identifier, boolean allowFieldSymbols, boolean isInOOContext) {
 		ArrayList<String> results = new ArrayList<String>();
 		if (StringUtil.isNullOrEmpty(identifier))
 			return results;
 		int start = 0;
 		// a field symbol could only be at the beginning, e.g. '<ls_any>-obj_ref->attribute'
 		if (allowFieldSymbols && identifier.charAt(0) == ABAP.FIELD_SYMBOL_START_SIGN) {
-			String fieldSymbol = readTillEndOfVariableName(identifier, start, true);
+			String fieldSymbol = readTillEndOfVariableName(identifier, start, true, isInOOContext);
 			results.add(fieldSymbol);
 			start += fieldSymbol.length();
 		}
 		while (start < identifier.length()) {
-			boolean isVarName = isCharAllowedForVariableNames(identifier.charAt(start), true, false); 
+			boolean isVarName = isCharAllowedForVariableNames(identifier, start, true, false, isInOOContext); 
 			int end = start + 1;
-			while (end < identifier.length() && (isVarName == isCharAllowedForVariableNames(identifier.charAt(end), false, false))) { 
+			while (end < identifier.length() && (isVarName == isCharAllowedForVariableNames(identifier, end, false, false, isInOOContext))) { 
 				++end;
 			}
 			results.add(identifier.substring(start, end));

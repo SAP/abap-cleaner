@@ -4,7 +4,7 @@ import com.sap.adt.abapcleaner.comparer.TextBit;
 
 /**
  * Enumeration of the color types available to display ABAP code.
- * {@link Token#toTextBits(int)} splits a {@link Token} into (one or several) {@link TextBit}s 
+ * {@link Token#toTextBits(int, boolean)} splits a {@link Token} into (one or several) {@link TextBit}s 
  * of one color type each.   
  */
 public enum ColorType  {

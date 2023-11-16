@@ -162,6 +162,7 @@ public class Obfuscator {
 			clearMaps(true, true);
 		}
 		
+		boolean isInOOContext = command.isInOOContext();
 		Token token = command.getFirstToken();
 		boolean condenseTillLineEnd = false;
 		while (token != null) {
@@ -221,7 +222,7 @@ public class Obfuscator {
 				Token prevCode = token.getPrevCodeToken();
 
 				String newText;
-				boolean oldTextMayBeVarName = ABAP.mayBeVariableName(oldText, false);
+				boolean oldTextMayBeVarName = ABAP.mayBeVariableName(oldText, false, isInOOContext);
 				boolean prevIfFirstCode = (prevCode == command.getFirstCodeToken());
 				if (prevCode != null && prevCode.isAnyKeyword("METHOD", "METHODS") && oldTextMayBeVarName) {
 					newText = getNewNameFor(getKey(oldText), methods, "", IdentifierType.METHOD);
@@ -233,7 +234,7 @@ public class Obfuscator {
 					newText = getTypeName(oldText, classes, "if_", false);
 
 				} else {					
-					newText = obfuscateIdentifier(token);
+					newText = obfuscateIdentifier(token, isInOOContext);
 				}
 				token.setText(newText, true);
 			}
@@ -243,12 +244,12 @@ public class Obfuscator {
 		}
 	}
 
-	private String obfuscateIdentifier(Token token) {
+	private String obfuscateIdentifier(Token token, boolean isInOOContext) {
 		String oldText = token.getText();
 		Token nextCode = token.getNextCodeToken();
 		Token parent = token.getParent();
 
-		ArrayList<String> bits = ABAP.splitIdentifier(oldText, true);
+		ArrayList<String> bits = ABAP.splitIdentifier(oldText, true, isInOOContext);
 		if (bits.size() == 3 && AbapCult.stringEqualsAny(true, bits.get(0) + bits.get(1), ABAP.SY_PREFIX, ABAP.SYST_PREFIX, ABAP.TEXT_SYMBOL_PREFIX)) {
 			return oldText;
 		}
@@ -275,7 +276,7 @@ public class Obfuscator {
 			if (ABAP.isFieldSymbol(bit)) {
 				newBit = ABAP.FIELD_SYMBOL_START_STRING + getVariableName(bit.substring(1, bit.length() - 1), variables, "ls_") + ABAP.FIELD_SYMBOL_END_STRING;
 				
-			} else if (!ABAP.isCharAllowedForVariableNames(bit.charAt(0), true, false)) {
+			} else if (!ABAP.isCharAllowedForVariableNames(bit, 0, true, false, isInOOContext)) {
 				sb.append(bit);
 				continue;
 				

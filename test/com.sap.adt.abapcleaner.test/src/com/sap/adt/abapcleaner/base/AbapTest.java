@@ -230,36 +230,90 @@ class AbapTest {
 	
 	@Test
 	void testIsCharAllowedForTypeNames() {
-		// first char
-		assertTrue(ABAP.isCharAllowedForTypeNames('a', true));
-		assertTrue(ABAP.isCharAllowedForTypeNames('A', true));
-		assertTrue(ABAP.isCharAllowedForTypeNames('z', true));
-		assertTrue(ABAP.isCharAllowedForTypeNames('Z', true));
-		assertTrue(ABAP.isCharAllowedForTypeNames('_', true));
-		
-		assertFalse(ABAP.isCharAllowedForTypeNames('0', true));
-		assertFalse(ABAP.isCharAllowedForTypeNames('9', true));
-		// in ABAP cleaner, type names may contain => 
-		assertFalse(ABAP.isCharAllowedForTypeNames('=', true));
-		assertFalse(ABAP.isCharAllowedForTypeNames('>', true));
+		// deliberately omitting '/' (NAMESPACE_SIGN), which can occur in type names
+		String neverAllowed = "!\"'()+,.:;=@[\\]^`{|}~";
 
-		assertFalse(ABAP.isCharAllowedForTypeNames('!', true));
-		assertFalse(ABAP.isCharAllowedForTypeNames('?', true));
+		// first char
+		assertTrue(ABAP.isCharAllowedForTypeNames("a", 0, true, true));
+		assertTrue(ABAP.isCharAllowedForTypeNames("A", 0, true, true));
+		assertTrue(ABAP.isCharAllowedForTypeNames("z", 0, true, true));
+		assertTrue(ABAP.isCharAllowedForTypeNames("Z", 0, true, true));
+		assertTrue(ABAP.isCharAllowedForTypeNames("_", 0, true, true));
+		
+		assertFalse(ABAP.isCharAllowedForTypeNames("0", 0, true, true));
+		assertFalse(ABAP.isCharAllowedForTypeNames("9", 0, true, true));
+		// in ABAP cleaner, type names may contain => 
+		assertFalse(ABAP.isCharAllowedForTypeNames("=", 0, true, true));
+		assertFalse(ABAP.isCharAllowedForTypeNames(">", 0, true, true));
+
+		assertFalse(ABAP.isCharAllowedForTypeNames("!", 0, true, true));
+		assertFalse(ABAP.isCharAllowedForTypeNames("?", 0, true, true));
+
+		// '%' is only allowed as first char if followed by '_'
+		assertTrue(ABAP.isCharAllowedForTypeNames("%_nn", 0, true, true));
+		assertFalse(ABAP.isCharAllowedForTypeNames("%nn", 0, true, true));
+
+		for (int i = 0; i < neverAllowed.length(); ++i) {
+			assertFalse(ABAP.isCharAllowedForTypeNames(neverAllowed, i, true, false));
+		}
 
 		// non-first char
-		assertTrue(ABAP.isCharAllowedForTypeNames('a', false));
-		assertTrue(ABAP.isCharAllowedForTypeNames('A', false));
-		assertTrue(ABAP.isCharAllowedForTypeNames('z', false));
-		assertTrue(ABAP.isCharAllowedForTypeNames('Z', false));
-		assertTrue(ABAP.isCharAllowedForTypeNames('_', false));
-		assertTrue(ABAP.isCharAllowedForTypeNames('0', false));
-		assertTrue(ABAP.isCharAllowedForTypeNames('9', false));
+		assertTrue(ABAP.isCharAllowedForTypeNames("a", 0, false, true));
+		assertTrue(ABAP.isCharAllowedForTypeNames("A", 0, false, true));
+		assertTrue(ABAP.isCharAllowedForTypeNames("z", 0, false, true));
+		assertTrue(ABAP.isCharAllowedForTypeNames("Z", 0, false, true));
+		assertTrue(ABAP.isCharAllowedForTypeNames("_", 0, false, true));
+		assertTrue(ABAP.isCharAllowedForTypeNames("0", 0, false, true));
+		assertTrue(ABAP.isCharAllowedForTypeNames("9", 0, false, true));
 		// in ABAP cleaner, type names may contain => 
-		assertTrue(ABAP.isCharAllowedForTypeNames('=', false));
-		assertTrue(ABAP.isCharAllowedForTypeNames('>', false));
+		assertTrue(ABAP.isCharAllowedForTypeNames("a=>b", 1, false, true));
+		assertTrue(ABAP.isCharAllowedForTypeNames("a=>b", 2, false, true));
 
-		assertFalse(ABAP.isCharAllowedForTypeNames('!', false));
-		assertFalse(ABAP.isCharAllowedForTypeNames('?', false));
+		assertFalse(ABAP.isCharAllowedForTypeNames("!", 0, false, true));
+		assertFalse(ABAP.isCharAllowedForTypeNames("?", 0, false, true));
+
+		for (int i = 0; i < neverAllowed.length(); ++i) {
+			assertFalse(ABAP.isCharAllowedForTypeNames(neverAllowed, i, false, false));
+		}
+	}
+	
+	@Test
+	void testIsCharAllowedForTypeNamesOutsideOO() {
+		// deliberately omitting '/' (NAMESPACE_SIGN), which can occur in type names
+		String neverAllowed = "!\"'()+,.:;=@[\\]^`{|}~"; 
+
+		// first char
+		assertTrue(ABAP.isCharAllowedForTypeNames("%_nn", 0, true, true));
+
+		assertTrue(ABAP.isCharAllowedForTypeNames("%", 0, true, false));
+		assertTrue(ABAP.isCharAllowedForTypeNames("$", 0, true, false));
+		assertTrue(ABAP.isCharAllowedForTypeNames("*", 0, true, false));
+		assertTrue(ABAP.isCharAllowedForTypeNames("?", 0, true, false));
+		
+		assertTrue(ABAP.isCharAllowedForTypeNames("&", 0, true, false));
+		assertTrue(ABAP.isCharAllowedForTypeNames("<", 0, true, false));
+		assertFalse(ABAP.isCharAllowedForTypeNames("#", 0, true, false));
+		assertTrue(ABAP.isCharAllowedForTypeNames(">", 0, true, false));
+		
+		for (int i = 0; i < neverAllowed.length(); ++i) {
+			assertFalse(ABAP.isCharAllowedForTypeNames(neverAllowed, i, true, false));
+		}
+		
+		// non-first char
+		assertTrue(ABAP.isCharAllowedForTypeNames("a%", 1, false, false));
+		assertTrue(ABAP.isCharAllowedForTypeNames("a$", 1, false, false));
+		assertTrue(ABAP.isCharAllowedForTypeNames("a*", 1, false, false));
+		assertTrue(ABAP.isCharAllowedForTypeNames("a?", 1, false, false));
+
+		assertFalse(ABAP.isCharAllowedForTypeNames("a&", 1, false, false));
+		assertFalse(ABAP.isCharAllowedForTypeNames("a<", 1, false, false));
+		assertTrue(ABAP.isCharAllowedForTypeNames("a#", 1, false, false));
+		assertTrue(ABAP.isCharAllowedForTypeNames("a>", 1, false, false));
+		assertFalse(ABAP.isCharAllowedForTypeNames("a>b", 1, false, false));
+
+		for (int i = 0; i < neverAllowed.length(); ++i) {
+			assertFalse(ABAP.isCharAllowedForTypeNames(neverAllowed, i, false, false));
+		}
 	}
 	
 	@Test
@@ -350,13 +404,13 @@ class AbapTest {
 
 	@Test
 	void testReadTillEndOfTypeName() {
-		assertEquals(null, ABAP.readTillEndOfTypeName(null, 0));
-		assertEquals(null, ABAP.readTillEndOfTypeName("", 0));
-		assertEquals(null, ABAP.readTillEndOfTypeName("TYPE ", 5));
-		assertEquals("any_type", ABAP.readTillEndOfTypeName("TYPE any_type", 5));
-		assertEquals("any_type", ABAP.readTillEndOfTypeName("TYPE any_type ", 5));
-		assertEquals("other_type", ABAP.readTillEndOfTypeName("TYPE other_type.", 5));
-		assertEquals("if_any_interface=>ty_any_type", ABAP.readTillEndOfTypeName("TYPE if_any_interface=>ty_any_type.", 5));
+		assertEquals(null, ABAP.readTillEndOfTypeName(null, 0, true));
+		assertEquals(null, ABAP.readTillEndOfTypeName("", 0, true));
+		assertEquals(null, ABAP.readTillEndOfTypeName("TYPE ", 5, true));
+		assertEquals("any_type", ABAP.readTillEndOfTypeName("TYPE any_type", 5, true));
+		assertEquals("any_type", ABAP.readTillEndOfTypeName("TYPE any_type ", 5, true));
+		assertEquals("other_type", ABAP.readTillEndOfTypeName("TYPE other_type.", 5, true));
+		assertEquals("if_any_interface=>ty_any_type", ABAP.readTillEndOfTypeName("TYPE if_any_interface=>ty_any_type.", 5, true));
 	}
 	
 	@Test
@@ -384,13 +438,13 @@ class AbapTest {
 		
 		assertFalse(ABAP.isNumeric(null));
 		
-		assertFalse(ABAP.mayBeVariableName(null, false));
-		assertFalse(ABAP.mayBeVariableName(null, true));
-		assertFalse(ABAP.mayBeVariableName("", true));
-		assertFalse(ABAP.mayBeVariableName("", false));
+		assertFalse(ABAP.mayBeVariableName(null, false, true));
+		assertFalse(ABAP.mayBeVariableName(null, true, true));
+		assertFalse(ABAP.mayBeVariableName("", true, true));
+		assertFalse(ABAP.mayBeVariableName("", false, true));
 
-		assertEquals(null, ABAP.readTillEndOfVariableName(null, 0, false));
-		assertEquals(null, ABAP.readTillEndOfVariableName(null, 0, true));
+		assertEquals(null, ABAP.readTillEndOfVariableName(null, 0, false, true));
+		assertEquals(null, ABAP.readTillEndOfVariableName(null, 0, true, true));
 	}
 
 	@Test
@@ -549,46 +603,46 @@ class AbapTest {
 	void testMayBeVariableName() {
 		// all of the following are VALID usages of namespaces, i.e. they could be used as
 		// identifiers for variable, method, structure, component names etc. 
-		assertTrue(ABAP.mayBeVariableName("/abc/def", false));
-		assertTrue(ABAP.mayBeVariableName("/123/", false));
-		assertTrue(ABAP.mayBeVariableName("/123/abc", false));
-		assertTrue(ABAP.mayBeVariableName("/123456890/abc", false));
-		assertTrue(ABAP.mayBeVariableName("/1234568901234567890123456789/", false));
-		assertTrue(ABAP.mayBeVariableName("a/abc/a/abcedfg/", false));
-		assertTrue(ABAP.mayBeVariableName("abcd/123/a/12345/", false));
-		assertTrue(ABAP.mayBeVariableName("/123//456/", false));
-		assertTrue(ABAP.mayBeVariableName("/___/", false));
-		assertTrue(ABAP.mayBeVariableName("/___/_/___/", false));
-		assertTrue(ABAP.mayBeVariableName("_/123//___//abc/", false));
+		assertTrue(ABAP.mayBeVariableName("/abc/def", false, true));
+		assertTrue(ABAP.mayBeVariableName("/123/", false, true));
+		assertTrue(ABAP.mayBeVariableName("/123/abc", false, true));
+		assertTrue(ABAP.mayBeVariableName("/123456890/abc", false, true));
+		assertTrue(ABAP.mayBeVariableName("/1234568901234567890123456789/", false, true));
+		assertTrue(ABAP.mayBeVariableName("a/abc/a/abcedfg/", false, true));
+		assertTrue(ABAP.mayBeVariableName("abcd/123/a/12345/", false, true));
+		assertTrue(ABAP.mayBeVariableName("/123//456/", false, true));
+		assertTrue(ABAP.mayBeVariableName("/___/", false, true));
+		assertTrue(ABAP.mayBeVariableName("/___/_/___/", false, true));
+		assertTrue(ABAP.mayBeVariableName("_/123//___//abc/", false, true));
 
 		// all of the following are INVALID usages of namespaces (see the rules in ABAP.mayBeVariableName()):
-		assertFalse(ABAP.mayBeVariableName("/12/", false)); // namespace /12/ too short
-		assertFalse(ABAP.mayBeVariableName("/ab/", false)); // namespace /ab/ too short
-		assertFalse(ABAP.mayBeVariableName("/abc/def/gh/", false)); // namespace /gh/ too short
-		assertFalse(ABAP.mayBeVariableName("/abc/def/ghi", false)); // final / not closed
-		assertFalse(ABAP.mayBeVariableName("/abc//def//ghi", false)); // final / not closed
-		assertFalse(ABAP.mayBeVariableName("/12345689012345678901234567890/", false)); // too long
+		assertFalse(ABAP.mayBeVariableName("/12/", false, true)); // namespace /12/ too short
+		assertFalse(ABAP.mayBeVariableName("/ab/", false, true)); // namespace /ab/ too short
+		assertFalse(ABAP.mayBeVariableName("/abc/def/gh/", false, true)); // namespace /gh/ too short
+		assertFalse(ABAP.mayBeVariableName("/abc/def/ghi", false, true)); // final / not closed
+		assertFalse(ABAP.mayBeVariableName("/abc//def//ghi", false, true)); // final / not closed
+		assertFalse(ABAP.mayBeVariableName("/12345689012345678901234567890/", false, true)); // too long
 	}
 
 	@Test
 	void testMayBeVariableNameForFieldSymbol() {
-		assertTrue(ABAP.mayBeVariableName("<>", true)); 
-		assertTrue(ABAP.mayBeVariableName("<_>", true)); 
-		assertTrue(ABAP.mayBeVariableName("<a>", true)); 
-		assertTrue(ABAP.mayBeVariableName("<ls_any>", true)); 
-		assertTrue(ABAP.mayBeVariableName("<ls_any>", true)); 
-		assertTrue(ABAP.mayBeVariableName("<1234567890123456789012345678>", true)); 
+		assertTrue(ABAP.mayBeVariableName("<>", true, true)); 
+		assertTrue(ABAP.mayBeVariableName("<_>", true, true)); 
+		assertTrue(ABAP.mayBeVariableName("<a>", true, true)); 
+		assertTrue(ABAP.mayBeVariableName("<ls_any>", true, true)); 
+		assertTrue(ABAP.mayBeVariableName("<ls_any>", true, true)); 
+		assertTrue(ABAP.mayBeVariableName("<1234567890123456789012345678>", true, true)); 
 
 		// all of the following are INVALID as field symbols
-		assertFalse(ABAP.mayBeVariableName("<a", true)); 
-		assertFalse(ABAP.mayBeVariableName("a>", true)); 
-		assertFalse(ABAP.mayBeVariableName("<a<", true)); 
-		assertFalse(ABAP.mayBeVariableName(">a>", true)); 
-		assertFalse(ABAP.mayBeVariableName("<a<b>", true)); 
-		assertFalse(ABAP.mayBeVariableName("<a>b>", true)); 
-		assertFalse(ABAP.mayBeVariableName("a<b", true)); 
-		assertFalse(ABAP.mayBeVariableName("a>b", true)); 
-		assertFalse(ABAP.mayBeVariableName("</>", true)); // '/' not allowed in FIELD-SYMBOLS
-		assertFalse(ABAP.mayBeVariableName("<a/>", true)); // '/' not allowed in FIELD-SYMBOLS
+		assertFalse(ABAP.mayBeVariableName("<a", true, true)); 
+		assertFalse(ABAP.mayBeVariableName("a>", true, true)); 
+		assertFalse(ABAP.mayBeVariableName("<a<", true, true)); 
+		assertFalse(ABAP.mayBeVariableName(">a>", true, true)); 
+		assertFalse(ABAP.mayBeVariableName("<a<b>", true, true)); 
+		assertFalse(ABAP.mayBeVariableName("<a>b>", true, true)); 
+		assertFalse(ABAP.mayBeVariableName("a<b", true, true)); 
+		assertFalse(ABAP.mayBeVariableName("a>b", true, true)); 
+		assertFalse(ABAP.mayBeVariableName("</>", true, true)); // '/' not allowed in FIELD-SYMBOLS
+		assertFalse(ABAP.mayBeVariableName("<a/>", true, true)); // '/' not allowed in FIELD-SYMBOLS
 	}
 }
