@@ -2046,4 +2046,22 @@ class UnusedVariablesTest extends RuleTestBase {
 
 		testRule();
 	}
+	
+	@Test
+	void testPragmaAtLineStart() {
+		buildSrc("    ##NEEDED DATA lv_any TYPE i.");
+		buildSrc("    DATA:");
+		buildSrc("      ##NEEDED lv_other TYPE i,");
+		buildSrc("      lv_third TYPE i,");
+		buildSrc("      lv_fourth TYPE i ##NEEDED.");
+
+		buildExp("    ##NEEDED DATA lv_any TYPE i.");
+		buildExp("    DATA:");
+		buildExp("      ##NEEDED lv_other TYPE i,");
+		buildExp("      lv_fourth TYPE i ##NEEDED.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }
