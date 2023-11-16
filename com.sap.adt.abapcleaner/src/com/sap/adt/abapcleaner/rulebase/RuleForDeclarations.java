@@ -366,8 +366,9 @@ public abstract class RuleForDeclarations extends Rule {
 			
 			// move to the next identifier
 			token = token.getLastTokenOnSiblings(true, TokenSearch.ASTERISK, ",|.");
-			if (token != null)
+			if (token != null) {
 				token = token.getNextCodeToken();
+			}
 		}
 		return blockLevel;
 	}
@@ -584,10 +585,24 @@ public abstract class RuleForDeclarations extends Rule {
 	}
 	
 	private boolean isNeededPragmaOrPseudoCommentFound(Token startToken) {
+		// see https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/index.htm?file=abenpragma.htm:
+		// A pragma applies to the current statement, that is to the statement that ends at the next . or ,. 
+		// Pragmas in front of the: of a chained statement apply to the entire chained statement.
+		
+		// determine whether ##NEEDED or #EC NEEDED are found before the startToken (stopping the search at a comma or colon) 
+		Token token = startToken;
+		while (token != null) {
+			if (token.isComma() || token.isChainColon()) 
+				break;
+			else if (token.isPragma() && token.textEquals("##NEEDED"))
+				return true;
+			token = token.getPrev();
+		}
+
 		// determine whether ##NEEDED or #EC NEEDED are found before the next comma or period 
 		// (or #EC NEEDED within the comments following it),
 		boolean commaOrPeriodFound = false;
-		Token token = startToken;
+		token = startToken;
 		while (token != null) {
 			if (token.isCommaOrPeriod()) {
 				commaOrPeriodFound = true;
