@@ -6,6 +6,15 @@ as well as bugfixes of reported issues, i.e. anything that enhances or changes t
 For a complete list of changes (including documentation, tests, refactoring etc.), please refer to 
 the list of [commits](../../../commits/main).
 
+## 2023-11-16 (version 1.11.2)
+
+**Thank you** very much [**fmabap**](https://github.com/fmabap), [**LechnerClemens**](https://github.com/LechnerClemens) and
+ [**RicardoLadeiro**](https://github.com/RicardoLadeiro) for the bug reports behind these improvements!
+
+* Fixed rule '**Unchain into multiple statements**' for BEGIN OF ... END OF with ABAP Doc ([#204](../../../issues/204))
+* Fixed rule '**Delete unused variables**' for variables with special chars in non-OO contexts ([#202](../../../issues/202))
+* Fixed rule '**Delete unused variables**' for pragmas at line start ([#200](../../../issues/200))
+
 ## 2023-11-14 (version 1.11.1)
 
 Great **thanks** to [**VladGhitulescu**](https://github.com/VladGhitulescu) and
