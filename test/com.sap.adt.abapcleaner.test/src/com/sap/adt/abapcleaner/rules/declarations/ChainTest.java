@@ -618,4 +618,67 @@ class ChainTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testConstantsBeginOfWithAbapDoc() {
+		// ensure that ABAP doc comments are NOT split out to own Commands, but kept attached to the structure they belong to
+
+		buildSrc("CONSTANTS:");
+		buildSrc("  \"! any ABAP doc");
+		buildSrc("  BEGIN OF ty_s_any,");
+		buildSrc("    comp1 TYPE i VALUE 1,");
+		buildSrc("    comp2 TYPE i VALUE 2,");
+		buildSrc("  END OF ty_s_any,");
+		buildSrc("");
+		buildSrc("  \"! other ABAP doc");
+		buildSrc("  \"! more ABAP doc");
+		buildSrc("  BEGIN OF ty_s_other,");
+		buildSrc("    comp1 TYPE i VALUE 3,");
+		buildSrc("    comp2 TYPE i VALUE 4,");
+		buildSrc("  END OF ty_s_other,");
+		buildSrc("");
+		buildSrc("  \" normal comment");
+		buildSrc("  \"! third ABAP doc");
+		buildSrc("  BEGIN OF ty_s_third,");
+		buildSrc("    comp1 TYPE i VALUE 5,");
+		buildSrc("    comp2 TYPE i VALUE 6,");
+		buildSrc("  END OF ty_s_third,");
+		buildSrc("");
+		buildSrc("  \" no ABAP doc");
+		buildSrc("  BEGIN OF ty_s_fourth,");
+		buildSrc("    comp1 TYPE i VALUE 7,");
+		buildSrc("    comp2 TYPE i VALUE 8,");
+		buildSrc("  END OF ty_s_fourth.");
+
+		buildExp("CONSTANTS:");
+		buildExp("  \"! any ABAP doc");
+		buildExp("  BEGIN OF ty_s_any,");
+		buildExp("    comp1 TYPE i VALUE 1,");
+		buildExp("    comp2 TYPE i VALUE 2,");
+		buildExp("  END OF ty_s_any.");
+		buildExp("");
+		buildExp("CONSTANTS:");
+		buildExp("  \"! other ABAP doc");
+		buildExp("  \"! more ABAP doc");
+		buildExp("  BEGIN OF ty_s_other,");
+		buildExp("    comp1 TYPE i VALUE 3,");
+		buildExp("    comp2 TYPE i VALUE 4,");
+		buildExp("  END OF ty_s_other.");
+		buildExp("");
+		buildExp("CONSTANTS:");
+		buildExp("  \" normal comment");
+		buildExp("  \"! third ABAP doc");
+		buildExp("  BEGIN OF ty_s_third,");
+		buildExp("    comp1 TYPE i VALUE 5,");
+		buildExp("    comp2 TYPE i VALUE 6,");
+		buildExp("  END OF ty_s_third.");
+		buildExp("");
+		buildExp("\" no ABAP doc");
+		buildExp("CONSTANTS: BEGIN OF ty_s_fourth,");
+		buildExp("             comp1 TYPE i VALUE 7,");
+		buildExp("             comp2 TYPE i VALUE 8,");
+		buildExp("           END OF ty_s_fourth.");
+
+		testRule();
+	}
 }
