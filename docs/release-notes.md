@@ -11,9 +11,9 @@ the list of [commits](../../../commits/main).
 **Thank you** very much [**fmabap**](https://github.com/fmabap), [**LechnerClemens**](https://github.com/LechnerClemens) and
  [**RicardoLadeiro**](https://github.com/RicardoLadeiro) for the bug reports behind these improvements!
 
-* Fixed rule '**Unchain into multiple statements**' for BEGIN OF ... END OF with ABAP Doc ([#204](../../../issues/204))
-* Fixed rule '**Delete unused variables**' for variables with special chars in non-OO contexts ([#202](../../../issues/202))
-* Fixed rule '**Delete unused variables**' for pragmas at line start ([#200](../../../issues/200))
+* Fixed rule '**Unchain into multiple statements**' for BEGIN OF ... END OF with **ABAP Doc** ([#204](../../../issues/204))
+* Fixed rule '**Delete unused variables**' for variable names with **special chars in non-OO contexts** ([#202](../../../issues/202))
+* Fixed rule '**Delete unused variables**' for **pragmas at line start** ([#200](../../../issues/200))
 
 ## 2023-11-14 (version 1.11.1)
 
