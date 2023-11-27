@@ -90,17 +90,24 @@ public class AlignLogicalExpressionsRule extends RuleForLogicalExpressions {
 	private static final String[] alignStyleSelectionLeftOnly = new String[] { "do not align", "left-align" }; // for IF (because this keyword is too short to be right-aligned with "AND" or "EQUIV")
 	private static final String[] alignStyleSelection = new String[] { "do not align", "left-align", "right-align" };
 
-	ConfigEnumValue<AlignStyle> configAlignIfWithBoolOps = new ConfigEnumValue<AlignStyle>(this, "AlignIfWithBoolOps", "Align AND / OR / EQUIV with IF", alignStyleSelectionLeftOnly, AlignStyle.DO_NOT_ALIGN);
-	ConfigEnumValue<AlignStyle> configAlignElseIfWithBoolOps = new ConfigEnumValue<AlignStyle>(this, "AlignElseIfWithBoolOps", "Align AND / OR / EQUIV with ELSEIF", alignStyleSelection, AlignStyle.DO_NOT_ALIGN);
-	ConfigEnumValue<AlignStyle> configAlignCheckWithBoolOps = new ConfigEnumValue<AlignStyle>(this, "AlignCheckWithBoolOps", "Align AND / OR / EQUIV with CHECK", alignStyleSelection, AlignStyle.DO_NOT_ALIGN);
-	ConfigEnumValue<AlignStyle> configAlignWhileWithBoolOps = new ConfigEnumValue<AlignStyle>(this, "AlignWhileWithBoolOps", "Align AND / OR / EQUIV with WHILE", alignStyleSelection, AlignStyle.DO_NOT_ALIGN);
-	ConfigEnumValue<AlignStyle> configAlignWhereWithBoolOps = new ConfigEnumValue<AlignStyle>(this, "AlignWhereWithBoolOps", "Align AND / OR / EQUIV with WHERE", alignStyleSelection, AlignStyle.DO_NOT_ALIGN);
-	ConfigEnumValue<AlignStyle> configAlignUntilWithBoolOps = new ConfigEnumValue<AlignStyle>(this, "AlignUntilWithBoolOps", "Align AND / OR / EQUIV with UNTIL", alignStyleSelection, AlignStyle.DO_NOT_ALIGN, AlignStyle.DO_NOT_ALIGN, LocalDate.of(2023, 6, 9));
+	ConfigEnumValue<AlignStyle> configAlignIfWithBoolOps = new ConfigEnumValue<AlignStyle>(this, "AlignIfWithBoolOps", "Align AND / OR / EQUIV with IF", alignStyleSelectionLeftOnly, AlignStyle.values(), AlignStyle.DO_NOT_ALIGN);
+	ConfigEnumValue<AlignStyle> configAlignElseIfWithBoolOps = new ConfigEnumValue<AlignStyle>(this, "AlignElseIfWithBoolOps", "Align AND / OR / EQUIV with ELSEIF", alignStyleSelection, AlignStyle.values(), AlignStyle.DO_NOT_ALIGN);
+	ConfigEnumValue<AlignStyle> configAlignCheckWithBoolOps = new ConfigEnumValue<AlignStyle>(this, "AlignCheckWithBoolOps", "Align AND / OR / EQUIV with CHECK", alignStyleSelection, AlignStyle.values(), AlignStyle.DO_NOT_ALIGN);
+	ConfigEnumValue<AlignStyle> configAlignWhileWithBoolOps = new ConfigEnumValue<AlignStyle>(this, "AlignWhileWithBoolOps", "Align AND / OR / EQUIV with WHILE", alignStyleSelection, AlignStyle.values(), AlignStyle.DO_NOT_ALIGN);
+	ConfigEnumValue<AlignStyle> configAlignWhereWithBoolOps = new ConfigEnumValue<AlignStyle>(this, "AlignWhereWithBoolOps", "Align AND / OR / EQUIV with WHERE", alignStyleSelection, AlignStyle.values(), AlignStyle.DO_NOT_ALIGN);
+	ConfigEnumValue<AlignStyle> configAlignUntilWithBoolOps = new ConfigEnumValue<AlignStyle>(this, "AlignUntilWithBoolOps", "Align AND / OR / EQUIV with UNTIL", alignStyleSelection, AlignStyle.values(), AlignStyle.DO_NOT_ALIGN, AlignStyle.DO_NOT_ALIGN, LocalDate.of(2023, 6, 9));
+
+	ConfigEnumValue<AlignStyle> configAlignSqlOnWithBoolOps = new ConfigEnumValue<AlignStyle>(this, "AlignSqlOnWithBoolOps", "SQL: Align AND / OR with ON", alignStyleSelectionLeftOnly, AlignStyle.values(), AlignStyle.LEFT_ALIGN, AlignStyle.DO_NOT_ALIGN, LocalDate.of(2023, 11, 18));
+	ConfigEnumValue<AlignStyle> configAlignSqlWhereWithBoolOps = new ConfigEnumValue<AlignStyle>(this, "AlignSqlWhereWithBoolOps", "SQL: Align AND / OR with WHERE", alignStyleSelection, AlignStyle.values(), AlignStyle.RIGHT_ALIGN, AlignStyle.DO_NOT_ALIGN, LocalDate.of(2023, 11, 18));
+	ConfigEnumValue<AlignStyle> configAlignSqlHavingWithBoolOps = new ConfigEnumValue<AlignStyle>(this, "AlignSqlHavingWithBoolOps", "SQL: Align AND / OR with HAVING", alignStyleSelection, AlignStyle.values(), AlignStyle.RIGHT_ALIGN, AlignStyle.DO_NOT_ALIGN, LocalDate.of(2023, 11, 18));
+	ConfigEnumValue<AlignStyle> configAlignSqlWhenWithBoolOps = new ConfigEnumValue<AlignStyle>(this, "AlignSqlWhenWithBoolOps", "SQL: Align AND / OR with WHEN", alignStyleSelection, AlignStyle.values(), AlignStyle.DO_NOT_ALIGN, AlignStyle.DO_NOT_ALIGN, LocalDate.of(2023, 11, 18));
+	
 	ConfigBoolValue configRightAlignComparisonOps = new ConfigBoolValue(this, "RightAlignComparisonOps", "Right-align comparison operators / IS", true);
 	ConfigBoolValue configOnlyAlignSameObjects = new ConfigBoolValue(this, "OnlyAlignSameObjects", "Only align comparisons on same object", false);
 	ConfigIntValue configMaxInnerSpaces = new ConfigIntValue(this, "MaxInnerSpaces", "Do not align if more than", "inner spaces would be required", 1, 20, 999);
 
 	private final ConfigValue[] configValues = new ConfigValue[] { configAlignIfWithBoolOps, configAlignElseIfWithBoolOps, configAlignCheckWithBoolOps, configAlignWhileWithBoolOps, configAlignWhereWithBoolOps, configAlignUntilWithBoolOps, 
+			configAlignSqlOnWithBoolOps, configAlignSqlWhereWithBoolOps, configAlignSqlHavingWithBoolOps,configAlignSqlWhenWithBoolOps,  
 			configRightAlignComparisonOps, configOnlyAlignSameObjects, configMaxInnerSpaces };
 
 	@Override
@@ -137,21 +144,36 @@ public class AlignLogicalExpressionsRule extends RuleForLogicalExpressions {
 	}
 
 	private AlignStyle getAlignStyle(Token keyword) {
-		if (keyword.isKeyword("IF"))
+		if (keyword.isKeyword("IF")) {
 			return AlignStyle.forValue(configAlignIfWithBoolOps.getValue());
-		else if (keyword.isKeyword("ELSEIF"))
+		} else if (keyword.isKeyword("ELSEIF")) {
 			return AlignStyle.forValue(configAlignElseIfWithBoolOps.getValue());
-		else if (keyword.isKeyword("CHECK"))
+		} else if (keyword.isKeyword("CHECK")) {
 			return AlignStyle.forValue(configAlignCheckWithBoolOps.getValue());
-		else if (keyword.isKeyword("WHILE"))
+		} else if (keyword.isKeyword("WHILE")) {
 			return AlignStyle.forValue(configAlignWhileWithBoolOps.getValue());
-		else if (keyword.isKeyword("WHERE")) // in LOOPs or constructor expressions
-			return AlignStyle.forValue(configAlignWhereWithBoolOps.getValue());
-		else if (keyword.isKeyword("UNTIL")) // in constructor expressions
+		} else if (keyword.isKeyword("WHERE")) { 
+			if (keyword.getParentCommand().isAbapSqlOperation()) {
+				// in SELECT etc.
+				return AlignStyle.forValue(configAlignSqlWhereWithBoolOps.getValue());
+			} else {
+				// in LOOPs or constructor expressions
+				return AlignStyle.forValue(configAlignWhereWithBoolOps.getValue());
+			}
+		} else if (keyword.isKeyword("UNTIL")) { // in constructor expressions
 			return AlignStyle.forValue(configAlignUntilWithBoolOps.getValue());
-		else if (keyword.textEquals("xsdbool("))
+
+		} else if (keyword.isKeyword("ON")) { 
+			return AlignStyle.forValue(configAlignSqlOnWithBoolOps.getValue());
+		} else if (keyword.isKeyword("HAVING")) { 
+			return AlignStyle.forValue(configAlignSqlHavingWithBoolOps.getValue());
+		} else if (keyword.isKeyword("WHEN")) { 
+			return AlignStyle.forValue(configAlignSqlWhenWithBoolOps.getValue());
+		
+		} else if (keyword.textEquals("xsdbool(")) {
 			return AlignStyle.DO_NOT_ALIGN;
-		else
+		} else {
 			return AlignStyle.DO_NOT_ALIGN;
+		}
 	}
 }

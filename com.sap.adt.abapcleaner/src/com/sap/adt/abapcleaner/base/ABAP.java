@@ -686,6 +686,8 @@ public final class ABAP {
 			// TODO: Comparison operators for bit patterns (O, Z, M) are missing,
 			// see https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/index.htm?file=abenlogexp_op.htm
 
+			// 'LIKE' as a comparison operator in SQL conditions (sql_cond) is NOT identified here: 
+			// 'operand1 [NOT] LIKE operand2 [ESCAPE esc]', see TokenTypeRefiner.refine()
 			default:
 				return false;
 		}
@@ -760,6 +762,7 @@ public final class ABAP {
 
 			case "IN":
 			case "BETWEEN":
+			case "LIKE": // for sql_cond: operand1 [NOT] LIKE operand2 [ESCAPE esc]
 				throw new IndexOutOfBoundsException("comparison operator '" + text + "' cannot be processed here, since it must be negated with the help of NOT");
 
 			default:
@@ -1016,8 +1019,13 @@ public final class ABAP {
 		if (StringUtil.isNullOrEmpty(identifier))
 			return results;
 		int start = 0;
-		// a field symbol could only be at the beginning, e.g. '<ls_any>-obj_ref->attribute'
-		if (allowFieldSymbols && identifier.charAt(0) == ABAP.FIELD_SYMBOL_START_SIGN) {
+		// process @ for host variables
+		if (identifier.charAt(0) == ABAP.AT_SIGN) {
+			results.add(ABAP.AT_SIGN_STRING);
+			++start;
+		}
+		// a field symbol could only be at the beginning, e.g. '<ls_any>-obj_ref->attribute' or '@<ls_any>-component'
+		if (allowFieldSymbols && start < identifier.length() && identifier.charAt(start) == ABAP.FIELD_SYMBOL_START_SIGN) {
 			String fieldSymbol = readTillEndOfVariableName(identifier, start, true, isInOOContext);
 			results.add(fieldSymbol);
 			start += fieldSymbol.length();

@@ -428,18 +428,22 @@ public final class StringUtil {
 	}
 
 	public static int findFirstNonSpace(String line) {
-		return findFirstNonSpace(line, 0);
+		return findFirstNonChar(line, 0, ' ');
 	}
 
 	public static int findFirstNonSpace(String line, int start) {
+		return findFirstNonChar(line, start, ' ');
+	}
+	
+	public static int findFirstNonChar(String line, int start, char c) {
 		if (line == null)
-			return 0;
+			return -1;
 		if (start >= line.length())
-			return line.length();
+			return -1;
 		int pos = start;
-		while (pos < line.length() && (line.charAt(pos) == ' '))
+		while (pos < line.length() && (line.charAt(pos) == c))
 			++pos;
-		return pos;
+		return (pos == line.length()) ? -1 : pos;
 	}
 
 	public static boolean containsAny(String string, String[] parts) {

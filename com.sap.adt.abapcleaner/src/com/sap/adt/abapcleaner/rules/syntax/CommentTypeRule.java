@@ -83,8 +83,8 @@ public class CommentTypeRule extends Rule {
 			+ LINE_SEP + "  ENDMETHOD.";
    }
 
-   final ConfigEnumValue<CommentSeparatorAction> configActionForLeadingAsterisks = new ConfigEnumValue<CommentSeparatorAction>(this, "MeasureForLeadingAsterisks", "Leading *** separators:", new String[] { "keep", "convert to ---", "convert to ===", "remove" }, CommentSeparatorAction.DELETE);
-	final ConfigEnumValue<CommentSeparatorAction> configActionForTrailingAsterisks = new ConfigEnumValue<CommentSeparatorAction>(this, "MeasureForTrailingAsterisks", "Trailing *** separators:", new String[] { "keep", "convert to ---", "convert to ===", "remove" }, CommentSeparatorAction.CONVERT_TO_HYPHEN);
+   final ConfigEnumValue<CommentSeparatorAction> configActionForLeadingAsterisks = new ConfigEnumValue<CommentSeparatorAction>(this, "MeasureForLeadingAsterisks", "Leading *** separators:", new String[] { "keep", "convert to ---", "convert to ===", "remove" }, CommentSeparatorAction.values(), CommentSeparatorAction.DELETE);
+	final ConfigEnumValue<CommentSeparatorAction> configActionForTrailingAsterisks = new ConfigEnumValue<CommentSeparatorAction>(this, "MeasureForTrailingAsterisks", "Trailing *** separators:", new String[] { "keep", "convert to ---", "convert to ===", "remove" }, CommentSeparatorAction.values(), CommentSeparatorAction.CONVERT_TO_HYPHEN);
 
 	private final ConfigValue[] configValues = new ConfigValue[] { configActionForLeadingAsterisks, configActionForTrailingAsterisks };
 

@@ -157,9 +157,9 @@ public class AlignParametersRule extends RuleForCommands {
 	final ConfigBoolValue configAlignAssignments = new ConfigBoolValue(this, "AlignAssignments", "Align assignments", true, true, LocalDate.of(2023, 3, 3));
 	final ConfigBoolValue configAlignAcrossTableRows = new ConfigBoolValue(this, "AlignAcrossTableRows", "Align assignments across rows of table constructors", true, false, LocalDate.of(2023, 6, 9));
 	final ConfigEnumValue<ComponentsOnSingleLine> configKeepComponentsOnSingleLine = new ConfigEnumValue<ComponentsOnSingleLine>(this, "KeepParametersOnSingleLine", "Table rows: Keep multiple components on single line",
-																														new String[] { "never", "if maximum line length B is observed", "always" }, ComponentsOnSingleLine.IF_BELOW_MAX_LINE_LENGTH);
+																														new String[] { "never", "if maximum line length B is observed", "always" }, ComponentsOnSingleLine.values(), ComponentsOnSingleLine.IF_BELOW_MAX_LINE_LENGTH);
 	final ConfigEnumValue<ContentLeftOfAssignOp> configAllowContentLeftOfAssignOp = new ConfigEnumValue<ContentLeftOfAssignOp>(this, "AllowContentLeftOfAssignOp", "Allow line starts left of assignment operator",
-																															new String[] { "never", "only to keep maximum line length", "always" }, ContentLeftOfAssignOp.TO_KEEP_MAX_LINE_LENGTH, ContentLeftOfAssignOp.NEVER, LocalDate.of(2022, 3, 19));
+																															new String[] { "never", "only to keep maximum line length", "always" }, ContentLeftOfAssignOp.values(), ContentLeftOfAssignOp.TO_KEEP_MAX_LINE_LENGTH, ContentLeftOfAssignOp.NEVER, LocalDate.of(2022, 3, 19));
 
 	private final ConfigValue[] configValues = new ConfigValue[] { configMaxLineLength, configMaxLineLengthForSingleLine, configMaxParamCountBehindProceduralCall, configMaxParamCountBehindFunctionalCall, 
 																						configPutProceduralCallKeywordsOnOwnLine, configPutFunctionalCallKeywordsOnOwnLine, configAlignAssignments, configAlignAcrossTableRows, 
@@ -909,7 +909,7 @@ public class AlignParametersRule extends RuleForCommands {
 		while (testToken != null) {
 			if (!testToken.textEqualsAny("(", ")")) {
 				return false;
-			} if (testToken.hasChildren() && testToken.getFirstChild() != testToken.getLastChild()) {
+			} if (testToken.hasChildren() && testToken.getFirstCodeChild() != testToken.getLastCodeChild()) {
 				return false;
 			}
 			testToken = testToken.getNextSibling();

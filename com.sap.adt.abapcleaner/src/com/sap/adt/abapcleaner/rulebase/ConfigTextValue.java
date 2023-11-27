@@ -3,6 +3,7 @@ package com.sap.adt.abapcleaner.rulebase;
 import java.time.LocalDate;
 
 import com.sap.adt.abapcleaner.base.ABAP;
+import com.sap.adt.abapcleaner.base.StringUtil;
 
 /**
  * Exposes a configuration value that can be set with a TextBox.
@@ -68,5 +69,19 @@ public class ConfigTextValue extends ConfigValue {
 			default:
 				return 30;
 		}
+	}
+
+	private static String getCodeForValue(String value) {
+		return "\"" + StringUtil.getEscapeText(value) + "\"";
+	}
+
+	@Override
+	public String getValueAsCode() {
+		return getCodeForValue(getValue()); 
+	}
+
+	@Override
+	public String getDefaultValueAsCode() { 		
+		return getCodeForValue(getDefault()); 
 	}
 }

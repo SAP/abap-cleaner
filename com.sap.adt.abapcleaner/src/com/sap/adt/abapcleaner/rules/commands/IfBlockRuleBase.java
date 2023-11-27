@@ -14,7 +14,7 @@ public abstract class IfBlockRuleBase extends Rule {
 	protected final ConfigIntValue configMinLinePercentage = new ConfigIntValue(this, "MinLinePercentage", "and a share of at least", "% of all lines", 0, 50, 100, 0, LocalDate.of(2021, 12, 14));
 	protected final ConfigBoolValue configKeepExceptionLogicInIf = new ConfigBoolValue(this, "KeepExceptionalLogicInIf", "Keep IF blocks that contain exceptional logic (RAISE, MESSAGE, RETURN, EXIT)", true, false, LocalDate.of(2021, 12, 17));
 	// TODO: use common configuration for the following (because it is found in several Rules)?
-   protected final ConfigEnumValue<NegationStyle> configNegationStyle = new ConfigEnumValue<NegationStyle>(this, "NegationStyle", NegationStyle.description, NegationStyle.selectionTexts, NegationStyle.AVOID_INNER_NEGATIONS, NegationStyle.NEVER, LocalDate.of(2022, 10, 17));
+   protected final ConfigEnumValue<NegationStyle> configNegationStyle = new ConfigEnumValue<NegationStyle>(this, "NegationStyle", NegationStyle.description, NegationStyle.selectionTexts, NegationStyle.values(), NegationStyle.AVOID_INNER_NEGATIONS, NegationStyle.NEVER, LocalDate.of(2022, 10, 17));
 	protected final ConfigBoolValue configConvertAbapFalseAndAbapTrue = new ConfigBoolValue(this, "ConvertAbapFalseAndAbapTrue", "Convert abap_false <-> abap_true (assuming abap_undefined is never used)", true);
 	protected final ConfigBoolValue configEnsureEmptyLineAfterEndIf = new ConfigBoolValue(this, "EnsureEmptyLineAfterEndIf", "Add empty line after ENDIF", true);
 

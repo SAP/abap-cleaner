@@ -9,6 +9,8 @@ public abstract class ConfigValue {
 	public abstract boolean isDefault();
 	public abstract void setDefault();
 	public abstract void setNeutral();
+	public abstract String getValueAsCode();
+	public abstract String getDefaultValueAsCode();
 	
 	protected final Rule rule;
 	public final String settingName;

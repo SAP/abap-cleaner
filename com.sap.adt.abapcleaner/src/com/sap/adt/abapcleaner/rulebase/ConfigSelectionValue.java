@@ -9,7 +9,10 @@ public class ConfigSelectionValue extends ConfigValue {
 	public final int defaultValue;
 	public final int neutralValue;
 	public final String[] selection;
-
+	// for generating unit tests:
+	public String enumClassName;
+	public String[] enumNames;
+	
 	public int getValue() { 
 		return rule.getInt(settingName); 
 	}
@@ -55,5 +58,19 @@ public class ConfigSelectionValue extends ConfigValue {
 	@Override
 	public String toString() {
 		return description + " [" + selection[defaultValue] + "]";
+	}
+
+	private static String getCodeForValue(int value, String enumClassName, String[] enumNames) {
+		return enumClassName + "." + enumNames[value];
+	}
+
+	@Override
+	public String getValueAsCode() {
+		return getCodeForValue(getValue(), enumClassName, enumNames); 
+	}
+
+	@Override
+	public String getDefaultValueAsCode() { 		
+		return getCodeForValue(getDefault(), enumClassName, enumNames); 
 	}
 }

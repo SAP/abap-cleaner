@@ -1175,26 +1175,16 @@ public class CodeDisplay extends Composite {
 			boolean found = false;
 			ConfigValue[] configValues = rule.getConfigValues();
 			for (ConfigValue configValue : configValues) {
-				if (!configValue.isDefault()) {
-					sb.append("\t\t").append("rule.config" + configValue.settingName);
-					if (configValue instanceof ConfigSelectionValue) {
-						sb.append(".setEnumValue(" + configValue.settingName + ".forValue(");
-						sb.append(String.valueOf(((ConfigSelectionValue) configValue).getValue()) + ")");
-					} else {
-						sb.append(".setValue(");
-						if (configValue instanceof ConfigBoolValue)
-							sb.append(((ConfigBoolValue) configValue).getValue() ? "true" : "false");
-						else if (configValue instanceof ConfigIntValue)
-							sb.append(String.valueOf(((ConfigIntValue) configValue).getValue()));
-						else if (configValue instanceof ConfigTextValue)
-							sb.append("\"" + ((ConfigTextValue) configValue).getValue() + "\"");
-					}
-					sb.append(");").append(LINE_SEP);
-					found = true;
-				}
+				if (configValue instanceof ConfigInfoValue || configValue.isDefault())
+					continue;
+				sb.append("\t\t").append("rule.config" + configValue.settingName);
+				sb.append((configValue instanceof ConfigSelectionValue) ? ".setEnumValue(" : ".setValue(");
+				sb.append(configValue.getValueAsCode() + ");").append(LINE_SEP);
+				found = true;
 			}
-			if (found)
+			if (found) {
 				sb.append(LINE_SEP);
+			}
 		}
 
 		// build the source code (= the input code)
@@ -1217,21 +1207,41 @@ public class CodeDisplay extends Composite {
 		if (fullMethod) {
 			// if the section is inside a method or a class definition, generate respective calls
 			Command command = getCommandAt(getCurLineIndex());
+			boolean addMethod = false;
+			boolean addClassDef = false;
 			while (command != null) {
 				command = command.getParent();
 				if (command == null)
 					break;
-				if (command.isMethodStart()) {
-					sb.append(LINE_SEP);
-					sb.append("\t\t").append("putAnyMethodAroundSrcAndExp();").append(LINE_SEP);
+				if (command.isMethodFunctionFormOrEventBlockStart()) {
+					addMethod = true;
 					break;
 				} else if (command.isDeclarationSectionStart()) {
-					sb.append(LINE_SEP);
-					sb.append("\t\t").append("putAnyClassDefAroundSrcAndExp();").append(LINE_SEP);
+					addClassDef = true;
 					break;
 				}
 			}
-	
+			if (!addMethod && !addClassDef) {
+				// if neither a method nor a class definition was found in the parent hierarchy, we assume that the code 
+				// snippet is inside of a method - unless METHOD, FORM, or FUNCTION is found anywhere else in the code
+				addMethod = true;
+				command = navigator.getCommandAt(0);
+				while (command != null) {
+					if (command.isMethodFunctionFormOrEventBlockStart()) {
+						addMethod = false;
+						break;
+					}
+					command = command.getNext();
+				}
+			}
+			if (addMethod) {
+				sb.append(LINE_SEP);
+				sb.append("\t\t").append("putAnyMethodAroundSrcAndExp();").append(LINE_SEP);
+			} else if (addClassDef) {
+				sb.append(LINE_SEP);
+				sb.append("\t\t").append("putAnyClassDefAroundSrcAndExp();").append(LINE_SEP);
+			}
+			
 			// build the test method end
 			sb.append(LINE_SEP);
 			sb.append("\t\t").append("testRule();").append(LINE_SEP);
@@ -1264,13 +1274,15 @@ public class CodeDisplay extends Composite {
 		StringBuilder sb = new StringBuilder();
 		if (fullStatement) {
 			sb.append("\t\t").append("return \"\"");
+		} else {
+			sb.append("\t\t\t").append("+ LINE_SEP + \"\"");
 		}
 		
 		// build the source code (= the input code)
 		String[] srcLines = StringUtil.split(srcText, ABAP.LINE_SEPARATOR, false);
 		for (String srcLine : srcLines) {
 			sb.append(LINE_SEP);
-			sb.append("\t\t").append("+ LINE_SEP + \"").append(StringUtil.getEscapeText(srcLine)).append("\"");
+			sb.append("\t\t\t").append("+ LINE_SEP + \"").append(StringUtil.getEscapeText(srcLine)).append("\"");
 		}
 		if (fullStatement) {
 			sb.append(";");

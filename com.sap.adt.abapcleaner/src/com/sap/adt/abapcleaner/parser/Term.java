@@ -80,6 +80,10 @@ public class Term {
 		return lastToken.getNextCodeToken(); 
 	}
 
+	public final Token getNextCodeSibling() { 
+		return lastToken.getNextCodeSibling(); 
+	}
+
 	final Token getPrevSibling() { 
 		return firstToken.getPrevSibling(); 
 	}
@@ -139,7 +143,7 @@ public class Term {
 		if (firstToken.isAnyKeyword(ABAP.constructorOperators)) {
 			// constructor expression, see ABAP Reference, "Constructor Operators for Constructor Expressions", https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/index.htm?file=abenconstructor_expressions.htm
 			token = token.getNextCodeToken();
-		} else if (firstToken.isAnyKeyword("DATA(", "FINAL(")) {
+		} else if (firstToken.isAnyKeyword("DATA(", "FINAL(", "@DATA(", "@FINAL(")) {
 			// continue below
 		} else if (firstToken.isKeyword() && firstToken.textStartsWith("TEXT-")) {
 			// continue below
@@ -426,6 +430,25 @@ public class Term {
 	}
 
 	public boolean condense() {
-		return firstToken.condenseUpTo(lastToken, ABAP.MAX_LINE_LENGTH, firstToken.getStartIndexInLine());
+		return firstToken.condenseUpTo(lastToken, ABAP.MAX_LINE_LENGTH, firstToken.getStartIndexInLine(), false);
+	}
+	
+	public boolean setFirstTokenWhitespace(int lineBreaks, int spacesLeft) {
+		return setTokenWhitespace(firstToken, lineBreaks, spacesLeft);
+	}
+	
+	public boolean setTokenWhitespace(Token startTokenInTerm, int lineBreaks, int spacesLeft) {
+		int oldStartIndex = startTokenInTerm.getStartIndexInLine();
+		if (!startTokenInTerm.setWhitespace(lineBreaks, spacesLeft)) 
+			return false;
+		if (startTokenInTerm == lastToken)
+			return true;
+		int addSpaceCount = startTokenInTerm.getStartIndexInLine() - oldStartIndex;
+		startTokenInTerm.getParentCommand().addIndent(addSpaceCount, oldStartIndex, startTokenInTerm.getNext(), lastToken.getNext(), false);
+		return true; 
+	}
+	
+	public Token findSiblingOfTypeAndTexts(TokenType tokenType, String... texts) {
+		return firstToken.getNextSiblingOfTypeAndTextBefore(getNextCodeSibling(), tokenType, texts);
 	}
 }

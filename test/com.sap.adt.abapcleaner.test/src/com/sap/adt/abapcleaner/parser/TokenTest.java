@@ -1060,6 +1060,11 @@ public class TokenTest {
 		assertAccessType("OPEN CURSOR WITH HOLD !dbcur FOR SELECT * FROM dtab WHERE fld = ?value.");
 		assertAccessType("SELECT * INTO CORRESPONDING FIELDS OF !wa.");
 		assertAccessType("SELECT * INTO CORRESPONDING FIELDS OF TABLE !itab PACKAGE SIZE ?n EXTENDED RESULT !oref.");
+
+		assertAccessType("SELECT * INTO CORRESPONDING FIELDS OF TABLE NEW !dref.");
+		assertAccessType("SELECT * APPENDING TABLE NEW !dref.");
+		assertAccessType("SELECT * INTO NEW !dref.");
+		assertAccessType("SELECT * INTO ( !elem1, NEW !elem2 ).");
 	}
 
 	@Test
@@ -1216,8 +1221,8 @@ public class TokenTest {
 	
 	private void assertEndOfLogicalExpression(String commandText, String startTokenText, String expEndTokenText) {
 		Token startToken = buildCommand(commandText, startTokenText);
-		Token endToken = startToken.getEndOfLogicalExpression();
-		String actEndTokenText = (endToken == null) ? null : endToken.getText();
+		Token lastInLogExpr = startToken.getLastTokenOfLogicalExpression();
+		String actEndTokenText = (lastInLogExpr == null) ? null : lastInLogExpr.getNextCodeToken().getText();
 		assertEquals(expEndTokenText, actEndTokenText);
 	}
 	
@@ -1231,6 +1236,15 @@ public class TokenTest {
 		assertEndOfLogicalExpression("LOOP AT lts_data ASSIGNING <ls_data> WHERE a = 1 OR ( a = 2 AND b <> 3 ) GROUP BY <ls_data>-comp.", "WHERE", "GROUP");
 
 		assertEndOfLogicalExpression("lv_result = xsdbool( a < 5 ).", "xsdbool(", ")");
+	}
+
+	@Test
+	void testGetEndOfLogicalExpressionAbapSql() {
+		assertEndOfLogicalExpression("SELECT * FROM dtab INTO TABLE lt_any WHERE col1 IS NOT NULL.", "WHERE", ".");
+		assertEndOfLogicalExpression("SELECT * FROM dtab INTO TABLE lt_any WHERE col1 < ANY ( SELECT col2 FROM other_dtab ) OR col1 > SOME ( SELECT col3 FROM third_dtab ).", "WHERE", ".");
+		assertEndOfLogicalExpression("SELECT FROM any_dtab FIELDS col1, CASE WHEN col2 BETWEEN 100 AND 300 OR col3 < 5 THEN 'a' ELSE 'b' END AS col4 INTO TABLE @FINAL(result).", "WHEN", "THEN");
+		assertEndOfLogicalExpression("SELECT * FROM dtab INTO TABLE lt_any WHERE CASE WHEN col2 BETWEEN 100 AND 300 OR col3 < 5 THEN 'a' ELSE 'b' END = 'b'.", "WHERE", ".");
+		assertEndOfLogicalExpression("SELECT * FROM dtab INTO TABLE lt_any WHERE col1 < ANY ( SELECT col2 FROM other_dtab ) OR col1 > SOME ( SELECT col3 FROM third_dtab ).", "WHERE", ".");
 	}
 
 	private void assertTextEquals(String expResultTokenText, Token resultToken) {

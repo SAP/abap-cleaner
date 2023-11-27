@@ -29,8 +29,8 @@ public abstract class AlignMethodsWithoutParamsRuleBase extends AlignDeclaration
 	protected abstract Token buildTableLine(AlignTable table, Token token, boolean isChain) throws UnexpectedSyntaxException;
 	
 	private static final String[] changeTypeSelection = new String[] { "always", "keep as is", "never" };
-	final ConfigEnumValue<ChangeType> configContinueAfterKeyword = new ConfigEnumValue<ChangeType>(this, "ContinueAfterKeyword", "Continue line after METHODS", changeTypeSelection, ChangeType.ALWAYS, ChangeType.ALWAYS, LocalDate.of(2023,  3,  7));
-	final ConfigEnumValue<ChangeType> configContinueAfterMethodName = new ConfigEnumValue<ChangeType>(this, "ContinueAfterMethodName", "Continue line after method name", changeTypeSelection, ChangeType.ALWAYS, ChangeType.ALWAYS, LocalDate.of(2023,  3,  7));
+	final ConfigEnumValue<ChangeType> configContinueAfterKeyword = new ConfigEnumValue<ChangeType>(this, "ContinueAfterKeyword", "Continue line after METHODS", changeTypeSelection, ChangeType.values(), ChangeType.ALWAYS, ChangeType.ALWAYS, LocalDate.of(2023,  3,  7));
+	final ConfigEnumValue<ChangeType> configContinueAfterMethodName = new ConfigEnumValue<ChangeType>(this, "ContinueAfterMethodName", "Continue line after method name", changeTypeSelection, ChangeType.values(), ChangeType.ALWAYS, ChangeType.ALWAYS, LocalDate.of(2023,  3,  7));
 	 
 	public AlignMethodsWithoutParamsRuleBase(Profile profile) {
 		super(profile);

@@ -335,6 +335,41 @@ class RuleTest {
 	}
 	
 	@Test
+	void testConfigSelectionMatchesEnum() {
+		Rule[] rules = Profile.createDefault().getAllRules();
+		
+		for (Rule rule : rules) {
+			for (ConfigValue configValue : rule.getConfigValues()) {
+				if (configValue instanceof ConfigSelectionValue) {
+					ConfigSelectionValue configSelValue = (ConfigSelectionValue) configValue;
+					if (configSelValue.enumNames == null) {
+						fail("rule '" + rule.getDisplayName() + "', setting '" + configValue.settingName + "': enum member names unknown!");
+					} else if (configSelValue.selection.length > configSelValue.enumNames.length) {
+						fail("rule '" + rule.getDisplayName() + "', setting '" + configValue.settingName + "' has more selection strings than enum members!");
+					}
+				}
+			}
+		}
+	}
+	
+	@Test
+	void testConfigAllowsUnitTestGeneration() {
+		Rule[] rules = Profile.createDefault().getAllRules();
+		
+		for (Rule rule : rules) {
+			for (ConfigValue configValue : rule.getConfigValues()) {
+				if (configValue instanceof ConfigInfoValue) {
+					assertNull(configValue.getValueAsCode());
+					assertNull(configValue.getDefaultValueAsCode());
+				} else {
+					assertTrue(configValue.getValueAsCode().length() > 0);
+					assertTrue(configValue.getDefaultValueAsCode().length() > 0);
+				}
+			}
+		}
+	}
+	
+	@Test
 	void testDateCreatedNotOnReleaseDate() {
 		// ensure that the creation dates of rules and configuration options are not equal to release dates, 
 		// otherwise it would not be clear in which release they were added
@@ -350,6 +385,5 @@ class RuleTest {
 				}
 			}
 		}
-		
 	}
 }

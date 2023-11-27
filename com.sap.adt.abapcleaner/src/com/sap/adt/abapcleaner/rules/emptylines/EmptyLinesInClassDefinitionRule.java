@@ -91,7 +91,7 @@ public class EmptyLinesInClassDefinitionRule extends RuleForCommands {
 	final ConfigBoolValue configRemoveEmptyLineAboveEndClass = new ConfigBoolValue(this, "RemoveEmptyLineAboveEndClass", "Remove empty line above ENDCLASS", false);
 	final ConfigBoolValue configRemoveIncludeWarnings = new ConfigBoolValue(this, "RemoveIncludeWarnings", "Remove notorious 'do not include other source files here!!!' comments", true);
 	final ConfigIntValue configMaxEmptyLines = new ConfigIntValue(this, "MaxEmptyLines", "Max. empty lines within definition sections:", "", 1, 1, 20);
-	final ConfigEnumValue<AddLineBetweenDefTypesStyle> configAddLineBetweenDefTypes = new ConfigEnumValue<AddLineBetweenDefTypesStyle>(this, "AddLineBetweenDefTypes", "Add empty line between CONSTANTS, DATA, METHODS etc.:", addLineBetweenDefTypesTexts, AddLineBetweenDefTypesStyle.ADD_CONSIDER_STATIC); 
+	final ConfigEnumValue<AddLineBetweenDefTypesStyle> configAddLineBetweenDefTypes = new ConfigEnumValue<AddLineBetweenDefTypesStyle>(this, "AddLineBetweenDefTypes", "Add empty line between CONSTANTS, DATA, METHODS etc.:", addLineBetweenDefTypesTexts, AddLineBetweenDefTypesStyle.values(), AddLineBetweenDefTypesStyle.ADD_CONSIDER_STATIC); 
 
 	private final ConfigValue[] configValues = new ConfigValue[] { configAddEmptyLineAboveSections, configRemoveEmptyLineBelowSections, configRemoveEmptyLineAboveEndClass, configRemoveIncludeWarnings, configMaxEmptyLines, configAddLineBetweenDefTypes };
 

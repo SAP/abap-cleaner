@@ -40,7 +40,10 @@ public class AlignLine {
 	public final void setCell(int index, AlignCell cell) {
 		setCell(index, cell, false);
 	}
-	public final void setCell(int index, AlignCell cell, boolean allowOverwrite) {
+	public final void overwriteCell(int index, AlignCell cell) {
+		setCell(index, cell, true);
+	}
+	private final void setCell(int index, AlignCell cell, boolean allowOverwrite) {
 		if (index < 0 || index >= cells.length)
 			throw new IndexOutOfBoundsException("index");
 		else if (!allowOverwrite && cells[index] != null)

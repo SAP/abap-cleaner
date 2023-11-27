@@ -77,11 +77,11 @@ public class AlignClearFreeAndSortRule extends RuleForCommands {
 	final ConfigIntValue configMaxLineLength = new ConfigIntValue(this, "MaxLineLength", "Maximum line length", "", 80, 120, ABAP.MAX_LINE_LENGTH);
 
 	final ConfigEnumValue<DistinctLineClear> configDistinctLineClear = new ConfigEnumValue<DistinctLineClear>(this, "DistinctLineClear", "CLEAR: Use one line per variable:",
-																								new String[] { "always", "only if additions are used", "never" }, DistinctLineClear.ALWAYS);
+																								new String[] { "always", "only if additions are used", "never" }, DistinctLineClear.values(), DistinctLineClear.ALWAYS);
 	final ConfigEnumValue<DistinctLineFree> configDistinctLineFree = new ConfigEnumValue<DistinctLineFree>(this, "DistinctLineFree", "FREE: Use one line per variable:",
-																								new String[] { "always", "never" }, DistinctLineFree.ALWAYS);
+																								new String[] { "always", "never" }, DistinctLineFree.values(), DistinctLineFree.ALWAYS);
 	final ConfigEnumValue<DistinctLineSort> configDistinctLineSort = new ConfigEnumValue<DistinctLineSort>(this, "DistinctLineSort", "SORT: Use one line per variable:",
-																								new String[] { "always", "only if additions are used", "never" }, DistinctLineSort.ALWAYS);
+																								new String[] { "always", "only if additions are used", "never" }, DistinctLineSort.values(), DistinctLineSort.ALWAYS);
 
 	private final ConfigValue[] configValues = new ConfigValue[] { configMaxLineLength, configDistinctLineClear, configDistinctLineFree, configDistinctLineSort };
 

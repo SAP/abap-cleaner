@@ -97,7 +97,7 @@ public class EscapeCharForParametersRule extends RuleForCommands {
 	private static final String[] changeTypeSelection = new String[] { "always", "keep as is", "only if parameter name is an ABAP word", "only to avoid syntax errors" };
 	private static final String[] criticalParamNames = new String[] { "EXPORTING", "CHANGING", "RAISING", "EXCEPTIONS", "DEFAULT", "OPTIONAL", "PREFERRED" };
 	
-	final ConfigEnumValue<EscapeCharAction> configUseEscapeCharForParams = new ConfigEnumValue<EscapeCharAction>(this, "UseEscapeCharForParams", "Use ! escape character for parameters", changeTypeSelection, EscapeCharAction.ONLY_FOR_ABAP_WORDS, EscapeCharAction.ONLY_FOR_ABAP_WORDS, LocalDate.of(2023, 5, 30));
+	final ConfigEnumValue<EscapeCharAction> configUseEscapeCharForParams = new ConfigEnumValue<EscapeCharAction>(this, "UseEscapeCharForParams", "Use ! escape character for parameters", changeTypeSelection, EscapeCharAction.values(), EscapeCharAction.ONLY_FOR_ABAP_WORDS, EscapeCharAction.ONLY_FOR_ABAP_WORDS, LocalDate.of(2023, 5, 30));
 
 	private final ConfigValue[] configValues = new ConfigValue[] { configUseEscapeCharForParams };
 

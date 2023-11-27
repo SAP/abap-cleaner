@@ -110,12 +110,16 @@ public class AlignColumn {
 		return isEmpty() ? 0 : Math.max(minimumWidth, maxMultiLineWidth) + 1;
 	}
 
+	public final boolean joinIntoPreviousColumns(boolean condenseSpaceBetweenCells) throws UnexpectedSyntaxException {
+		return joinIntoPreviousColumns(condenseSpaceBetweenCells, false);
+	}
+	
 	/**
 	 * Appends all Tokens and Terms in this column to those of the respective previous occupied column
 	 * (which means that no separate horizontal space will be reserved for them); 
 	 * returns true if whitespace was changed
 	 */
-	public final boolean joinIntoPreviousColumns(boolean condenseSpaceBetweenCells) throws UnexpectedSyntaxException {
+	public final boolean joinIntoPreviousColumns(boolean condenseSpaceBetweenCells, boolean removeLineBreaksBetweenCells) throws UnexpectedSyntaxException {
 		if (index == 0)
 			throw new IllegalStateException("This method cannot be called on the first column!");
 
@@ -131,15 +135,24 @@ public class AlignColumn {
 			for (int i = index - 1; i >= 0; --i) {
 				AlignCell destCell = line.getCell(i);
 				if (destCell != null) {
-					if (condenseSpaceBetweenCells && !cell.getFirstToken().isFirstTokenInLine()) {
-						if (cell.getFirstToken().setWhitespace()) {
-							changed = true;
+					Token firstInCell = cell.getFirstToken();
+					if (condenseSpaceBetweenCells && (removeLineBreaksBetweenCells || !firstInCell.isFirstTokenInLine())) {
+						Token prevToken = firstInCell.getPrev();
+						if (prevToken == null || !prevToken.isComment()) {
+							if (cell.setWhitespace(0, 1, true, false, null)) {
+								changed = true;
+							}
+						} else {
+							Token prevCode = firstInCell.getPrevCodeToken();
+							if (cell.setWhitespace(1, prevCode.getEndIndexInLine() + 1, true, false, null)) {
+								changed = true;
+							}
 						}
 					}
 					// create a joined Term, but preserve special settings of the destination cell (additionalIndent, overrideTextWidth)
 					Term joinedTerm = Term.createForTokenRange(destCell.getFirstToken(), cell.getLastToken());
 					AlignCellTerm alignCellTerm = AlignCellTerm.createSpecial(joinedTerm, destCell.additionalIndent, (destCell.overrideTextWidth == 1)); 
-					line.setCell(i, alignCellTerm, true);
+					line.overwriteCell(i, alignCellTerm);
 					
 					parentTable.getColumn(i).invalidate();
 					break;

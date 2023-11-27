@@ -76,7 +76,7 @@ public class CheckInLoopRule extends CheckStatementRuleBase {
 			+ LINE_SEP + "  ENDMETHOD.";
    }
 
-   final ConfigEnumValue<KeepCheckInLoopCondition> configKeepCondition = new ConfigEnumValue<KeepCheckInLoopCondition>(this, "KeepCondition", "Keep CHECK statement in LOOP:", new String[] { "never", "at loop start" }, KeepCheckInLoopCondition.NEVER);
+   final ConfigEnumValue<KeepCheckInLoopCondition> configKeepCondition = new ConfigEnumValue<KeepCheckInLoopCondition>(this, "KeepCondition", "Keep CHECK statement in LOOP:", new String[] { "never", "at loop start" }, KeepCheckInLoopCondition.values(), KeepCheckInLoopCondition.NEVER);
 	final ConfigBoolValue configProcessChains = new ConfigBoolValue(this, "ProcessChains", "Unchain CHECK: chains in loops (required for processing them with this rule)", true, false, LocalDate.of(2023, 10, 27));
    
 	private final ConfigValue[] configValues = new ConfigValue[] { configKeepCondition, configNegationStyle, configConvertAbapFalseAndAbapTrue, configProcessChains };

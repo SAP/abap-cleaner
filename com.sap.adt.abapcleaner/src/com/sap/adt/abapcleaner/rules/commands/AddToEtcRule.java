@@ -74,7 +74,7 @@ public class AddToEtcRule extends RuleForCommands {
    }
 
 	final ConfigEnumValue<AddToReplacementStyleForOldRelease> configReplacementStyleForOldRelease = new ConfigEnumValue<AddToReplacementStyleForOldRelease>(this, "AddToReplacementStyle", "If cleanup is restricted to NetWeaver < 7.54 syntax,",
-			new String[] { "keep obsolete statements", "replace with 'a = a + ...' etc." }, AddToReplacementStyleForOldRelease.REPLACE_WITHOUT_ASSIGNMENT_OP, AddToReplacementStyleForOldRelease.KEEP, LocalDate.of(2022, 8, 26));
+			new String[] { "keep obsolete statements", "replace with 'a = a + ...' etc." }, AddToReplacementStyleForOldRelease.values(), AddToReplacementStyleForOldRelease.REPLACE_WITHOUT_ASSIGNMENT_OP, AddToReplacementStyleForOldRelease.KEEP, LocalDate.of(2022, 8, 26));
 	final ConfigBoolValue configProcessChains = new ConfigBoolValue(this, "ProcessChains", "Unchain ADD:, SUBTRACT: etc. chains (required for processing them with this rule)", true, false, LocalDate.of(2023, 10, 27));
 
 	private final ConfigValue[] configValues = new ConfigValue[] { configReplacementStyleForOldRelease, configProcessChains };

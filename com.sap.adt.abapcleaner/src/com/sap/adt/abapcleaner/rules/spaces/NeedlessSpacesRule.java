@@ -356,9 +356,9 @@ public class NeedlessSpacesRule extends Rule {
 			return endToken;
 		
 		// skip scope of AlignLogicalExpressionsRule
-		endToken = token.getEndOfLogicalExpression();
+		endToken = token.getLastTokenOfLogicalExpression();
 		if (endToken != null)
-			return endToken;
+			return endToken.getNextCodeToken();
 
 		// skip scope of AlignCondExpressionsRule
 		Token prev = token.getPrevCodeSibling();

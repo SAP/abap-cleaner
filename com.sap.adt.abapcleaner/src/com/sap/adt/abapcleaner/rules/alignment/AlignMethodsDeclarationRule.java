@@ -104,12 +104,12 @@ public class AlignMethodsDeclarationRule extends AlignDeclarationSectionRuleBase
 	private static final String[] handleOneLinersSelection = new String[] { "create if possible", "keep existing", "same as multi-liners" };
 	private static final String[] alignConsecutiveSelection = new String[] { "never", "one-liners", "one-liners and tabular layout" };
 	
-	final ConfigEnumValue<ChangeType> configContinueAfterKeyword = new ConfigEnumValue<ChangeType>(this, "ContinueAfterKeyword", "Continue line after [CLASS-]METHODS", changeTypeSelection, ChangeType.KEEP_AS_IS);
-	final ConfigEnumValue<ChangeType> configContinueAfterMethodName = new ConfigEnumValue<ChangeType>(this, "ContinueAfterMethodName", "Continue line after method name", changeTypeSelection, ChangeType.KEEP_AS_IS);
-	final ConfigEnumValue<ChangeType> configContinueAfterAccess = new ConfigEnumValue<ChangeType>(this, "ContinueAfterAccess", "Continue line after IMPORTING etc.", changeTypeSelection, ChangeType.ALWAYS);
+	final ConfigEnumValue<ChangeType> configContinueAfterKeyword = new ConfigEnumValue<ChangeType>(this, "ContinueAfterKeyword", "Continue line after [CLASS-]METHODS", changeTypeSelection, ChangeType.values(), ChangeType.KEEP_AS_IS);
+	final ConfigEnumValue<ChangeType> configContinueAfterMethodName = new ConfigEnumValue<ChangeType>(this, "ContinueAfterMethodName", "Continue line after method name", changeTypeSelection, ChangeType.values(), ChangeType.KEEP_AS_IS);
+	final ConfigEnumValue<ChangeType> configContinueAfterAccess = new ConfigEnumValue<ChangeType>(this, "ContinueAfterAccess", "Continue line after IMPORTING etc.", changeTypeSelection, ChangeType.values(), ChangeType.ALWAYS);
 	final ConfigIntValue configFillPercentageToJustifyOwnColumn = new ConfigIntValue(this, "FillPercentageToJustifyOwnColumn", "Fill ratio to justify own column for DEFAULT / OPTIONAL", "%", 1, 40, 100);
-	final ConfigEnumValue<MethodsOneLinerAction> configHandleOneLiners = new ConfigEnumValue<MethodsOneLinerAction>(this, "HandleOneLiners", "Handling of (potential) one-liners", handleOneLinersSelection, MethodsOneLinerAction.KEEP_EXISTING);
-	final ConfigEnumValue<MethodsSequenceAlignment> configAlignConsecutive = new ConfigEnumValue<MethodsSequenceAlignment>(this, "AlignConsecutive", "Align consecutive declarations", alignConsecutiveSelection, MethodsSequenceAlignment.ONE_LINERS, MethodsSequenceAlignment.NEVER, LocalDate.of(2022, 6, 5));
+	final ConfigEnumValue<MethodsOneLinerAction> configHandleOneLiners = new ConfigEnumValue<MethodsOneLinerAction>(this, "HandleOneLiners", "Handling of (potential) one-liners", handleOneLinersSelection, MethodsOneLinerAction.values(), MethodsOneLinerAction.KEEP_EXISTING);
+	final ConfigEnumValue<MethodsSequenceAlignment> configAlignConsecutive = new ConfigEnumValue<MethodsSequenceAlignment>(this, "AlignConsecutive", "Align consecutive declarations", alignConsecutiveSelection, MethodsSequenceAlignment.values(), MethodsSequenceAlignment.ONE_LINERS, MethodsSequenceAlignment.NEVER, LocalDate.of(2022, 6, 5));
 	final ConfigBoolValue configSeparateWithEmptyLine = new ConfigBoolValue(this, "SeparateWithEmptyLine", "Separate multi-line declarations with empty lines", true, false, LocalDate.of(2022, 6, 5));
 
 	private final ConfigValue[] configValues = new ConfigValue[] { configContinueAfterKeyword, configContinueAfterMethodName, configContinueAfterAccess, configFillPercentageToJustifyOwnColumn, configHandleOneLiners, configAlignConsecutive , configAlignAcrossEmptyLines, configAlignAcrossCommentLines, configSeparateWithEmptyLine };
@@ -368,7 +368,7 @@ public class AlignMethodsDeclarationRule extends AlignDeclarationSectionRuleBase
 			} catch (UnexpectedSyntaxException e) {
 				throw new UnexpectedSyntaxBeforeChanges(this, e);
 			}
-			line.setCell(Columns.TYPE_OR_LIKE.getValue(), newTypeCell, true);
+			line.overwriteCell(Columns.TYPE_OR_LIKE.getValue(), newTypeCell);
 		}
 		line.setCell(Columns.DEFAULT_OR_OPTIONAL.getValue(), new AlignCellToken(token));
 		return token;
@@ -475,8 +475,9 @@ public class AlignMethodsDeclarationRule extends AlignDeclarationSectionRuleBase
 			AlignColumn defOrOptColumn = table.getColumn(Columns.DEFAULT_OR_OPTIONAL.getValue());
 			if (!defOrOptColumn.isEmpty()) {
 				double fillRatioToJustifyOwnColumn = configFillPercentageToJustifyOwnColumn.getValue() / 100.0;
-				if (defOrOptColumn.getCellCount() <= 1 || defOrOptColumn.getCellCount() < (int) (table.getLineCount() * fillRatioToJustifyOwnColumn))
+				if (defOrOptColumn.getCellCount() <= 1 || defOrOptColumn.getCellCount() < (int) (table.getLineCount() * fillRatioToJustifyOwnColumn)) {
 					defOrOptColumn.joinIntoPreviousColumns(true);
+				}
 			}
 		} catch (UnexpectedSyntaxException ex) {
 			throw new UnexpectedSyntaxBeforeChanges(this, ex);

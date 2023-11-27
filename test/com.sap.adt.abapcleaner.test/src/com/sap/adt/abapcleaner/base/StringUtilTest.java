@@ -436,18 +436,18 @@ class StringUtilTest {
 	
 	@Test
 	void testFindFirstNonSpace() {
-		assertEquals(0, StringUtil.findFirstNonSpace(null));
-		assertEquals(0, StringUtil.findFirstNonSpace(""));
-		assertEquals(3, StringUtil.findFirstNonSpace("   "));
+		assertEquals(-1, StringUtil.findFirstNonSpace(null));
+		assertEquals(-1, StringUtil.findFirstNonSpace(""));
+		assertEquals(-1, StringUtil.findFirstNonSpace("   "));
 		assertEquals(3, StringUtil.findFirstNonSpace("   abc"));
 	}
 	
 	@Test
 	void testFindFirstNonSpaceWithStart() {
-		assertEquals(0, StringUtil.findFirstNonSpace(null, 0));
-		assertEquals(0, StringUtil.findFirstNonSpace("", 0));
-		assertEquals(0, StringUtil.findFirstNonSpace("", 1));
-		assertEquals(3, StringUtil.findFirstNonSpace("   ", 2));
+		assertEquals(-1, StringUtil.findFirstNonSpace(null, 0));
+		assertEquals(-1, StringUtil.findFirstNonSpace("", 0));
+		assertEquals(-1, StringUtil.findFirstNonSpace("", 1));
+		assertEquals(-1, StringUtil.findFirstNonSpace("   ", 2));
 		assertEquals(9, StringUtil.findFirstNonSpace("   abc   def", 6));
 	}
 	

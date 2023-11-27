@@ -303,7 +303,7 @@ public class AlignPerformRule extends RuleForCommands {
 			}
 
 			// condense parameter list
-			if (firstParam.condenseUpTo(lastParam, configMaxLineLength.getValue(), firstParam.getStartIndexInLine())) {
+			if (firstParam.condenseUpTo(lastParam, configMaxLineLength.getValue(), firstParam.getStartIndexInLine(), true)) {
 				changed = true;
 			}
 		}

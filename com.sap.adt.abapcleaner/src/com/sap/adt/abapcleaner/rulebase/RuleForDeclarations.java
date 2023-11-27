@@ -267,7 +267,7 @@ public abstract class RuleForDeclarations extends Rule {
 					if (token.isAnyKeyword("TYPE", "LIKE")) {
 						Token parameterName = token.getPrevCodeSibling();
 						if (parameterName.closesLevel()) { // VALUE(...) or REFERENCE(...)
-							parameterName = parameterName.getPrevSibling().getFirstChild(); 
+							parameterName = parameterName.getPrevSibling().getFirstCodeChild(); 
 						}
 						String parameterNameText = parameterName.getText();
 						if (parameterNameText.startsWith(ABAP.OPERAND_ESCAPE_CHAR_STRING))
@@ -279,8 +279,8 @@ public abstract class RuleForDeclarations extends Rule {
 						// read class-based exceptions
 						token = token.getNextCodeSibling();
 						while (!token.isCommaOrPeriod()) {
-							if (token.isKeyword("RESUMABLE(") && token.hasChildren() && token.getFirstChild().isIdentifier()) {
-								methodInfo.addException(ExceptionInfo.createClassBased(token.getFirstChild().getText(), true));
+							if (token.isKeyword("RESUMABLE(") && token.hasCodeChildren() && token.getFirstCodeChild().isIdentifier()) {
+								methodInfo.addException(ExceptionInfo.createClassBased(token.getFirstCodeChild().getText(), true));
 							} else if (token.isIdentifier()) {
 								methodInfo.addException(ExceptionInfo.createClassBased(token.getText(), false));
 							}
@@ -649,8 +649,8 @@ public abstract class RuleForDeclarations extends Rule {
 		// a data reference is created to the memory area of the local variable; in such a case, the FinalVariableRule 
 		// will never change DATA(dobj) to FINAL(dobj), because the data reference could change the memory anywhere. 
 		Token dataType = refKeyword.getNextCodeSibling();
-		if (dataType.getOpensLevel() && dataType.hasChildren()) {
-			Token identifier = dataType.getFirstChild(); 
+		if (dataType.getOpensLevel() && dataType.hasCodeChildren()) {
+			Token identifier = dataType.getFirstCodeChild(); 
 			VariableInfo varInfo = localVariables.getVariableInfo(identifier, false);
 			if (varInfo != null) {
 				varInfo.addReferenceByDataRef();

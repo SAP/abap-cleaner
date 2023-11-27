@@ -2803,4 +2803,19 @@ class AlignParametersTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testCommandContinuesAfterPrevious() {
+		buildSrc("    IF lv_any_value = 'T1'. any_method( iv_any_param = 1");
+		buildSrc("             iv_other_param = 2 ).");
+		buildSrc("    ENDIF.");
+
+		buildExp("    IF lv_any_value = 'T1'. any_method( iv_any_param   = 1");
+		buildExp("                                        iv_other_param = 2 ).");
+		buildExp("    ENDIF.");
+
+		putAnyClassDefAroundSrcAndExp();
+		
+		testRule();
+	}
 }

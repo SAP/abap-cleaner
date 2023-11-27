@@ -90,7 +90,7 @@ public class EmptySectionsInClassDefRule extends Rule {
    }
 
 	final ConfigEnumValue<EmptySectionsAction> configEmptySectionsAction = new ConfigEnumValue<EmptySectionsAction>(this, "EmptySectionsMeasure", "Scope:",
-			new String[] { "Remove empty PROTECTED SECTIONs from FINAL classes", "Remove any empty SECTION from non-empty class definitions", "Remove any empty SECTION" }, EmptySectionsAction.REMOVE_ANY_FROM_NON_EMPTY_CLASS);
+			new String[] { "Remove empty PROTECTED SECTIONs from FINAL classes", "Remove any empty SECTION from non-empty class definitions", "Remove any empty SECTION" }, EmptySectionsAction.values(), EmptySectionsAction.REMOVE_ANY_FROM_NON_EMPTY_CLASS);
 
 	private final ConfigValue[] configValues = new ConfigValue[] { configEmptySectionsAction };
 

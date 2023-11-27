@@ -93,8 +93,8 @@ public class EndOfCommentRule extends RuleForCommands {
 
 	private final String[] endOfCommentActionTexts = new String[] { "always keep", "remove if redundant", "always remove" };
 
-	final ConfigEnumValue<EndOfCommentAction> configEndOfCommentActionInsideMethod = new ConfigEnumValue<EndOfCommentAction>(this, "EndOfCommentActionInsideMethod", "Action for end-of comments inside methods:", endOfCommentActionTexts, EndOfCommentAction.REMOVE_REDUNDANT);
-	final ConfigEnumValue<EndOfCommentAction> configEndOfCommentActionOutsideMethod = new ConfigEnumValue<EndOfCommentAction>(this, "EndOfCommentActionOutsideMethod", "Action for end-of comments outside of methods:", endOfCommentActionTexts, EndOfCommentAction.REMOVE_REDUNDANT);
+	final ConfigEnumValue<EndOfCommentAction> configEndOfCommentActionInsideMethod = new ConfigEnumValue<EndOfCommentAction>(this, "EndOfCommentActionInsideMethod", "Action for end-of comments inside methods:", endOfCommentActionTexts, EndOfCommentAction.values(), EndOfCommentAction.REMOVE_REDUNDANT);
+	final ConfigEnumValue<EndOfCommentAction> configEndOfCommentActionOutsideMethod = new ConfigEnumValue<EndOfCommentAction>(this, "EndOfCommentActionOutsideMethod", "Action for end-of comments outside of methods:", endOfCommentActionTexts, EndOfCommentAction.values(), EndOfCommentAction.REMOVE_REDUNDANT);
 	final ConfigIntValue configLineLimitInsideMethod = new ConfigIntValue(this, "LineLimitInsideMethod", "Keep comment in method if opening command is >", "lines away", 10, 50, 999);
 	
 	private final ConfigValue[] configValues = new ConfigValue[] { configEndOfCommentActionInsideMethod, configEndOfCommentActionOutsideMethod, configLineLimitInsideMethod };

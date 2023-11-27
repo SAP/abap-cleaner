@@ -51,11 +51,12 @@ public class LogicalExpression {
 	// - Relational/Predicate Operator IS: used in predicate expressions: https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/index.htm?file=abenpredicate_expressions.htm
 	// - Predicate Functions: line_exists(), matches(), contains(), contains_any_of(), contains_any_not_of()
 
-	private LogicalExpression parentExpression;
+	private final LogicalExpression parentExpression;
 	private Token firstToken; // possibly the opening parenthesis "("
-	private Token lastToken; // possibly the closing parenthesis ")"
-	private Token endToken; // the Token after lastToken (in a LogicalExpression there certainly is one, at least the final period .)
-	private boolean isInParentheses;
+	public final Token lastToken; // possibly the closing parenthesis ")"
+	public final boolean isSql;
+	public final Token endToken; // the Token after lastToken (in a LogicalExpression there certainly is one, at least the final period .)
+	private final boolean isInParentheses;
 	private BindingLevel bindingLevel = BindingLevel.values()[0];
 
 	private ArrayList<Token> keywords = new ArrayList<Token>(); // the keyword(s) that correspond to the BindingLevel of this expression: EQUIV (possibly preceded by NOT), OR, AND,
@@ -88,18 +89,18 @@ public class LogicalExpression {
 	}
 
 	public static LogicalExpression create(Token firstToken, Token lastToken) throws UnexpectedSyntaxException {
-		return new LogicalExpression(null, firstToken, lastToken);
+		return new LogicalExpression(null, firstToken, lastToken, firstToken.getParentCommand().isAbapSqlOperation());
 	}
 	
-	static LogicalExpression createInner(LogicalExpression parentExpression, Token firstToken, Token lastToken) throws UnexpectedSyntaxException {
-		return new LogicalExpression(parentExpression, firstToken, lastToken);
+	static LogicalExpression createInner(LogicalExpression parentExpression, Token firstToken, Token lastToken, boolean isSql) throws UnexpectedSyntaxException {
+		return new LogicalExpression(parentExpression, firstToken, lastToken, isSql);
 	}
 	
-	private LogicalExpression(LogicalExpression parentExpression, Token firstToken_, Token lastToken_) throws UnexpectedSyntaxException {
+	private LogicalExpression(LogicalExpression parentExpression, Token firstToken_, Token lastToken_, boolean isSql) throws UnexpectedSyntaxException {
 		this.parentExpression = parentExpression;
 		this.firstToken = firstToken_.getThisOrNextCodeToken();
 		this.lastToken = lastToken_.getThisOrPrevCodeToken();
-
+		this.isSql = isSql;
 		endToken = lastToken.getNextCodeToken();
 		isInParentheses = (firstToken.getOpensLevel() && lastToken.closesLevel() && firstToken.textEquals("(") && lastToken.textEquals(")") && lastToken == firstToken.getNextCodeSibling());
 
@@ -117,8 +118,9 @@ public class LogicalExpression {
 				ignoreNextAnd = false;
 			} else if (token.isKeyword()) {
 				BindingLevel tokenBindingLevel = getBindingLevelOfToken(token, isFirst);
-				if (tokenBindingLevel != BindingLevel.UNKNOWN && tokenBindingLevel.getValue() < minBindingLevel.getValue())
+				if (tokenBindingLevel != BindingLevel.UNKNOWN && tokenBindingLevel.getValue() < minBindingLevel.getValue()) {
 					minBindingLevel = tokenBindingLevel;
+				}
 			}
 			token = token.getNextCodeSibling();
 			isFirst = false;
@@ -164,19 +166,20 @@ public class LogicalExpression {
 				relExprType = RelationalExpressionType.NONE;
 			} else {
 				keywords.add(keyword);
-				if (keyword.isKeyword("IS"))
+				if (keyword.isKeyword("IS")) {
 					relExprType = RelationalExpressionType.PREDICATE_EXPRESSION;
-				else if (keyword.isIdentifier())
+				} else if (keyword.isIdentifier() || isSql && keyword.isKeyword("EXISTS")) {
 					relExprType = RelationalExpressionType.PREDICATE_FUNCTION;
-				else
+				} else {
 					relExprType = RelationalExpressionType.COMPARISON;
+				}
 			}
 		}
 		isValid = isSupported;
 	}
 
 	private void addInnerExpression(Token start, Token end) throws UnexpectedSyntaxException {
-		LogicalExpression newInnerExpression = LogicalExpression.createInner(this, start, end);
+		LogicalExpression newInnerExpression = LogicalExpression.createInner(this, start, end, isSql);
 		innerExpressions.add(newInnerExpression); // for debugging, add the newInnerExpression even if it is not supported
 		if (!newInnerExpression.isSupported) {
 			isSupported = false;
@@ -204,6 +207,9 @@ public class LogicalExpression {
 
 		// determine predicate function
 		if (start.isIdentifier() && start.textEqualsAny("line_exists(", "matches(", "contains(", "contains_any_of(", "contains_any_not_of(")) {
+			// relationalExpressionType = RelationalExpressionType.PREDICATE_FUNCTION;
+			return start;
+		} else if (isSql && start.isKeyword("EXISTS")) {
 			// relationalExpressionType = RelationalExpressionType.PREDICATE_FUNCTION;
 			return start;
 		}
@@ -587,10 +593,10 @@ public class LogicalExpression {
 				}
 
 				tree.add(TreeAlignColumnType.OPEN_BRACKET_FOR_REL, isInParentheses ? firstToken : null);
-				if (relExprType == RelationalExpressionType.PREDICATE_FUNCTION)
+				if (relExprType == RelationalExpressionType.PREDICATE_FUNCTION) {
 					tree.add(TreeAlignColumnType.REL_FUNCTION, getFirstTokenExceptOpeningParenthesis(),
 							getLastTokenExceptClosingParenthesis());
-				else {
+				} else {
 					tree.add(TreeAlignColumnType.REL_TERM1, getFirstTokenExceptOpeningParenthesis(), keywords.get(0).getPrevCodeToken());
 					tree.add(TreeAlignColumnType.REL_OPERATOR, keywords.get(0));
 					tree.add(TreeAlignColumnType.REL_TERM2, keywords.get(0).getNextCodeToken(), getLastTokenExceptClosingParenthesis());
