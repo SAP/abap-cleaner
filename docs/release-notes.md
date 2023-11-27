@@ -6,6 +6,18 @@ as well as bugfixes of reported issues, i.e. anything that enhances or changes t
 For a complete list of changes (including documentation, tests, refactoring etc.), please refer to 
 the list of [commits](../../../commits/main).
 
+## 2023-11-27 (version 1.12.0)
+
+**Many thanks** to [**christianguenter2**](https://github.com/christianguenter2), [**VladGhitulescu**](https://github.com/VladGhitulescu) 
+and [**bnichell**](https://github.com/bnichell) for the ideas behind these new features and fixes!
+
+* Added links to **Open Source webinar** recording and slides
+* Added new rule '**Align SELECT clauses**' ([#6](../../../issues/6))
+* Added new rule '**Align SELECT ... FROM ... JOIN**' ([#6](../../../issues/6))
+* Added new rule '**Align SELECT lists**' ([#6](../../../issues/6))
+* Enhanced rule '**Align logical expressions**' with four options on '**SQL: Align AND / OR ...**' ([#193](../../../issues/193))
+* Fixed rule '**Use FINAL for immutable variables**' for **CALL FUNCTION ... TABLES** ([#209](../../../issues/209))
+
 ## 2023-11-16 (version 1.11.2)
 
 **Thank you** very much [**fmabap**](https://github.com/fmabap), [**LechnerClemens**](https://github.com/LechnerClemens) and

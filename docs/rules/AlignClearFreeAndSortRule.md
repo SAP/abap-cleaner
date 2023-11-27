@@ -1,4 +1,4 @@
-[<-- previous rule](AlignWithSecondWordRule.md) | [overview](../rules.md) | [next rule -->](AlignParametersRule.md)
+[<-- previous rule](AlignWithSecondWordRule.md) | [overview](../rules.md) | [next rule -->](AlignSelectClausesRule.md)
 
 # Align CLEAR:, FREE: and SORT
 

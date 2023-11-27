@@ -1,4 +1,4 @@
-[<-- previous rule](AlignClearFreeAndSortRule.md) | [overview](../rules.md) | [next rule -->](AlignLogicalExpressionsRule.md)
+[<-- previous rule](AlignSelectListsRule.md) | [overview](../rules.md) | [next rule -->](AlignLogicalExpressionsRule.md)
 
 # Align parameters and components
 

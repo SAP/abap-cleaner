@@ -1,6 +1,6 @@
 # Available Cleanup Rules
 
-ABAP cleaner offers 66 cleanup rules with a total of 235 configuration options:
+ABAP cleaner offers 69 cleanup rules with a total of 267 configuration options:
 
 ## Empty Lines
 
@@ -83,6 +83,9 @@ ABAP cleaner offers 66 cleanup rules with a total of 235 configuration options:
 * [Align assignments to the same object](rules/AlignAssignmentsRule.md)
 * [Align keywords with second word of first line](rules/AlignWithSecondWordRule.md)
 * [Align CLEAR:, FREE: and SORT](rules/AlignClearFreeAndSortRule.md)
+* [Align SELECT clauses](rules/AlignSelectClausesRule.md)
+* [Align SELECT ... FROM ... JOIN](rules/AlignSelectFromRule.md)
+* [Align SELECT lists](rules/AlignSelectListsRule.md)
 * [Align parameters and components](rules/AlignParametersRule.md)
 * [Align logical expressions](rules/AlignLogicalExpressionsRule.md)
 * [Align conditional expressions](rules/AlignCondExpressionsRule.md)
