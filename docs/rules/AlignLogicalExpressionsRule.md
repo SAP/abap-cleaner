@@ -12,6 +12,10 @@ Aligns logical expressions, especially if they span multiple lines, to express o
 * Align AND / OR / EQUIV with WHILE \[do not align\]
 * Align AND / OR / EQUIV with WHERE \[do not align\]
 * Align AND / OR / EQUIV with UNTIL \[do not align\]
+* SQL: Align AND / OR with ON \[left-align\]
+* SQL: Align AND / OR with WHERE \[right-align\]
+* SQL: Align AND / OR with HAVING \[right-align\]
+* SQL: Align AND / OR with WHEN \[do not align\]
 * \[X\] Right-align comparison operators / IS
 * \[ \] Only align comparisons on same object
 * Do not align if more than \[20\] inner spaces would be required
