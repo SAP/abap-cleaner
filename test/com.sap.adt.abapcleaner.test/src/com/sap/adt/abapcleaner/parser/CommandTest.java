@@ -1533,11 +1533,10 @@ public class CommandTest {
 		assertStressTestToken("any_method( param = 1 ).", 0, StressTestType.PRAGMA, "any_method( ##PRAGMA param = 1 ).");
 		assertStressTestToken("any_method( param = 1 ).", 3, StressTestType.PRAGMA, "any_method( param = 1 ##PRAGMA ).");
 
-		assertStressTestToken("DELETE FROM dtab WHERE id < 10.", 1, StressTestType.COLON, "DELETE FROM: dtab WHERE id < 10.");
-
 		assertNoStressTestToken("DATA lv_any TYPE i. \" comment", 4, StressTestType.LINE_END_COMMENT);
 		assertNoStressTestToken("DATA lv_any TYPE i. \" comment", 4, StressTestType.COMMENT_LINE);
 		assertNoStressTestToken("SELECT * FROM any_table INTO TABLE @DATA(lv_any).", 0, StressTestType.COLON);
+		assertNoStressTestToken("DELETE FROM dtab WHERE id < 10.", 0, StressTestType.COLON);
 		assertNoStressTestToken("DATA: lv_any TYPE i.", 4, StressTestType.COLON);
 		assertNoStressTestToken("DATA lv_any TYPE i.", 4, StressTestType.PRAGMA);
 		

@@ -8,6 +8,7 @@ import com.sap.adt.abapcleaner.parser.Token;
 import com.sap.adt.abapcleaner.programbase.UnexpectedSyntaxAfterChanges;
 import com.sap.adt.abapcleaner.programbase.UnexpectedSyntaxException;
 import com.sap.adt.abapcleaner.rulebase.ConfigBoolValue;
+import com.sap.adt.abapcleaner.rulebase.ConfigInfoStyle;
 import com.sap.adt.abapcleaner.rulebase.ConfigInfoValue;
 import com.sap.adt.abapcleaner.rulebase.ConfigValue;
 import com.sap.adt.abapcleaner.rulebase.Profile;
@@ -125,7 +126,7 @@ public class NeedlessParenthesesRule extends RuleForLogicalExpressions {
 	final ConfigBoolValue configRemoveOrParenthesisAnd = new ConfigBoolValue(this, "RemoveOrParenthesisAnd", "Remove needless parentheses from OR  ( ... AND ... )", false);
 	final ConfigBoolValue configRemoveAroundSameOp = new ConfigBoolValue(this, "RemoveAroundSameOp", "Remove needless parentheses from AND ( ... AND ... ) /  OR  ( ... OR ... )", false);
 	// final ConfigBoolValue configRemoveAroundNot = new ConfigBoolValue(this, "RemoveAroundNot", "Remove needless parentheses for AND ( NOT ... ) /  OR  ( NOT ... )", false);
-	final ConfigInfoValue configWarning = new ConfigInfoValue(this, "CAUTION: While the logic remains unchanged, readability may suffer in some cases.", true);
+	final ConfigInfoValue configWarning = new ConfigInfoValue(this, "CAUTION: While the logic remains unchanged, readability may suffer in some cases.", ConfigInfoStyle.WARNING);
 
 	private final ConfigValue[] configValues = new ConfigValue[] { configRemoveAroundAll, configRemoveAroundRelExpr, configRemoveOrParenthesisAnd, configRemoveAroundSameOp, configWarning };
 
@@ -169,8 +170,11 @@ public class NeedlessParenthesesRule extends RuleForLogicalExpressions {
 			throw new UnexpectedSyntaxAfterChanges(this, ex);
 		}
 		if (changed) {
-			Token newEnd = keyword.getEndOfLogicalExpression();
-			((AlignLogicalExpressionsRule)parentProfile.getRule(RuleID.ALIGN_LOGICAL_EXPRESSIONS)).alignLogicalExpression(code, command, keyword, newEnd, false, releaseRestriction);
+			Token lastInLogExpr = keyword.getLastTokenOfLogicalExpression();
+			if (lastInLogExpr != null) {
+				Token newEnd = lastInLogExpr.getNextCodeToken();
+				((AlignLogicalExpressionsRule)parentProfile.getRule(RuleID.ALIGN_LOGICAL_EXPRESSIONS)).alignLogicalExpression(code, command, keyword, newEnd, false, releaseRestriction);
+			}
 		}
 		return changed;
 	}

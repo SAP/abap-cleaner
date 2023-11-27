@@ -51,8 +51,9 @@ public class TokenTypeRefiner implements ITokenTypeRefiner {
 					if (prevToken != null) {
 						if (prevToken.isChainColon())
 							prevToken = prevToken.getPrev();
-						if (prevToken != null && prevToken.getMayBeIdentifier() && prevToken.isAnyKeyword("METHOD", "METHODS", "CLASS-METHODS", "TYPE-POOLS"))
+						if (prevToken != null && prevToken.getMayBeIdentifier() && prevToken.isAnyKeyword("METHOD", "METHODS", "CLASS-METHODS", "TYPE-POOLS")) {
 							token.type = TokenType.IDENTIFIER;
+						}
 					}
 				}
 				token = token.getNext();
@@ -82,8 +83,9 @@ public class TokenTypeRefiner implements ITokenTypeRefiner {
 		if (firstCode.isAnyKeyword("APPEND", "DELETE", "INSERT", "LOOP", "READ")) {
 			Token usingKey = firstCode.getLastTokenOnSiblings(true, TokenSearch.ASTERISK, "USING", "KEY");
 			Token identifier = (usingKey == null) ? null : usingKey.getNextCodeSibling();
-			if (identifier != null && identifier.getMayBeIdentifier())
+			if (identifier != null && identifier.getMayBeIdentifier()) {
 				identifier.type = TokenType.IDENTIFIER;
+			}
 		}
 
 		// - SORT ... BY <identifier> [ASCENDING | DESCENDING] [AS TEXT]
@@ -159,8 +161,9 @@ public class TokenTypeRefiner implements ITokenTypeRefiner {
 			if (identifier.getMayBeIdentifier())
 				identifier.type = TokenType.IDENTIFIER;
 			identifier = identifier.getNext().getNext();
-			if (identifier.getMayBeIdentifier())
+			if (identifier.getMayBeIdentifier()) {
 				identifier.type = TokenType.IDENTIFIER;
+			}
 		}
 
 		// use TokenType.IDENTIFIER for "var" / "dtype" as well as "type" / "struc_type" / "abap_type" in declarations (CONSTANTS, DATA, FIELD-SYMBOLS, TYPES, CLASS-DATA)
@@ -173,8 +176,9 @@ public class TokenTypeRefiner implements ITokenTypeRefiner {
 			do {
 				if (!isFieldSymbol && token.matchesOnSiblings(true, "BEGIN|END", "OF")) {
 					token = token.getNextCodeSibling().getNextCodeSibling();
-					if (token.isAnyKeyword("ENUM", "MESH"))
+					if (token.isAnyKeyword("ENUM", "MESH")) {
 						token = token.getNextCodeSibling();
+					}
 				} else {
 					token = token.getLastTokenOnSiblings(true, TokenSearch.ASTERISK, "TYPE|LIKE");
 					if (token == null)
@@ -201,22 +205,25 @@ public class TokenTypeRefiner implements ITokenTypeRefiner {
 					} else {
 						if (!isFieldSymbol) {
 							Token ofToken = token.getLastTokenOnSiblings(true, "STANDARD TABLE|SORTED TABLE|HASHED TABLE|TABLE", "OF");
-							if (ofToken != null)
+							if (ofToken != null) {
 								token = ofToken.getNextCodeSibling();
+							}
 						}
 						Token toToken = (token == null) ? null : token.getLastTokenOnSiblings(true, "REF", "TO"); // may appear as "TYPE REF TO" or as "TYPE ... TABLE OF REF TO"
-						if (toToken != null)
+						if (toToken != null) {
 							token = toToken.getNextCodeSibling();
+						}
 					}
 				}
 				//
 				if (token != null && token.getMayBeIdentifier())
 					token.type = TokenType.IDENTIFIER;
 
-				if (isChain && token != null)
+				if (isChain && token != null) {
 					token = token.getLastTokenOnSiblings(true, TokenSearch.ASTERISK, ",");
-				else
+				} else {
 					token = null;
+				}
 			} while (token != null);
 		}
 
@@ -242,7 +249,19 @@ public class TokenTypeRefiner implements ITokenTypeRefiner {
 
 		// correct "HIGH" and "LOW" in "SET RUN TIME CLOCK RESOLUTION HIGH|LOW" from .IDENTIFIER to .KEYWORD
 		Token highLowToken = firstCode.getLastTokenOnSiblings(true, "SET", "RUN", "TIME", "CLOCK", "RESOLUTION", "HIGH|LOW");
-		if (highLowToken != null)
+		if (highLowToken != null) {
 			highLowToken.type = TokenType.KEYWORD;
+		}
+
+		// in ABAP SQL commands, the keyword 'LIKE' (which only appears as part of sql_cond here)
+		// is considered a comparison operator: 'operand1 [NOT] LIKE operand2 [ESCAPE esc]'
+		if (command.isAbapSqlOperation()) {
+			Token token = firstCode;
+			while (token != null) {
+				if (token.isKeyword("LIKE"))
+					token.type = TokenType.COMPARISON_OP;
+				token = token.getNextCodeSibling();
+			}
+		}
 	}
 }

@@ -6,6 +6,7 @@ import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Label;
+import org.eclipse.wb.swt.SWTResourceManager;
 
 import com.sap.adt.abapcleaner.rulebase.*;
 
@@ -25,9 +26,12 @@ class ConfigLabel extends ConfigControl {
       super(configValue, configDisplay);
 
       lblDescription = new Label(parent, SWT.NONE);
+      if (configValue.isHeading()) {
+      	lblDescription.setFont(SWTResourceManager.getFont("Segoe UI", 9, SWT.BOLD));
+      }
       lblDescription.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false, 3, 1));
       lblDescription.setText(configValue.description);
-      if (configValue.isWarning) {
+      if (configValue.isWarning()) {
       	lblDescription.setForeground(new Color(255, 0, 0));
       }
    }

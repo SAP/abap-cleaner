@@ -115,7 +115,7 @@ public class TreeAlign {
 			// move basicIndent to the right if it is too far left: 
 			// - if basicIndent is further right than the first code Token inside the parent parenthesis, use this Token's indent
 			if (keyword.getParent() != null) {
-				Token firstCodeChild = keyword.getParent().getFirstChild().getNextWhileComment();
+				Token firstCodeChild = keyword.getParent().getFirstCodeChild();
 				if (firstCodeChild != null && basicIndent < firstCodeChild.getStartIndexInLine()) {
 					basicIndent = firstCodeChild.getStartIndexInLine();
 				}

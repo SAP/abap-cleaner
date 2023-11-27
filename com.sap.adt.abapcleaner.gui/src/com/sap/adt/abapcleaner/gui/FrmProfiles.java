@@ -111,6 +111,7 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
    private Label lblFilter;
    private Text txtFilter;
    private Button btnObfuscate;
+   private Button btnGenerateUnitTestClass;
    private Button btnGenerateUnitTest;
    private Button btnGenerateExample;
    private Composite pngProfileImportExport;
@@ -324,6 +325,7 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
       	lblRuleChapter.setText("");
       
       btnObfuscate.setVisible(Program.showDevFeatures());
+      btnGenerateUnitTestClass.setVisible(Program.showDevFeatures());
       btnGenerateUnitTest.setVisible(Program.showDevFeatures());
       btnGenerateExample.setVisible(Program.showDevFeatures());
 
@@ -894,7 +896,20 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 				obfuscateExampleCode(obfuscator );
 			}
 		});
-		btnObfuscate.setText("Obfusc.");
+		btnObfuscate.setText("&Obfusc.");
+
+		btnGenerateUnitTestClass = new Button(pnlExamplesInfo, SWT.NONE);
+		btnGenerateUnitTestClass.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
+		btnGenerateUnitTestClass.setToolTipText("Generate Java code for a new Unit Test class; Ctrl+click for generating default configuration only");
+		btnGenerateUnitTestClass.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				boolean showMessage = ((e.stateMask & SWT.SHIFT) == 0);
+				boolean defaultConfigOnly = ((e.stateMask & SWT.CONTROL) != 0);
+				generateUnitTestClass(defaultConfigOnly, showMessage);
+			}
+		});
+		btnGenerateUnitTestClass.setText("UT Class");
 
 		btnGenerateUnitTest = new Button(pnlExamplesInfo, SWT.NONE);
 		btnGenerateUnitTest.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
@@ -910,12 +925,13 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 
 		btnGenerateExample = new Button(pnlExamplesInfo, SWT.NONE);
 		btnGenerateExample.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
-		btnGenerateExample.setToolTipText("Generate Java code for rule example from code selection (left display)");
+		btnGenerateExample.setToolTipText("Generate Java code for rule example from code selection (left display); Ctrl+Click to get a full statement.");
 		btnGenerateExample.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
 				boolean showMessage = ((e.stateMask & SWT.SHIFT) == 0);
-				codeDisplay.generateExample(true, showMessage);
+				boolean fullStatement = ((e.stateMask & SWT.CONTROL) != 0);
+				codeDisplay.generateExample(fullStatement, showMessage);
 			}
 		});
 		btnGenerateExample.setText("Gen. &Ex.");
@@ -1109,6 +1125,7 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
          int index = findRuleIndex(lastSelectedRuleID);
          int setIndex = (index >= 0) ? index : (sortByGroup ? 1 : 0); // index 0 contains a RuleGroup, therefore use index 1 
          chkRules.select(setIndex);
+         chkRules.showItem(chkRules.getItem(setIndex));
          if (setIndex >= 0 && itemsInChkRules[setIndex] instanceof Rule)
          	setRule((Rule)itemsInChkRules[setIndex]);
       } else {
@@ -1861,4 +1878,104 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
       	refreshExample(curRule, curRule.getExample());
       }
    }
+
+   /** builds the Java code for a Unit Test from the currently selected code */
+	private void generateUnitTestClass(boolean defaultConfigOnly, boolean showMessage) {
+		final String LINE_SEP = ABAP.LINE_SEPARATOR;
+		final String TAB = "\t";
+
+		if (curRule == null) {
+			Message.show("Please select a rule first!", shell);
+			return;
+		}
+
+		// determine whether this rule has any configuration for the setUp() method
+		ConfigValue[] configValues = curRule.getConfigValues();
+		boolean hasConfigValues = false;
+		if (configValues != null) {
+			for (ConfigValue configValue : configValues) {
+				if (!(configValue instanceof ConfigInfoValue)) {
+					hasConfigValues = true;
+					break;
+				}
+			}
+		}
+		if (defaultConfigOnly && !hasConfigValues) {
+			Message.show("This rule does not have any configuration!", shell);
+			return;
+		}
+
+		StringBuilder sb = new StringBuilder();
+		String ruleClassName = curRule.getClass().getSimpleName();
+		String testClassName = StringUtil.removeSuffix(ruleClassName, "Rule", true) + "Test";
+
+		if (!defaultConfigOnly) {
+			sb.append("package " + curRule.getClass().getPackageName() + ";" + LINE_SEP);
+			sb.append(LINE_SEP);
+		
+			// imports
+			if (hasConfigValues)
+				sb.append("import org.junit.jupiter.api.BeforeEach;").append(LINE_SEP);
+			sb.append("import org.junit.jupiter.api.Test;").append(LINE_SEP);
+			sb.append(LINE_SEP);
+			sb.append("import com.sap.adt.abapcleaner.rulebase.RuleID;").append(LINE_SEP);
+			sb.append("import com.sap.adt.abapcleaner.rulebase.RuleTestBase;").append(LINE_SEP);
+			sb.append(LINE_SEP);
+			
+			// class with rule attribute
+			sb.append("class " + testClassName + " extends RuleTestBase {").append(LINE_SEP);
+			if (hasConfigValues) {
+				sb.append(TAB + "private " + ruleClassName + " rule;").append(LINE_SEP);
+				sb.append(TAB + LINE_SEP);
+			}
+
+			// constructor
+			sb.append(TAB + testClassName + "() {").append(LINE_SEP);
+			sb.append(TAB + TAB + "super(RuleID." + curRule.getID().name() + ");").append(LINE_SEP);
+			if (hasConfigValues) {
+				sb.append(TAB + TAB + "rule = (" + ruleClassName + ")getRule();").append(LINE_SEP);
+			}
+			sb.append(TAB + "}").append(LINE_SEP);
+			sb.append(TAB + LINE_SEP);
+
+			// begin of setUp() method
+			if (hasConfigValues) {
+				sb.append(TAB + "@BeforeEach").append(LINE_SEP);
+				sb.append(TAB + "void setUp() {").append(LINE_SEP);
+			}
+		}
+
+		// default configuration
+		sb.append(TAB + TAB + "// setup default test configuration (may be modified in the individual test methods)").append(LINE_SEP);
+		for (ConfigValue configValue : configValues) {
+			if (configValue instanceof ConfigInfoValue)
+				continue;
+			sb.append(TAB + TAB + "rule.config" + configValue.settingName);
+			sb.append((configValue instanceof ConfigSelectionValue) ? ".setEnumValue(" : ".setValue(");
+			sb.append(configValue.getDefaultValueAsCode() + ");").append(LINE_SEP);
+		}
+
+		if (!defaultConfigOnly) {
+			if (hasConfigValues) {
+				// end of setUp() method
+				sb.append(TAB + "}").append(LINE_SEP);
+				sb.append(TAB + LINE_SEP);
+			}
+
+			// sample test method
+			sb.append(TAB + "@Test").append(LINE_SEP);
+			sb.append(TAB + "void test() {").append(LINE_SEP);
+			sb.append(TAB + TAB + "// TODO").append(LINE_SEP);
+			sb.append(TAB + "}").append(LINE_SEP);
+			sb.append("}").append(LINE_SEP);
+		}
+		
+		// copy the generated code to the clipboard and show a success message
+		SystemClipboard.setText(sb.toString());
+		if (showMessage) {
+			String message = "The generated code for the unit test class '" + testClassName + "' was copied to the clipboard.";
+			Message.show(message, "Generate Unit Test Class from Code Selection", shell);
+		}
+	
+	}
 }

@@ -52,4 +52,18 @@ public class ConfigBoolValue extends ConfigValue {
 	public String toString() {
 		return (defaultValue ? "[X] " : "[ ] ") + description;
 	}
+
+	private static String getCodeForValue(boolean value) {
+		return value ? "true" : "false";
+	}
+
+	@Override
+	public String getValueAsCode() {
+		return getCodeForValue(getValue()); 
+	}
+
+	@Override
+	public String getDefaultValueAsCode() { 		
+		return getCodeForValue(getDefault()); 
+	}
 }

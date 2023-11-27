@@ -1130,4 +1130,30 @@ class AlignLogicalExpressionsTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testSelectWhereWithInnerWhere() {
+		rule.configAlignSqlWhereWithBoolOps.setEnumValue(AlignStyle.RIGHT_ALIGN);
+		rule.configAlignSqlHavingWithBoolOps.setEnumValue(AlignStyle.RIGHT_ALIGN);
+
+		buildSrc("  SELECT * FROM any_dtab CLIENT SPECIFIED");
+		buildSrc("    INTO TABLE et_any_table");
+		buildSrc("    WHERE NOT any_col IN ( SELECT any_col FROM other_dtab CLIENT SPECIFIED");
+		buildSrc("                             WHERE lv_any_value = iv_any_param");
+		buildSrc("                           AND ( other_col <> space OR third_col <> space ) )");
+		buildSrc("    AND ( fourth_col <> space OR fifth_col <> space )");
+		buildSrc("         AND col_6 = iv_any_param.");
+
+		buildExp("  SELECT * FROM any_dtab CLIENT SPECIFIED");
+		buildExp("    INTO TABLE et_any_table");
+		buildExp("    WHERE NOT any_col IN ( SELECT any_col FROM other_dtab CLIENT SPECIFIED");
+		buildExp("                             WHERE lv_any_value = iv_any_param");
+		buildExp("                               AND ( other_col <> space OR third_col <> space ) )");
+		buildExp("      AND ( fourth_col <> space OR fifth_col <> space )");
+		buildExp("      AND col_6 = iv_any_param.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }

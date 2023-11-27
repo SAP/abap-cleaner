@@ -9,6 +9,7 @@ import com.sap.adt.abapcleaner.programbase.UnexpectedSyntaxAfterChanges;
 import com.sap.adt.abapcleaner.programbase.UnexpectedSyntaxException;
 import com.sap.adt.abapcleaner.rulebase.ConfigBoolValue;
 import com.sap.adt.abapcleaner.rulebase.ConfigEnumValue;
+import com.sap.adt.abapcleaner.rulebase.ConfigInfoStyle;
 import com.sap.adt.abapcleaner.rulebase.ConfigInfoValue;
 import com.sap.adt.abapcleaner.rulebase.ConfigValue;
 import com.sap.adt.abapcleaner.rulebase.Profile;
@@ -98,13 +99,13 @@ public class AbapDocParametersRule extends RuleForDeclarations {
 	private final String[] addDocTexts = new String[] { "Always (CAUTION: discouraged if SAP GUI is used, too)", "Add non-synchronized line", "Only to non-synchronized ABAP Doc", "Never" };
 	private final String[] deleteObsoleteDocText = new String[] { "Always", "Only if description is empty", "Never" };
 
-	final ConfigEnumValue<AddAbapDocType> configAddParameters = new ConfigEnumValue<AddAbapDocType>(this, "AddParameters", "Add missing parameters to ABAP Doc", addDocTexts, AddAbapDocType.ONLY_FOR_NON_SYNCHRONIZED);
-	final ConfigEnumValue<AddAbapDocType> configAddExceptions = new ConfigEnumValue<AddAbapDocType>(this, "AddExceptions", "Add missing exceptions to ABAP Doc", addDocTexts, AddAbapDocType.ONLY_FOR_NON_SYNCHRONIZED);
-	final ConfigInfoValue configAddAlwaysWarning = new ConfigInfoValue(this, "CAUTION: option 'Always' may delete synchronized descriptions that were added with SAP GUI", true);
+	final ConfigEnumValue<AddAbapDocType> configAddParameters = new ConfigEnumValue<AddAbapDocType>(this, "AddParameters", "Add missing parameters to ABAP Doc", addDocTexts, AddAbapDocType.values(), AddAbapDocType.ONLY_FOR_NON_SYNCHRONIZED);
+	final ConfigEnumValue<AddAbapDocType> configAddExceptions = new ConfigEnumValue<AddAbapDocType>(this, "AddExceptions", "Add missing exceptions to ABAP Doc", addDocTexts, AddAbapDocType.values(), AddAbapDocType.ONLY_FOR_NON_SYNCHRONIZED);
+	final ConfigInfoValue configAddAlwaysWarning = new ConfigInfoValue(this, "CAUTION: option 'Always' may delete synchronized descriptions that were added with SAP GUI", ConfigInfoStyle.WARNING);
 	final ConfigBoolValue configOnlyAddToExistingDetails = new ConfigBoolValue(this, "OnlyAddToExistingDetails", "Only add if at least one parameter or exception is already documented", false);
 	final ConfigBoolValue configUpdateOrder = new ConfigBoolValue(this, "Update order", "Update order of parameters and exceptions in ABAP Doc", true);
-	final ConfigEnumValue<DeleteObsoleteAbapDocType> configDeleteParameters = new ConfigEnumValue<DeleteObsoleteAbapDocType>(this, "DeleteParameters", "Delete obsolete parameters from ABAP Doc", deleteObsoleteDocText, DeleteObsoleteAbapDocType.IF_DESCRIPTION_EMPTY);
-	final ConfigEnumValue<DeleteObsoleteAbapDocType> configDeleteExceptions = new ConfigEnumValue<DeleteObsoleteAbapDocType>(this, "DeleteExceptions", "Delete obsolete exceptions from ABAP Doc", deleteObsoleteDocText, DeleteObsoleteAbapDocType.IF_DESCRIPTION_EMPTY);
+	final ConfigEnumValue<DeleteObsoleteAbapDocType> configDeleteParameters = new ConfigEnumValue<DeleteObsoleteAbapDocType>(this, "DeleteParameters", "Delete obsolete parameters from ABAP Doc", deleteObsoleteDocText, DeleteObsoleteAbapDocType.values(), DeleteObsoleteAbapDocType.IF_DESCRIPTION_EMPTY);
+	final ConfigEnumValue<DeleteObsoleteAbapDocType> configDeleteExceptions = new ConfigEnumValue<DeleteObsoleteAbapDocType>(this, "DeleteExceptions", "Delete obsolete exceptions from ABAP Doc", deleteObsoleteDocText, DeleteObsoleteAbapDocType.values(), DeleteObsoleteAbapDocType.IF_DESCRIPTION_EMPTY);
 
 	private final ConfigValue[] configValues = new ConfigValue[] { configAddParameters, configAddExceptions, configAddAlwaysWarning, configOnlyAddToExistingDetails, configUpdateOrder, configDeleteParameters, configDeleteExceptions };
 

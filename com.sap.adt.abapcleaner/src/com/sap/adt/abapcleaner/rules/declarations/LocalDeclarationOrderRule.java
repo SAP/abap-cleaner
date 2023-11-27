@@ -130,11 +130,11 @@ public class LocalDeclarationOrderRule extends RuleForDeclarations {
 	private String[] typesDeclarationOrderNames = new String[] { "move to method start, keeping current order" }; 
 	private String[] declarationOrderNames = new String[] { "move to method start, keeping current order", "move to method start, order by first usage", "move to innermost block, order by first usage" };
 	
-	final ConfigEnumValue<LocalTypesDeclarationOrder> configTypesOrder = new ConfigEnumValue<LocalTypesDeclarationOrder>(this, "TypesOrder", "Rearrange TYPES", typesDeclarationOrderNames, LocalTypesDeclarationOrder.METHOD_START_KEEP_ORDER);
-	final ConfigEnumValue<LocalDeclarationOrder> configConstantsOrder = new ConfigEnumValue<LocalDeclarationOrder>(this, "ConstantsOrder", "Rearrange CONSTANTS", declarationOrderNames, LocalDeclarationOrder.METHOD_START_KEEP_ORDER);
-	final ConfigEnumValue<LocalDeclarationOrder> configStaticsOrder = new ConfigEnumValue<LocalDeclarationOrder>(this, "StaticsOrder", "Rearrange STATICS", declarationOrderNames, LocalDeclarationOrder.METHOD_START_CHANGE_ORDER);
-	final ConfigEnumValue<LocalDeclarationOrder> configDataOrder = new ConfigEnumValue<LocalDeclarationOrder>(this, "DataOrder", "Rearrange DATA", declarationOrderNames, LocalDeclarationOrder.METHOD_START_CHANGE_ORDER);
-	final ConfigEnumValue<LocalDeclarationOrder> configFieldSymbolsOrder = new ConfigEnumValue<LocalDeclarationOrder>(this, "FieldSymbolsOrder", "Rearrange FIELD-SYMBOLS", declarationOrderNames, LocalDeclarationOrder.METHOD_START_CHANGE_ORDER);
+	final ConfigEnumValue<LocalTypesDeclarationOrder> configTypesOrder = new ConfigEnumValue<LocalTypesDeclarationOrder>(this, "TypesOrder", "Rearrange TYPES", typesDeclarationOrderNames, LocalTypesDeclarationOrder.values(), LocalTypesDeclarationOrder.METHOD_START_KEEP_ORDER);
+	final ConfigEnumValue<LocalDeclarationOrder> configConstantsOrder = new ConfigEnumValue<LocalDeclarationOrder>(this, "ConstantsOrder", "Rearrange CONSTANTS", declarationOrderNames, LocalDeclarationOrder.values(), LocalDeclarationOrder.METHOD_START_KEEP_ORDER);
+	final ConfigEnumValue<LocalDeclarationOrder> configStaticsOrder = new ConfigEnumValue<LocalDeclarationOrder>(this, "StaticsOrder", "Rearrange STATICS", declarationOrderNames, LocalDeclarationOrder.values(), LocalDeclarationOrder.METHOD_START_CHANGE_ORDER);
+	final ConfigEnumValue<LocalDeclarationOrder> configDataOrder = new ConfigEnumValue<LocalDeclarationOrder>(this, "DataOrder", "Rearrange DATA", declarationOrderNames, LocalDeclarationOrder.values(), LocalDeclarationOrder.METHOD_START_CHANGE_ORDER);
+	final ConfigEnumValue<LocalDeclarationOrder> configFieldSymbolsOrder = new ConfigEnumValue<LocalDeclarationOrder>(this, "FieldSymbolsOrder", "Rearrange FIELD-SYMBOLS", declarationOrderNames, LocalDeclarationOrder.values(), LocalDeclarationOrder.METHOD_START_CHANGE_ORDER);
 	final ConfigBoolValue configDistinctBlocks = new ConfigBoolValue(this, "DistinctBlocks", "Create distinct blocks for STATICS, DATA, and FIELD-SYMBOLS", true);
 	final ConfigBoolValue configEmptyLine = new ConfigBoolValue(this, "EmptyLine", "Put empty line between blocks of STATICS, DATA, and FIELD-SYMBOLS)", true);
 	final ConfigBoolValue configMoveComments = new ConfigBoolValue(this, "MoveComments", "Move attached comments", true);

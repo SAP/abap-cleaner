@@ -92,7 +92,7 @@ public class CheckOutsideLoopRule extends CheckStatementRuleBase {
 			+ LINE_SEP + "  ENDMETHOD.";
    }
 
-   final ConfigEnumValue<KeepCheckOutsideLoopCondition> configKeepCondition = new ConfigEnumValue<KeepCheckOutsideLoopCondition>(this, "KeepCondition", "Keep CHECK statement:", new String[] { "never", "at method start", "after declarations", "after declarations and CLEAR statements" }, KeepCheckOutsideLoopCondition.KEEP_AFTER_DECLARATIONS);
+   final ConfigEnumValue<KeepCheckOutsideLoopCondition> configKeepCondition = new ConfigEnumValue<KeepCheckOutsideLoopCondition>(this, "KeepCondition", "Keep CHECK statement:", new String[] { "never", "at method start", "after declarations", "after declarations and CLEAR statements" }, KeepCheckOutsideLoopCondition.values(), KeepCheckOutsideLoopCondition.KEEP_AFTER_DECLARATIONS);
 	final ConfigBoolValue configAllowCheckAfterCheckpoints = new ConfigBoolValue(this, "AllowCheckAfterCheckpoints", "Allow CHECK after ASSERT, BREAK-POINT and LOG-POINT", true, false, LocalDate.of(2023, 10, 9));
 	final ConfigBoolValue configProcessChains = new ConfigBoolValue(this, "ProcessChains", "Unchain CHECK: chains outside loops (required for processing them with this rule)", true, false, LocalDate.of(2023, 10, 27));
 

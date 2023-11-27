@@ -26,16 +26,19 @@ public abstract class RuleForLogicalExpressions extends Rule {
             continue;
          }
 
+         boolean isAbapSql = command.isAbapSqlOperation();
          Token token = command.getFirstToken();
          do {
          	// does this Token start a logical expression? If so, get the Token following the logical expression  
-         	Token end = token.getEndOfLogicalExpression();
-         	if (end != null) {
-               if (executeOn(code, command, token, end, releaseRestriction))
+         	Token lastInLogExpr = token.getLastTokenOfLogicalExpression();
+         	if (lastInLogExpr != null) {
+               if (executeOn(code, command, token, lastInLogExpr.getNextCodeToken(), releaseRestriction))
                   code.addRuleUse(this, command, token);
-               token = end;
+               // in ABAP SQL, a WHERE could contain an inner, independent WHERE, e.g. 'WHERE any_col IN ( SELECT ... WHERE ... )', 
+               // therefore we must continue inside (not after) the logical expression
+               token = isAbapSql ? token.getNextCodeToken() : lastInLogExpr.getNextCodeToken();
          	} else {
-               token = token.getNext();
+               token = token.getNextCodeToken();
          	}
          } while (token != null);
          command = command.getNext();

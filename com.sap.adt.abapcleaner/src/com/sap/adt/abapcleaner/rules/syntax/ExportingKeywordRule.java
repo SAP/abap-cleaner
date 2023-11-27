@@ -74,7 +74,7 @@ public class ExportingKeywordRule extends RuleForTokens {
 			return false;
 
 		// ensure that EXPORTING is the only keyword
-		Token firstChildCode = token.getFirstChild().getThisOrNextCodeToken();
+		Token firstChildCode = token.getFirstCodeChild();
 		if (firstChildCode == null || !firstChildCode.isKeyword("EXPORTING")) {
 			return false;
 		} else if (firstChildCode.matchesOnSiblings(true, TokenSearch.ASTERISK, "IMPORTING|CHANGING|RECEIVING|EXCEPTIONS")) { 

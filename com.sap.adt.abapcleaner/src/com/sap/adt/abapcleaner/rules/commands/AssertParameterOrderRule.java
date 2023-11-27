@@ -171,13 +171,13 @@ public class AssertParameterOrderRule extends RuleForCommands {
 			+ LINE_SEP + "  ENDMETHOD.";
 	}
 
-	final ConfigInfoValue configInfoOrder = new ConfigInfoValue(this, "Ensure order of parameters for expectation and actual value:", false);
+	final ConfigInfoValue configInfoOrder = new ConfigInfoValue(this, "Ensure order of parameters for expectation and actual value:");
 	final ConfigEnumValue<AssertParameterOrder> configComparisonParamOrder = new ConfigEnumValue<AssertParameterOrder>(this, "ComparisonParamOrder", "Methods comparing values (ASSERT_EQUALS..., _DIFFERS, _THAT, _CHAR...)",
-			new String[] { "expectation first (EXP)", "actual value first (ACT, ACT_AS_TEXT)", "keep as is" }, AssertParameterOrder.EXP_FIRST);
+			new String[] { "expectation first (EXP)", "actual value first (ACT, ACT_AS_TEXT)", "keep as is" }, AssertParameterOrder.values(), AssertParameterOrder.EXP_FIRST);
 	final ConfigEnumValue<AssertParameterOrder> configNumTextTableParamOrder = new ConfigEnumValue<AssertParameterOrder>(this, "NumTextTableParamOrder", "Methods checking numbers, text and tables (_NUMBER..., _TEXT_..., _TABLE_...)",
-			new String[] { "expectation first (LOWER..UPPER, PATTERN, LINE)", "actual value first (NUMBER, TEXT, TABLE)", "keep as is" }, AssertParameterOrder.EXP_FIRST);
+			new String[] { "expectation first (LOWER..UPPER, PATTERN, LINE)", "actual value first (NUMBER, TEXT, TABLE)", "keep as is" }, AssertParameterOrder.values(), AssertParameterOrder.EXP_FIRST);
 	final ConfigEnumValue<AssertParameterOrder> configReturnCodeParamOrder = new ConfigEnumValue<AssertParameterOrder>(this, "ReturnCodeParamOrder", "Methods checking return code (ASSERT_SUBRC, _RETURN_CODE):",
-			new String[] { "expectation first (EXP)", "actual value first (ACT)", "keep as is" }, AssertParameterOrder.EXP_FIRST);
+			new String[] { "expectation first (EXP)", "actual value first (ACT)", "keep as is" }, AssertParameterOrder.values(), AssertParameterOrder.EXP_FIRST);
 	final ConfigTextValue configAssertClassName = new ConfigTextValue(this, "AssertClassName", "Product code assert class name:", "", ConfigTextType.ABAP_CLASS);
 
 	private final ConfigValue[] configValues = new ConfigValue[] { configInfoOrder, configComparisonParamOrder, configNumTextTableParamOrder, configReturnCodeParamOrder, configAssertClassName };

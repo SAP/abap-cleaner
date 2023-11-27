@@ -137,10 +137,10 @@ public class ClassDefinitionRule extends RuleForCommands {
 
 	final ConfigIntValue configMaxLineLength = new ConfigIntValue(this, "MaxLineLength", "Maximum line length", "", 80, 120, ABAP.MAX_LINE_LENGTH);
 	final ConfigEnumValue<ClassDefIndentStyle> configIndentStyle = new ConfigEnumValue<ClassDefIndentStyle>(this, "IndentStyle", "Indentation:",
-			new String[] { "2 spaces", "4 spaces", "align with class name", "align with DEFINITION keyword" }, ClassDefIndentStyle.PLUS_2);
+			new String[] { "2 spaces", "4 spaces", "align with class name", "align with DEFINITION keyword" }, ClassDefIndentStyle.values(), ClassDefIndentStyle.PLUS_2);
 	final ConfigEnumValue<ClassDefOneLinerAction> configOneLinerAction = new ConfigEnumValue<ClassDefOneLinerAction>(this, "OneLinerAction", "One-/Two-liners:",
-			new String[] { "create after CLASS ... DEFINITION", "create below CLASS ... DEFINITION", "keep existing", "always split to multi-line" }, ClassDefOneLinerAction.KEEP);
-	final ConfigInfoValue configMultiLiners = new ConfigInfoValue(this, "For multi-liners, start new line for:", false);
+			new String[] { "create after CLASS ... DEFINITION", "create below CLASS ... DEFINITION", "keep existing", "always split to multi-line" }, ClassDefOneLinerAction.values(), ClassDefOneLinerAction.KEEP);
+	final ConfigInfoValue configMultiLiners = new ConfigInfoValue(this, "For multi-liners, start new line for:");
 	final ConfigBoolValue configNewLineForPublic = new ConfigBoolValue(this, "NewLineForPublic", "PUBLIC", true);
 	final ConfigBoolValue configNewLineForInheriting = new ConfigBoolValue(this, "NewLineForInheriting", "INHERITING FROM ...", true);
 	final ConfigBoolValue configNewLineForAbstractOrFinal = new ConfigBoolValue(this, "NewLineForAbstractOrFinal", "ABSTRACT, FINAL", false);

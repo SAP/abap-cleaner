@@ -117,17 +117,17 @@ public class AlignCondExpressionsRule extends RuleForCommands {
 	final ConfigIntValue configMaxLineLength = new ConfigIntValue(this, "MaxLineLength", "Maximum line length for one-liners and tabular cases:", "", 80, 120, ABAP.MAX_LINE_LENGTH);
 
 	final ConfigEnumValue<CondOneLinerStyle> configOneLinerStyle = new ConfigEnumValue<CondOneLinerStyle>(this, "OneLinerStyle", "One-liners:",
-																								new String[] { "create if possible", "keep as is", "always split to multi-line" }, CondOneLinerStyle.KEEP);
+																								new String[] { "create if possible", "keep as is", "always split to multi-line" }, CondOneLinerStyle.values(), CondOneLinerStyle.KEEP);
 	final ConfigEnumValue<CondSimpleStyle> configSimpleStyle = new ConfigEnumValue<CondSimpleStyle>(this, "SimpleStyle", "Simple cases (1x WHEN):",
-																								new String[] { "put WHEN/THEN/ELSE below each other", "layout like complex cases" }, CondSimpleStyle.VERTICAL_LAYOUT);
+																								new String[] { "put WHEN/THEN/ELSE below each other", "layout like complex cases" }, CondSimpleStyle.values(), CondSimpleStyle.VERTICAL_LAYOUT);
 	final ConfigEnumValue<CondTabularStyle> configTabularStyle = new ConfigEnumValue<CondTabularStyle>(this, "TabularStyle", "Tabular cases (multiple WHEN):",
-																								new String[] { "put WHEN... THEN ... on one line if possible", "keep as is", "always split to multi-line" }, CondTabularStyle.CREATE);
+																								new String[] { "put WHEN... THEN ... on one line if possible", "keep as is", "always split to multi-line" }, CondTabularStyle.values(), CondTabularStyle.CREATE);
 	
 	final ConfigBoolValue configGapAfterElse = new ConfigBoolValue(this, "GapAfterElse", "Tabular cases: Align ELSE value with THEN values", true);
 	final ConfigBoolValue configThenOnWhenLine = new ConfigBoolValue(this, "ThenOnWhenLine", "Complex cases: Put THEN at the end of WHEN line", true);
 	final ConfigBoolValue configContinueAfterElse = new ConfigBoolValue(this, "ContinueAfterElse", "Complex cases: Continue after ELSE", false);
 	final ConfigEnumValue<CondValueIndent> configValueIndent = new ConfigEnumValue<CondValueIndent>(this, "ValueInset", "Complex cases: Indentation of values:",
-																								new String[] { "below WHEN", "below WHEN + 2 spaces", "below WHEN + 5 spaces", "below WHEN + 7 spaces" }, CondValueIndent.ADD_2);
+																								new String[] { "below WHEN", "below WHEN + 2 spaces", "below WHEN + 5 spaces", "below WHEN + 7 spaces" }, CondValueIndent.values(), CondValueIndent.ADD_2);
 
 	private final ConfigValue[] configValues = new ConfigValue[] { configMaxLineLength, configOneLinerStyle, configSimpleStyle, configTabularStyle, configGapAfterElse, configThenOnWhenLine, configContinueAfterElse, configValueIndent };
 
@@ -181,7 +181,7 @@ public class AlignCondExpressionsRule extends RuleForCommands {
 	private Command[] executeOn(Code code, Command command, Token parentToken, boolean isSwitch) throws UnexpectedSyntaxAfterChanges { 
 		AlignTable table = new AlignTable(MAX_COLUMN_COUNT);
 		
-		Token token = parentToken.getFirstChild().getThisOrNextCodeToken();
+		Token token = parentToken.getFirstCodeChild();
 
 		int basicIndent = token.getStartIndexInLine();
 		int firstLineBreaks = token.lineBreaks;
@@ -322,7 +322,7 @@ public class AlignCondExpressionsRule extends RuleForCommands {
 		if (configThenOnWhenLine.getValue()) {
 			thenColumn.removeLineBreaksBefore();
 			try {
-				thenColumn.joinIntoPreviousColumns(true);
+				thenColumn.joinIntoPreviousColumns(true, true);
 			} catch (UnexpectedSyntaxException e) {
 				throw new UnexpectedSyntaxAfterChanges(this, e);
 			}

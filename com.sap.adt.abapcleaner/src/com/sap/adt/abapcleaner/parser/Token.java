@@ -83,6 +83,9 @@ public class Token {
 	public final Token getLastChild() { return lastChild; }
 	final void setLastChild(Token value) { lastChild = value; }
 
+	public final Token getFirstCodeChild() { return (firstChild == null || firstChild.isCode()) ? firstChild : firstChild.getNextCodeSibling(); }
+	public final Token getLastCodeChild() { return (lastChild == null || lastChild.isCode()) ? lastChild : lastChild.getPrevCodeSibling(); }
+
 	public final String getText() { return text; }
 	
 	// type and effect of this Token
@@ -196,6 +199,8 @@ public class Token {
 	public final int getTextLength() { return text.length(); }
 
 	public final boolean hasChildren() { return (firstChild != null); }
+
+	public final boolean hasCodeChildren() { return (firstChild != null && (firstChild.isCode() || firstChild.getNextCodeSibling() != null)); }
 
 	public final boolean isPrecededByWhitespace() { return (lineBreaks > 0 || spacesLeft > 0); }
 
@@ -370,10 +375,18 @@ public class Token {
 			return TokenType.KEYWORD;  
 			
 		} else {
+			// Assume .IDENTIFIER if at least one letter a-z A-Z or an underscore _ is found, otherwise assume .OTHER_OP. 
+			// This first assumption may be corrected in TokenTypeRefinerRnd.refine(Command, Token, Token), esp. if the  
+			// RND Parser categorizes the Token as .CAT_IDENTIFIER: in non-object-oriented contexts, even the single  
+			// characters $ % ?, as well as sequences like &%$?*#> and <%$?*# could be valid variable names,
+			// cp. ABAP.isCharAllowedForVariableNames() and ABAP.isCharAllowedForTypeNames()! However, all the above 
+			// categorizations as .COMMENT, .PRAGMA, .LITERAL etc. (except .KEYWORD) are always correct, even in 
+			// non-object-oriented contexts.
 			char[] textChars = text.toCharArray();
 			for (char c : textChars) {
-				if (Character.isLetter(c)) 
+				if (Character.isLetter(c) || c == '_') {
 					return TokenType.IDENTIFIER;
+				}
 			}
 			return TokenType.OTHER_OP; // e.g. ")", "#("
 		}
@@ -1416,6 +1429,10 @@ public class Token {
 			token = token.prev;
 			result += token.text.length() + token.spacesLeft;
 		}
+		// does this Command continue the line of the previous Command? (parentCommand may be null if this Token is being moved)
+		if (token.lineBreaks == 0 && token.prev == null && parentCommand != null && parentCommand.getPrev() != null) {
+			result += parentCommand.getPrev().lastToken.getEndIndexInLine();
+		}
 		return result;
 	}
 
@@ -1425,6 +1442,10 @@ public class Token {
 		while (token.lineBreaks == 0 && token.prev != null) {
 			token = token.prev;
 			result += token.spacesLeft + token.text.length();
+		}
+		// does this Command continue the line of the previous Command? (parentCommand may be null if this Token is being moved)
+		if (token.lineBreaks == 0 && token.prev == null && parentCommand != null && parentCommand.getPrev() != null) {
+			result += parentCommand.getPrev().lastToken.getEndIndexInLine();
 		}
 		return result;
 	}
@@ -1622,6 +1643,25 @@ public class Token {
 		}
 		return result;
 	}
+
+	public final Token getNextSiblingOfTypeAndTextBefore(Token end, TokenType tokenType, String... texts) {
+		Token result = nextSibling;
+		while (result != null && result != end) {
+			if (result.type == tokenType && result.textEqualsAny(texts)) {
+				return result;
+			}
+			result = result.nextSibling;
+		}
+		return null;
+	}
+	
+	public final Token getNextSiblingWhileLevelOpener() {
+		Token token = this;
+		while (token != null && token.opensLevel)
+			token = token.nextSibling;
+		return token;
+	}
+
 
 	public final Token getPrevTokenOfType(TokenType tokenType) {
 		Token result = prev;
@@ -2115,11 +2155,20 @@ public class Token {
 		} else if (firstToken.matchesOnSiblings(true, "OPEN", "CURSOR") && prevToken.isAnyKeyword("CURSOR", "HOLD")) {
 			// OPEN CURSOR [WITH HOLD] @dbcur|@DATA(dbcur) FOR ...
 			return MemoryAccessType.WRITE;
-		} else if (firstToken.isAnyKeyword("SELECT", "WITH") && prevToken.isAnyKeyword("INTO", "OF", "TABLE", "RESULT")) {
-			// SELECT ... { { INTO ( elem1, elem2,  ...) } | { INTO [CORRESPONDING FIELDS OF] wa [indicators] } | { INTO|APPENDING [CORRESPONDING FIELDS OF] TABLE itab [indicators] [PACKAGE SIZE n] } }
-			//   EXTENDED RESULT @oref 
-			// WITH: cp. https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/index.htm?file=abapwith.htm
-			return MemoryAccessType.WRITE;
+		} else if (firstToken.isAnyKeyword("SELECT", "WITH")) {
+			Token parentPrev = (parent != null && parent.textEquals("(")) ? parent.getPrevCodeToken() : null;
+			boolean isParentPrevInto = (parentPrev != null && parentPrev.isKeyword("INTO"));
+			if (prevToken.isAnyKeyword("INTO", "OF", "TABLE", "RESULT") || isParentPrevInto) {
+				// SELECT ... { { INTO ( elem1, elem2,  ...) } | { INTO [CORRESPONDING FIELDS OF] wa [indicators] } | { INTO|APPENDING [CORRESPONDING FIELDS OF] TABLE itab [indicators] [PACKAGE SIZE n] } }
+				//   EXTENDED RESULT @oref 
+				// WITH: cp. https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/index.htm?file=abapwith.htm
+				return MemoryAccessType.WRITE;
+			} else if (prevToken.isKeyword("NEW") && (prevPrevToken != null && prevPrevToken.isAnyKeyword("INTO", "OF", "TABLE") || isParentPrevInto)) {
+				// SELECT .. .INTO|APPENDING [CORRESPONDING FIELDS OF] [TABLE] { NEW @dref | NEW @DATA(dref) | NEW @FINAL(dref) }
+				// SELECT ... INTO ( { NEW @dref1 | NEW @DATA(dref1) | NEW @FINAL(dref1) }, ... )
+				// cp. https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/index.htm?file=abapselect_into_target.htm
+				return MemoryAccessType.WRITE;
+			}
 		}
 		
 		// Processing External Data: ABAP and HANA
@@ -2396,41 +2445,42 @@ public class Token {
 	
 	
 	/**
-	 * If this Token starts a logical expression, the corresponding end Token is returned; otherwise null.
+	 * If this Token starts a logical expression, the last code Token of the logical expression is returned; otherwise null.
 	 * @return
 	 */
-	public Token getEndOfLogicalExpression() {
+	public Token getLastTokenOfLogicalExpression() {
       Token firstCode = parentCommand.getFirstCodeToken();
 
-      // 1. cases on top level (parent == null)
+      // 1. non-SQL cases on top level (parent == null)
       if (this == firstCode && firstCode.isAnyKeyword("IF", "ELSEIF", "CHECK", "WHILE")) {
-      	return parentCommand.getLastNonCommentToken();
+      	return parentCommand.getLastNonCommentToken().getPrevCodeToken();
 
-      } else if (isKeyword("WHERE") && parent == null && firstCode.matchesOnSiblings(true, "LOOP AT|MODIFY|DELETE|FOR")) {
+      } else if (isKeyword("WHERE") && parent == null && firstCode.matchesOnSiblings(true, "LOOP AT|MODIFY|DELETE|FOR") 
+      		&& !parentCommand.isAbapSqlOperation()) { // for ABAP SQL, see below
          // LOOP AT ... WHERE <logical_expression> [GROUP BY ...].
          // MODIFY itab ... WHERE log_exp ... etc. 
          Token end = getLastTokenOnSiblings(true, TokenSearch.ASTERISK, "GROUP BY|USING KEY|TRANSPORTING|FROM");
          if (end == null) {
-            return parentCommand.getLastCodeToken();
+            return parentCommand.getLastCodeToken().getPrevCodeToken();
          } else if (end.isAnyKeyword("BY", "KEY")) { // if "GROUP BY" or "USING KEY" was found
-            return end.getPrevCodeSibling();
+            return end.getPrevCodeSibling().getPrevCodeToken();
          } else {
-         	return end;
+         	return end.getPrevCodeToken();
          }
 
       } else if (isKeyword("UNTIL") && parent == null && firstCode.isKeyword("WAIT")) {
          // WAIT FOR ASYNCHRONOUS TASKS [MESSAGING CHANNELS] [PUSH CHANNELS] UNTIL log_exp [UP TO sec SECONDS].
          Token end = getLastTokenOnSiblings(true, TokenSearch.ASTERISK, "UP", "TO");
          if (end == null) {
-            return parentCommand.getLastCodeToken();
+            return parentCommand.getLastCodeToken().getPrevCodeToken();
          } else {
-            return end.getPrevCodeSibling(); // "UP"
+            return end.getPrevCodeSibling().getPrevCodeToken(); // previous to "UP"
          }
       } 
       
       // 2. xsdbool( ... ) and boolc( ... )
       if (textEqualsAny("xsdbool(", "boolc(")) {
-      	return getNextSibling();
+      	return getNextSibling().getPrevCodeToken();
       }
       
       
@@ -2438,22 +2488,24 @@ public class Token {
       // the following must be aligned with Command.finishBuild()!
       Token ctorKeyword = (parent == null) ? null : parent.getPrevCodeSibling();
       if (ctorKeyword == null || !ctorKeyword.isKeyword()) {
-      	return null;
+      	// continue below
       
       } else if (isAnyKeyword("WHEN") && ctorKeyword.isAnyKeyword("COND")) {
       	// "FOR, Iteration Expressions", https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/index.htm?file=abenfor.htm, context:
       	// - COND type( [let_exp] WHEN log_exp THEN ... WHEN .. )
-      	return getLastTokenOnSiblings(true, TokenSearch.ASTERISK, "THEN");
+      	Token thenToken = getLastTokenOnSiblings(true, TokenSearch.ASTERISK, "THEN");
+      	return (thenToken == null) ? null : thenToken.getPrevCodeToken();
       
       } else if (isAnyKeyword("UNTIL", "WHILE") && ctorKeyword.isAnyKeyword("REDUCE", "NEW", "VALUE")) {
       	// "FOR, Conditional Iteration", https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/index.htm?file=abenfor_conditional.htm, context:
          // - REDUCE|NEW|VALUE identifier( ... FOR var = rhs [THEN expr] UNTIL|WHILE log_exp [let_exp] ... ) 
-      	return getLastTokenOnSiblings(true, TokenSearch.ASTERISK, "LET|NEXT|FOR");
+      	Token letNextOrFor = getLastTokenOnSiblings(true, TokenSearch.ASTERISK, "LET|NEXT|FOR");
+      	return (letNextOrFor == null) ? null : letNextOrFor.getPrevCodeToken();
 
       } else if (isKeyword("WHERE") && ctorKeyword.isAnyKeyword("FILTER")) {
       	// FILTER type( itab [EXCEPT] [USING KEY keyname] WHERE c1 op f1 [AND c2 op f2 [...]] ) ...
       	// FILTER type( itab [EXCEPT] IN ftab [USING KEY keyname] WHERE c1 op f1 [AND c2 op f2 [...]] ) ...
-        	return parent.getNextSibling();
+        	return parent.getNextSibling().getPrevCodeToken();
          
       } else if (isKeyword("WHERE") && ctorKeyword.isAnyKeyword("REDUCE", "NEW", "VALUE") && getNextCodeSibling() != null && getNextCodeSibling().textEquals("(")) {
          // "FOR, Table Iterations", https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/index.htm?file=abenfor_itab.htm
@@ -2467,7 +2519,69 @@ public class Token {
       	//     | { GROUPS OF wa|<fs> IN GROUP group [INDEX INTO idx] [ WHERE ( log_exp )] GROUP BY group_key [ASCENDING|DESCENDING [AS TEXT]] [WITHOUT MEMBERS] } [ let_exp] ...
       	// Condition [cond]: in this case, the condition is in parentheses:
       	// - ... [USING KEY keyname] [FROM idx1] [TO idx2] [STEP n] [WHERE ( log_exp )|(cond_syntax)] ...
-         return getNextCodeSibling().getNextSibling().getNext();
+         return getNextCodeSibling().getNextSibling();
+      }
+      
+      // 4. ABAP SQL conditions (sql_cond)
+      if (parentCommand.isAbapSqlOperation()) {
+      	if (isKeyword("WHEN")) {
+      		Token thenToken = getLastTokenOnSiblings(true, TokenSearch.ASTERISK, "THEN"); 
+      		return (thenToken == null) ? null : thenToken.getPrevCodeToken();
+      		
+      	} else if (isAnyKeyword("WHERE", "HAVING", "ON")) {
+      		// find the next keyword that does NOT fit into a sql condition (but instead starts a new clause, join, case etc.)
+      		Token end = getNextCodeSibling();
+      		while (end != null && !end.isPeriod()) {
+      			if (!end.isKeyword()) {
+      				// the condition can only end with a keyword, a period or a closing parenthesis (see while condition above)
+   				} else if (end.isAnyKeyword("NOT", "AND", "OR")) {
+   					// sql_cond -> rel_exp | [NOT] sql_cond [AND|OR sql_cond] ...
+   				} else if (end.isAnyKeyword("IS", "BETWEEN", "IN", "LIKE")) {
+   					// operand IS [NOT] NULL, operand IS [NOT] INITIAL
+      				// however, EQ, NE etc. as well as BETWEEN, IN, LIKE should be categorized as TokenType.COMPARISON_OP
+      			} else if (end.isAnyKeyword("ALL", "ANY", "SOME")) {
+      				// operand1 {=|EQ|<>|NE|>|GT|<|LT|>=|GE|<=|LE} [ALL|ANY|SOME] ( SELECT subquery_clauses ... )
+   				} else if (end.isAnyKeyword("NULL", "INITIAL", "ESCAPE")) {
+   					// operand IS [NOT] NULL, operand IS [NOT] INITIAL, operand1 [NOT] LIKE operand2 [ESCAPE esc]
+   				} else if (end.isAnyKeyword("EXISTS")) {
+   					// EXISTS ( SELECT subquery_clauses ... )
+   				} else if (end.isAnyKeyword("CASE", "WHEN", "THEN", "ELSE", "END")) {
+   					// CASE as an sql expression at operand position
+   				} else if (end.isAnyKeyword(ABAP.abapSqlAggregateFunctions)) { // or .abapSqlFunctions?
+   					// sql_agg
+   				} else if (end.isAnyKeyword(ABAP.constructorOperators)) {
+   					// if constructor operators could ever be used, they would be part of the logical expression
+   				} else {
+   					break;
+      			}
+      			// the logical expression may be at the end of parentheses, 
+      			// e.g. the ON condition in 'SELECT FROM ( dtab1 AS t1 INNER JOIN dtab2 AS t2 ON t2~d = t1~d ) ...'
+      			if (end.getNextCodeSibling() == null) 
+      				return end;
+      			end = end.getNextCodeSibling();
+      		}
+      		// check whether the end meets the expectations, otherwise ignore this logical expressions by returning null
+      		if (end != null && !end.isPeriod()) {
+      			if (end.isAnyKeyword("UNION", "INTERSECT", "EXCEPT")) {
+      				// end of SELECT
+      			} else if (end.isAnyKeyword("FIELDS", "FOR", "WHERE", "GROUP", "HAVING", "ORDER", "INTO", "APPENDING")) {
+      				// next SQL clause
+      			} else if (end.isAnyKeyword("USING", "UP", "%_HINTS", "PRIVILEGED", "OFFSET", "BYPASSING", "CONNECTION")) {
+      				// USING CLIENT / DB hints / ABAP options
+      			} else if (end.isAnyKeyword("INNER", "LEFT", "RIGHT", "CROSS", "ON", "CLIENT")) {
+      				// next join, or ON condition from surrounding join without parentheses 
+   				} else if (end.isAnyKeyword("SOURCE", "CHILD", "PERIOD", "SIBLINGS", "DEPTH", "MULTIPLE", "ORPHANS", "CYCLES", "LOAD", "GENERATE", "DISTANCE", "MEASURES", "WHERE", "WITH")) {
+   					// additions of HIERARCHY( ... ), HIERARCHY_DESCENDANTS|HIERARCHY_ANCESTORS|HIERARCHY_SIBLINGS( ... ),
+   					// HIERARCHY_ANCESTORS_AGGREGATE( ... )
+      			} else {
+      				if (Program.showDevFeatures()) 
+      					throw new IllegalArgumentException("Unexpected end '" + end.getText() + "' of SQL condition: " + parentCommand.toString());
+      				// ignore this unexpected syntax by returning null as if no logical expression was found
+      				end = null;
+      			}
+      		}
+      		return (end == null) ? null : end.getPrevCodeToken();
+      	}
       }
       return null;
 	}
@@ -2485,7 +2599,7 @@ public class Token {
 
 		// exclude constructor expressions
 		Token prev = getPrevCodeToken();
-		if (prev != null && prev.isAnyKeyword("NEW", "VALUE", "CONV", "CORRESPONDING", "CAST", "REF", "EXACT", "REDUCE", "FILTER", "COND", "SWITCH")) {
+		if (prev != null && prev.isAnyKeyword(ABAP.constructorOperators)) {
 			return false;
 		}
 		return true;
@@ -2726,7 +2840,7 @@ public class Token {
 		return textEqualsAny(ABAP.abapSqlLiteralTypes) && parent != null && parent.textEquals("CAST(") && getPrevCodeSibling() != null && getPrevCodeSibling().isKeyword("AS");
 	}
 	
-	public boolean condenseUpTo(Token last, int maxLineLength, int indent) {
+	public boolean condenseUpTo(Token last, int maxLineLength, int indent, boolean keepQuotMarkCommentLines) {
 		Token token = this;
 		if (token == last)
 			return false;
@@ -2737,7 +2851,7 @@ public class Token {
 		while (token != null) {
 			// if needed, move Token to the next line, otherwise directly behind the previous Token
 			int spacesLeft = (token.isAttached() || token.isCommaOrPeriod() || token.isChainColon()) ? 0 : 1;
-			if (token.isAsteriskCommentLine()) {
+			if (token.isAsteriskCommentLine() || keepQuotMarkCommentLines && token.isQuotMarkCommentLine()) {
 				// do nothing
 			} else if (token.getPrev().isComment() || indexInLine + spacesLeft + token.getTextLength() > maxLineLength) {
 				if (token.setWhitespace(1, indent)) {

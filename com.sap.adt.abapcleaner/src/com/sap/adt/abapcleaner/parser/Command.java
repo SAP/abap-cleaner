@@ -1998,11 +1998,20 @@ public class Command {
 	}
 	
 	public final boolean isAbapSqlOperation() {
+		return isAbapSqlReadOperation() || isAbapSqlWriteOperation();
+	}
+	
+	public final boolean isAbapSqlReadOperation() {
+		Token firstCode = getFirstCodeToken();
+		return (firstCode != null) && firstCode.matchesOnSiblings(true, "SELECT|WITH|OPEN CURSOR|FETCH NEXT CURSOR|CLOSE CURSOR");
+	}
+	
+	public final boolean isAbapSqlWriteOperation() {
 		Token firstCode = getFirstCodeToken();
 		if (firstCode == null) {
 			return false;
 
-		} else if (firstCode.matchesOnSiblings(true, "SELECT|UPDATE|WITH|OPEN CURSOR|CLOSE CURSOR|FETCH NEXT CURSOR")) {
+		} else if (firstCode.isKeyword("UPDATE")) {
 			return true;
 		
 		} else if (firstCode.isKeyword("INSERT")) {
@@ -2931,7 +2940,7 @@ public class Command {
 		// - but never in ABAP SQL Commands like SELECT, UPDATE, WITH etc. (in which "," has a different meaning)
 		Token token = firstToken;
 		if (stressTestType == StressTestType.COLON) {
-			if (isAbapSqlOperation() && !firstCodeTokenIsAnyKeyword("INSERT", "DELETE", "MODIFY"))
+			if (isAbapSqlOperation())
 				return false;
 			token = token.getLastTokenDeep(true, TokenSearch.ASTERISK, ":");
 			if (token == null) {

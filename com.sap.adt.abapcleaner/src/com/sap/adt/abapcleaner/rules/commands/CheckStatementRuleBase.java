@@ -11,7 +11,7 @@ import com.sap.adt.abapcleaner.rules.alignment.AlignLogicalExpressionsRule;
 
 public abstract class CheckStatementRuleBase extends Rule {
    protected final ConfigBoolValue configConvertAbapFalseAndAbapTrue = new ConfigBoolValue(this, "ConvertAbapFalseAndAbapTrue", "Convert abap_false <-> abap_true (assuming abap_undefined is never used)", true);
-   protected final ConfigEnumValue<NegationStyle> configNegationStyle = new ConfigEnumValue<NegationStyle>(this, "NegationStyle", NegationStyle.description, NegationStyle.selectionTexts, NegationStyle.AVOID_INNER_NEGATIONS, NegationStyle.NEVER, LocalDate.of(2022, 10, 17));
+   protected final ConfigEnumValue<NegationStyle> configNegationStyle = new ConfigEnumValue<NegationStyle>(this, "NegationStyle", NegationStyle.description, NegationStyle.selectionTexts, NegationStyle.values(), NegationStyle.AVOID_INNER_NEGATIONS, NegationStyle.NEVER, LocalDate.of(2022, 10, 17));
 
 	public CheckStatementRuleBase(Profile profile) {
 		super(profile);

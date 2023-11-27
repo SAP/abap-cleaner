@@ -94,8 +94,8 @@ public class NeedlessClearRule extends RuleForDeclarations {
 
 	private static final String[] actionTexts = new String[] { "delete", "add TODO comment", "ignore" };
 
-	final ConfigEnumValue<NeedlessClearAction> configActionAtStart = new ConfigEnumValue<NeedlessClearAction>(this, "ActionAtStart", "Action for CLEAR at method start:", actionTexts, NeedlessClearAction.DELETE);
-	final ConfigEnumValue<NeedlessClearAction> configActionAtEnd = new ConfigEnumValue<NeedlessClearAction>(this, "ActionAtEnd", "Action for CLEAR at method end:", actionTexts, NeedlessClearAction.ADD_TODO_COMMENT);
+	final ConfigEnumValue<NeedlessClearAction> configActionAtStart = new ConfigEnumValue<NeedlessClearAction>(this, "ActionAtStart", "Action for CLEAR at method start:", actionTexts, NeedlessClearAction.values(), NeedlessClearAction.DELETE);
+	final ConfigEnumValue<NeedlessClearAction> configActionAtEnd = new ConfigEnumValue<NeedlessClearAction>(this, "ActionAtEnd", "Action for CLEAR at method end:", actionTexts, NeedlessClearAction.values(), NeedlessClearAction.ADD_TODO_COMMENT);
 	final ConfigBoolValue configKeepStrucBeforeAssign = new ConfigBoolValue(this, "KeepStrucBeforeAssign", "Keep CLEAR for structure that is assigned to directly afterwards", true);
 	
 	private final ConfigValue[] configValues = new ConfigValue[] { configActionAtStart, configActionAtEnd, configKeepStrucBeforeAssign };

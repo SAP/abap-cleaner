@@ -88,9 +88,9 @@ public class IndentRule extends Rule {
 	private static final String[] alignSelection = new String[] { "always", "if comment is preceded by blank line", "never" };
 
 	final ConfigBoolValue configExecuteOnClassDefinitionSections = new ConfigBoolValue(this, "ExecuteOnClassDefinitionSections", "Execute on CLASS ... DEFINITION sections", true);
-	final ConfigEnumValue<AlignWithNextCommandMode> configAlignWithFollowingElse = new ConfigEnumValue<AlignWithNextCommandMode>(this, "AlignWithFollowingElse", "Align with following ELSEIF or ELSE", alignSelection, AlignWithNextCommandMode.IF_BLANK_LINE_ABOVE);
-	final ConfigEnumValue<AlignWithNextCommandMode> configAlignWithFollowingWhen = new ConfigEnumValue<AlignWithNextCommandMode>(this, "AlignWithFollowingWhen", "Align with following WHEN", alignSelection, AlignWithNextCommandMode.IF_BLANK_LINE_ABOVE);
-	final ConfigEnumValue<AlignWithNextCommandMode> configAlignWithFollowingCatch = new ConfigEnumValue<AlignWithNextCommandMode>(this, "AlignWithFollowingCatch", "Align with following CATCH or CLEANUP", alignSelection, AlignWithNextCommandMode.IF_BLANK_LINE_ABOVE);
+	final ConfigEnumValue<AlignWithNextCommandMode> configAlignWithFollowingElse = new ConfigEnumValue<AlignWithNextCommandMode>(this, "AlignWithFollowingElse", "Align with following ELSEIF or ELSE", alignSelection, AlignWithNextCommandMode.values(), AlignWithNextCommandMode.IF_BLANK_LINE_ABOVE);
+	final ConfigEnumValue<AlignWithNextCommandMode> configAlignWithFollowingWhen = new ConfigEnumValue<AlignWithNextCommandMode>(this, "AlignWithFollowingWhen", "Align with following WHEN", alignSelection, AlignWithNextCommandMode.values(), AlignWithNextCommandMode.IF_BLANK_LINE_ABOVE);
+	final ConfigEnumValue<AlignWithNextCommandMode> configAlignWithFollowingCatch = new ConfigEnumValue<AlignWithNextCommandMode>(this, "AlignWithFollowingCatch", "Align with following CATCH or CLEANUP", alignSelection, AlignWithNextCommandMode.values(), AlignWithNextCommandMode.IF_BLANK_LINE_ABOVE);
 	
 	private final ConfigValue[] configValues = new ConfigValue[] { configExecuteOnClassDefinitionSections, configAlignWithFollowingElse, configAlignWithFollowingWhen, configAlignWithFollowingCatch };
 

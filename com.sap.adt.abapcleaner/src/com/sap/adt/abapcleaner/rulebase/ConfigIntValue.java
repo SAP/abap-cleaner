@@ -77,4 +77,18 @@ public class ConfigIntValue extends ConfigValue {
 	public String toString() {
 		return description + " [" + Cult.format(defaultValue) + "] " + unit;
 	}
+
+	private static String getCodeForValue(int value) {
+		return String.valueOf(value);
+	}
+
+	@Override
+	public String getValueAsCode() {
+		return getCodeForValue(getValue()); 
+	}
+
+	@Override
+	public String getDefaultValueAsCode() { 		
+		return getCodeForValue(getDefault()); 
+	}
 }

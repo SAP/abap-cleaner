@@ -10,6 +10,8 @@ import com.sap.adt.abapcleaner.programbase.IntegrityBrokenException;
 import com.sap.adt.abapcleaner.programbase.ParseException;
 import com.sap.adt.abapcleaner.programbase.UnexpectedSyntaxAfterChanges;
 import com.sap.adt.abapcleaner.programbase.UnexpectedSyntaxException;
+import com.sap.adt.abapcleaner.rulehelpers.SelectClause;
+import com.sap.adt.abapcleaner.rulehelpers.SelectQuery;
 
 /** Obfuscates identifiers (variable names, method names etc.) in the supplied Code to help transforming real-life  
  * code samples into example or test code, which can then be used as open-source. With activated developer features, 
@@ -47,8 +49,12 @@ public class Obfuscator {
 		COMPONENT("comp", "c"),
 		INSTANCE("instance", "o"),
 		REF("ref", "r"),
-		EXCEPTION("exception", "x");
-		
+		EXCEPTION("exception", "x"),
+
+		DTAB("dtab", "dtab"),
+		TABALIAS("tabalias", "t"),
+		COL("col", "c");
+
 		public final String infix;
 		public final String shortInfix;
 		
@@ -79,6 +85,10 @@ public class Obfuscator {
 	private HashMap<String, String> methods = new HashMap<>();
 	private HashMap<String, String> stringLiterals = new HashMap<>();
 	private HashMap<String, String> integerLiterals = new HashMap<>();
+	// for ABAP SQL:
+	private HashMap<String, String> dtabs = new HashMap<>();
+	private HashMap<String, String> tabAliases = new HashMap<>();
+	private HashMap<String, String> cols = new HashMap<>();
 
 	public Obfuscator(boolean methodScope, boolean createShortNames, boolean simplify, boolean removeLineEndComments, boolean removeCommentLines, boolean obfuscateLiterals) {
 		this.methodScope = methodScope;
@@ -121,6 +131,10 @@ public class Obfuscator {
 		if (clearClasses) {
 			classes.clear();
 		}
+		
+		dtabs.clear();
+		tabAliases.clear();
+		cols.clear();
 	}
 	
 	public Code obfuscate(String codeText) throws ParseException, UnexpectedSyntaxAfterChanges {
@@ -161,8 +175,21 @@ public class Obfuscator {
 			// obfuscate every single Command individually, 'forgetting' all identifiers used so far
 			clearMaps(true, true);
 		}
+		// tabaliases and cols for ABAP SQL are Command-specific
+		tabAliases.clear();
+		cols.clear();
 		
 		boolean isInOOContext = command.isInOOContext();
+		boolean isSql = command.isAbapSqlOperation();
+		ArrayList<SelectQuery> selectQueries = null;
+		try {
+			if (isSql) {
+				selectQueries = SelectQuery.createQueryChainsFrom(command);
+			}
+		} catch (UnexpectedSyntaxException e) {
+			throw new UnexpectedSyntaxAfterChanges(null, e);
+		}
+		
 		Token token = command.getFirstToken();
 		boolean condenseTillLineEnd = false;
 		while (token != null) {
@@ -233,8 +260,9 @@ public class Obfuscator {
 				} else if (prevCode != null && prevCode.isKeyword("INTERFACE") && prevIfFirstCode && oldTextMayBeVarName) {
 					newText = getTypeName(oldText, classes, "if_", false);
 
-				} else {					
-					newText = obfuscateIdentifier(token, isInOOContext);
+				} else {
+					SelectClause selectClause = isSql ? determineSelectClause(token, selectQueries) : SelectClause.NONE;
+					newText = obfuscateIdentifier(token, isInOOContext, selectClause);
 				}
 				token.setText(newText, true);
 			}
@@ -244,10 +272,52 @@ public class Obfuscator {
 		}
 	}
 
-	private String obfuscateIdentifier(Token token, boolean isInOOContext) {
+	private SelectClause determineSelectClause(Token token, ArrayList<SelectQuery> selectQueries) {
+		// search in subqueries first (and therefore in reverse order), because outer queries contain the Tokens of inner queries 
+		for (int i = selectQueries.size() - 1; i >= 0; --i) {
+			SelectQuery query = selectQueries.get(i);
+			while (query != null) {
+				for (SelectClause clauseType : query.getClausTypesInOrder()) {
+					Term term = query.getClause(clauseType);
+					if (term != null && term.contains(token)) {
+						return clauseType;
+					}
+				}
+				query = query.getNextQuery();
+			}
+		}
+		return SelectClause.NONE;
+	}
+
+	private String obfuscateIdentifier(Token token, boolean isInOOContext, SelectClause selectClause) {
 		String oldText = token.getText();
+		Token prevCode = token.getPrevCodeToken();
 		Token nextCode = token.getNextCodeToken();
 		Token parent = token.getParent();
+
+		// identify host variables in ABAP SQL, e.g. @var, @DATA(var) and obfuscate them as if they were outside of ABAP SQL
+		if (selectClause != SelectClause.NONE) {
+			if (token.getText().startsWith(ABAP.AT_SIGN_STRING)) {
+				// @var
+				selectClause = SelectClause.NONE;
+				
+			} else if (token.isAttached() && token.getParent() != null && token.getParent().textStartsWith(ABAP.AT_SIGN_STRING)) {
+				// @DATA(var), @FINAL(var)
+				selectClause = SelectClause.NONE;
+
+			} else if (selectClause != SelectClause.INTO && token.isAttached() && token.getParent() != null && token.getParent().textEquals("(")) {
+				// (dynamic_list) - exception: 'INTO (lv_var)', which is allowed without spaces for 'INTO ( elem1, elem2, ... )'
+				selectClause = SelectClause.NONE;
+			
+			} else if (selectClause == SelectClause.INTO || selectClause == SelectClause.FOR_ALL_ENTRIES) {
+				// INTO TABLE lt_any / FOR ALL ENTRIES IN lt_any (non-strict mode without @ for host variables)
+				selectClause = SelectClause.NONE;
+			
+			} else if (selectClause == SelectClause.WHERE && prevCode != null && prevCode.isComparisonOperator()) {
+				// 'WHERE col1 = lv_any OR col2 IN lt_any' (non-strict mode without @ for host variables)
+				selectClause = SelectClause.NONE;
+			}
+		}
 
 		ArrayList<String> bits = ABAP.splitIdentifier(oldText, true, isInOOContext);
 		if (bits.size() == 3 && AbapCult.stringEqualsAny(true, bits.get(0) + bits.get(1), ABAP.SY_PREFIX, ABAP.SYST_PREFIX, ABAP.TEXT_SYMBOL_PREFIX)) {
@@ -266,7 +336,8 @@ public class Obfuscator {
 			sbKey.append(bit);
 
 			// if chains like 'lo_object->if_any~method(' shall be removed, simply skip if~, cl_any=>, cl_any->, struc- and proceed with the rest of the identifier
-			if (simplify && i + 2 < bits.size() && AbapCult.stringEqualsAny(true, nextBit, "~", "=>", "->", "-")) {
+			// exception: in SELECT FROM ... JOIN ... ON ..., 'tabalias~col' must NOT be simplified
+			if (simplify && i + 2 < bits.size() && AbapCult.stringEqualsAny(true, nextBit, "~", "=>", "->", "-") && selectClause != SelectClause.FROM) {
 				++i;
 				continue;
 			}
@@ -286,7 +357,11 @@ public class Obfuscator {
 				continue;
 				
 			} else if (nextBit.equals("~")) {
-				newBit = getNewNameFor(key, classes, "if_", IdentifierType.INTERFACE);
+				if (selectClause == SelectClause.NONE) {
+					newBit = getNewNameFor(key, classes, "if_", IdentifierType.INTERFACE);
+				} else {
+					newBit = getNewNameFor(key, tabAliases, "", IdentifierType.TABALIAS);
+				}
 
 			} else if (nextBit.equals("=>")) {
 				newBit = getTypeName(bit, classes, "cl_", false);
@@ -306,7 +381,9 @@ public class Obfuscator {
 				}
 			
 			} else if (prevBit.equals("~")) {
-				if (token.isTypeIdentifier()) {
+				if (selectClause != SelectClause.NONE) {
+					newBit = getNewNameFor(key, cols, "", IdentifierType.COL);
+				} else if (token.isTypeIdentifier()) {
 					newBit = getTypeName(bit, types, "ty_", false);
 				} else {
 					newBit = getNewNameFor(key, methods, "", IdentifierType.METHOD);
@@ -341,7 +418,17 @@ public class Obfuscator {
 				}
 				
 			} else {
-				if (token.isTypeIdentifier()) {
+				if (selectClause == SelectClause.FROM) {
+					if (prevCode != null && prevCode.isKeyword("AS")) {
+						newBit = getNewNameFor(key, tabAliases, "", IdentifierType.TABALIAS);
+					} else if (nextCode != null && nextCode.isKeyword("AS") || prevCode != null && prevCode.isKeyword("FROM")) {
+						newBit = getNewNameFor(key, dtabs, "", IdentifierType.DTAB);
+					} else {
+						newBit = getNewNameFor(key, cols, "", IdentifierType.COL);
+					}					
+				} else if (selectClause != SelectClause.NONE) {
+					newBit = getNewNameFor(key, cols, "", IdentifierType.COL);
+				} else if (token.isTypeIdentifier()) {
 					newBit = getTypeName(bit, types, "ty_", (bits.size() == 1));
 				} else if (simplify && sb.length() == 0) {
 					newBit = getVariableName(bit, variables, "lv_", key);
@@ -460,7 +547,7 @@ public class Obfuscator {
 		int number;
 		String numberPrefix;
 		
-		if (createShortNames) {
+		if (createShortNames || identifierType == IdentifierType.TABALIAS) {
 			numberPrefix = identifierType.shortInfix;
 			number = 1;
 

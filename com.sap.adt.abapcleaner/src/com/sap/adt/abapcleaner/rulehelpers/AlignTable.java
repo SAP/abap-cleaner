@@ -195,8 +195,13 @@ public class AlignTable {
 					spacesLeft = columnIndent;
 				}
 				column.setEffectiveIndent(columnIndent);
-				if (column.isEmpty())
+				if (column.isEmpty()) {
+					if (column.getForceLineBreakAfter()) {
+						lineBreaks = 1;
+						// spacesLeft can be undefined, because the next column should have a forced indent
+					}
 					continue;
+				}
 
 				AlignCell cell = line.getCell(column);
 				int columnWidth = keepMultiline ? column.getMaxMultiLineWidthWithSpaceLeft() : column.getMaxMonoLineWidthWithSpaceLeft();
@@ -335,5 +340,9 @@ public class AlignTable {
 	
 	public final void setMaxLineLength(int maxLineLength) {
 		this.maxLineLength = maxLineLength;
+	}
+	
+	public int getIndexOfLine(AlignLine line) {
+		return lines.indexOf(line);
 	}
 }

@@ -148,7 +148,7 @@ public class TypoRule extends Rule {
 	final ConfigBoolValue configProcessShorttexts = new ConfigBoolValue(this, "ProcessShorttexts", "Apply on (synchronized) shorttexts", true); 
 	final ConfigBoolValue configProcessComments = new ConfigBoolValue(this, "ProcessComments", "Apply on textual comments", true); 
 	final ConfigBoolValue configAddTodoBeforeMessage = new ConfigBoolValue(this, "AddTodoBeforeMessage", "Add TODO if textual comment is followed by MESSAGE command", true); 
-   final ConfigEnumValue<TypoAction> configActionForLiterals = new ConfigEnumValue<TypoAction>(this, "MeasureForLiterals", "Apply on literals:", new String[] { "change directly", "add TODO comment", "keep unchanged" }, TypoAction.ADD_TODO_COMMENT);
+   final ConfigEnumValue<TypoAction> configActionForLiterals = new ConfigEnumValue<TypoAction>(this, "MeasureForLiterals", "Apply on literals:", new String[] { "change directly", "add TODO comment", "keep unchanged" }, TypoAction.values(), TypoAction.ADD_TODO_COMMENT);
 
 	private final ConfigValue[] configValues = new ConfigValue[] { configCorrectTypos, configConvertBritishToAmerican, configProcessAbapDoc, configProcessShorttexts, configProcessComments, configAddTodoBeforeMessage, configActionForLiterals };
 
