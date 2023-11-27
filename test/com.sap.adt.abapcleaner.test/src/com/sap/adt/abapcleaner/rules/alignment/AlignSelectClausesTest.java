@@ -530,4 +530,122 @@ class AlignSelectClausesTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testCommentAfterSelect() {
+		buildSrc("   SELECT *");
+		buildSrc("   FROM any_table");
+		buildSrc("   INTO TABLE @lt_any.");
+		buildSrc("");
+		buildSrc("   SELECT * \" comment");
+		buildSrc("   FROM any_table");
+		buildSrc("   INTO TABLE @lt_any.");
+
+		buildExp("   SELECT * FROM any_table");
+		buildExp("     INTO TABLE @lt_any.");
+		buildExp("");
+		buildExp("   SELECT * \" comment");
+		buildExp("     FROM any_table");
+		buildExp("     INTO TABLE @lt_any.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testFromCdsWithParameters() {
+		// ensure that FROM with parameters is NOT moved behind SELECT * 
+		buildSrc("    SELECT *");
+		buildSrc("   FROM any_cds( iv_any_param   = @lv_any_value,");
+		buildSrc("                 iv_other_param = @lv_other_value,");
+		buildSrc("                 iv_third_param = @lv_third_value )");
+		buildSrc("            ORDER BY any_col, other_col");
+		buildSrc("     INTO TABLE @DATA(lv_fourth_value).");
+
+		buildExp("    SELECT *");
+		buildExp("      FROM any_cds( iv_any_param   = @lv_any_value,");
+		buildExp("                    iv_other_param = @lv_other_value,");
+		buildExp("                    iv_third_param = @lv_third_value )");
+		buildExp("      ORDER BY any_col, other_col");
+		buildExp("      INTO TABLE @DATA(lv_fourth_value).");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testSelectAggregate() {
+		// ensure that a complex aggregate in the SELECT list can be parsed
+		buildSrc("    SELECT SUM( CAST( dec2 AS DEC( 10,2 ) ) ) AS sum1");
+		buildSrc("    FROM any_dtab INTO @lv_result.");
+
+		buildExp("    SELECT SUM( CAST( dec2 AS DEC( 10,2 ) ) ) AS sum1");
+		buildExp("      FROM any_dtab");
+		buildExp("      INTO @lv_result.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testDBHintsAndExtendedResult() {
+		buildSrc("    FINAL(lo_extended_result) = NEW cl_osql_extended_result( iv_cached_view = abap_true ).");
+		buildSrc("");
+		buildSrc("    SELECT any_col, other_col");
+		buildSrc("           FROM any_dtab");
+		buildSrc("            GROUP BY any_col");
+		buildSrc("         %_HINTS HDB 'RESULT_CACHE' \"#EC CI_HINTS");
+		buildSrc("             INTO TABLE @FINAL(lt_any_table)");
+		buildSrc("                  EXTENDED RESULT @lo_extended_result.");
+
+		buildExp("    FINAL(lo_extended_result) = NEW cl_osql_extended_result( iv_cached_view = abap_true ).");
+		buildExp("");
+		buildExp("    SELECT any_col, other_col FROM any_dtab");
+		buildExp("      GROUP BY any_col");
+		buildExp("      %_HINTS HDB 'RESULT_CACHE' \"#EC CI_HINTS");
+		buildExp("      INTO TABLE @FINAL(lt_any_table)");
+		buildExp("           EXTENDED RESULT @lo_extended_result.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testIntoIndicatorsStructure() {
+		buildSrc("    SELECT SINGLE *");
+		buildSrc("           FROM any_dtab");
+		buildSrc("           WHERE any_col = @lv_any_value");
+		buildSrc("           INTO @lv_other_value INDICATORS NULL STRUCTURE null_ind.");
+
+		buildExp("    SELECT SINGLE * FROM any_dtab");
+		buildExp("      WHERE any_col = @lv_any_value");
+		buildExp("      INTO @lv_other_value INDICATORS NULL STRUCTURE null_ind.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testDBFeatureModePragma() {
+		buildSrc("    SELECT any_col, COUNT(*) AS other_col");
+		buildSrc("      FROM any_dtab ##DB_FEATURE_MODE[TABLE_LEN_MAX1]");
+		buildSrc("     WHERE any_col IN @lt_any_table");
+		buildSrc("      GROUP BY any_col");
+		buildSrc("      INTO TABLE @lt_other_table.");
+
+		buildExp("    SELECT any_col, COUNT(*) AS other_col");
+		buildExp("      FROM any_dtab ##DB_FEATURE_MODE[TABLE_LEN_MAX1]");
+		buildExp("      WHERE any_col IN @lt_any_table");
+		buildExp("      GROUP BY any_col");
+		buildExp("      INTO TABLE @lt_other_table.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }

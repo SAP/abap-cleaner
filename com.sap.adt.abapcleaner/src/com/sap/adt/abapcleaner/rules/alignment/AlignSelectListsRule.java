@@ -245,9 +245,14 @@ public class AlignSelectListsRule extends RuleForCommands {
 		//            grouping_sets1, grouping_sets2, ...} 
 		// INTO (elem1, elem2,  ...) 
 
-		AlignTable table = hasComma ? buildTableFromCommaSepList(clauseType, clause, start)
-											 : buildTableFromSpaceSepList(clauseType, clause, start);
-
+		AlignTable table = new AlignTable(MAX_COLUMN_COUNT);
+		boolean changed = false;
+		if (hasComma) { 
+			changed |= buildTableFromCommaSepList(table, clauseType, clause, start);
+		} else { 
+			changed |= buildTableFromSpaceSepList(table, clauseType, clause, start);
+		}
+		
 		SelectListLayout layout = determineLayout(clauseType, complexFieldsLayout, simpleFieldsLayout, table);
 		if (layout == SelectListLayout.KEEP_AS_IS) 
 			return false;
@@ -273,7 +278,6 @@ public class AlignSelectListsRule extends RuleForCommands {
 		// ensure that the opening parenthesis continues the line after INTO;   
 		// also, change '(a, b)' or '(a, b )' into '( a, b )': those three are syntactically fine, but '( a, b)' would be erroneous;
 		// for single elements, '(a)' and '( a )' are fine, but '(a )' and '( a)' are erroneous
-		boolean changed = false;
 		if (clauseType == SelectClause.INTO) {
 			Token openingParens = start.getParent();
 			Token closingParens = openingParens.getNextSibling();
@@ -374,8 +378,8 @@ public class AlignSelectListsRule extends RuleForCommands {
 		return (next.isAttached() && next2.textEquals(")") && next2 == clause.lastToken);
 	}
 
-	private AlignTable buildTableFromCommaSepList(SelectClause clauseType, Term clause, Token start) throws UnexpectedSyntaxException {
-		AlignTable table = new AlignTable(MAX_COLUMN_COUNT);
+	private boolean buildTableFromCommaSepList(AlignTable table, SelectClause clauseType, Term clause, Token start) throws UnexpectedSyntaxException {
+		boolean changed = false;
 		Token token = start;
 		do {
 			// determine the next field
@@ -408,16 +412,18 @@ public class AlignSelectListsRule extends RuleForCommands {
 				}
 				line.setCell(Columns.ADDITIONS.getValue(), new AlignCellTerm(Term.createForTokenRange(firstInTerm, lastInTerm)));
 			}
-			if (token == null)
+			if (token == null) {
 				break;
+			} else if (token.isComma() && !token.isAttached() && token.lineBreaks == 0) {
+				changed |= token.setWhitespace(0, 0);
+			}
 			
 			token = token.getNextCodeSibling();
 		} while (token != null);
-		return table;
+		return changed;
 	}
 	
-	private AlignTable buildTableFromSpaceSepList(SelectClause clauseType, Term clause, Token start) throws UnexpectedSyntaxException {
-		AlignTable table = new AlignTable(MAX_COLUMN_COUNT);
+	private boolean buildTableFromSpaceSepList(AlignTable table, SelectClause clauseType, Term clause, Token start) throws UnexpectedSyntaxException {
 		Token token = start;
 		do {
 			// determine the next field
@@ -457,7 +463,7 @@ public class AlignSelectListsRule extends RuleForCommands {
 				token = additions.getNextCodeSibling();
 			}
 		} while (token != null);
-		return table;
+		return false;
 	}
 
 	private SelectListLayout determineLayout(SelectClause clauseType, SelectListLayout complexFieldsLayout, SelectListLayout simpleFieldsLayout, AlignTable table) {

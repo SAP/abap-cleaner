@@ -314,6 +314,10 @@ public final class ABAP {
 			} 
 			grammarReader.close();
 			
+			// add two special cases from ABAP SQL: 'SELECT ... INTO ( NEW @DATA(...) )', 'SELECT ... INTO ( NEW @FINAL(...) )'
+			result.add("@DATA");
+			result.add("@FINAL");
+			
 		} catch (IOException e) {
 			// use provided fallback keywords (taken from .pad file of ABAP version 7.57)
 			String[] fallbackKeywords = getFallbackKeywords();
@@ -393,8 +397,9 @@ public final class ABAP {
 		if (textBits == null || textBits.length == 0)
 			return false;
 		for (String textBit : textBits) {
-			if (!abapKeywords.contains(getAbapKeywordKey(textBit)))
+			if (!abapKeywords.contains(getAbapKeywordKey(textBit))) {
 				return false;
+			}
 		}
 		return true;
 	}
@@ -406,8 +411,9 @@ public final class ABAP {
 		// split into components, e.g. "sy-subrc":
 		String[] textBits = StringUtil.split(text, new char[] { '-', ':', '(' }, true);
 		for (String textBit : textBits) {
-			if (!abapLowerCaseKeywords.contains(getAbapKeywordKey(textBit)))
+			if (!abapLowerCaseKeywords.contains(getAbapKeywordKey(textBit))) {
 				return false;
+			}
 		}
 		return true;
 	}

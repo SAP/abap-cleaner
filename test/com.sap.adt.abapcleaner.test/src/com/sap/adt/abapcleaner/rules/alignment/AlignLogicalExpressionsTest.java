@@ -1156,4 +1156,36 @@ class AlignLogicalExpressionsTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testSelectWhereNotInList() {
+		// ensure that WHERE ... [NOT] IN (...) is correctly parsed and processed
+		buildSrc("    SELECT any_col");
+		buildSrc("      FROM any_dtab");
+		buildSrc("      INTO TABLE lt_any_table");
+		buildSrc("      FOR ALL ENTRIES IN cts_any_table");
+		buildSrc("      WHERE any_col EQ cts_any_table-any_comp");
+		buildSrc("        AND other_col NOT IN (if_any_interface=>co_any_constant,");
+		buildSrc("                              if_any_interface=>co_other_constant ).");
+		buildSrc("");
+		buildSrc("      SELECT * FROM any_dtab USING CLIENT @iv_any_param");
+		buildSrc("        INTO TABLE @lv_any_value");
+		buildSrc("        WHERE any_col IN ( @gc_any_constant, @gc_other_constant ).");
+
+		buildExp("    SELECT any_col");
+		buildExp("      FROM any_dtab");
+		buildExp("      INTO TABLE lt_any_table");
+		buildExp("      FOR ALL ENTRIES IN cts_any_table");
+		buildExp("      WHERE any_col       EQ cts_any_table-any_comp");
+		buildExp("        AND other_col NOT IN (if_any_interface=>co_any_constant,");
+		buildExp("                              if_any_interface=>co_other_constant ).");
+		buildExp("");
+		buildExp("      SELECT * FROM any_dtab USING CLIENT @iv_any_param");
+		buildExp("        INTO TABLE @lv_any_value");
+		buildExp("        WHERE any_col IN ( @gc_any_constant, @gc_other_constant ).");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }
