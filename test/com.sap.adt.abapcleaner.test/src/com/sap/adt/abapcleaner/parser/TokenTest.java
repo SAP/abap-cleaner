@@ -1163,7 +1163,7 @@ public class TokenTest {
 		assertAccessType("CALL METHOD (methodname) EXPORTING e1 = ?pe1 e2 = ?pe2 IMPORTING i1 = !pi1 i2 = DATA(pi2) i3 = !pi3 CHANGING c1 = #pc1 c2 = #pc2 RECEIVING r1 = !pr1.");
 
 		assertAccessType("CALL FUNCTION func EXPORTING e1 = ?pe1 e2 = ?pe2 IMPORTING i1 = !pi1 i2 = !pi2 CHANGING c1 = #pc1 c2 = #pc2 EXCEPTIONS exc1 = ?px1 exc2 = ?px2.");
-		assertAccessType("CALL FUNCTION func IMPORTING i1 = !pi1 i2 = !pi2 CHANGING c1 = #pc1 c2 = #pc2.");
+		assertAccessType("CALL FUNCTION func IMPORTING i1 = !pi1 i2 = !pi2 TABLES t1 = #pt1 CHANGING c1 = #pc1 c2 = #pc2.");
 		assertAccessType("CALL FUNCTION func EXPORTING e1 = ?pe1 e2 = ?pe2 IMPORTING i1 = !pi1 i2 = DATA(pi2) i3 = !pi3 CHANGING c1 = #pc1 c2 = #pc2.");
 
 		assertAccessType("CALL DATABASE PROCEDURE proxy EXPORTING e1 = ?pe1 e2 = ?pe2 IMPORTING i1 = !pi1 i2 = !pi2.");
@@ -1172,7 +1172,7 @@ public class TokenTest {
 
 	@Test
 	void testAccessTypeReceiveAndPerform() {
-		assertAccessType("RECEIVE RESULTS FROM FUNCTION func KEEPING TASK IMPORTING i1 = !pi1 i2 = !pi2 TABLES t1 = ?itab1 t2 = itab2 CHANGING c1 = #pc1 c2 = #pc2 EXCEPTIONS exc1 = ?px1 exc2 = ?px2.");
+		assertAccessType("RECEIVE RESULTS FROM FUNCTION func KEEPING TASK IMPORTING i1 = !pi1 i2 = !pi2 TABLES t1 = #itab1 t2 = #itab2 CHANGING c1 = #pc1 c2 = #pc2 EXCEPTIONS exc1 = ?px1 exc2 = ?px2.");
 		
 		// ensure that all actual parameters are treated as READ_WRITE or READ_WRITE_POSSIBLE, because the syntax check does not prevent changing a USING parameter 
 		assertAccessType("PERFORM subr IN PROGRAM prog IF FOUND TABLES #itab1 #itab2 USING #u1 #u2 CHANGING #c1 #c2.");

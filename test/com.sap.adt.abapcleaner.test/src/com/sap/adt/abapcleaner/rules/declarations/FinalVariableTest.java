@@ -657,4 +657,36 @@ class FinalVariableTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testCallFunctionWithTables() {
+		// ensure that only the definition of the EXPORTING parameter is changed to FINAL(...), 
+		// while the TABLES parameter remains DATA(...), because the function can change it
+		
+		buildSrc("    DATA(lv_any) = 1.");
+		buildSrc("    DATA(lv_other) = 2.");
+		buildSrc("    DATA(lv_third) = 3.");
+		buildSrc("    DATA(lt_table) = get_table( ).");
+		buildSrc("");
+		buildSrc("    CALL FUNCTION 'ANY_FUNCTION'");
+		buildSrc("      EXPORTING iv_any = lv_any");
+		buildSrc("      IMPORTING ev_any = lv_other");
+		buildSrc("      TABLES    t1     = lt_table");
+		buildSrc("      CHANGING  cv_any = lv_third.");
+
+		buildExp("    FINAL(lv_any) = 1.");
+		buildExp("    DATA(lv_other) = 2.");
+		buildExp("    DATA(lv_third) = 3.");
+		buildExp("    DATA(lt_table) = get_table( ).");
+		buildExp("");
+		buildExp("    CALL FUNCTION 'ANY_FUNCTION'");
+		buildExp("      EXPORTING iv_any = lv_any");
+		buildExp("      IMPORTING ev_any = lv_other");
+		buildExp("      TABLES    t1     = lt_table");
+		buildExp("      CHANGING  cv_any = lv_third.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }

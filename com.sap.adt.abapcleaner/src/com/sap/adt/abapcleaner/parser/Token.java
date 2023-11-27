@@ -2355,11 +2355,11 @@ public class Token {
 			}
 			// if no access keyword is found, we use the default result .READ below
 			if (accessKeyword != null) {
-				if (accessKeyword.isAnyKeyword("TABLES", "EXPORTING")) {
+				if (accessKeyword.isAnyKeyword("EXPORTING")) {
 					return MemoryAccessType.READ;
 				} else if (accessKeyword.isAnyKeyword("IMPORTING", "RECEIVING")) {
 					return MemoryAccessType.WRITE;
-				} else if (accessKeyword.isAnyKeyword("CHANGING")) { 
+				} else if (accessKeyword.isAnyKeyword("CHANGING", "TABLES")) { 
 					return MemoryAccessType.READ_WRITE;
 				}
 			}
