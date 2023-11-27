@@ -2872,4 +2872,15 @@ public class Token {
 		}
 		return changed;
 	}
+
+	/** returns true if this Token is the NEW keyword in SELECT ... INTO(NEW ...) and is attached to the opening parenthesis */
+	boolean isAttachedNewKeywordInSelectInto() {
+		if (isKeyword("NEW") && isAttached() && prev.textEquals("(")) {
+			Token prevPrev = prev.getPrevCodeSibling();
+			return (prevPrev != null && prevPrev.isKeyword("INTO") && parentCommand.isAbapSqlReadOperation());
+		} else {
+			return false;
+		}
+			
+	}
 }

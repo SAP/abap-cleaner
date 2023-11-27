@@ -199,6 +199,9 @@ public class TokenTypeRefinerRnd implements ITokenTypeRefiner {
 					// keep TokenType.KEYWORD - RND parser classifies 'FIELD' as an identifier and as 'suspicious' 
 				} else if (token.isTextSymbol()) { 
 					// keep TokenType.KEYWORD, which was assigned earlier when rndToken "TEXT" was processed
+				} else if (token.isAttachedNewKeywordInSelectInto() || token.isAnyKeyword("@DATA(", "@FINAL(") && token.getPrevCodeSibling() != null && token.getPrevCodeSibling().isAttachedNewKeywordInSelectInto()) { 
+					// keep TokenType.KEYWORD for 'NEW', '@DATA' and '@FINAL' in SELECT ... INTO (NEW @dref), 
+					// SELECT ... INTO (NEW @DATA(dobj)) and SELECT ... INTO (NEW @FINAL(dobj))
 				} else if (token.type != TokenType.IDENTIFIER) {
 					token.type = TokenType.IDENTIFIER;
 				}

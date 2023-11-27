@@ -764,4 +764,23 @@ class AlignSelectFromTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testDBFeatureModePragma() {
+		buildSrc("    SELECT any_col, COUNT(*) AS other_col");
+		buildSrc("      FROM    any_dtab ##DB_FEATURE_MODE[TABLE_LEN_MAX1]");
+		buildSrc("      WHERE any_col IN @lt_any_table");
+		buildSrc("      GROUP BY any_col");
+		buildSrc("      INTO TABLE @lt_other_table.");
+
+		buildExp("    SELECT any_col, COUNT(*) AS other_col");
+		buildExp("      FROM any_dtab ##DB_FEATURE_MODE[TABLE_LEN_MAX1]");
+		buildExp("      WHERE any_col IN @lt_any_table");
+		buildExp("      GROUP BY any_col");
+		buildExp("      INTO TABLE @lt_other_table.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }

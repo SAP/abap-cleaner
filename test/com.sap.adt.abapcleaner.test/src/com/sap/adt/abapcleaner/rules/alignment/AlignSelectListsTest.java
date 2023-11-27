@@ -649,4 +649,155 @@ class AlignSelectListsTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testRemoveSpacesBeforeComma() {
+		buildSrc("    SELECT any_col,");
+		buildSrc("           MAX( other_col ) AS c2   ,");
+		buildSrc("           MIN( third_col ) AS c3     ,");
+		buildSrc("           SUM( fourth_col ) AS c4 \" comment");
+		buildSrc("           , fifth_col AS c4");
+		buildSrc("      FROM any_dtab");
+		buildSrc("      GROUP BY any_col");
+		buildSrc("      %_HINTS HDB 'RESULT_CACHE' \"#EC CI_HINTS");
+		buildSrc("      INTO TABLE @FINAL(lv_any_value)");
+		buildSrc("           EXTENDED RESULT @lo_extended_result.");
+
+		buildExp("    SELECT any_col,");
+		buildExp("           MAX( other_col )  AS c2,");
+		buildExp("           MIN( third_col )  AS c3,");
+		buildExp("           SUM( fourth_col ) AS c4 \" comment");
+		buildExp("           ,");
+		buildExp("           fifth_col         AS c4");
+		buildExp("      FROM any_dtab");
+		buildExp("      GROUP BY any_col");
+		buildExp("      %_HINTS HDB 'RESULT_CACHE' \"#EC CI_HINTS");
+		buildExp("      INTO TABLE @FINAL(lv_any_value)");
+		buildExp("           EXTENDED RESULT @lo_extended_result.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testAddSpaceInParenthesesOfInto() {
+		// ensure that a space is added at the beginning and end of an INTO ( ... ) list with one element
+
+		buildSrc("    SELECT SINGLE any_col FROM any_dtab");
+		buildSrc("      WHERE any_col = @lv_any_value");
+		buildSrc("      INTO (@DATA(dobj1)).");
+		buildSrc("");
+		buildSrc("    SELECT SINGLE any_col FROM any_dtab");
+		buildSrc("      WHERE any_col = @lv_any_value");
+		buildSrc("      INTO (@FINAL(dobj2)).");
+		buildSrc("");
+		buildSrc("    SELECT SINGLE any_col FROM any_dtab");
+		buildSrc("      WHERE any_col = @lv_any_value");
+		buildSrc("      INTO (NEW @DATA(dref1)).");
+		buildSrc("");
+		buildSrc("    SELECT SINGLE any_col FROM any_dtab");
+		buildSrc("      WHERE any_col = @lv_any_value");
+		buildSrc("      INTO (NEW @FINAL(dref2)).");
+
+		buildExp("    SELECT SINGLE any_col FROM any_dtab");
+		buildExp("      WHERE any_col = @lv_any_value");
+		buildExp("      INTO ( @DATA(dobj1) ).");
+		buildExp("");
+		buildExp("    SELECT SINGLE any_col FROM any_dtab");
+		buildExp("      WHERE any_col = @lv_any_value");
+		buildExp("      INTO ( @FINAL(dobj2) ).");
+		buildExp("");
+		buildExp("    SELECT SINGLE any_col FROM any_dtab");
+		buildExp("      WHERE any_col = @lv_any_value");
+		buildExp("      INTO ( NEW @DATA(dref1) ).");
+		buildExp("");
+		buildExp("    SELECT SINGLE any_col FROM any_dtab");
+		buildExp("      WHERE any_col = @lv_any_value");
+		buildExp("      INTO ( NEW @FINAL(dref2) ).");
+
+		putAnyMethodAroundSrcAndExp();
+
+		// RND Parser categorizes INTO (NEW @DATA(...)) as erroneous, although ABAP syntax allows this
+		deactivateSyntaxCheckAfterParse();
+		
+		testRule();
+	}
+
+	@Test
+	void testSelectListWithHostVariableAndLiteral() {
+		buildSrc("    SELECT any_col, @lr_any_ref->mv_any_attribute AS other_col, third_col , '2' AS fourth_col");
+		buildSrc("      FROM any_dtab");
+		buildSrc("      INTO TABLE @DATA(lt_any_table).");
+
+		buildExp("    SELECT any_col,");
+		buildExp("           @lr_any_ref->mv_any_attribute AS other_col,");
+		buildExp("           third_col,");
+		buildExp("           '2'                           AS fourth_col");
+		buildExp("      FROM any_dtab");
+		buildExp("      INTO TABLE @DATA(lt_any_table).");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testFieldsWithCaseWhen() {
+		buildSrc("    SELECT SINGLE");
+		buildSrc("      FROM @data_tab AS data_tab");
+		buildSrc("      FIELDS CASE WHEN 1 = 0 THEN 0 END AS col1, col2  ,");
+		buildSrc("         CASE WHEN 1 = 0 THEN 0 END AS col3,   CASE WHEN 1 = 0 THEN 42 END AS col4, col5");
+		buildSrc("      INTO CORRESPONDING FIELDS OF @wa_ind2");
+		buildSrc("           INDICATORS NULL BITFIELD null_ind.");
+
+		buildExp("    SELECT SINGLE");
+		buildExp("      FROM @data_tab AS data_tab");
+		buildExp("      FIELDS CASE WHEN 1 = 0 THEN 0 END  AS col1,");
+		buildExp("             col2,");
+		buildExp("             CASE WHEN 1 = 0 THEN 0 END  AS col3,");
+		buildExp("             CASE WHEN 1 = 0 THEN 42 END AS col4,");
+		buildExp("             col5");
+		buildExp("      INTO CORRESPONDING FIELDS OF @wa_ind2");
+		buildExp("           INDICATORS NULL BITFIELD null_ind.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testSelectListWithFirstValueOver() {
+		buildSrc("    SELECT");
+		buildSrc("          id,");
+		buildSrc("          col1,");
+		buildSrc("          col2,");
+		buildSrc("          col3,");
+		buildSrc("          FIRST_VALUE( col2 ) OVER( PARTITION BY col1 ORDER BY col3 )");
+		buildSrc("                      AS first_value,");
+		buildSrc("          LAST_VALUE( col2 ) OVER( PARTITION BY col1 ORDER BY col3 )");
+		buildSrc("                      AS last_value,");
+		buildSrc("          LAST_VALUE( col2 ) OVER( PARTITION BY col1 ORDER BY col3");
+		buildSrc("                      ROWS BETWEEN UNBOUNDED PRECEDING");
+		buildSrc("                      AND UNBOUNDED FOLLOWING )");
+		buildSrc("                      AS last_value_correct");
+		buildSrc("          FROM demo_update");
+		buildSrc("          INTO TABLE @DATA(result).");
+
+		buildExp("    SELECT id,");
+		buildExp("           col1,");
+		buildExp("           col2,");
+		buildExp("           col3,");
+		buildExp("           FIRST_VALUE( col2 ) OVER( PARTITION BY col1 ORDER BY col3 ) AS first_value,");
+		buildExp("           LAST_VALUE( col2 ) OVER( PARTITION BY col1 ORDER BY col3 )  AS last_value,");
+		buildExp("           LAST_VALUE( col2 ) OVER( PARTITION BY col1 ORDER BY col3");
+		buildExp("                       ROWS BETWEEN UNBOUNDED PRECEDING");
+		buildExp("                       AND UNBOUNDED FOLLOWING )                       AS last_value_correct");
+		buildExp("          FROM demo_update");
+		buildExp("          INTO TABLE @DATA(result).");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }
