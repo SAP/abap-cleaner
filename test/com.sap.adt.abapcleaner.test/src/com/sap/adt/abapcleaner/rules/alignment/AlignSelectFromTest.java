@@ -783,4 +783,28 @@ class AlignSelectFromTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testJoinWithoutOptionalInner() {
+		// test a case that only has 'JOIN' without the optional '[INNER [cardinality]]' 
+		
+		buildSrc("    SELECT");
+		buildSrc("      FROM any_dtab AS t1");
+		buildSrc("      JOIN other_dtab AS t2 ON t2~any_col = t1~any_col");
+		buildSrc("      FIELDS DISTINCT t2~other_col");
+		buildSrc("      WHERE t1~third_col = @lv_any_value");
+		buildSrc("      INTO TABLE @lt_any_table.");
+
+		buildExp("    SELECT");
+		buildExp("      FROM any_dtab AS t1");
+		buildExp("             JOIN");
+		buildExp("               other_dtab AS t2 ON t2~any_col = t1~any_col");
+		buildExp("      FIELDS DISTINCT t2~other_col");
+		buildExp("      WHERE t1~third_col = @lv_any_value");
+		buildExp("      INTO TABLE @lt_any_table.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }
