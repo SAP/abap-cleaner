@@ -291,7 +291,7 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 		this.defaultRuleID = settings.profilesLastRuleID;
 		
       // load profiles 
-      ArrayList<Profile> profiles = Profile.loadProfiles(settings.profilesDirectory, settings.readOnlyProfileDirs);
+      ArrayList<Profile> profiles = Profile.loadProfiles(settings.profilesDirectory, settings.readOnlyProfileDirs, null);
       this.profiles = profiles;
 
       // remember the profile names when opening FrmProfiles
@@ -1859,7 +1859,7 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 		}
 
 		// update the profiles from read-only directories (all other would have been moved along with the own profile directory) 
-		Profile.updateReadOnlyProfiles(profiles, settings.readOnlyProfileDirs);
+		Profile.updateReadOnlyProfiles(profiles, settings.readOnlyProfileDirs, null);
 		refreshProfileList(curProfileName);
    }
    

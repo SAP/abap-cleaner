@@ -43,7 +43,7 @@ public class TextSettingsReader extends SettingsReaderBase implements ISettingsR
       
       requiredVersion = readInt32(ISettingsWriter.KEY_REQUIRED_VERSION);
       if (programVersion < requiredVersion)
-         throw new IOException("requires version " + Integer.toString(requiredVersion) + ", but installed version is " + Integer.toString(programVersion));
+         throw new IOException("'" + path + "' requires technical version " + Integer.toString(requiredVersion) + ", but installed version is " + Integer.toString(programVersion) + ".");
       fileVersion = readInt32(ISettingsWriter.KEY_PROGRAM_VERSION);
    }
 
