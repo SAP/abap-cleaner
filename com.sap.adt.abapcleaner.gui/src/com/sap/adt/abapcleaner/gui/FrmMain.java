@@ -278,7 +278,8 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		MainSettings settings = new MainSettings();
 		settings.load();
 		if (profile == null) {
-			profile = getMostRecentlyUsedProfile(settings);
+			StringBuilder errorMessages = new StringBuilder();
+			profile = getMostRecentlyUsedProfile(settings, errorMessages);
 			// if the profile was not found, notify the caller that a fallback profile will be used for the next attempt;
 			// if no profile exists at all, this fallback will be Profile.DEFAULT_NAME, with which the message will not come up again
 			if (!StringUtil.isNullOrEmpty(settings.curProfileName) && !settings.curProfileName.equals(profile.name)) {
@@ -287,6 +288,9 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 				settings.curProfileName = fallbackProfileName;
 				settings.save();
 				String warning = "Cleanup cancelled: Profile '" + oldProfileName + "' was not found anymore. For the next attempt, profile '" + fallbackProfileName + "' will be used.";
+				if (errorMessages.length() > 0) {
+					warning += System.lineSeparator() + System.lineSeparator() + errorMessages.toString();
+				}
 				return CleanupResult.createError(warning);
 			}
 		}
@@ -340,9 +344,9 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 	}
 
 	/** returns the profile that was last used, or a fallback profile from the available profiles, or a newly created default profile */
-	private static Profile getMostRecentlyUsedProfile(MainSettings settings) {
+	private static Profile getMostRecentlyUsedProfile(MainSettings settings, StringBuilder errorMessages) {
 		// find the profile that was last used according to the settings
-		ArrayList<Profile> profiles = Profile.loadProfiles(settings.profilesDirectory, settings.readOnlyProfileDirs);
+		ArrayList<Profile> profiles = Profile.loadProfiles(settings.profilesDirectory, settings.readOnlyProfileDirs, errorMessages);
 		for (Profile profile : profiles) {
 			if (profile.toString().equals(settings.curProfileName)) {
 				return profile;
@@ -388,7 +392,9 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 
 		loadSettings();
 		String lastProfileName = settings.curProfileName;
-		boolean lastProfileFound = refreshProfileList(StringUtil.isNullOrEmpty(lastProfileName) ? Profile.DEFAULT_NAME : lastProfileName, false);
+		String selectProfileName = StringUtil.isNullOrEmpty(lastProfileName) ? Profile.DEFAULT_NAME : lastProfileName;
+		StringBuilder errorMessages = new StringBuilder();
+		boolean lastProfileFound = refreshProfileList(selectProfileName, false, errorMessages);
 
 		codeDisplay.setUsedRulesDisplay(this);
 		codeDisplay.setSearchControls(this);
@@ -461,7 +467,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		lstUsedRules.setVisible(true);
 
 		if (lastProfileName != null && !lastProfileFound && curProfile != null) {
-			Message.show(getProfileFallbackMessage(lastProfileName, curProfile.name), "Profile not found", shell);
+			Message.show(getProfileFallbackMessage(lastProfileName, curProfile.name, errorMessages), "Profile not found", shell);
 		}
 
 		while (!shell.isDisposed()) {
@@ -515,10 +521,11 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 				// however, if the current profile name is still in the list, suppress reloading the profile and reprocessing the code
 				String lastProfileName = (curProfile == null) ? null : curProfile.name;
 				String profileName = (curProfile == null) ? Profile.DEFAULT_NAME : curProfile.name;
+				StringBuilder errorMessages = new StringBuilder();
 				boolean suppressReprocessingIfFound = (curProfile != null);
-				boolean profileFound = refreshProfileList(profileName, suppressReprocessingIfFound);
+				boolean profileFound = refreshProfileList(profileName, suppressReprocessingIfFound, errorMessages);
 				if (lastProfileName != null && !profileFound && curProfile != null) {
-					Message.show(getProfileFallbackMessage(lastProfileName, curProfile.name), "Profile not found", shell);
+					Message.show(getProfileFallbackMessage(lastProfileName, curProfile.name, errorMessages), "Profile not found", shell);
 				}
 
 				codeDisplay.formActivated();
@@ -1825,11 +1832,11 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 	}
 
 	/** returns true if the supplied profileNameToSelect was found, otherwise false */
-	private boolean refreshProfileList(String profileNameToSelect, boolean suppressReprocessingIfFound) {
+	private boolean refreshProfileList(String profileNameToSelect, boolean suppressReprocessingIfFound, StringBuilder errorMessages) {
 		if (settings == null)
-			profiles = Profile.loadProfiles(null, null);
+			profiles = Profile.loadProfiles(null, null, errorMessages);
 		else
-			profiles = Profile.loadProfiles(settings.profilesDirectory, settings.readOnlyProfileDirs);
+			profiles = Profile.loadProfiles(settings.profilesDirectory, settings.readOnlyProfileDirs, errorMessages);
 
 		cboProfile.removeAll();
 
@@ -1925,7 +1932,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		if (profileResult != null) {
 			// lastProfileName.saved is false if FrmProfiles was closed with "Cancel" or with the red X
 			if (profileResult.saved && profileResult.lastProfileName != null) {
-				refreshProfileList(profileResult.lastProfileName, false);
+				refreshProfileList(profileResult.lastProfileName, false, null);
 			}
 		}
 	}
@@ -2598,7 +2605,13 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
    	Message.show(summary + " The result was copied to the clipboard.", "frequency list of structure-identical commands", shell);
 	}
 
-	private static String getProfileFallbackMessage(String oldProfileName, String fallbackProfileName) {
-		return "Profile '" + oldProfileName + "' was not found anymore." + System.lineSeparator() + "Profile '" + fallbackProfileName + "' was selected instead.";
+	private static String getProfileFallbackMessage(String oldProfileName, String fallbackProfileName, StringBuilder errorMessages) {
+		String msg = "Profile '" + oldProfileName + "' was not found anymore.";
+		msg += System.lineSeparator() + "Profile '" + fallbackProfileName + "' was selected instead.";
+		if (errorMessages.length() > 0) {
+			msg += System.lineSeparator() + System.lineSeparator() + errorMessages.toString(); 
+			// msg += System.lineSeparator() + System.lineSeparator() + "Please update " + Program.PRODUCT_NAME + "."; 
+		}
+		return msg;
 	}
 }

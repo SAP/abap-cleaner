@@ -30,14 +30,21 @@ public class Profile {
 		}
 	}
 
-	public static ArrayList<Profile> loadProfiles(String ownProfileDir, ArrayList<ProfileDir> readOnlyProfileDirs) {
+	/**
+	 * loads the profiles found in the supplied own profile directory and (optionally) the read-only profile directories 
+	 * @param ownProfileDir - own profile directory
+	 * @param readOnlyProfileDirs - read-only profile directories for team profiles
+	 * @param errorMessages - may be null; will otherwise be filled with error messages if file version of profiles is too low
+	 * @return
+	 */
+	public static ArrayList<Profile> loadProfiles(String ownProfileDir, ArrayList<ProfileDir> readOnlyProfileDirs, StringBuilder errorMessages) {
 		ArrayList<Profile> profiles = new ArrayList<Profile>();
 		if (ownProfileDir != null) {
-			addProfilesFromDir(profiles, ownProfileDir, "");
+			addProfilesFromDir(profiles, ownProfileDir, "", errorMessages);
 		}
 		if (readOnlyProfileDirs != null) {
 			for (ProfileDir profileDir : readOnlyProfileDirs) {
-				addProfilesFromDir(profiles, profileDir.readOnlyDir, profileDir.shortName + READ_ONLY_INFIX);
+				addProfilesFromDir(profiles, profileDir.readOnlyDir, profileDir.shortName + READ_ONLY_INFIX, errorMessages);
 			}
 		}
 
@@ -51,20 +58,32 @@ public class Profile {
 		return profiles;
 	}
 
-	public static void updateReadOnlyProfiles(ArrayList<Profile> profiles, ArrayList<ProfileDir> readOnlyProfileDirs) {
+	/**
+	 * updates the profiles from read-only profile directories
+	 * @param profiles - list of profiles to update
+	 * @param readOnlyProfileDirs - read-only profile directories for team profiles, from which profiles will be updated 
+	 * @param errorMessages - may be null; will otherwise be filled with error messages if file version of profiles is too low
+	 */
+	public static void updateReadOnlyProfiles(ArrayList<Profile> profiles, ArrayList<ProfileDir> readOnlyProfileDirs, StringBuilder errorMessages) {
 		profiles.removeIf(p -> p.isReadOnly);
 		for (ProfileDir profileDir : readOnlyProfileDirs) {
-			addProfilesFromDir(profiles, profileDir.readOnlyDir, profileDir.shortName + READ_ONLY_INFIX);
+			addProfilesFromDir(profiles, profileDir.readOnlyDir, profileDir.shortName + READ_ONLY_INFIX, errorMessages);
 		}
 	}
 
-	private static void addProfilesFromDir(ArrayList<Profile> profiles, String dir, String namePrefix) {
+	private static void addProfilesFromDir(ArrayList<Profile> profiles, String dir, String namePrefix, StringBuilder errorMessages) {
 		Persistency persistency = Persistency.get(); 
 		String[] paths = getLoadPaths(dir);
 		for (String path : paths) {
 			try (ISettingsReader reader = TextSettingsReader.createFromFile(persistency, path, Program.TECHNICAL_VERSION)) {
 				profiles.add(Profile.createFromSettings(reader, namePrefix));
+			
 			} catch (IOException e) {
+				if (errorMessages != null) {
+					if (errorMessages.length() > 0)
+						errorMessages.append(System.lineSeparator());
+					errorMessages.append(e.getMessage());
+				}
 			}
 		}
 	}

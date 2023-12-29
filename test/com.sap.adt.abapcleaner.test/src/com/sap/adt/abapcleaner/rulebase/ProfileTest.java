@@ -429,7 +429,7 @@ class ProfileTest {
 		readOnlyProfileDirs.add(new ProfileDir(teamNameB, readOnlyDirB));
 
 		// ensure that all 8 profiles are loaded, including from the read-only folders
-		ArrayList<Profile> profiles = Profile.loadProfiles(profilesDir, readOnlyProfileDirs);
+		ArrayList<Profile> profiles = Profile.loadProfiles(profilesDir, readOnlyProfileDirs, null);
 		assertEquals(8, profiles.size());
 		assertTrue(profilesContain(profiles, Profile.DEFAULT_NAME));
 		assertTrue(profilesContain(profiles, Profile.ESSENTIAL_NAME));
@@ -441,7 +441,7 @@ class ProfileTest {
 		assertTrue(profilesContain(profiles, teamNameB, anyProfileName));
 
 		// ensure that in an empty directory, the 'default' and 'essential' profiles are created
-		profiles = Profile.loadProfiles(anyDir, null);
+		profiles = Profile.loadProfiles(anyDir, null, null);
 		assertEquals(2, profiles.size());
 		assertTrue(profilesContain(profiles, Profile.DEFAULT_NAME));
 		assertTrue(profilesContain(profiles, Profile.ESSENTIAL_NAME));
@@ -455,7 +455,7 @@ class ProfileTest {
 		// ensure that all 3 profiles are loaded from the default directory, even if the ownProfileDir 
 		// from MainSettings.profilesDirectory is "" (because it was never explicitly set)
 		String emptyProfilesDir = "";
-		ArrayList<Profile> profiles = Profile.loadProfiles(emptyProfilesDir, null);
+		ArrayList<Profile> profiles = Profile.loadProfiles(emptyProfilesDir, null, null);
 		assertEquals(3, profiles.size());
 		assertTrue(profilesContain(profiles, Profile.DEFAULT_NAME));
 		assertTrue(profilesContain(profiles, Profile.ESSENTIAL_NAME));
@@ -472,12 +472,12 @@ class ProfileTest {
 		readOnlyProfileDirs.add(new ProfileDir(teamNameA, readOnlyDirA));
 
 		// load "own" profiles and profiles from the read-only folder of team A
-		ArrayList<Profile> profiles = Profile.loadProfiles(profilesDir, readOnlyProfileDirs);
+		ArrayList<Profile> profiles = Profile.loadProfiles(profilesDir, readOnlyProfileDirs, null);
 		
 		// now update the profile list, with different read-only profile dirs (team A removed, team B added)
 		ArrayList<ProfileDir> newReadOnlyProfileDirs = new ArrayList<>();
 		newReadOnlyProfileDirs.add(new ProfileDir(teamNameB, readOnlyDirB));
-		Profile.updateReadOnlyProfiles(profiles, newReadOnlyProfileDirs);
+		Profile.updateReadOnlyProfiles(profiles, newReadOnlyProfileDirs, null);
 
 		// ensure that now 5 profiles are loaded, including from the read-only folder of team B (but not team A)
 		assertEquals(5, profiles.size());
@@ -497,7 +497,7 @@ class ProfileTest {
 		readOnlyProfileDirs.add(new ProfileDir(teamNameB, readOnlyDirB));
 
 		// load "own" profiles and profiles from a read-only folder which does not exist
-		ArrayList<Profile> profiles = Profile.loadProfiles(profilesDir, readOnlyProfileDirs);
+		ArrayList<Profile> profiles = Profile.loadProfiles(profilesDir, readOnlyProfileDirs, null);
 		
 		// ensure that 3 profiles are loaded
 		assertEquals(3, profiles.size());

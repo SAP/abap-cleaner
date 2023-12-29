@@ -317,7 +317,7 @@ class TextSettingsReaderTest {
 			reader = TextSettingsReader.createFromString(sbSrc.toString(), TECHNICAL_VERSION);
 		} catch (IOException ex) {
 			raisedException = true;
-			assertTrue(ex.getMessage().indexOf("requires version 17") >= 0);
+			assertTrue(ex.getMessage().indexOf("requires technical version 17") >= 0);
 		}
 		assertTrue(raisedException);
 	}
