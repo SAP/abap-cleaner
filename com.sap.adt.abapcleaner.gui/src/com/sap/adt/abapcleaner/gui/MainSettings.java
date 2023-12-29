@@ -175,8 +175,10 @@ public class MainSettings {
 	void load() {
 		Persistency persistency = Persistency.get();
 		String path = persistency.getLoadPath(FileType.SETTINGS_MAIN_TEXT);
-		if (path == null || !persistency.fileExists(path))
+		if (path == null || !persistency.fileExists(path)) {
+			setDefault();
 			return;
+		}
 
 		try {
 			try (ISettingsReader reader = TextSettingsReader.createFromFile(persistency, path, Program.TECHNICAL_VERSION)) {

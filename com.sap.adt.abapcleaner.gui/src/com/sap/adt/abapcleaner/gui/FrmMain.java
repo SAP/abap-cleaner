@@ -277,9 +277,20 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 
 		MainSettings settings = new MainSettings();
 		settings.load();
-		if (profile == null)
+		if (profile == null) {
 			profile = getMostRecentlyUsedProfile(settings);
-
+			// if the profile was not found, notify the caller that a fallback profile will be used for the next attempt;
+			// if no profile exists at all, this fallback will be Profile.DEFAULT_NAME, with which the message will not come up again
+			if (!StringUtil.isNullOrEmpty(settings.curProfileName) && !settings.curProfileName.equals(profile.name)) {
+				String oldProfileName = settings.curProfileName;
+				String fallbackProfileName = profile.name;
+				settings.curProfileName = fallbackProfileName;
+				settings.save();
+				String warning = "Cleanup cancelled: Profile '" + oldProfileName + "' was not found anymore. For the next attempt, profile '" + fallbackProfileName + "' will be used.";
+				return CleanupResult.createError(warning);
+			}
+		}
+		
 		BackgroundJob job = new BackgroundJob(ParseParams.createForCleanupRange("", sourceCode, abapRelease, cleanupRange, settings.cleanupRangeExpandMode),
 				CleanupParams.createForProfile(profile, false, settings.releaseRestriction));
 		job.run();
@@ -328,14 +339,27 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		}
 	}
 
+	/** returns the profile that was last used, or a fallback profile from the available profiles, or a newly created default profile */
 	private static Profile getMostRecentlyUsedProfile(MainSettings settings) {
+		// find the profile that was last used according to the settings
 		ArrayList<Profile> profiles = Profile.loadProfiles(settings.profilesDirectory, settings.readOnlyProfileDirs);
 		for (Profile profile : profiles) {
 			if (profile.toString().equals(settings.curProfileName)) {
 				return profile;
 			}
 		}
-		return Profile.createDefault();
+		// if no profile was found for the supplied name, use the 'default' profile (cp. refreshProfileList())
+		for (Profile profile : profiles) {
+			if (profile.toString().equals(Profile.DEFAULT_NAME)) {
+				return profile;
+			}
+		}
+		// if no such profile exists, either, use the first profile; otherwise create a new default profile (but don't save it)
+		if (profiles.size() > 0) {
+			return profiles.get(0);
+		} else { 
+			return Profile.createDefault();
+		}
 	}
 
 	public FrmMain() {
@@ -363,6 +387,8 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		searchTextFont = new Font(display, modelFont.getName(), modelFont.getHeight(), SWT.BOLD);
 
 		loadSettings();
+		String lastProfileName = settings.curProfileName;
+		boolean lastProfileFound = refreshProfileList(StringUtil.isNullOrEmpty(lastProfileName) ? Profile.DEFAULT_NAME : lastProfileName, false);
 
 		codeDisplay.setUsedRulesDisplay(this);
 		codeDisplay.setSearchControls(this);
@@ -434,6 +460,10 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 
 		lstUsedRules.setVisible(true);
 
+		if (lastProfileName != null && !lastProfileFound && curProfile != null) {
+			Message.show(getProfileFallbackMessage(lastProfileName, curProfile.name), "Profile not found", shell);
+		}
+
 		while (!shell.isDisposed()) {
 			if (!display.readAndDispatch()) {
 				display.sleep();
@@ -483,19 +513,24 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 			public void shellActivated(ShellEvent e) {
 				// refresh the profile list, because new profiles could have been added after menu "Help / Open Profiles Folder" was used;
 				// however, if the current profile name is still in the list, suppress reloading the profile and reprocessing the code
+				String lastProfileName = (curProfile == null) ? null : curProfile.name;
 				String profileName = (curProfile == null) ? Profile.DEFAULT_NAME : curProfile.name;
 				boolean suppressReprocessingIfFound = (curProfile != null);
-				refreshProfileList(profileName, suppressReprocessingIfFound);
+				boolean profileFound = refreshProfileList(profileName, suppressReprocessingIfFound);
+				if (lastProfileName != null && !profileFound && curProfile != null) {
+					Message.show(getProfileFallbackMessage(lastProfileName, curProfile.name), "Profile not found", shell);
+				}
 
 				codeDisplay.formActivated();
 			}
 
 			@Override
 			public void shellClosed(ShellEvent e) {
-				if (isPlugin)
+				if (isPlugin) {
 					cancelAndClose();
-				else
+				} else {
 					applyAndClose();
+				}
 			}
 		});
 		shell.setImage(SWTResourceManager.getImage(FrmMain.class, "/ShellImage.png"));
@@ -1506,8 +1541,6 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 				settings.save();
 			}
 		}
-
-		refreshProfileList(StringUtil.isNullOrEmpty(settings.curProfileName) ? Profile.DEFAULT_NAME : settings.curProfileName, false);
 	}
 
 	private boolean refreshCode() {
@@ -1791,7 +1824,8 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		shell.dispose();
 	}
 
-	private void refreshProfileList(String profileNameToSelect, boolean suppressReprocessingIfFound) {
+	/** returns true if the supplied profileNameToSelect was found, otherwise false */
+	private boolean refreshProfileList(String profileNameToSelect, boolean suppressReprocessingIfFound) {
 		if (settings == null)
 			profiles = Profile.loadProfiles(null, null);
 		else
@@ -1801,17 +1835,27 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 
 		boolean profileNameFound = false;
 		int selectIndex = 0;
+		int defaultIndex = -1;
 		for (Profile profile : profiles) {
 			String name = profile.toString();
 			if (name.equals(profileNameToSelect)) {
 				selectIndex = cboProfile.getItemCount();
 				profileNameFound = true;
 			}
+			if (name.equals(Profile.DEFAULT_NAME)) {
+				defaultIndex = cboProfile.getItemCount();
+			}
 			cboProfile.add(name);
 		}
+		// if no profile was found with the supplied profile name, fallback to the 'default' profile (cp. getMostRecentlyUsedProfile()), 
+		// or otherwise, simply to the first profile (Profile.loadProfiles() ensures that there is at least one of them)
+		if (!profileNameFound && defaultIndex >= 0)
+			selectIndex = defaultIndex;
+		
 		cboProfile.select(selectIndex);
 		if (!profileNameFound || !suppressReprocessingIfFound)
 			profileChanged();
+		return profileNameFound;
 	}
 
 	private void helpAbout() {
@@ -2552,5 +2596,9 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
    	SystemClipboard.setText(sb.toString());
    	String summary = Cult.format(freqOfTexts.size()) + " different structures were found in " + Cult.format(code.commandCount) + " commands.";
    	Message.show(summary + " The result was copied to the clipboard.", "frequency list of structure-identical commands", shell);
+	}
+
+	private static String getProfileFallbackMessage(String oldProfileName, String fallbackProfileName) {
+		return "Profile '" + oldProfileName + "' was not found anymore." + System.lineSeparator() + "Profile '" + fallbackProfileName + "' was selected instead.";
 	}
 }
