@@ -201,7 +201,8 @@ public class AlignSelectFromRule extends RuleForCommands {
 		Token token = firstTableNameStart;
 		while (token != null) {
 			boolean opensParens = token.textEquals("(");
-			boolean startsJoin = token.isAnyKeyword("LEFT", "RIGHT", "INNER", "CROSS");
+			// {[INNER [cardinality]] JOIN}|{LEFT|RIGHT [OUTER [cardinality]] JOIN}|{CROSS JOIN} 
+			boolean startsJoin = token.isAnyKeyword("LEFT", "RIGHT", "INNER", "CROSS", "JOIN");
 			boolean startsAs = (token.isKeyword("AS") && token.getNextCodeSibling() != null && token.getNextCodeSibling().isIdentifier());
 			boolean startsOn = token.isKeyword("ON");
 			boolean startsClientHandling = token.matchesOnSiblings(true, "CLIENT", "SPECIFIED") 
