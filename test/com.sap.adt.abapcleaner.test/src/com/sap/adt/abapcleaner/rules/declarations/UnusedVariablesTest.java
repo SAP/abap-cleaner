@@ -2067,7 +2067,7 @@ class UnusedVariablesTest extends RuleTestBase {
 
 	@Test
 	void testVariableNameLikeMethodName() {
-		// ensure that 'test( )' is not considered as a usage of the variable test
+		// ensure that 'test( )' is not considered as a usage of the variable 'test'
 		
 		buildSrc("    SELECT FROM any_dtab");
 		buildSrc("      FIELDS any_field");
