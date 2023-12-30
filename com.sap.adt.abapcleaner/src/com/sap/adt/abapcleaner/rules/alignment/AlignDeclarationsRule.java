@@ -25,6 +25,12 @@ public class AlignDeclarationsRule extends AlignDeclarationSectionRuleBase {
 		public int getValue() { return this.ordinal(); }
 	}
 
+	private enum TableType {
+		NORMAL, 
+		STRUCTURE, 
+		ENUM
+	}
+
 	private static final int MAX_COLUMN_COUNT = 8;
 
 	private final static RuleReference[] references = new RuleReference[] { 
@@ -54,37 +60,42 @@ public class AlignDeclarationsRule extends AlignDeclarationSectionRuleBase {
    	private Stack<AlignTable> tableStack = new Stack<>();
    	private ArrayList<AlignTable> allTables = new ArrayList<>();
    	
-   	/** contains only tables that belong to BEGIN OF ... END OF sections */
+   	/** contains only tables that belong to BEGIN OF struc ... END OF struc sections */
    	private HashSet<AlignTable> structureTables = new HashSet<>();
+
+   	/** contains only tables that belong to BEGIN OF ENUM ... END OF ENUM sections */
+   	private HashSet<AlignTable> enumTables = new HashSet<>();
    	
    	public TableSet(StructureAlignStyle structureAlignStyle) {
   			this.structureAlignStyle = structureAlignStyle;
-   		addTable(false);
+   		addTable(TableType.NORMAL);
    	}
    	
-   	private void addTable(boolean forStructure) {
+   	private void addTable(TableType tableType) {
    		AlignTable newTable = new AlignTable(MAX_COLUMN_COUNT);
    		
    		allTables.add(newTable);
   			tableStack.push(newTable);
-  			if (forStructure) {
+  			if (tableType == TableType.STRUCTURE) {
   				structureTables.add(newTable);
+  			} else if (tableType == TableType.ENUM) {
+  				enumTables.add(newTable);
   			}
    	}
    	
    	public AlignTable getCurrentTable() {
    		// in special cases, e.g. if the rule is executed on a "TYPES END OF" line, the table stack may be empty
    		if (tableStack.isEmpty()) {
-      		addTable(false);
+      		addTable(TableType.NORMAL);
    		}
    		return tableStack.peek(); 
    	}
 
-   	public void beginOfStructure() {
+   	public void beginOfStructure(boolean isEnum) {
    		if (structureAlignStyle == StructureAlignStyle.ACROSS_LEVELS && additionalIndent > 0) {
    			// continue using the table at the top of the table stack, which was started at the top-level BEGIN OF
    		} else {
-   			addTable(true);
+   			addTable(isEnum ? TableType.ENUM : TableType.STRUCTURE);
    		}
   			additionalIndent += 2;
    	}
@@ -105,8 +116,7 @@ public class AlignDeclarationsRule extends AlignDeclarationSectionRuleBase {
    			// replace the table from the previous level with a new one, which will have independent alignment
    			if (!tableStack.isEmpty())
    				tableStack.pop();
-   			boolean forStructure = (additionalIndent != 0); 
-   			addTable(forStructure);
+   			addTable((additionalIndent != 0) ? TableType.STRUCTURE : TableType.NORMAL);
    		}
    	}
 
@@ -116,6 +126,10 @@ public class AlignDeclarationsRule extends AlignDeclarationSectionRuleBase {
    	
    	public boolean isTableForStructure(AlignTable table) {
    		return structureTables.contains(table);
+   	}
+   	
+   	public boolean isTableForEnum(AlignTable table) {
+   		return enumTables.contains(table);
    	}
    }
    
@@ -198,6 +212,14 @@ public class AlignDeclarationsRule extends AlignDeclarationSectionRuleBase {
 				+ LINE_SEP + "      END OF ty_s_inner,"
 				+ LINE_SEP + "      other_component TYPE i,"
 				+ LINE_SEP + "      END OF ty_s_outer_2."
+				+ LINE_SEP + ""
+				+ LINE_SEP + "    TYPES:"
+				+ LINE_SEP + "      BEGIN OF ENUM number,"
+				+ LINE_SEP + "        zero VALUE IS INITIAL,"
+				+ LINE_SEP + "         one VALUE 1,"
+				+ LINE_SEP + "        two VALUE 2,"
+				+ LINE_SEP + "       three VALUE 3,"
+				+ LINE_SEP + "      END OF ENUM number."
 				+ LINE_SEP 
 				+ LINE_SEP + "    \" if maximum line length is exceeded, VALUE clauses can be moved below TYPE or even below the name" 
 				+ LINE_SEP + "    CONSTANTS lc_any_constant_with_long_name TYPE if_any_interface=>ty_any_type VALUE if_any_interface=>co_any_value_with_long_name."
@@ -209,6 +231,7 @@ public class AlignDeclarationsRule extends AlignDeclarationSectionRuleBase {
    private final String[] alignChainActionTexts     = new String[] { "align name, TYPE, LENGTH, VALUE etc. if filled", "align name and TYPE (like Pretty Printer)", "align name only" };
    private final String[] alignNonChainsActionTexts = new String[] { "align name, TYPE, LENGTH, VALUE etc. if filled", "align name and TYPE", "align name only (like Pretty Printer)" };
    private final String[] alignStructureActionTexts = new String[] { "align name, TYPE, LENGTH, VALUE etc. if filled", "align name and TYPE (like Pretty Printer)", "align name only" };
+   private final String[] alignEnumActionTexts = new String[] { "align name and VALUE (like Pretty Printer)", "align name only" };
    
    private final String[] structureAlignStyleTexts = new String[] { "align outer structure with inner", "align outer structure independently (like Pretty Printer)", "align each section independently" };
    
@@ -218,11 +241,12 @@ public class AlignDeclarationsRule extends AlignDeclarationSectionRuleBase {
 	// configAlignAcrossEmptyLines and configAlignAcrossCommentLines are inherited
 	final ConfigEnumValue<AlignDeclarationsAction> configAlignStructureAction = new ConfigEnumValue<AlignDeclarationsAction>(this, "AlignStructureAction", "Action for structures (BEGIN OF ...):", alignStructureActionTexts, AlignDeclarationsAction.values(), AlignDeclarationsAction.ALIGN_NAME_TYPE_LENGTH_ETC, AlignDeclarationsAction.ALIGN_NAME_TYPE_LENGTH_ETC, LocalDate.of(2023, 6, 10) ); 
 	final ConfigEnumValue<StructureAlignStyle> configStructureAlignStyle = new ConfigEnumValue<StructureAlignStyle>(this, "StructureAlignStyle", "Scope of nested structures:", structureAlignStyleTexts, StructureAlignStyle.values(), StructureAlignStyle.PER_LEVEL, StructureAlignStyle.ACROSS_LEVELS, LocalDate.of(2023, 5, 21) ); 
+	final ConfigEnumValue<AlignEnumAction> configAlignEnumAction = new ConfigEnumValue<AlignEnumAction>(this, "AlignEnumAction", "Action for enums (BEGIN OF ENUM ...):", alignEnumActionTexts, AlignEnumAction.values(), AlignEnumAction.ALIGN_NAME_AND_VALUE, AlignEnumAction.ALIGN_NAME_ONLY, LocalDate.of(2023, 12, 30) ); 
 	final ConfigIntValue configFillPercentageToJustifyOwnColumn = new ConfigIntValue(this, "FillPercentageToJustifyOwnColumn", "Fill Ratio to justify own column", "%", 1, 20, 100);
 	final ConfigIntValue configMaxLineLength = new ConfigIntValue(this, "MaxLineLength", "Maximum line length", "(only used to move VALUE clauses to the next line if required)", 80, 130, 255, 200, LocalDate.of(2023, 7, 28));
 	final ConfigBoolValue configCondenseInnerSpaces = new ConfigBoolValue(this, "CondenseInnerSpaces", "Condense inner spaces in non-aligned parts", true, true, LocalDate.of(2023, 6, 10));
 
-	private final ConfigValue[] configValues = new ConfigValue[] { configExecuteOnClassDefAndInterfaces, configAlignChainAction, configAlignNonChainsAction, configAlignAcrossEmptyLines, configAlignAcrossCommentLines, configAlignStructureAction, configStructureAlignStyle, configMaxLineLength, configFillPercentageToJustifyOwnColumn, configCondenseInnerSpaces };
+	private final ConfigValue[] configValues = new ConfigValue[] { configExecuteOnClassDefAndInterfaces, configAlignChainAction, configAlignNonChainsAction, configAlignAcrossEmptyLines, configAlignAcrossCommentLines, configAlignStructureAction, configStructureAlignStyle, configAlignEnumAction, configMaxLineLength, configFillPercentageToJustifyOwnColumn, configCondenseInnerSpaces };
 
 	@Override
 	public ConfigValue[] getConfigValues() { return configValues; }
@@ -230,6 +254,15 @@ public class AlignDeclarationsRule extends AlignDeclarationSectionRuleBase {
 	private AlignDeclarationsAction getAlignChainAction() { return AlignDeclarationsAction.forValue(configAlignChainAction.getValue()); }
 	private AlignDeclarationsAction getAlignNonChainsAction() { return AlignDeclarationsAction.forValue(configAlignNonChainsAction.getValue()); }
 	private AlignDeclarationsAction getAlignStructureAction() { return AlignDeclarationsAction.forValue(configAlignStructureAction.getValue()); }
+
+	private AlignDeclarationsAction getAlignEnumAction() {
+		switch (AlignEnumAction.forValue(configAlignEnumAction.getValue())) {
+			case ALIGN_NAME_AND_VALUE:
+				return AlignDeclarationsAction.ALIGN_NAME_TYPE_LENGTH_ETC;
+			default: // ALIGN_NAME_ONLY:
+				return AlignDeclarationsAction.ALIGN_NAME_ONLY;
+		}
+	}
 
 	public boolean isConfigValueEnabled(ConfigValue configValue) {
 		if (configValue == configAlignAcrossEmptyLines || configValue == configAlignAcrossCommentLines) {
@@ -257,10 +290,11 @@ public class AlignDeclarationsRule extends AlignDeclarationSectionRuleBase {
 
 	@Override
 	protected boolean isMatchForFirstCommand(Command command, int pass) {
-		if (!configExecuteOnClassDefAndInterfaces.getValue() && (command.isInClassDefinition() || command.isInInterfaceDefinition()))
+		if (!configExecuteOnClassDefAndInterfaces.getValue() && (command.isInClassDefinition() || command.isInInterfaceDefinition())) {
 			return false;
-		else 
+		} else { 
 			return command.isDeclaration();
+		}
 	}
 
 	@Override
@@ -294,12 +328,18 @@ public class AlignDeclarationsRule extends AlignDeclarationSectionRuleBase {
 
 			for (AlignTable table : tableSet.getAllTables()) {
 				AlignDeclarationsAction alignAction;
+				boolean isForEnum = tableSet.isTableForEnum(table);
 				if (tableSet.isTableForStructure(table)) {
 					alignAction = getAlignStructureAction();
+				} else if (isForEnum) {
+					alignAction = getAlignEnumAction();
 				} else { 
 					alignAction = startCommandIsChain ? getAlignChainAction() : getAlignNonChainsAction();
 				}
-				joinColumns(table, alignAction);
+				joinColumns(table, alignAction, isForEnum);
+				if (isForEnum) {
+					keepEnumOneLiners(table);
+				}
 			}
 
 		} catch (UnexpectedSyntaxException ex) {
@@ -346,6 +386,32 @@ public class AlignDeclarationsRule extends AlignDeclarationSectionRuleBase {
 		}
 		
 		alignInnerCommentLines(startCommand, endCommand);
+	}
+
+	private void keepEnumOneLiners(AlignTable table) {
+		// one-liners are only kept if no VALUE is defined
+		if (!table.getColumn(Columns.VALUE.getValue()).isEmpty())
+			return;
+		AlignLine firstIdentifierLine = null;
+		for (AlignLine line : table.getLines()) {
+			AlignCell identifier = line.getCell(Columns.IDENTIFIER.getValue());
+			if (identifier != null) {
+				if (firstIdentifierLine == null) {
+					firstIdentifierLine = line;
+				} else if (identifier.getFirstToken().lineBreaks > 0) {
+					// at least one more identifier starts a new line 
+					return;
+				}
+			}
+		}
+		// remove all table lines except the one with the first identifier
+		for (int lineIndex = table.getLineCount() - 1; lineIndex >= 0; --lineIndex) {
+			AlignLine line = table.getLine(lineIndex);
+			AlignCell identifier = line.getCell(Columns.IDENTIFIER.getValue());
+			if (identifier != null && (line != firstIdentifierLine)) {
+				table.removeLineAt(lineIndex);
+			}
+		}
 	}
 
 	private boolean includeKeywordInTable(Command startCommand, Command endCommand) {
@@ -533,7 +599,8 @@ public class AlignDeclarationsRule extends AlignDeclarationSectionRuleBase {
 		
 		if (token.matchesOnSiblings(true, "BEGIN", "OF")) {
 			// start a new AlignTable for the next AlignLine
-			tableSet.beginOfStructure();
+			boolean isEnum = token.matchesOnSiblings(true, "BEGIN", "OF", "ENUM");
+			tableSet.beginOfStructure(isEnum);
 		}
 		
 		// skip the rest of the line, including a line-end comment
@@ -554,7 +621,7 @@ public class AlignDeclarationsRule extends AlignDeclarationSectionRuleBase {
 		token = identifier.getNext();
 		if (token.isCommaOrPeriod()) // e.g., "DATA: lv_text(100), ..." uses the default type c  
 			return token;
-		if (!token.isAnyKeyword("TYPE", "LIKE"))
+		if (!token.isAnyKeyword("TYPE", "LIKE", "VALUE"))
 			return null;
 		
 		// TYPE|LIKE [{LINE OF}|{RANGE OF}|{REF TO}|{{STANDARD|SORTED|HASHED} TABLE OF [REF TO]}] <identifier>
@@ -583,10 +650,12 @@ public class AlignDeclarationsRule extends AlignDeclarationSectionRuleBase {
 			}
 			typeEnd = typeEnd.getNextSibling();
 		}
-		// for TYPE ... TABLE OF ..., override text width with 1 to avoid expanding the TYPE column with this cell
-		Term typeInfo = Term.createForTokenRange(typeStart, typeEnd.getPrev());
-		newCell = AlignCellTerm.createSpecial(typeInfo, 0, isTable);
-		line.setCell(Columns.TYPE.getValue(), newCell );
+		if (typeEnd != typeStart) { // enum members do not have a TYPE / LIKE section
+			// for TYPE ... TABLE OF ..., override text width with 1 to avoid expanding the TYPE column with this cell
+			Term typeInfo = Term.createForTokenRange(typeStart, typeEnd.getPrev());
+			newCell = AlignCellTerm.createSpecial(typeInfo, 0, isTable);
+			line.setCell(Columns.TYPE.getValue(), newCell );
+		}
 		token = typeEnd;
 
 		// the remaining components only appear in DATA and TYPES, not with FIELD-SYMBOLS
@@ -647,7 +716,7 @@ public class AlignDeclarationsRule extends AlignDeclarationSectionRuleBase {
 		return token;
 	}
 
-	private void joinColumns(AlignTable table, AlignDeclarationsAction alignAction) throws UnexpectedSyntaxException {
+	private void joinColumns(AlignTable table, AlignDeclarationsAction alignAction, boolean isEnum) throws UnexpectedSyntaxException {
 		// decide whether rarely used columns should really be aligned (i.e. whether horizontal space should be reserved for them):
 		// if only one single line (or less than 20% of all lines) have content in this column, then join the content into a previous column
 
@@ -664,6 +733,10 @@ public class AlignDeclarationsRule extends AlignDeclarationSectionRuleBase {
 				// join all columns (except IDENTIFIER, which is not covered by this loop) 
 				join = true;
 
+			} else if (isEnum) {
+				// do not join VALUE
+				join = false;
+				
 			} else if (alignAction == AlignDeclarationsAction.ALIGN_NAME_AND_TYPE) {
 				// join all columns except TYPE
 				join = (i != Columns.TYPE.getValue());

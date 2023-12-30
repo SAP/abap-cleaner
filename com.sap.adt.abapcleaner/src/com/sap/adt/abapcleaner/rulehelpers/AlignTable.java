@@ -59,11 +59,12 @@ public class AlignTable {
 		}
 	}
 
-	private final void removeLineAt(int index) {
+	public final void removeLineAt(int index) {
 		AlignLine line = lines.get(index);
 		for (AlignColumn column : columns) {
-			if (line.getCell(column) != null)
+			if (line.getCell(column) != null) {
 				column.invalidate();
+			}
 		}
 		lines.remove(index);
 	}
