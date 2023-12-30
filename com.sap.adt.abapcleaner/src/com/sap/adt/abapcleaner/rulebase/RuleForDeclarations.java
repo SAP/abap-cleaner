@@ -482,7 +482,7 @@ public abstract class RuleForDeclarations extends Rule {
 					localVariables.addInlineDeclaration(token, token.getText());
 				}
 	
-			} else if (token.isIdentifier()) {
+			} else if (token.isIdentifier() && !token.startsFunctionalMethodCall(true) && !token.startsConstructorExpression()) {
 				// process non-comment, non-declaration code
 				
 				// get the name of the used object, e.g. "struc" from "struc-component", "var" from "var->member" or "var+offset(length)" etc.

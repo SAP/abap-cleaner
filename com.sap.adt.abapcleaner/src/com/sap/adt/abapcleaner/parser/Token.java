@@ -2605,6 +2605,17 @@ public class Token {
 		return true;
 	}
 	
+	public boolean startsConstructorExpression() {
+		if (textEquals("#(") || isIdentifier() && getOpensLevel() && textEndsWith("(")) {
+			if (next == null || next.isAttached()) // e.g. lv_any(5)
+				return false;
+			Token prev = getPrevCodeToken();
+			return (prev != null && prev.isAnyKeyword(ABAP.constructorOperators));
+		} else {
+			return false;
+		}
+	}
+	
 	public int getCondensedWidthUpTo(Token endToken, boolean considerEndOfComments) {
 		int result = 0;
 		Token token = this;

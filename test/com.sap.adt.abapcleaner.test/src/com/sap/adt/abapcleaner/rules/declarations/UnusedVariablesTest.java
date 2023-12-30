@@ -2064,4 +2064,26 @@ class UnusedVariablesTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testVariableNameLikeMethodName() {
+		// ensure that 'test( )' is not considered as a usage of the variable test
+		
+		buildSrc("    SELECT FROM any_dtab");
+		buildSrc("      FIELDS any_field");
+		buildSrc("      INTO TABLE @DATA(test).");
+		buildSrc("");
+		buildSrc("    test( ).");
+
+		buildExp("    SELECT FROM any_dtab");
+		buildExp("      FIELDS any_field");
+		buildExp("      \" TODO: variable is assigned but never used (ABAP cleaner)");
+		buildExp("      INTO TABLE @DATA(test).");
+		buildExp("");
+		buildExp("    test( ).");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }
