@@ -1606,4 +1606,147 @@ class AlignDeclarationsTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testAlignEnumNamesAndValues() {
+		buildSrc("    TYPES:");
+		buildSrc("      BEGIN OF ENUM number,");
+		buildSrc("        zero VALUE IS INITIAL,");
+		buildSrc("         one VALUE 1,");
+		buildSrc("        two VALUE 2,");
+		buildSrc("       three VALUE 3,");
+		buildSrc("      END OF ENUM number.");
+
+		buildExp("    TYPES:");
+		buildExp("      BEGIN OF ENUM number,");
+		buildExp("        zero  VALUE IS INITIAL,");
+		buildExp("        one   VALUE 1,");
+		buildExp("        two   VALUE 2,");
+		buildExp("        three VALUE 3,");
+		buildExp("      END OF ENUM number.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testAlignEnumNamesOnly() {
+		rule.configAlignEnumAction.setEnumValue(AlignEnumAction.ALIGN_NAME_ONLY);
+
+		buildSrc("    TYPES:");
+		buildSrc("      BEGIN OF ENUM number,");
+		buildSrc("        zero VALUE IS INITIAL,");
+		buildSrc("         one VALUE 1,");
+		buildSrc("        two VALUE 2,");
+		buildSrc("       three VALUE 3,");
+		buildSrc("      END OF ENUM number.");
+
+		buildExp("    TYPES:");
+		buildExp("      BEGIN OF ENUM number,");
+		buildExp("        zero VALUE IS INITIAL,");
+		buildExp("        one VALUE 1,");
+		buildExp("        two VALUE 2,");
+		buildExp("        three VALUE 3,");
+		buildExp("      END OF ENUM number.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testTwoEnumsInOneChain() {
+		buildSrc("    TYPES: BEGIN OF ENUM number,");
+		buildSrc("      zero VALUE IS INITIAL,");
+		buildSrc("      one VALUE 1,");
+		buildSrc("      two VALUE 2,");
+		buildSrc("      END OF ENUM number,");
+		buildSrc("");
+		buildSrc("      BEGIN OF ENUM alphabet BASE TYPE char1,");
+		buildSrc("      none VALUE IS INITIAL,");
+		buildSrc("      alpha VALUE 'a',");
+		buildSrc("      beta VALUE 'b',");
+		buildSrc("      END OF ENUM alphabet.");
+
+		buildExp("    TYPES: BEGIN OF ENUM number,");
+		buildExp("             zero VALUE IS INITIAL,");
+		buildExp("             one  VALUE 1,");
+		buildExp("             two  VALUE 2,");
+		buildExp("           END OF ENUM number,");
+		buildExp("");
+		buildExp("           BEGIN OF ENUM alphabet BASE TYPE char1,");
+		buildExp("             none  VALUE IS INITIAL,");
+		buildExp("             alpha VALUE 'a',");
+		buildExp("             beta  VALUE 'b',");
+		buildExp("           END OF ENUM alphabet.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testKeepEnumOneLiners() {
+		// ensure that one-liners without VALUE are kept, but the existing lines are still indented correctly
+		buildSrc("  TYPES: BEGIN OF ENUM size,");
+		buildSrc("  s, m, l, xl, xxl,");
+		buildSrc("   END OF ENUM size,");
+		buildSrc("");
+		buildSrc("   BEGIN OF ENUM number,");
+		buildSrc("   one, two, three,");
+		buildSrc("    END OF ENUM number.");
+
+		buildExp("  TYPES: BEGIN OF ENUM size,");
+		buildExp("           s, m, l, xl, xxl,");
+		buildExp("         END OF ENUM size,");
+		buildExp("");
+		buildExp("         BEGIN OF ENUM number,");
+		buildExp("           one, two, three,");
+		buildExp("         END OF ENUM number.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testExpandEnumTwoLiner() {
+		buildSrc("  TYPES: BEGIN OF ENUM size,");
+		buildSrc("  s, m, l,");
+		buildSrc("   xl, xxl,");
+		buildSrc("   END OF ENUM size.");
+
+		buildExp("  TYPES: BEGIN OF ENUM size,");
+		buildExp("           s,");
+		buildExp("           m,");
+		buildExp("           l,");
+		buildExp("           xl,");
+		buildExp("           xxl,");
+		buildExp("         END OF ENUM size.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testExpandEnumOneLinerWithValues() {
+		buildSrc("  TYPES:");
+		buildSrc("   BEGIN OF ENUM number,");
+		buildSrc("   zero VALUE IS INITIAL, one VALUE 1, two VALUE 2, three VALUE 3,");
+		buildSrc("    END OF ENUM number.");
+
+		buildExp("  TYPES:");
+		buildExp("    BEGIN OF ENUM number,");
+		buildExp("      zero  VALUE IS INITIAL,");
+		buildExp("      one   VALUE 1,");
+		buildExp("      two   VALUE 2,");
+		buildExp("      three VALUE 3,");
+		buildExp("    END OF ENUM number.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }
