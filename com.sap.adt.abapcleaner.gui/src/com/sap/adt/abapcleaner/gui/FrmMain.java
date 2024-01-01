@@ -1371,7 +1371,15 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		cpsApplyOrCancel.setLayout(gl_cpsApplyOrCancel);
 		cpsApplyOrCancel.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false, 1, 1));
 
-		btnApplyAndClose = new Button(cpsApplyOrCancel, SWT.NONE);
+		// depending on OS, create buttons "Apply and Close - Cancel" (Windows) or "Cancel - Apply and Close" (macOS, Linux)
+		if (SystemInfo.putOKBeforeCancel()) {
+			btnApplyAndClose = new Button(cpsApplyOrCancel, SWT.NONE);
+			btnCancel = new Button(cpsApplyOrCancel, SWT.NONE);
+		} else {
+			btnCancel = new Button(cpsApplyOrCancel, SWT.NONE);
+			btnApplyAndClose = new Button(cpsApplyOrCancel, SWT.NONE);
+		}
+		
 		btnApplyAndClose.setFont(SWTResourceManager.getFont("Segoe UI", 9, SWT.BOLD));
 		btnApplyAndClose.setText("Apply and Close");
 		btnApplyAndClose.addSelectionListener(new SelectionAdapter() {
@@ -1381,7 +1389,6 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 			}
 		});
 
-		btnCancel = new Button(cpsApplyOrCancel, SWT.NONE);
 		btnCancel.setText("Cancel");
 		btnCancel.addSelectionListener(new SelectionAdapter() {
 			@Override

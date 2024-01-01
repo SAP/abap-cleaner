@@ -116,6 +116,7 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
    private Button btnGenerateExample;
    private Composite pngProfileImportExport;
    private Button btnOK;
+   private Button btnCancel;
    private Label lblActivate;
    private Button btnActivateAllRules; 
    private Button btnActivateDefaultRules;
@@ -1001,7 +1002,15 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 		});
 		chkHighlightWritePositions.setText("&Write positions");
 		
-		Button btnCancel = new Button(cpsHighlightCancelOk, SWT.NONE);
+		// depending on OS, create buttons "Save Profiles and Exit - Cancel" (Windows) or "Cancel - Save Profiles and Exit" (macOS, Linux)
+		if (SystemInfo.putOKBeforeCancel()) {
+			btnOK = new Button(cpsHighlightCancelOk, SWT.NONE);
+			btnCancel = new Button(cpsHighlightCancelOk, SWT.NONE);
+		} else {
+			btnCancel = new Button(cpsHighlightCancelOk, SWT.NONE);
+			btnOK = new Button(cpsHighlightCancelOk, SWT.NONE);
+		}
+
 		btnCancel.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
@@ -1010,7 +1019,7 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 		});
 		btnCancel.setText("&Cancel");
 		
-		btnOK = new Button(cpsHighlightCancelOk, SWT.NONE);
+		btnOK.setFont(SWTResourceManager.getFont("Segoe UI", 9, SWT.BOLD));
 		btnOK.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {

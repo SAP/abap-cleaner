@@ -174,23 +174,21 @@ public class PersistencyBase {
 	   
 	   // determine a platform-specific folder to store application data
 		try {
-			String osNameUpper = System.getProperty("os.name").toUpperCase();
-			if (osNameUpper.indexOf("WIN") >= 0) { // "Windows 10", "Windows 8.1" etc.
+			OperatingSystem operatingSystem = SystemInfo.getOperatingSystem();
+			if (operatingSystem == OperatingSystem.WINDOWS) {
 				// for Windows, use the Windows-specific APPDATA, usually "C:\Users\<user>\AppData\Roaming"
 				// (user.home would just return "C:\Users\<user>" here)
 				appDataDir = System.getenv("APPDATA");
 				subfolder = appDataCompanyFolderWin + sep + appDataFolderWin;
-			
 			} else {
 				// for all non-Windows systems, use a sub-folder of user.home 
 				appDataDir = System.getProperty("user.home");
 				
-				if (osNameUpper.indexOf("MAC") >= 0) { // "Mac OS X" etc.
+				if (operatingSystem == OperatingSystem.MACOS) {
 					// for macOS, create and manage all app-specific data and support files in 
 					// "~/Library/Application Support/<bundle identifier>" (or alternatively, "~/Library/Preferences/<bundle identifier>")
 					subfolder =  "Library" + sep + "Application Support" + sep + appDataFolderMac;   
-					
-				} else if (osNameUpper.indexOf("NIX") >= 0 || osNameUpper.indexOf("NUX") >= 0 || osNameUpper.indexOf("AIX") > 0) { // "Linux" etc.
+				} else if (operatingSystem == OperatingSystem.LINUX) { 
 					// Linux prefers a hidden directory (therefore, leading ".")
 					subfolder =  "." + appDataFolderLinux; 
 				
