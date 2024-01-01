@@ -26,6 +26,7 @@ class AlignParametersTest extends RuleTestBase {
 		rule.configAlignAssignments.setValue(true);
 		rule.configAlignAcrossTableRows.setValue(true);
 		rule.configKeepComponentsOnSingleLine.setEnumValue(ComponentsOnSingleLine.IF_BELOW_MAX_LINE_LENGTH);
+		rule.configKeepOtherOneLiners.setEnumValue(ComponentsOnSingleLine.NEVER);
 		rule.configAllowContentLeftOfAssignOp.setEnumValue(ContentLeftOfAssignOp.TO_KEEP_MAX_LINE_LENGTH);
 	}
 	
@@ -2816,6 +2817,47 @@ class AlignParametersTest extends RuleTestBase {
 
 		putAnyClassDefAroundSrcAndExp();
 		
+		testRule();
+	}
+
+	@Test
+	void testKeepValueWithBaseOnOneLine() {
+		rule.configKeepOtherOneLiners.setEnumValue(ComponentsOnSingleLine.IF_BELOW_MAX_LINE_LENGTH);
+
+		buildSrc("    result = VALUE #( BASE result ( id = 1 name = 'abc' ) ).");
+
+		copyExpFromSrc();
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testSplitValueWithBaseToTwoLines() {
+		buildSrc("    result = VALUE #( BASE result ( id = 1 name = 'abc' ) ).");
+
+		buildExp("    result = VALUE #( BASE result");
+		buildExp("                      ( id = 1 name = 'abc' ) ).");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+
+	@Test
+	void testSplitValueWithBaseToThreeLines() {
+		rule.configKeepComponentsOnSingleLine.setEnumValue(ComponentsOnSingleLine.NEVER);
+
+		buildSrc("    result = VALUE #( BASE result ( id = 1 name = 'abc' ) ).");
+
+		buildExp("    result = VALUE #( BASE result");
+		buildExp("                      ( id   = 1");
+		buildExp("                        name = 'abc' ) ).");
+
+		putAnyMethodAroundSrcAndExp();
+
 		testRule();
 	}
 }
