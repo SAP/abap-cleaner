@@ -145,6 +145,8 @@ public class AlignParametersRule extends RuleForCommands {
 			+ LINE_SEP + "         WITH KEY field1 = ls_any_structure-field1" 
 			+ LINE_SEP + "                  fld2 = ls_any_structure-fld2" 
 			+ LINE_SEP + "                  long_field_name3 = ls_any_structure-long_field_name_3." 
+			+ LINE_SEP 
+			+ LINE_SEP + "    result = VALUE #( BASE result ( id = 1 name = 'abc' ) )."
 			+ LINE_SEP + "  ENDMETHOD.";
    }
 
@@ -157,13 +159,15 @@ public class AlignParametersRule extends RuleForCommands {
 	final ConfigBoolValue configAlignAssignments = new ConfigBoolValue(this, "AlignAssignments", "Align assignments", true, true, LocalDate.of(2023, 3, 3));
 	final ConfigBoolValue configAlignAcrossTableRows = new ConfigBoolValue(this, "AlignAcrossTableRows", "Align assignments across rows of table constructors", true, false, LocalDate.of(2023, 6, 9));
 	final ConfigEnumValue<ComponentsOnSingleLine> configKeepComponentsOnSingleLine = new ConfigEnumValue<ComponentsOnSingleLine>(this, "KeepParametersOnSingleLine", "Table rows: Keep multiple components on single line",
-																														new String[] { "never", "if maximum line length B is observed", "always" }, ComponentsOnSingleLine.values(), ComponentsOnSingleLine.IF_BELOW_MAX_LINE_LENGTH);
+																												new String[] { "never", "if maximum line length B is observed", "always" }, ComponentsOnSingleLine.values(), ComponentsOnSingleLine.IF_BELOW_MAX_LINE_LENGTH);
+	final ConfigEnumValue<ComponentsOnSingleLine> configKeepOtherOneLiners = new ConfigEnumValue<ComponentsOnSingleLine>(this, "KeepOtherOneLiners", "Keep other one-liners",
+																												new String[] { "never", "if maximum line length A is observed", "always" }, ComponentsOnSingleLine.values(), ComponentsOnSingleLine.NEVER, ComponentsOnSingleLine.NEVER, LocalDate.of(2024, 1, 1));
 	final ConfigEnumValue<ContentLeftOfAssignOp> configAllowContentLeftOfAssignOp = new ConfigEnumValue<ContentLeftOfAssignOp>(this, "AllowContentLeftOfAssignOp", "Allow line starts left of assignment operator",
 																															new String[] { "never", "only to keep maximum line length", "always" }, ContentLeftOfAssignOp.values(), ContentLeftOfAssignOp.TO_KEEP_MAX_LINE_LENGTH, ContentLeftOfAssignOp.NEVER, LocalDate.of(2022, 3, 19));
 
 	private final ConfigValue[] configValues = new ConfigValue[] { configMaxLineLength, configMaxLineLengthForSingleLine, configMaxParamCountBehindProceduralCall, configMaxParamCountBehindFunctionalCall, 
 																						configPutProceduralCallKeywordsOnOwnLine, configPutFunctionalCallKeywordsOnOwnLine, configAlignAssignments, configAlignAcrossTableRows, 
-																						configKeepComponentsOnSingleLine, configAllowContentLeftOfAssignOp };
+																						configKeepComponentsOnSingleLine, configKeepOtherOneLiners, configAllowContentLeftOfAssignOp };
 
 	@Override
 	public ConfigValue[] getConfigValues() { return configValues; }
@@ -484,16 +488,17 @@ public class AlignParametersRule extends RuleForCommands {
 		if (contentType == ContentType.ROW_IN_VALUE_OR_NEW_CONSTRUCTOR && alignAcrossTableRows) {
 			// for rows that can be kept on one line, remove the corresponding assignments from the AlignTable
 			for (Token curParent : parentTokens) {
-				if (determineKeepOnSingleLine(curParent, curParent.getNextSibling(), tableStart.earlyIndent)) {
+				if (determineKeepOnSingleLine(curParent, curParent.getNextSibling(), tableStart.earlyIndent, true)) {
 					table.removeAllLinesOfParent(curParent);
 				} else if (parentTokenOfFirstLine == null) {
 					// remember the parentToken of the first line that remains in the AlignTable (if any)
 					parentTokenOfFirstLine = curParent;
 				}
 			}
-		} else if (contentType == ContentType.ROW_IN_VALUE_OR_NEW_CONSTRUCTOR || isTableOfSingleComponents(parentToken, endToken)) {
+		} else {
 			// only the range parentToken ... endToken is included in the AlignTable; determine whether it can be kept on one line
-			keepOnSingleLine = determineKeepOnSingleLine(parentToken, endToken, tableStart.earlyIndent);
+			boolean forTabularStyle = (contentType == ContentType.ROW_IN_VALUE_OR_NEW_CONSTRUCTOR || isTableOfSingleComponents(parentToken, endToken)); 
+			keepOnSingleLine = determineKeepOnSingleLine(parentToken, endToken, tableStart.earlyIndent, forTabularStyle);
 		}
 		if (parentTokenOfFirstLine == null) {
 			parentTokenOfFirstLine = parentToken;
@@ -878,7 +883,7 @@ public class AlignParametersRule extends RuleForCommands {
 		return new TableStart(startIndent, continueOnSameLine, forceTableToNextLine, earlyIndent);
 	}
 
-	private boolean determineKeepOnSingleLine(Token parentToken, Token end, int earlyIndent) {
+	private boolean determineKeepOnSingleLine(Token parentToken, Token end, int earlyIndent, boolean forTabularStyle) {
 		// if there is already a line break, return false
 		Token testToken = parentToken.getNext();
 		while (testToken != null && testToken != end) {
@@ -889,11 +894,14 @@ public class AlignParametersRule extends RuleForCommands {
 		}
 
 		// decide whether to keep everything on one line
-		switch (ComponentsOnSingleLine.forValue(configKeepComponentsOnSingleLine.getValue())) {
+		ComponentsOnSingleLine keepOnSingleLine = forTabularStyle ? ComponentsOnSingleLine.forValue(configKeepComponentsOnSingleLine.getValue())
+																					 : ComponentsOnSingleLine.forValue(configKeepOtherOneLiners.getValue());
+		switch (keepOnSingleLine) {
 			case ALWAYS:
 				return true;
 			case IF_BELOW_MAX_LINE_LENGTH:
-				return (earlyIndent + (end.getEndIndexInLine() - parentToken.getStartIndexInLine()) <= configMaxLineLengthForSingleLine.getValue());
+				int maxLineLength = forTabularStyle ? configMaxLineLengthForSingleLine.getValue() : configMaxLineLength.getValue();
+				return (earlyIndent + (end.getEndIndexInLine() - parentToken.getStartIndexInLine()) <= maxLineLength);
 			case NEVER:
 				return false;
 			default:
