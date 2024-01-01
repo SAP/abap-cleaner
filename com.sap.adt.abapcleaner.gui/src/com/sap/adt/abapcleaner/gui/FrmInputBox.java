@@ -9,6 +9,7 @@ import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.wb.swt.SWTResourceManager;
 
+import com.sap.adt.abapcleaner.base.SystemInfo;
 import com.sap.adt.abapcleaner.programbase.Persistency;
 
 import org.eclipse.swt.events.KeyAdapter;
@@ -26,6 +27,8 @@ public class FrmInputBox {
    
 	protected Shell shell;
 	private Text txtResult;
+	private Button btnOK;
+	private Button btnCancel;
 
 	public FrmInputBox() {
       invalidChars = new String(Persistency.get().getInvalidFileNameChars());
@@ -92,7 +95,14 @@ public class FrmInputBox {
 		Label lblExcessWidth = new Label(cpsButtons, SWT.NONE);
 		lblExcessWidth.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, true, false, 1, 1));
 		
-		Button btnCancel = new Button(cpsButtons, SWT.NONE);
+		if (SystemInfo.putOKBeforeCancel()) {
+			btnOK = new Button(cpsButtons, SWT.NONE);
+			btnCancel = new Button(cpsButtons, SWT.NONE);
+		} else {
+			btnCancel = new Button(cpsButtons, SWT.NONE);
+			btnOK = new Button(cpsButtons, SWT.NONE);
+		}
+		
 		btnCancel.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false, 1, 1));
 		btnCancel.addSelectionListener(new SelectionAdapter() {
 			@Override
@@ -103,7 +113,7 @@ public class FrmInputBox {
 		});
 		btnCancel.setText("&Cancel");
 		
-		Button btnOK = new Button(cpsButtons, SWT.NONE);
+		btnOK.setFont(SWTResourceManager.getFont("Segoe UI", 9, SWT.BOLD));
 		btnOK.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false, 1, 1));
 		btnOK.addSelectionListener(new SelectionAdapter() {
 			@Override
