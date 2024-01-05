@@ -76,6 +76,33 @@ Aligns logical expressions, especially if they span multiple lines, to express o
                 AND statistic = abap_false.
       " do something
     ENDLOOP.
+
+    SELECT
+      FROM any_dtab AS t1
+           INNER JOIN other_dtab AS t2 ON t1~any_col = t2~any_col
+                 AND t1~other_col = t2~other_col
+      FIELDS t1~any_col,
+             t2~other_col
+      WHERE t1~status = @lc_status_active
+           AND t1~any_flag = @abap_false
+          AND ( t2~year > @lv_year_from
+           OR t2~year = @lv_year_from AND t2~month >= @lv_month_from )
+            AND t1~other_col IN ( SELECT other_col FROM third_dtab WHERE third_col = @lv_any_value
+            OR third_col = @lv_other_value )
+      INTO CORRESPONDING FIELDS OF TABLE @lts_any_table.
+
+    SELECT FROM demo_expressions
+      FIELDS char1 && '_' && char2        AS group,
+             MIN( num1 ) + MIN( num2 )    AS min,
+             MAX( num1 ) + MAX( num2 )    AS max,
+             CASE WHEN MIN( num1 )  < 0
+              OR MIN( num2 ) < 0
+                  THEN 'X' END            AS negative
+      GROUP BY char1, char2
+      HAVING MIN( num1 ) * MIN( num2 ) > 25
+             AND MAX( num1 ) * MAX( num2 ) < 1000
+      ORDER BY group
+      INTO TABLE @FINAL(grouped_having).
   ENDMETHOD.
 ```
 
@@ -134,6 +161,33 @@ Resulting code:
                AND statistic  = abap_false.
       " do something
     ENDLOOP.
+
+    SELECT
+      FROM any_dtab AS t1
+           INNER JOIN other_dtab AS t2 ON  t1~any_col   = t2~any_col
+                                       AND t1~other_col = t2~other_col
+      FIELDS t1~any_col,
+             t2~other_col
+      WHERE t1~status   = @lc_status_active
+        AND t1~any_flag = @abap_false
+        AND (    t2~year > @lv_year_from
+              OR t2~year = @lv_year_from AND t2~month >= @lv_month_from )
+        AND t1~other_col IN ( SELECT other_col FROM third_dtab WHERE third_col = @lv_any_value
+                                                                  OR third_col = @lv_other_value )
+      INTO CORRESPONDING FIELDS OF TABLE @lts_any_table.
+
+    SELECT FROM demo_expressions
+      FIELDS char1 && '_' && char2        AS group,
+             MIN( num1 ) + MIN( num2 )    AS min,
+             MAX( num1 ) + MAX( num2 )    AS max,
+             CASE WHEN    MIN( num1 ) < 0
+                       OR MIN( num2 ) < 0
+                  THEN 'X' END            AS negative
+      GROUP BY char1, char2
+      HAVING MIN( num1 ) * MIN( num2 ) > 25
+         AND MAX( num1 ) * MAX( num2 ) < 1000
+      ORDER BY group
+      INTO TABLE @FINAL(grouped_having).
   ENDMETHOD.
 ```
 

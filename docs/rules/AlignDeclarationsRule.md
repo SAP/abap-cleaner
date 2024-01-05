@@ -19,6 +19,7 @@ If line length is exceeded, VALUE clauses can be moved to the next line, unless 
 * \[X\] Align across comment lines
 * Action for structures \(BEGIN OF ...\): \[align name, TYPE, LENGTH, VALUE etc. if filled\]
 * Scope of nested structures: \[align outer structure independently \(like Pretty Printer\)\]
+* Action for enums \(BEGIN OF ENUM ...\): \[align name and VALUE \(like Pretty Printer\)\]
 * Maximum line length \[130\] \(only used to move VALUE clauses to the next line if required\)
 * Fill Ratio to justify own column \[20\] %
 * \[X\] Condense inner spaces in non-aligned parts
@@ -84,6 +85,14 @@ If line length is exceeded, VALUE clauses can be moved to the next line, unless 
       END OF ty_s_inner,
       other_component TYPE i,
       END OF ty_s_outer_2.
+
+    TYPES:
+      BEGIN OF ENUM number,
+        zero VALUE IS INITIAL,
+         one VALUE 1,
+        two VALUE 2,
+       three VALUE 3,
+      END OF ENUM number.
 
     " if maximum line length is exceeded, VALUE clauses can be moved below TYPE or even below the name
     CONSTANTS lc_any_constant_with_long_name TYPE if_any_interface=>ty_any_type VALUE if_any_interface=>co_any_value_with_long_name.
@@ -152,6 +161,14 @@ Resulting code:
         END OF ty_s_inner,
         other_component TYPE i,
       END OF ty_s_outer_2.
+
+    TYPES:
+      BEGIN OF ENUM number,
+        zero  VALUE IS INITIAL,
+        one   VALUE 1,
+        two   VALUE 2,
+        three VALUE 3,
+      END OF ENUM number.
 
     " if maximum line length is exceeded, VALUE clauses can be moved below TYPE or even below the name
     CONSTANTS lc_any_constant_with_long_name TYPE if_any_interface=>ty_any_type
