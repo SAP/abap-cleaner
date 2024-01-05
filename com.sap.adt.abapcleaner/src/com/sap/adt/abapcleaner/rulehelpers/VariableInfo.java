@@ -14,7 +14,10 @@ public class VariableInfo {
    public final boolean isConstant;
    /** true if this variable was declared with DATA/CONSTANTS/STATICS BEGIN OF */
    public final boolean isBoundStructuredData;
-
+   public final VariableAccessType accessType;
+   private boolean isNeeded;
+   public final ParameterInfo parameterInfo;
+   
    /** the level-opening Command that encloses all (non-declaration) usages of this variable */
    private Command enclosingCommand;
 
@@ -47,6 +50,10 @@ public class VariableInfo {
     * variable which is declared inline */
    public boolean declarationCannotBeMoved;
 
+   public boolean isParameter() { return (parameterInfo != null); } // alternative: return (accessType != VariableAccessType.LOCAL)
+   public boolean isParameterByValue() { return (parameterInfo != null) && parameterInfo.isByValue; } 
+   public boolean isNeeded() { return isNeeded; }
+   
    public boolean isUsed() { return usedCount > 0; }
    public boolean isUsedInComment() { return usedCountInComment > 0; }
 
@@ -60,23 +67,42 @@ public class VariableInfo {
       this.isType = isType;
       this.isConstant = isConstant;
       this.isBoundStructuredData = isBoundStructuredData;
+      this.accessType = VariableAccessType.LOCAL;
+      this.parameterInfo = null;
    }
 
+   public VariableInfo(ParameterInfo parameterInfo) {
+      this.declarationToken = parameterInfo.declarationToken;
+      this.isDeclaredInline = false;
+      this.isType = false;
+      this.isConstant = false;
+      this.isBoundStructuredData = false;
+      this.accessType = parameterInfo.accessType;
+      this.isNeeded = parameterInfo.isNeeded;
+      this.parameterInfo = parameterInfo;
+   }
+
+   public void setNeeded() {
+   	isNeeded = true;
+   }
+   
 	public void addUsage(Token token, boolean isAssignment, boolean isUsageInSelfAssignment, boolean isCommentedOut, boolean writesToReferencedMemory) {
 		if (isCommentedOut) {
-			if (isAssignment)
+			if (isAssignment) {
 				++assignedCountInComment;
-			else if (isUsageInSelfAssignment)
+			} else if (isUsageInSelfAssignment) {
 				++usedCountInSelfAssignmentInComment;
-			else
+			} else {
 				++usedCountInComment;
+			}
 		} else {
-			if (isAssignment)
+			if (isAssignment) {
 				++assignedCount;
-			else if (isUsageInSelfAssignment)
+			} else if (isUsageInSelfAssignment) {
 				++usedCountInSelfAssignment;
-			else
+			} else {
 				++usedCount;
+			}
 		}
 		if (writesToReferencedMemory)
 			++writeToReferencedMemoryCount;
@@ -84,8 +110,9 @@ public class VariableInfo {
 		if (token != null) {
 			Command command = token.getParentCommand();
 			enclosingCommandWithCommentUsage = updateEnclosingCommand(enclosingCommandWithCommentUsage, command);
-			if (!isCommentedOut)
+			if (!isCommentedOut) {
 				enclosingCommand = updateEnclosingCommand(enclosingCommand, command);
+			}
 		}
 	}
 

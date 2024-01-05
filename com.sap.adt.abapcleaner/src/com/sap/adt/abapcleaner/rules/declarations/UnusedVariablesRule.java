@@ -36,7 +36,7 @@ public class UnusedVariablesRule extends RuleForDeclarations {
 	public String getDisplayName() { return "Delete unused variables"; }
 
 	@Override
-	public String getDescription() { return "Deletes unused variables, or comments them out if they are 'used' in commented-out code. TODO comments can be added for variables that are assigned but never used."; }
+	public String getDescription() { return "Deletes unused variables, or comments them out if they are only 'used' in commented-out code. TODO comments can be added for variables that are assigned but never used."; }
 
 	@Override
 	public String getHintsAndRestrictions() { return "Note that this rule will skip methods in which macros are used."; }
@@ -100,7 +100,7 @@ public class UnusedVariablesRule extends RuleForDeclarations {
 			+ LINE_SEP + "*" 
 			+ LINE_SEP + "*    lv_commented_out = 0." 
 			+ LINE_SEP + "*    DO lc_commented_out * lv_assigned_but_used_incomment TIMES." 
-			+ LINE_SEP + "*      LOOP AT its_table ASSIGNING <ls_commented_out>." 
+			+ LINE_SEP + "*      LOOP AT its_any_table ASSIGNING <ls_commented_out>." 
 			+ LINE_SEP + "*        lv_commented_out += 1." 
 			+ LINE_SEP + "*      ENDLOOP." 
 			+ LINE_SEP + "*    ENDDO." 
@@ -116,7 +116,7 @@ public class UnusedVariablesRule extends RuleForDeclarations {
 	final ConfigEnumValue<UnusedVariableActionIfAssigned> configActionForAssignedVarsOnlyUsedInComment = new ConfigEnumValue<UnusedVariableActionIfAssigned>(this, "MeasureForAssignedVarsOnlyUsedInComment", "Action for assigned variables only used in commented-out code:", actionTextsIfAssigned, UnusedVariableActionIfAssigned.values(), UnusedVariableActionIfAssigned.ADD_TODO_COMMENT);
 	final ConfigEnumValue<UnusedVariableAction> configActionForConstantsNeverUsed = new ConfigEnumValue<UnusedVariableAction>(this, "MeasureForConstantsNeverUsed", "Action for local constants that are never used:", actionTexts, UnusedVariableAction.values(), UnusedVariableAction.COMMENT_OUT_WITH_ASTERISK);
 	final ConfigEnumValue<UnusedVariableAction> configActionForConstantsOnlyUsedInComment = new ConfigEnumValue<UnusedVariableAction>(this, "MeasureForConstantsOnlyUsedInComment", "Action for constants only used in commented-out code:", actionTexts, UnusedVariableAction.values(), UnusedVariableAction.COMMENT_OUT_WITH_ASTERISK);
-
+ 
 	private final ConfigValue[] configValues = new ConfigValue[] { configActionForVarsNeverUsed, configActionForVarsOnlyUsedInComment, configActionForAssignedVars, configActionForAssignedVarsOnlyUsedInComment,
 			configActionForConstantsNeverUsed, configActionForConstantsOnlyUsedInComment };
 
@@ -160,10 +160,10 @@ public class UnusedVariablesRule extends RuleForDeclarations {
 		// the macros (note that macro code may be local or 'out of sight')
 		if (localVariables.getMethodUsesMacrosOrTestInjection())
 			return;
-		
+
 		for (VariableInfo varInfo : localVariables.getLocalsInDeclarationOrder()) {
 			// TYPES declarations are currently not processed by this rule
-			if (varInfo.isType)
+			if (varInfo.isParameter() || varInfo.isType)
 				continue;
 			
 			Command command = varInfo.declarationToken.getParentCommand();
@@ -172,7 +172,7 @@ public class UnusedVariablesRule extends RuleForDeclarations {
 				continue;
 			commandForErrorMsg = command;
 
-			if (varInfo.isUsed()) {
+			if (varInfo.isUsed() || varInfo.isNeeded()) {
 				// if an earlier cleanup produced a comment above the declaration of this variable, remove it (now that the variable or constant is used)
 				try {
 					if (command.getClosesLevel()) {
@@ -205,35 +205,40 @@ public class UnusedVariablesRule extends RuleForDeclarations {
 			}
 		}
 	}
-	
+
 	private UnusedVariableAction getAction(VariableInfo varInfo) {
-		if (varInfo.isDeclaredInline || varInfo.isBoundStructuredData) {
-			// add a to-do comment, if required by the action (see below), or
-			// - if the variable is declared inline with DATA(...) or FIELD-SYMBOL(...)
-			// - if the variable is declared with DATA/CONSTANTS/STATICS BEGIN OF ... (bound structure data)
-			return UnusedVariableAction.ADD_TODO_COMMENT;
-		
-		} else if (varInfo.isAssigned()) {
+		UnusedVariableAction action;
+		if (varInfo.isAssigned()) {
 			if (varInfo.isUsedInComment()) {
-				return convertToAction(UnusedVariableActionIfAssigned.forValue(configActionForAssignedVarsOnlyUsedInComment.getValue()));	
+				action = convertToAction(UnusedVariableActionIfAssigned.forValue(configActionForAssignedVarsOnlyUsedInComment.getValue()));	
 			} else {
-				return convertToAction(UnusedVariableActionIfAssigned.forValue(configActionForAssignedVars.getValue()));	
+				action = convertToAction(UnusedVariableActionIfAssigned.forValue(configActionForAssignedVars.getValue()));	
 			}
 		
 		} else if (varInfo.isUsedInComment() || varInfo.isAssignedInComment()) {
 			if (varInfo.isConstant) {
-				return UnusedVariableAction.forValue(configActionForConstantsOnlyUsedInComment.getValue());
+				action = UnusedVariableAction.forValue(configActionForConstantsOnlyUsedInComment.getValue());
 			} else {
-				return UnusedVariableAction.forValue(configActionForVarsOnlyUsedInComment.getValue());
+				action = UnusedVariableAction.forValue(configActionForVarsOnlyUsedInComment.getValue());
 			}
 
 		} else {
 			if (varInfo.isConstant) {
-				return UnusedVariableAction.forValue(configActionForConstantsNeverUsed.getValue());
+				action = UnusedVariableAction.forValue(configActionForConstantsNeverUsed.getValue());
 			} else {
-				return UnusedVariableAction.forValue(configActionForVarsNeverUsed.getValue());
+				action = UnusedVariableAction.forValue(configActionForVarsNeverUsed.getValue());
 			}
 		}
+		
+		// the declaration can NOT be commented out or deleted if the variable is ...
+		// - declared inline with DATA(...) or FIELD-SYMBOL(...)
+		// - declared with DATA/CONSTANTS/STATICS BEGIN OF ... (bound structure data)
+		if (varInfo.isDeclaredInline || varInfo.isBoundStructuredData) {
+			if (action != UnusedVariableAction.IGNORE) { 
+				action = UnusedVariableAction.ADD_TODO_COMMENT;
+			}
+		}
+		return action;
 	}
 	
 	private String getMessage(VariableInfo varInfo, Command command) { 

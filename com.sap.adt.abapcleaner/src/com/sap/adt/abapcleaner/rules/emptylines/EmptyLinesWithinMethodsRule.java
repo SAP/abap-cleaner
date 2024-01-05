@@ -70,6 +70,10 @@ public class EmptyLinesWithinMethodsRule extends Rule {
 	@Override
 	public ConfigValue[] getConfigValues() { return configValues; }
 
+	public int getMaxEmptyLinesAtMethodStart() {
+		return configMaxEmptyLinesAtMethodStart.getValue();
+	}
+	
 	public EmptyLinesWithinMethodsRule(Profile profile) {
 		super(profile);
 		initializeConfiguration();

@@ -13,6 +13,7 @@ public class ClassInfo {
    }
 
 	public final String name;
+	public final ClassInfo parentClass;
 
 	private HashMap<String, ClassInfo> interfaces;
 	private HashMap<String, String> aliases;
@@ -20,8 +21,10 @@ public class ClassInfo {
 	private HashMap<String, MethodInfo> methods;
 	private ArrayList<MethodInfo> methodsInOrder;
 	
-	public ClassInfo(String name) {
+	public ClassInfo(String name, ClassInfo parentClass) {
 		this.name = name;
+		this.parentClass = parentClass;
+		
 		interfaces = new HashMap<>();
 		aliases = new HashMap<>();
 		
@@ -36,10 +39,19 @@ public class ClassInfo {
 	
 	/** @param methodName - can be a plain method name, an alias, or INTERFACE~METHOD */
 	public MethodInfo getMethod(String methodName) {
-		MethodInfo methodInfo = methods.get(getNameKey(methodName));
-		if (methodInfo != null) 
-			return methodInfo;
-
+		// find the method signature in the class hierarchy (if visible in the code document)
+		ClassInfo curClass = this;
+		do {
+			MethodInfo methodInfo = curClass.methods.get(getNameKey(methodName));
+			if (methodInfo != null && !methodInfo.isRedefinition)
+				return methodInfo;
+			curClass = curClass.parentClass;
+		} while (curClass != null);
+		// if the full signature is out of sight, use METHODS ... REDEFINITION
+		MethodInfo redefMethodInfo = methods.get(getNameKey(methodName));
+		if (redefMethodInfo != null)
+			return redefMethodInfo;
+		
 		// is methodName an alias or an explicit interface method?
 		String interfaceAndMethod = aliases.get(getNameKey(methodName));
 		if (interfaceAndMethod == null)

@@ -113,7 +113,7 @@ public class FinalVariableRule extends RuleForDeclarations {
 			return;
 		
 		for (VariableInfo varInfo : localVariables.getLocalsInDeclarationOrder()) {
-			if (!varInfo.isDeclaredInline || varInfo.isAssignedAfterDeclaration())
+			if (varInfo.isParameter() || !varInfo.isDeclaredInline || varInfo.isAssignedAfterDeclaration())
 				continue;
 			Token identifier = varInfo.declarationToken;
 			if (identifier == null || !identifier.isAttached())

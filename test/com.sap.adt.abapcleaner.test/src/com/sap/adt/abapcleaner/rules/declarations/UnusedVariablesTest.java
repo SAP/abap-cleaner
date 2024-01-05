@@ -2086,4 +2086,29 @@ class UnusedVariablesTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testUsageOfInstance() {
+		buildSrc("    DATA(lo_any_instance) = get_instance( ).");
+		buildSrc("    lo_any_instance->any_method( ).");
+
+		copyExpFromSrc();
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testIgnoreAssignedButUnusedVars() {
+		rule.configActionForAssignedVars.setEnumValue(UnusedVariableActionIfAssigned.IGNORE);
+
+		buildSrc("    DATA(lo_unused_util) = get_utility( ).");
+
+		copyExpFromSrc();
+		
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }

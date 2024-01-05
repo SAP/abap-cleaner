@@ -57,7 +57,9 @@ public abstract class RuleForDeclarations extends Rule {
 			// or later (in a class implementation section) read from them
 			if (command.isClassDefinitionStart() || command.isInterfaceStart()) {
 				isInDefinition = true;
-				curClassOrInterface = new ClassInfo(command.getDefinedName());
+				Token parentClassName = command.getFirstCodeToken().getLastTokenOnSiblings(true, TokenSearch.ASTERISK, "INHERITING", "FROM", TokenSearch.ANY_IDENTIFIER);
+				ClassInfo parentClass = (parentClassName == null) ? null : classesAndInterfaces.get(getNameKey(parentClassName.getText()));
+				curClassOrInterface = new ClassInfo(command.getDefinedName(), parentClass);
 				classesAndInterfaces.put(getNameKey(curClassOrInterface.name), curClassOrInterface);
 				methodVisibility = MethodVisibility.PUBLIC;
 
@@ -249,30 +251,36 @@ public abstract class RuleForDeclarations extends Rule {
 			curClassOrInterface.addMethod(methodInfo);
 			
 			// read the parameters and (class-based or non-class-based) exceptions
-			ParameterAccessType accessType = ParameterAccessType.IMPORTING;
+			VariableAccessType accessType = VariableAccessType.IMPORTING;
 			while (!token.isCommaOrPeriod()) {
 				if (token.isKeyword()) {
 					// determine parameter access type
 					if (token.isKeyword("IMPORTING"))
-						accessType = ParameterAccessType.IMPORTING;
+						accessType = VariableAccessType.IMPORTING;
 					else if (token.isKeyword("EXPORTING"))
-						accessType = ParameterAccessType.EXPORTING;
+						accessType = VariableAccessType.EXPORTING;
 					else if (token.isKeyword("CHANGING"))
-						accessType = ParameterAccessType.CHANGING;
+						accessType = VariableAccessType.CHANGING;
 					else if (token.isKeyword("RETURNING"))
-						accessType = ParameterAccessType.RETURNING;
+						accessType = VariableAccessType.RETURNING;
 
 					// the parameter name is the Token before "TYPE" or "LIKE", possibly inside "VALUE(...)" or "REFERENCE(...)",
 					// and possibly with an escape char ! before it (e.g. "IMPORTING !iv_number TYPE i")
 					if (token.isAnyKeyword("TYPE", "LIKE")) {
 						Token parameterName = token.getPrevCodeSibling();
+						boolean isByValue = false;
+						boolean isReference = false;
 						if (parameterName.closesLevel()) { // VALUE(...) or REFERENCE(...)
-							parameterName = parameterName.getPrevSibling().getFirstCodeChild(); 
+							parameterName = parameterName.getPrevSibling();
+							isByValue = parameterName.isKeyword("VALUE(");
+							isReference = parameterName.isKeyword("REFERENCE(");
+							parameterName = parameterName.getFirstCodeChild(); 
 						}
 						String parameterNameText = parameterName.getText();
 						if (parameterNameText.startsWith(ABAP.OPERAND_ESCAPE_CHAR_STRING))
 							parameterNameText = parameterNameText.substring(ABAP.OPERAND_ESCAPE_CHAR_STRING.length());
-						methodInfo.addParameter(new ParameterInfo(parameterNameText, accessType));
+						boolean isNeeded = isNeededPragmaOrPseudoCommentFound(parameterName, true);
+						methodInfo.addParameter(new ParameterInfo(parameterName, parameterNameText, accessType, isNeeded, isByValue, isReference));
 					}
 					
 					if (token.isKeyword("RAISING")) {
@@ -358,7 +366,7 @@ public abstract class RuleForDeclarations extends Rule {
 	
 				// if the pragma ##NEEDED or the pseudo comment "#EC NEEDED is defined for this variable, add a "usage" 
 				// to prevent it from being commented out or deleted
-				if (isNeededPragmaOrPseudoCommentFound(token))
+				if (isNeededPragmaOrPseudoCommentFound(token, false))
 					localVariables.setNeeded(varName);
 	
 				if (!isChain)
@@ -444,7 +452,15 @@ public abstract class RuleForDeclarations extends Rule {
 		Token firstCode = command.getFirstCodeToken();
 		if (firstCode == null)
 			return;
-
+		
+		// in case of 'RETURN expr.', add a usage on the RETURNING parameter
+		if (firstCode.isKeyword("RETURN")) {
+			Token nextCode = firstCode.getNextCodeToken();
+			if (nextCode != null && !nextCode.isPeriod() && localVariables.returningParameter != null) {
+				localVariables.returningParameter.addUsage(firstCode, true, false, false, false);
+			}
+		}
+		
 		// determine whether the Command is an assignment (without inline declaration, which will be handled below) 
 		boolean isAssignmentCommand = command.isAssignment(false, true);
 		boolean isInOOContext = command.isInOOContext();
@@ -470,7 +486,7 @@ public abstract class RuleForDeclarations extends Rule {
 				localVariables.addDeclaration(token, true, false, false, false, isInOOContext);
 
 				// if the pragma ##NEEDED is defined for this variable, add a "usage" to prevent it from being commented out or deleted
-				if (isNeededPragmaOrPseudoCommentFound(token))
+				if (isNeededPragmaOrPseudoCommentFound(token, false))
 					localVariables.setNeeded(token.getText());
 
 				// determine whether a field-symbol is assigned directly at its declaration position, using 
@@ -482,7 +498,7 @@ public abstract class RuleForDeclarations extends Rule {
 					localVariables.addInlineDeclaration(token, token.getText());
 				}
 	
-			} else if (token.isIdentifier() && !token.startsFunctionalMethodCall(true) && !token.startsConstructorExpression()) {
+			} else if (token.isIdentifier()) {
 				// process non-comment, non-declaration code
 				
 				// get the name of the used object, e.g. "struc" from "struc-component", "var" from "var->member" or "var+offset(length)" etc.
@@ -532,7 +548,12 @@ public abstract class RuleForDeclarations extends Rule {
 				}
 
 				boolean isUsageInSelfAssignment = !isAssignment && !isFieldSymbol && AbapCult.stringEquals(objectName, assignedToVar, true);
-				localVariables.addUsage(token, objectName, isAssignment, isUsageInSelfAssignment, false, writesToReferencedMemory);
+				if (!isAssignment && !isUsageInSelfAssignment && readPos + 1 == tokenText.length() && token.startsFunctionalMethodCall(true)) {
+					// the functional method call "xyz(" is NOT a usage of the local variable "xyz"; however, this is only true if  
+					// readPos points to the opening parenthesis, because "lo_instance->any_method(" is a usage of "lo_instance"
+				} else {
+					localVariables.addUsage(token, objectName, isAssignment, isUsageInSelfAssignment, false, writesToReferencedMemory);
+				}
 				
 				// in "var+offset(length)" or "struc-component+offset(length), "offset" may be an identifier as well
 				if (readPos < tokenText.length()) {
@@ -587,7 +608,7 @@ public abstract class RuleForDeclarations extends Rule {
 		}
 	}
 	
-	private boolean isNeededPragmaOrPseudoCommentFound(Token startToken) {
+	private boolean isNeededPragmaOrPseudoCommentFound(Token startToken, boolean stopAtLineBreak) {
 		// see https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/index.htm?file=abenpragma.htm:
 		// A pragma applies to the current statement, that is to the statement that ends at the next . or ,. 
 		// Pragmas in front of the: of a chained statement apply to the entire chained statement.
@@ -599,6 +620,8 @@ public abstract class RuleForDeclarations extends Rule {
 				break;
 			else if (token.isPragma() && token.textEquals("##NEEDED"))
 				return true;
+			if (stopAtLineBreak && token.lineBreaks > 0)
+				break;
 			token = token.getPrev();
 		}
 
@@ -619,6 +642,9 @@ public abstract class RuleForDeclarations extends Rule {
 			if (token.isComment() && token.textStartsWith(ABAP.PSEUDO_COMMENT_EC_PREFIX + "NEEDED"))
 				return true;
 			token = token.getNext();
+			if (stopAtLineBreak && token != null && token.lineBreaks > 0) {
+				break;
+			}
 		}
 
 		// determine whether ##NEEDED or #EC NEEDED are found before the chain colon 

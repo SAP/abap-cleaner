@@ -24,6 +24,7 @@ public enum RuleID  {
    DECLARATION_CHAIN, // for compatibility, this old RuleID is kept, while the class was renamed from DeclarationChainRule to ChainRule
    NEEDLESS_CLEAR,
    LOCAL_DECLARATION_ORDER,
+   UNUSED_PARAMETERS,
    UNUSED_VARIABLES,
    CHAIN_OF_ONE,
    IMPLICIT_TYPE,
