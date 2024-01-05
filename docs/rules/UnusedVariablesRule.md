@@ -1,8 +1,8 @@
-[<-- previous rule](LocalDeclarationOrderRule.md) | [overview](../rules.md) | [next rule -->](ChainOfOneRule.md)
+[<-- previous rule](UnusedParametersRule.md) | [overview](../rules.md) | [next rule -->](ChainOfOneRule.md)
 
 # Delete unused variables
 
-Deletes unused variables, or comments them out if they are 'used' in commented-out code. TODO comments can be added for variables that are assigned but never used.
+Deletes unused variables, or comments them out if they are only 'used' in commented-out code. TODO comments can be added for variables that are assigned but never used.
 
 Note that this rule will skip methods in which macros are used.
 
@@ -67,7 +67,7 @@ Note that this rule will skip methods in which macros are used.
 *
 *    lv_commented_out = 0.
 *    DO lc_commented_out * lv_assigned_but_used_incomment TIMES.
-*      LOOP AT its_table ASSIGNING <ls_commented_out>.
+*      LOOP AT its_any_table ASSIGNING <ls_commented_out>.
 *        lv_commented_out += 1.
 *      ENDLOOP.
 *    ENDDO.
@@ -125,7 +125,7 @@ Resulting code:
 *
 *    lv_commented_out = 0.
 *    DO lc_commented_out * lv_assigned_but_used_incomment TIMES.
-*      LOOP AT its_table ASSIGNING <ls_commented_out>.
+*      LOOP AT its_any_table ASSIGNING <ls_commented_out>.
 *        lv_commented_out += 1.
 *      ENDLOOP.
 *    ENDDO.

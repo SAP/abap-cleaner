@@ -246,6 +246,7 @@ public class UnusedParametersRule extends RuleForDeclarations {
 			if (emptyLinesWithinMethodsRule.isActive && emptyLinesWithinMethodsRule.getMaxEmptyLinesAtMethodStart() == 0) {
 				if (insertAt.getFirstToken().setLineBreaks(1)) {
 					code.addRuleUse(this, insertAt);
+					code.addRuleUse(this, methodStart);
 				}
 			}
 		}

@@ -6,6 +6,24 @@ as well as bugfixes of reported issues, i.e. anything that enhances or changes t
 For a complete list of changes (including documentation, tests, refactoring etc.), please refer to 
 the list of [commits](../../../commits/main).
 
+## 2024-01-05 (version 1.13.0)
+
+**Thank you** [**ConjuringCoffee**](https://github.com/ConjuringCoffee), [**kjetil-kilhavn**](https://github.com/kjetil-kilhavn),
+ [**this-yash**](https://github.com/this-yash), [**VladGhitulescu**](https://github.com/VladGhitulescu) and [**stockbal**](https://github.com/stockbal) 
+ for the ideas and bug reports behind these improvements!
+
+* Added new rule '**Report unused parameters**' ([#224](../../../issues/224))
+* Enhanced rule '**Align declarations**' for **enumerations** ([#194](../../../issues/194))
+* Enhanced rule '**Align parameters and components**' with option '**Keep other one-liners**' ([#170](../../../issues/170))
+* Enhanced rule '**Align logical expressions**' with examples for **ABAP SQL** ([#215](../../../issues/215))
+* Aligned order of **OK and Cancel buttons** with OS standards ([#188](../../../issues/188))
+* Added info message if profile is missing and fallback profile is used ([#219](../../../issues/219))
+* Added info message if higher technical version is required ([#140](../../../issues/140))
+* Fixed rule '**Shorten VALUE statements**' for **GROUP BY** group_key ([#226](../../../issues/226))
+* Fixed rule '**Delete unused variables**' for variable with **same name** as a method ([#222](../../../issues/222))
+* Fixed rule '**Align SELECT ... FROM ... JOIN**' for JOIN without **optional INNER** ([#221](../../../issues/221))
+* Updated **ABAP grammar file** to latest version
+
 ## 2023-11-27 (version 1.12.0)
 
 **Many thanks** to [**christianguenter2**](https://github.com/christianguenter2), [**VladGhitulescu**](https://github.com/VladGhitulescu) 

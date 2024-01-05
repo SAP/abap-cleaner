@@ -27,6 +27,7 @@ This rule is part of the **essential** profile, as it is explicitly demanded by 
 * \[X\] Align assignments
 * \[X\] Align assignments across rows of table constructors
 * Table rows: Keep multiple components on single line \[if maximum line length B is observed\]
+* Keep other one-liners \[never\]
 * Allow line starts left of assignment operator \[only to keep maximum line length\]
 
 ## Examples
@@ -87,6 +88,8 @@ This rule is part of the **essential** profile, as it is explicitly demanded by 
          WITH KEY field1 = ls_any_structure-field1
                   fld2 = ls_any_structure-fld2
                   long_field_name3 = ls_any_structure-long_field_name_3.
+
+    result = VALUE #( BASE result ( id = 1 name = 'abc' ) ).
   ENDMETHOD.
 ```
 
@@ -141,6 +144,9 @@ Resulting code:
          WITH KEY field1           = ls_any_structure-field1
                   fld2             = ls_any_structure-fld2
                   long_field_name3 = ls_any_structure-long_field_name_3.
+
+    result = VALUE #( BASE result
+                      ( id = 1 name = 'abc' ) ).
   ENDMETHOD.
 ```
 
