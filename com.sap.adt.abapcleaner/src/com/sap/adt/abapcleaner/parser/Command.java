@@ -1716,6 +1716,31 @@ public class Command {
 	}
 
 	/**
+	 * Inserts the supplied comment text above this command without checking whether it already exists
+	 * @param commentText
+	 * @return
+	 * @throws IntegrityBrokenException
+	 */
+	public final Command insertCommentLineAbove(String commentText) throws IntegrityBrokenException {
+		int indent = isAsteriskCommentLine() ? getIndent() : firstToken.spacesLeft;
+		if (getClosesLevel())
+			indent += ABAP.INDENT_STEP;
+
+		String insertText = ABAP.COMMENT_SIGN_STRING + " " + commentText.trim();
+		Token newComment = Token.createForAbap(1, indent, insertText, getFirstToken().sourceLineNum);
+		Command newCommand = Command.create(newComment, this);
+		try {
+			newCommand.finishBuild(getSourceTextStart(), getSourceTextEnd());
+		} catch (ParseException e) {
+			throw new IntegrityBrokenException(newCommand, "error while creating a new comment above an existing command");
+		}
+
+		insertPrev(newCommand, false);
+		newCommand.testReferentialIntegrity(true);
+		return newCommand;
+	}
+
+	/**
 	 * Inserts the supplied comment text above the line of the supplied Token.
 	 * 
 	 * @param token
@@ -1759,7 +1784,14 @@ public class Command {
 					break;
 				prevCommand = prevCommand.prev;
 			}
-			
+
+			// fix indentation for special cases
+			if (isAsteriskCommentLine()) {
+				newComment.spacesLeft = getIndent();
+			} else if (getClosesLevel()) {
+				newComment.spacesLeft += ABAP.INDENT_STEP;
+			}
+
 			// insert a new Command with the new comment Token before the current Command 
 			Command newCommand = Command.create(newComment, this);
 			try {
@@ -1767,7 +1799,7 @@ public class Command {
 			} catch (ParseException e) {
 				throw new IntegrityBrokenException(newCommand, "error while creating a new comment above a variable declaration");
 			}
-			insertLeftSibling(newCommand);
+			insertPrev(newCommand, false);
 			newCommand.testReferentialIntegrity(true);
 			
 		} else {

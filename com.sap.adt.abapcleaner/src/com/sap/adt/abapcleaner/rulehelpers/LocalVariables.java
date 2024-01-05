@@ -36,6 +36,7 @@ public class LocalVariables {
    private final Rule rule;
    private final MethodInfo methodInfo;
    private final boolean isInOOContext;
+   public final VariableInfo returningParameter;
    private boolean methodUsesMacrosOrTestInjection;
    
 	public HashMap<String, VariableInfo> locals = new HashMap<String, VariableInfo>();
@@ -51,6 +52,22 @@ public class LocalVariables {
 		this.rule = rule;
 		this.methodInfo = methodInfo;
 		this.isInOOContext = (methodInfo == null) ? false : methodInfo.isInOOContext;
+		
+		VariableInfo returningParameter = null;
+		if (methodInfo != null) {
+			// if the method signature is known, add the parameters as local variables (note that a method signature, 
+			// e.g. from an interface, may be used for several implementations in the same code document!)  
+			for (ParameterInfo parameterInfo : methodInfo.getParametersInOrder()) {
+				String key = getNameKey(parameterInfo.name, false);
+				VariableInfo varInfo = new VariableInfo(parameterInfo);
+				locals.put(key, varInfo);
+				localsInDeclarationOrder.add(varInfo);
+				if (parameterInfo.accessType == VariableAccessType.RETURNING) {
+					returningParameter = varInfo;
+				}
+			}
+		}
+		this.returningParameter = returningParameter;
 	}
 
 	public boolean isMethodSignatureKnown() {
@@ -116,8 +133,13 @@ public class LocalVariables {
 	}
 
 	public void setNeeded(String name) {
-		addUsage(null, name, false, false, false, false);
+		String key = getNameKey(getObjectName(name, isInOOContext), false);
+		VariableInfo varInfo = locals.get(key);
+		if (varInfo != null) {
+			varInfo.setNeeded();
+		}
 	}
+
 	public void addInlineDeclaration(Token identifier, String name) {
 		addUsage(identifier, name, true, false, false, false);
 	}
@@ -136,8 +158,9 @@ public class LocalVariables {
 			referringDeclaration.setTypeSource(varInfo);
 			// if varInfo is declared inline, the referring declaration (that uses varInfo in its LIKE clause) must NOT be moved
 			// to a different position by the LocalDeclarationOrderRule
-			if (varInfo.isDeclaredInline) 
+			if (varInfo.isDeclaredInline) {
 				referringDeclaration.declarationCannotBeMoved = true;
+			}
 		}
 	}
 	public void addUsage(Token identifier, String name) {
@@ -145,25 +168,21 @@ public class LocalVariables {
 	}
 	public VariableInfo addUsage(Token identifier, String name, boolean isAssignment, boolean isUsageInSelfAssignment, boolean isCommentedOut, boolean writesToReferencedMemory) {
 		// determine whether the identifier represent a type (rather than a data object);  
-		// identifier is only null when this method is called from .setNeeded(), and then false is correct
-		boolean isType = (identifier != null && identifier.isTypeIdentifier());
+		boolean isType = identifier.isTypeIdentifier();
 		
 		String key = getNameKey(getObjectName(name, isInOOContext), isType);
 		VariableInfo varInfo = locals.get(key);
 		if (varInfo == null) 
 			return null;
 		
-		// for 'real' usages (as opposed to pseudo-usage if ##NEEDED or "#EC NEEDED is found):
-		if (identifier != null) {
-			// enhance the ordered usage lists
-			if (!localsWithUsage.contains(varInfo)) {
-				localsInUsageOrder.add(varInfo);
-				localsWithUsage.add(varInfo);
-			}
-			if (!isCommentedOut && !localsWithNonCommentUsage.contains(varInfo)) {
-				localsInNonCommentUsageOrder.add(varInfo);
-				localsWithNonCommentUsage.add(varInfo);
-			}
+		// enhance the ordered usage lists
+		if (!localsWithUsage.contains(varInfo)) {
+			localsInUsageOrder.add(varInfo);
+			localsWithUsage.add(varInfo);
+		}
+		if (!isCommentedOut && !localsWithNonCommentUsage.contains(varInfo)) {
+			localsInNonCommentUsageOrder.add(varInfo);
+			localsWithNonCommentUsage.add(varInfo);
 		}
 
 		varInfo.addUsage(identifier, isAssignment, isUsageInSelfAssignment, isCommentedOut, writesToReferencedMemory);

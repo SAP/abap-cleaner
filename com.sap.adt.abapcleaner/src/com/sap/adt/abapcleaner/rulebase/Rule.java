@@ -20,7 +20,7 @@ import java.time.LocalDate;
 import java.util.*;
 
 public abstract class Rule {
-	public static final int RULE_COUNT = 69;
+	public static final int RULE_COUNT = 70;
 	public static final int RULE_GROUP_COUNT = 7;
 
 	protected static final String LINE_SEP = ABAP.LINE_SEPARATOR;
@@ -73,6 +73,7 @@ public abstract class Rule {
          new ChainRule(profile),
          new NeedlessClearRule(profile),
          new LocalDeclarationOrderRule(profile),
+         new UnusedParametersRule(profile),
          new UnusedVariablesRule(profile),
          new ChainOfOneRule(profile),
          new ImplicitTypeRule(profile),

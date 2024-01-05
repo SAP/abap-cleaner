@@ -257,7 +257,7 @@ public class LocalDeclarationOrderRule extends RuleForDeclarations {
 	 * always returns false for inline declarations and for declarations that cannot be moved 
 	 * because their LIKE clause refers to a variable that is declared inline */
 	private boolean variableMatchesFilter(VariableInfo varInfo, DeclarationType declarationType) {
-		if (varInfo.isDeclaredInline || varInfo.declarationCannotBeMoved)
+		if (varInfo.isParameter() || varInfo.isDeclaredInline || varInfo.declarationCannotBeMoved)
 			return false;
 		
 		Token keyword = varInfo.declarationToken.getParentCommand().getFirstCodeToken();
@@ -517,7 +517,7 @@ public class LocalDeclarationOrderRule extends RuleForDeclarations {
 	private boolean canSectionBeMoved(Section section, Command writePos, Command methodStart, LocalVariables localVariables) {
 		HashSet<Command> declarationsBefore = null;
 		for (VariableInfo testLocal : localVariables.getLocalsInDeclarationOrder()) {
-			if (testLocal.getTypeSource() == null || !section.contains(testLocal.declarationToken.getParentCommand())) {
+			if (testLocal.isParameter() || testLocal.getTypeSource() == null || !section.contains(testLocal.declarationToken.getParentCommand())) {
 				continue;
 			}
 			// build a hash set of all declaration Commands before the write position (just in time) 

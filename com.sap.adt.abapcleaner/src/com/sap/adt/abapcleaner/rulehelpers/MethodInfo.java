@@ -13,7 +13,7 @@ public class MethodInfo {
 
    public final Token declarationToken;
 	public final String name;
-	public final MethodVisibility visiblity;
+	public final MethodVisibility visibility;
 
 	// possible combinations of the qualifiers: a method may be 
 	// - ABSTRACT 
@@ -37,7 +37,7 @@ public class MethodInfo {
 	public MethodInfo(Token declarationToken, MethodVisibility visibility, boolean isAbstract, boolean isFinal, boolean isRedefinition, boolean isForTesting) {
 		this.declarationToken = declarationToken;
 		this.name = declarationToken.getText();
-		this.visiblity = visibility;
+		this.visibility = visibility;
 		
 		this.isAbstract = isAbstract;
 		this.isFinal = isFinal;

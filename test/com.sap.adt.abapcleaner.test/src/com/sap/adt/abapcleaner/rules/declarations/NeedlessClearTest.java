@@ -385,4 +385,28 @@ public class NeedlessClearTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testClearExportingParameterKept() {
+		// ensure that 'CLEAR ev_value' is kept even with the method signature being visible, 
+		// i.e. when EV_VALUE is part of to the LocalVariables of ANY_METHOD
+
+		buildSrc("CLASS any_class DEFINITION.");
+		buildSrc("  PUBLIC SECTION.");
+		buildSrc("    METHODS any_method");
+		buildSrc("      EXPORTING ev_value TYPE i.");
+		buildSrc("ENDCLASS.");
+		buildSrc("");
+		buildSrc("");
+		buildSrc("");
+		buildSrc("CLASS any_class IMPLEMENTATION.");
+		buildSrc("  METHOD any_method.");
+		buildSrc("    CLEAR ev_value.");
+		buildSrc("  ENDMETHOD.");
+		buildSrc("ENDCLASS.");
+
+		copyExpFromSrc();
+
+		testRule();
+	}
 }

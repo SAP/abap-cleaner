@@ -206,7 +206,7 @@ public class NeedlessClearRule extends RuleForDeclarations {
 		// excluded cases where the variable is not defined locally (e.g. parameters or attributes), 
 		// as well as cases defined with DATA ... BEGIN OF
 		VariableInfo varInfo = localVariables.getVariableInfo(token, false);
-		if (varInfo == null || varInfo.isBoundStructuredData)
+		if (varInfo == null || varInfo.isBoundStructuredData || varInfo.isParameter())
 			return false;
 
 		// exclude cases declared with STATICS (CONSTANTS, FIELD-SYMBOLS, TYPES make no sense anyway)

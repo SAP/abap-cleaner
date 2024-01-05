@@ -1,8 +1,9 @@
 package com.sap.adt.abapcleaner.rulehelpers;
 
-public enum ParameterAccessType {
+public enum VariableAccessType {
    IMPORTING,
    EXPORTING,
    CHANGING,
-   RETURNING;
+   RETURNING, 
+   LOCAL;
 }
