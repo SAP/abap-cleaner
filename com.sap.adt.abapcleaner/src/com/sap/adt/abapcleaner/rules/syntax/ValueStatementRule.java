@@ -106,13 +106,14 @@ public class ValueStatementRule extends RuleForTokens {
 	@Override
 	protected boolean executeOn(Code code, Command command, Token token, int releaseRestriction) throws UnexpectedSyntaxBeforeChanges, UnexpectedSyntaxAfterChanges {
 		// find the next "VALUE ...( ... (" statement with inner parentheses
-		if (!token.isKeyword("VALUE") || !token.getNext().getOpensLevel() || !token.getNext().hasChildren() || token.getNext().isLiteral()
-				|| !token.getNext().getNext().matchesOnSiblings(true, TokenSearch.ASTERISK, "("))
+		Token nextCode = token.getNextCodeSibling();
+		if (!token.isKeyword("VALUE") || !nextCode.getOpensLevel() || !nextCode.hasChildren() || nextCode.isLiteral()
+				|| !nextCode.getNext().matchesOnSiblings(true, TokenSearch.ASTERISK, "("))
 			return false;
 
 		// determine minimum indentation for parameters (in case putting them behind the opening bracket would exceed line length):
 		// if the result of the method call, table expression etc. is assigned, the parameters must remain right of the assignment operator
-		Token parentToken = token.getNext();
+		Token parentToken = nextCode;
 		AlignTable commonAssignmentsTable;
 		try {
 			commonAssignmentsTable = createTableFromAssignmentSequence(parentToken);
@@ -125,6 +126,18 @@ public class ValueStatementRule extends RuleForTokens {
 		ArrayList<AlignTable> rows = new ArrayList<AlignTable>();
 
 		while (nextParent != null && nextParent.textEquals("(")) {
+			// skip the group_key in 'FOR GROUP OF ... IN ... GROUP BY ( ... )'
+			// cp. https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/abenfor_groups_of.htm
+			Token prev = nextParent.getPrevCodeSibling();
+			Token prevPrev = (prev == null) ? null : prev.getPrevCodeSibling();
+			if (prevPrev != null && prevPrev.isKeyword("GROUP") && prev.isKeyword("BY")) {
+				nextParent = nextParent.getNextSibling();
+				while (nextParent != null && !nextParent.textEquals("(")) {
+					nextParent = nextParent.getNextSibling();
+				}
+				continue;
+			}
+			
 			AlignTable newRow;
 			try {
 				newRow = createTableFromAssignmentSequence(nextParent);
@@ -183,8 +196,9 @@ public class ValueStatementRule extends RuleForTokens {
 
 			// find the beginning of the next row, potentially skipping further first-level assignments and comments
 			nextParent = newRow.endToken;
-			while (nextParent != null && !nextParent.textEquals("("))
+			while (nextParent != null && !nextParent.textEquals("(")) {
 				nextParent = nextParent.getNextSibling();
+			}
 		}
 
 		if (rows.size() < 2 || commonAssignments.isEmpty())

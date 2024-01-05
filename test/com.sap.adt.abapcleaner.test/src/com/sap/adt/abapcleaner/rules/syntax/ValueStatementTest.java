@@ -301,4 +301,28 @@ class ValueStatementTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testGroupKeySkipped() {
+		// ensure that the group_key in 'FOR GROUP OF ... IN ... GROUP BY ( ... )' is skipped, 
+		// i.e. extraction of the 'plant' parameter only happens after 'GROUP BY ( ... )' 
+		// cp. https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/abenfor_groups_of.htm
+		
+		buildSrc("  itab = VALUE #( FOR GROUPS OF <fs> IN itab");
+		buildSrc("                  GROUP BY ( plant = <fs>-plant )");
+		buildSrc("                  ( plant    = <fs>-plant");
+		buildSrc("                    itemcode = <fs>-itemcode1 )");
+		buildSrc("                  ( plant    = <fs>-plant");
+		buildSrc("                    itemcode = <fs>-itemcode2 ) ).");
+
+		buildExp("  itab = VALUE #( FOR GROUPS OF <fs> IN itab");
+		buildExp("                  GROUP BY ( plant = <fs>-plant )");
+		buildExp("                  plant    = <fs>-plant");
+		buildExp("                  ( itemcode = <fs>-itemcode1 )");
+		buildExp("                  ( itemcode = <fs>-itemcode2 ) ).");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }
