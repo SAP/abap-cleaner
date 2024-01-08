@@ -166,10 +166,12 @@ public class PragmaPositionRule extends Rule {
 			
 		} else if (token.isFirstTokenInLine()) {
 			// the pragma position is correct; move it only if configuration demands to move pragmas at line start, too
-			if (configMovePragmaFromLineStartToEnd.getValue() && !token.isLastTokenInLineExceptComment()) {
-				return moveToLineEnd(token);
-			} else {
+			if (!configMovePragmaFromLineStartToEnd.getValue() || token.isLastTokenInLineExceptComment()) {
 				return false;
+			} else if (pragmaIsInCorrectLineEndPosition(token)) {
+				return false;
+			} else {
+				return moveToLineEnd(token);
 			}
 			
 		} else if (token.isLastTokenInLineExceptComment()) {
@@ -181,21 +183,29 @@ public class PragmaPositionRule extends Rule {
 			}
 			
 		} else {
-			// move the pragma, unless the line only continues with more pragmas and a comma/period/colon (and potentially a comment)  
-			Token next = token.getNext();
-			// move behind the last pragma in a possible sequence of pragmas on the same line  
-			while (next.isPragma()) {
-				next = next.getNext();
-				if (next == null || next.lineBreaks > 0)
-					return false;
-			}
-			if ((next.isCommaOrPeriod() || next.isChainColon()) && next.isLastTokenInLineExceptComment()) {
-				return false;
-			} else if (next.isCommentAfterCode()) {
+			if (pragmaIsInCorrectLineEndPosition(token)) {
 				return false;
 			} else {
 				return moveToLineEnd(token);
 			}
+		}
+	}
+
+	private boolean pragmaIsInCorrectLineEndPosition(Token pragma) {
+		// check whether the line only continues with more pragmas, a comma/period/colon, and potentially a comment
+		Token next = pragma;
+		while (next.isPragma()) {
+			next = next.getNext();
+			if (next == null || next.lineBreaks > 0) {
+				return true;
+			}
+		}
+		if ((next.isCommaOrPeriod() || next.isChainColon()) && next.isLastTokenInLineExceptComment()) {
+			return true;
+		} else if (next.isCommentAfterCode()) {
+			return true;
+		} else {
+			return false;
 		}
 	}
 
