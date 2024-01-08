@@ -39,7 +39,7 @@ ABAP cleaner is installed with two **profiles**:
   (and even going beyond its demands);
 - in the '**essential**' profile, only those cleanup rules are active which are explicitly demanded by the 
   [Clean ABAP Styleguide](https://github.com/SAP/styleguides/blob/main/clean-abap/CleanABAP.md); 
-  this applies to approx. 40-50% of the available cleanup rules. 
+  this applies to approx. 40% of the available cleanup rules. 
 
 Additionally, you can create your own profiles:  In each profile, you can **select** which cleanup rules shall be active, 
 and **configure** options and thresholds for these rules. 
@@ -85,7 +85,7 @@ both with a "broadband" approach (simultaneously applying 70+ different rules)
 and a focused approach (cleaning with a limited selection of rules). 
 
 ABAP cleaner was implemented with object-oriented ABAP in mind, but it may also be used for code in reports and functions. 
-ABAP SQL and EML statements are not yet supported (meaning that most cleanup rules simply leave them unchanged). 
+EML statements are not yet supported (meaning that most cleanup rules simply leave them unchanged). 
 
 
 ## Requirements and Installation
