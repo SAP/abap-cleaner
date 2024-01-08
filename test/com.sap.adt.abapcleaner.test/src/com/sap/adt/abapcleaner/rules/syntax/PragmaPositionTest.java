@@ -406,4 +406,18 @@ public class PragmaPositionTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testMovePragmasToLineEnd() {
+		rule.configMovePragmaFromLineStartToEnd.setValue(true);
+
+		buildSrc("SELECT * FROM any_dtab INTO TABLE @lt_other");
+		buildSrc("  ##ITAB_DB_SELECT ##ITAB_KEY_IN_SELECT.");
+
+		copyExpFromSrc();
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }
