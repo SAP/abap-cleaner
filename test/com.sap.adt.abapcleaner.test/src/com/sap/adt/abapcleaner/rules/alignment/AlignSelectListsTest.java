@@ -800,4 +800,17 @@ class AlignSelectListsTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testAnonymousFieldWithCase() {
+		buildSrc("    SELECT SINGLE FROM any_table");
+		buildSrc("      FIELDS CASE WHEN any_field IS INITIAL THEN @abap_true END");
+		buildSrc("      INTO @DATA(lv_any).");
+
+		copyExpFromSrc();
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }

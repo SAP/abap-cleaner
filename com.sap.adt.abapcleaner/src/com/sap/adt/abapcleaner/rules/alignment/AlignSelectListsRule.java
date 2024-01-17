@@ -247,7 +247,10 @@ public class AlignSelectListsRule extends RuleForCommands {
 
 		AlignTable table = new AlignTable(MAX_COLUMN_COUNT);
 		boolean changed = false;
-		if (hasComma) { 
+		// FIELDS clauses were introduced with ABAP 7.50 and always require strict mode, so they are always comma-separated 
+		// (but may consist of one element only and therefore have no comma), cp. 
+		// https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/abenabap_sql_strictmode_750.htm
+		if (hasComma || clauseType == SelectClause.FIELDS) {
 			changed |= buildTableFromCommaSepList(table, clauseType, clause, start);
 		} else { 
 			changed |= buildTableFromSpaceSepList(table, clauseType, clause, start);

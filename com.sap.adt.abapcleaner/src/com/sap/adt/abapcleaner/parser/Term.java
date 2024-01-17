@@ -147,6 +147,8 @@ public class Term {
 			// continue below
 		} else if (firstToken.isKeyword() && firstToken.textStartsWith("TEXT-")) {
 			// continue below
+		} else if (firstToken.isKeyword("CASE")) {
+			// continue below
 		} else if (firstToken.isStringLiteral() || firstToken.isLiteral() || firstToken.isIdentifier() || firstToken.isOtherOp()) {
 			// continue below
 		} else if (firstToken.getOpensLevel() && firstToken.textEqualsAny(ABAP.abapSqlFunctions)) {
@@ -159,6 +161,19 @@ public class Term {
 		if (token.startsStringTemplate()) {
 			while (!token.endsStringTemplate()) {
 				token = token.getNextSibling();
+			}
+		} else if (token.isKeyword("CASE")) {
+			// move to the end of the CASE expression in ABAP SQL: 'CASE WHEN sql_cond1 THEN result1 [WHEN sql_cond2 THEN result2] [ELSE resultn|sql_null] END'
+			int nestingDepth = 1;
+			while (nestingDepth > 0) {
+				token = token.getNextCodeSibling();
+				if (token == null) { // pro forma
+					break;
+				} else if (token.isKeyword("CASE")) {
+					++nestingDepth;
+				} else if (token.isKeyword("END")) {
+					--nestingDepth;
+				}
 			}
 		} else {
 			while (token.getOpensLevel()) {
