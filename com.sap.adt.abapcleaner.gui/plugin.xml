@@ -23,6 +23,16 @@
       </command>
    </extension>
    <extension
+         point="org.eclipse.core.expressions.propertyTesters">
+      <propertyTester
+            class="com.sap.adt.abapcleaner.gui.eclipse.DummyForcePluginActivationPropertyTester"
+            id="com.sap.adt.abapcleaner.gui.dummyPropertyTester"
+            namespace="com.sap.adt.abapcleaner.gui"
+            properties="forcePluginActivation"
+            type="java.lang.Object">
+      </propertyTester>
+   </extension>
+   <extension
          point="org.eclipse.ui.menus">
       <menuContribution
             allPopups="false"
@@ -35,6 +45,10 @@
                   checkEnabled="false">
                <with
                      variable="activePart">
+                  <test
+                        forcePluginActivation="true"
+                        property="com.sap.adt.abapcleaner.gui.forcePluginActivation">
+                  </test>
                   <test
                         args="com.sap.adt.abapcleaner.cleanup.automatic"
                         forcePluginActivation="true"
@@ -53,6 +67,10 @@
                <with
                      variable="activePart">
                   <test
+                        forcePluginActivation="true"
+                        property="com.sap.adt.abapcleaner.gui.forcePluginActivation">
+                  </test>
+                  <test
                         args="com.sap.adt.abapcleaner.cleanup.interactive"
                         forcePluginActivation="true"
                         property="com.sap.adt.tools.abapsource.ui.editormenu.shouldShowContextMenu"
@@ -69,6 +87,10 @@
                   checkEnabled="false">
                <with
                      variable="activePart">
+                  <test
+                        forcePluginActivation="true"
+                        property="com.sap.adt.abapcleaner.gui.forcePluginActivation">
+                  </test>
                   <test
                         args="com.sap.adt.abapcleaner.cleanup.readonly"
                         forcePluginActivation="true"
