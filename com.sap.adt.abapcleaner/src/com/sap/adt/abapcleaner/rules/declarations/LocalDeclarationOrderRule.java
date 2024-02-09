@@ -328,22 +328,20 @@ public class LocalDeclarationOrderRule extends RuleForDeclarations {
 			if (command == startCommand)
 				return command;
 
-			// at the very beginning of a method, consider comments to belong to the method (not the declaration), 
-			// except for ABAP Doc comments
-			if (command.getFirstTokenLineBreaks() == 1 && !command.isAbapDoc()
-					&& command.getPrev() != null && command.getPrev().isMethodFunctionFormOrEventBlockStart()) {
-				return startCommand;
-			}
-			
-			// if below the startCommand, there are empty lines or further comment lines before the next non-declaration 
-			// command, include the comment in the section
-			Command next = startCommand.getNextSibling();
-			while (next != null) {
-				if (next.isCommentLine() || next.getFirstTokenLineBreaks() > 1)
-					return command;
-				if (!next.isDeclaration())
-					break;
-				next = next.getNextSibling();
+			// at the very beginning of a method, consider comments to belong to the method (not the declaration)
+			if (command.getFirstTokenLineBreaks() == 1 && command.getPrev() != null && command.getPrev().isMethodFunctionFormOrEventBlockStart()) {
+				// use below logic to only include attached to-do comments and ABAP doc comments
+			} else {
+				// if below the startCommand, there are empty lines or further comment lines before the next non-declaration 
+				// command, include the comment in the section
+				Command next = startCommand.getNextSibling();
+				while (next != null) {
+					if (next.isCommentLine() || next.getFirstTokenLineBreaks() > 1)
+						return command;
+					if (!next.isDeclaration())
+						break;
+					next = next.getNextSibling();
+				}
 			}
 		}
 		
@@ -360,12 +358,12 @@ public class LocalDeclarationOrderRule extends RuleForDeclarations {
 			if (testCommand == null)
 				break;
 
-			if (testCommand.isCommentLine()) {
+			if (testCommand.isAbapDoc()) {
+				continue;
+			} else if (testCommand.isCommentLine()) {
 				String commentText = testCommand.getFirstToken().getText();
-				if (StringUtil.startsWith(commentText, ABAP.ABAP_DOC_SIGN, false)) {
-					continue;
-				} else if (StringUtil.containsAny(commentText, UnusedVariablesRule.varMessages) 
-							|| StringUtil.containsAny(commentText, UnusedVariablesRule.constMessages)) {
+				if (StringUtil.containsAny(commentText, UnusedVariablesRule.varMessages) 
+				 || StringUtil.containsAny(commentText, UnusedVariablesRule.constMessages)) {
 					continue;
 				}
 			}
@@ -433,7 +431,8 @@ public class LocalDeclarationOrderRule extends RuleForDeclarations {
 		if (section.contains(writePos)) {
 			// for sections that are already in the right place, keep existing empty lines; after rearranging declarations 
 			// once, this allows for purposefully introducing extra lines which are then kept
-			firstToken.lineBreaks = Math.max(lineBreaks, firstToken.lineBreaks);
+			if (firstToken.setLineBreaks(Math.max(lineBreaks, firstToken.lineBreaks)))
+				code.addRuleUse(this, section.firstCommand);
 
 			// if the section already is in the correct place, simply adjust writePos
 			writePos = section.lastCommand.getNextSibling(); 
@@ -447,7 +446,8 @@ public class LocalDeclarationOrderRule extends RuleForDeclarations {
 			}
 
 		} else {
-			firstToken.lineBreaks = lineBreaks;
+			if (firstToken.setLineBreaks(lineBreaks)) 
+				code.addRuleUse(this, section.firstCommand);
 
 			// if the first command of the section is itself in a write position, update that write position
 			for (Command otherParent : writePosOfParent.keySet()) {
@@ -510,7 +510,9 @@ public class LocalDeclarationOrderRule extends RuleForDeclarations {
 					lastDeclaration = lastDeclaration.getPrevNonCommentSibling(); 
 				lineBreaks = getLineBreaksBetween(lastDeclaration, nextNonCommentSibling); // or (..., nextSibling)
 			}
-			nextSibling.getFirstToken().lineBreaks = lineBreaks;
+			if (nextSibling.getFirstToken().setLineBreaks(lineBreaks)) {
+				code.addRuleUse(this, nextSibling);
+			}
 		} 
 	}
 

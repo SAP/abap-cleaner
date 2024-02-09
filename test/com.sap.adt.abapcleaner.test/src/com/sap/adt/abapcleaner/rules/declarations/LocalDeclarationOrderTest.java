@@ -1508,4 +1508,25 @@ public class LocalDeclarationOrderTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testAbapDocAfterMethodComment() {
+		// expect the ABAP doc to be kept with the constant
+		buildSrc("    \" comment on method");
+		buildSrc("    \"! documentation on constant");
+		buildSrc("    CONSTANTS lc_any TYPE i VALUE 1.");
+		buildSrc("");
+		buildSrc("    rv_result = lc_any.");
+
+		buildExp("    \" comment on method");
+		buildExp("");
+		buildExp("    \"! documentation on constant");
+		buildExp("    CONSTANTS lc_any TYPE i VALUE 1.");
+		buildExp("");
+		buildExp("    rv_result = lc_any.");
+
+		putAnyMethodAroundSrcAndExp();
+		
+		testRule();
+	}
 }

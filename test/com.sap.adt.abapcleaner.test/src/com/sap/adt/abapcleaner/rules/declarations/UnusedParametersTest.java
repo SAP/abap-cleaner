@@ -631,4 +631,24 @@ public class UnusedParametersTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testAMDPMethodSkipped() {
+		buildSrc("CLASS cl_any DEFINITION.");
+		buildSrc("  PUBLIC_SECTION.");
+		buildSrc("     METHODS any_amdp");
+		buildSrc("        IMPORTING VALUE(iv_param) TYPE i.");
+		buildSrc("ENDCLASS.");
+		buildSrc("");
+		buildSrc("CLASS cl_any IMPLEMENTATION.");
+		buildSrc("  METHOD any_amdp BY DATABASE PROCEDURE FOR HDB LANGUAGE SQLSCRIPT.");
+		buildSrc("    DECLARE query STRING;");
+		buildSrc("    query = 'text' || iv_param;");
+		buildSrc("  ENDMETHOD.");
+		buildSrc("ENDCLASS.");
+
+		copyExpFromSrc();
+
+		testRule();
+	}
 }
