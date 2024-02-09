@@ -167,7 +167,7 @@ public class LocalDeclarationOrderRule extends RuleForDeclarations {
 		HashMap<Command, Command> writePosOfParent = new HashMap<>(); 
 		HashMap<Command, Token> writePosOfChain = new HashMap<>(); 
 		
-		if (isCommandBlocked(methodStart))
+		if (isCommandBlocked(methodStart) || localVariables.isEmpty())
 			return;
 		
 		// move TYPES to start of method

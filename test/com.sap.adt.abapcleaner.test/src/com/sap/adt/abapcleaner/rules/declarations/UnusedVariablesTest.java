@@ -2126,4 +2126,19 @@ class UnusedVariablesTest extends RuleTestBase {
 		
 		testRule();
 	}
+
+	@Test
+	void testDynamicAssign() {
+		// ensure that methods with dynamic assigns are completely skipped
+		buildSrc("    DATA lv_any TYPE string.");
+		buildSrc("    DATA lv_unused TYPE i.");
+		buildSrc("    ASSIGN ('lv_any') TO FIELD-SYMBOL(<lv_any>).");
+		buildSrc("    lv_result = <lv_any>.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		copyExpFromSrc();
+		
+		testRule();
+	}
 }

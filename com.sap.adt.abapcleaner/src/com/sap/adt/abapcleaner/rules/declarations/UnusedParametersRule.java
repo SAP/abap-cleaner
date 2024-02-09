@@ -149,12 +149,13 @@ public class UnusedParametersRule extends RuleForDeclarations {
 
 	@Override
 	protected void executeOn(Code code, Command methodStart, LocalVariables localVariables, int releaseRestriction) throws UnexpectedSyntaxAfterChanges, IntegrityBrokenException {
-		// skip this method if macros are used inside the method, because parameters may be used inside the macros 
-		// (note that macro code may be local or 'out of sight')
-		if (localVariables.getMethodUsesMacrosOrTestInjection())
+		// skip this method if macros or dynamic ASSIGN are used inside the method, because parameters may be used 
+		// inside the macros or dynamically (note that macro code may be local or 'out of sight')
+		if (localVariables.getMethodUsesMacrosOrTestInjection() || localVariables.getMethodUsesDynamicAssign())
 			return;
 
 		// if the method signature is not visible, nothing can be done, and existing to-do comments are kept
+		// however, do NOT return just because localVariables are empty, since old comments might have to be cleaned up 
 		if (localVariables.getMethodInfo() == null)
 			return;
 		else if (isCommandBlocked(methodStart))

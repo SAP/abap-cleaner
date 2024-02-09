@@ -689,4 +689,20 @@ class FinalVariableTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testDynamicAssign() {
+		// ensure that methods with dynamic assigns are completely skipped
+		buildSrc("    DATA(lv_any) = 1.");
+		buildSrc("    DATA(lv_other) = 2.");
+		buildSrc("    ASSIGN ('lv_any') TO FIELD-SYMBOL(<lv_any>).");
+		buildSrc("    CLEAR <lv_any>.");
+		buildSrc("    rv_result = lv_any + lv_other.");
+
+		copyExpFromSrc();
+
+		putAnyMethodAroundSrcAndExp();
+		
+		testRule();
+	}
 }
