@@ -1007,7 +1007,7 @@ public class TokenTest {
 	@Test
 	void testAccessTypeDateAndTimeProcessing() {
 		assertAccessType("CONVERT DATE ?dat TIME ?tim FRACTIONAL SECONDS ?fs DAYLIGHT SAVING TIME ?dst TIME ZONE ?tz INTO UTCLONG !time_stamp.");
-		assertAccessType("CONVERT DATE ?dat TIME ?tim DAYLIGHT SAVING TIME ?dst INTO TIME STAMP !time_stamp TIME ZONE !tz.");
+		assertAccessType("CONVERT DATE ?dat TIME ?tim DAYLIGHT SAVING TIME ?dst INTO TIME STAMP !time_stamp TIME ZONE ?tz.");
 		assertAccessType("CONVERT UTCLONG ?time_stamp INTO DATE !dat TIME !tim FRACTIONAL SECONDS !fs DAYLIGHT SAVING TIME !dst TIME ZONE !tz.");
 		assertAccessType("CONVERT TIME STAMP ?time_stamp TIME ZONE ?tz INTO DATE !dat TIME !tim DAYLIGHT SAVING TIME !dst.");
 		assertAccessType("GET TIME FIELD !tim.");

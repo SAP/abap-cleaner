@@ -2067,11 +2067,10 @@ public class Token {
 		if (firstToken.matchesOnSiblings(true, "CONVERT", "DATE") && prevToken.isAnyKeyword("UTCLONG")) {
 			// CONVERT DATE dat TIME tim [FRACTIONAL SECONDS fs] [DAYLIGHT SAVING TIME dst] TIME ZONE tz INTO UTCLONG time_stamp. 
 			return MemoryAccessType.WRITE;
-		} else if (firstToken.matchesOnSiblings(true, "CONVERT", "DATE") && prevToken.isAnyKeyword("STAMP", "ZONE")) {
+		} else if (firstToken.matchesOnSiblings(true, "CONVERT", "DATE") && prevToken.isAnyKeyword("STAMP")) {
 			// CONVERT DATE dat [TIME tim [DAYLIGHT SAVING TIME dst]] INTO TIME STAMP time_stamp TIME ZONE tz.
-			// but NOT for the time zone in 'CONVERT DATE ... TIME ZONE tz INTO UTCLONG time_stamp'!
-			if (!firstToken.matchesOnSiblings(true,  TokenSearch.ASTERISK, "INTO", "UTCLONG"))
-				return MemoryAccessType.WRITE;
+			// note that TIME ZONE is NOT a write position, although it is behind the INTO keyword
+			return MemoryAccessType.WRITE;
 		} else if (firstToken.matchesOnSiblings(true, "CONVERT", "UTCLONG") && prevToken.isAnyKeyword("DATE", "TIME", "SECONDS", "ZONE")) {
 			// CONVERT UTCLONG time_stamp INTO [DATE dat] [TIME tim [FRACTIONAL SECONDS fs]] [DAYLIGHT SAVING TIME dst] TIME ZONE tz. 
 			return MemoryAccessType.WRITE;
