@@ -143,7 +143,7 @@ public class LocalVariables {
 	public void addInlineDeclaration(Token identifier, String name) {
 		addUsage(identifier, name, true, false, false, false);
 	}
-	public void addUsageInLikeClause(Token identifier, String name, Command methodStart, VariableInfo referringDeclaration) {
+	public void addUsageInLikeOrValueClause(Token identifier, String name, Command methodStart, VariableInfo referringDeclaration) {
 		VariableInfo varInfo = addUsage(identifier, name, false, false, false, false);
 		if (varInfo == null) 
 			return;

@@ -321,57 +321,49 @@ public abstract class RuleForDeclarations extends Rule {
 
 		boolean isInOOContext = command.isInOOContext();
 		while (token != null) {
+			boolean skipLine = false;
 			boolean isBoundStructuredData = false;
-			do {
-				if (token.matchesOnSiblings(true, "END", "OF")) {
-					--blockLevel;
-					break;
-					
-				} else if (token.matchesOnSiblings(true, "BEGIN", "OF")) {
-					++blockLevel;
+			if (token.matchesOnSiblings(true, "END", "OF")) {
+				--blockLevel;
+				skipLine = true;
+				
+			} else if (token.matchesOnSiblings(true, "BEGIN", "OF")) {
+				++blockLevel;
 
+				if (blockLevel > 1) {
 					// in case of nested BEGIN OF, do not enter names of inner structures  
-					if (blockLevel > 1)
-						break;
-
+					skipLine = true;
+				} else {
 					// move token to the name of the structure to add its declaration below
 					token = token.getNextCodeSibling();
 					token = token.getNextCodeSibling();
 					isBoundStructuredData = true;
 					
-					if (token.isKeyword("ENUM"))
+					if (token.isKeyword("ENUM")) {
 						token = token.getNextCodeSibling();
-					
-				} else if (blockLevel > 0) { 	
-					break;
+					}
 				}
-				
+			} else { 	
+				skipLine = (blockLevel > 0);
+			}
+			
+			if (!skipLine) {
 				// add declaration
 				String varName = token.getText();
 				VariableInfo varInfo = localVariables.addDeclaration(token, false, isTypeDeclaration, isConstantsDeclaration, isBoundStructuredData, isInOOContext);
-	
-				// if the declaration uses "LIKE ...", count that as a usage of that variable
-				Token next = token.getNextCodeSibling();
-				if (next != null && next.isKeyword("LIKE") && next.getNextCodeSibling() != null) {
-					token = next.getNextCodeSibling();
-					// skip any keywords before the identifier of the data object, e.g. LINE OF, RANGE OF, REF TO, 
-					// { STANDARD | SORTED | HASHED } TABLE OF 
-					while (token.isKeyword() && token.getNextCodeSibling() != null) {
-						token = token.getNextCodeSibling();
-					}
-					// the Token may contain more than the object name, e.g. 'DATA ls_struc LIKE LINE OF lr_ref->lt_table.'
-					String usedObjectName = LocalVariables.getObjectName(token.getText(), isInOOContext);
-					localVariables.addUsageInLikeClause(token, usedObjectName, methodStart, varInfo);
-				}
-	
+
 				// if the pragma ##NEEDED or the pseudo comment "#EC NEEDED is defined for this variable, add a "usage" 
 				// to prevent it from being commented out or deleted
-				if (isNeededPragmaOrPseudoCommentFound(token, false))
+				if (isNeededPragmaOrPseudoCommentFound(token, false)) {
 					localVariables.setNeeded(varName);
-	
-				if (!isChain)
-					return blockLevel;
-			} while (false);
+				}
+
+				// find usages of other variables or constants in LIKE ... or VALUE ... clauses
+				token = executeOnDeclarationLine(methodStart, localVariables, token, isInOOContext, varInfo); 
+			}
+				
+			if (!isChain || token == null) 
+				return blockLevel;
 			
 			// move to the next identifier
 			token = token.getLastTokenOnSiblings(true, TokenSearch.ASTERISK, ",|.");
@@ -380,6 +372,39 @@ public abstract class RuleForDeclarations extends Rule {
 			}
 		}
 		return blockLevel;
+	}
+
+	private Token executeOnDeclarationLine(Command methodStart, LocalVariables localVariables, Token token, boolean isInOOContext, VariableInfo varInfo) {
+		// if the declaration uses "LIKE ...", count that as a usage of that variable or constant
+		Token next = token.getNextCodeSibling();
+		if (next != null && next.isKeyword("LIKE") && next.getNextCodeSibling() != null) {
+			token = next.getNextCodeSibling();
+			// skip any keywords before the identifier of the data object, e.g. LINE OF, RANGE OF, REF TO, 
+			// { STANDARD | SORTED | HASHED } TABLE OF 
+			while (token.isKeyword() && token.getNextCodeSibling() != null) {
+				token = token.getNextCodeSibling();
+			}
+			// the Token may contain more than the object name, e.g. 'DATA ls_struc LIKE LINE OF lr_ref->lt_table.'
+			String usedObjectName = LocalVariables.getObjectName(token.getText(), isInOOContext);
+			localVariables.addUsageInLikeOrValueClause(token, usedObjectName, methodStart, varInfo);
+			
+		} 
+		
+		// if the declaration uses "VALUE <constant>", count that as a usage of <constant>
+		while (token != null && !token.isCommaOrPeriod()) {
+			if (token.isKeyword("VALUE")) {
+				token = token.getNextCodeSibling();
+				if (token != null && token.isIdentifier()) {
+					// the Token may contain more than the object name, e.g. 'DATA lv_value TYPE i VALUE if_any_interface=>co_any_value.'
+					// however, no calculations (lc_any + 1) or substrings (lc_data+4(2)) are possible
+					String usedObjectName = LocalVariables.getObjectName(token.getText(), isInOOContext);
+					localVariables.addUsageInLikeOrValueClause(token, usedObjectName, methodStart, varInfo);
+				}
+				break;
+			}
+			token = token.getNextCodeSibling();
+		}
+		return token;
 	}
 
 	private void executeOnCommentLine(Command command, LocalVariables localVariables, CommentIdentifier commentIdentifier) {

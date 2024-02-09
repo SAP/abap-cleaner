@@ -2111,4 +2111,19 @@ class UnusedVariablesTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testConstantUsedAsDataValue() {
+		// ensure that the usage of the constant is detected
+		buildSrc("    CONSTANTS lc_any_constant TYPE i VALUE 1.");
+		buildSrc("    DATA lv_any_value TYPE i VALUE lc_any_constant.");
+		buildSrc("");
+		buildSrc("    rv_result = lv_any_value.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		copyExpFromSrc();
+		
+		testRule();
+	}
 }
