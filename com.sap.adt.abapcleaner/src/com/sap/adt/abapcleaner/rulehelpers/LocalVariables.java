@@ -38,6 +38,7 @@ public class LocalVariables {
    private final boolean isInOOContext;
    public final VariableInfo returningParameter;
    private boolean methodUsesMacrosOrTestInjection;
+   private boolean methodUsesDynamicAssign;
    
 	public HashMap<String, VariableInfo> locals = new HashMap<String, VariableInfo>();
 
@@ -195,5 +196,13 @@ public class LocalVariables {
 	
 	public boolean getMethodUsesMacrosOrTestInjection() {
 		return methodUsesMacrosOrTestInjection;
+	}
+	
+	public void setMethodUsesDynamicAssign() {
+		methodUsesDynamicAssign = true;
+	}
+
+	public boolean getMethodUsesDynamicAssign() {
+		return methodUsesDynamicAssign;
 	}
 }

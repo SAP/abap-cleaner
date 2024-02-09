@@ -651,4 +651,26 @@ public class UnusedParametersTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testDynamicAssign() {
+		// ensure that methods with dynamic assigns are completely skipped
+		buildSrc("CLASS cl_any DEFINITION.");
+		buildSrc("  PUBLIC_SECTION.");
+		buildSrc("     METHODS any_method");
+		buildSrc("        IMPORTING iv_any_param TYPE i");
+		buildSrc("        RETURNING VALUE(rv_result) TYPE i.");
+		buildSrc("ENDCLASS.");
+		buildSrc("");
+		buildSrc("CLASS cl_any IMPLEMENTATION.");
+		buildSrc("  METHOD any_method.");
+		buildSrc("    ASSIGN ('iv_any_param') TO FIELD-SYMBOL(<lv_any>).");
+		buildSrc("    rv_result = <lv_any>.");
+		buildSrc("  ENDMETHOD.");
+		buildSrc("ENDCLASS.");
+
+		copyExpFromSrc();
+
+		testRule();
+	}
 }

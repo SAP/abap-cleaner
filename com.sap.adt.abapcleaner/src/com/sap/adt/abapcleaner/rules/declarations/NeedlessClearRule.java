@@ -117,7 +117,7 @@ public class NeedlessClearRule extends RuleForDeclarations {
 	@Override
 	protected void executeOn(Code code, Command methodStart, LocalVariables localVariables, int releaseRestriction) throws UnexpectedSyntaxAfterChanges, IntegrityBrokenException {
 		// skip this method if macros are used inside the method (note that macro code may be local or 'out of sight')
-		if (localVariables.getMethodUsesMacrosOrTestInjection() || isCommandBlocked(methodStart))
+		if (localVariables.isEmpty() || localVariables.getMethodUsesMacrosOrTestInjection() || isCommandBlocked(methodStart))
 			return;
 
 		NeedlessClearAction actionAtStart = NeedlessClearAction.forValue(configActionAtStart.getValue());

@@ -101,8 +101,8 @@ public abstract class RuleForDeclarations extends Rule {
 			}
 			
 			if (command.endsLocalVariableContext()) {
-				if (!skipMethod && methodStart != null && !methodStart.startsAMDPMethod())
-					executeOn(code, methodStart, localVariables, releaseRestriction);
+				if (!skipMethod)
+					callExecuteOnMethod(code, methodStart, localVariables, releaseRestriction);
 				methodStart = null;
 				isInMethod = false;
 				localVariables = new LocalVariables(this, null);
@@ -110,8 +110,8 @@ public abstract class RuleForDeclarations extends Rule {
 			// do NOT attach the next section with "else if", since "AT SELECTION-SCREEN" may both end and start   
 			// a "local variable context" at the same time
 			if (command.startsLocalVariableContext()) {
-				if (!skipMethod && !localVariables.isEmpty() && methodStart != null && !methodStart.startsAMDPMethod())
-					executeOn(code, methodStart, localVariables, releaseRestriction);
+				if (!skipMethod)
+					callExecuteOnMethod(code, methodStart, localVariables, releaseRestriction);
 				methodStart = command;
 				isInMethod = true;
 				MethodInfo curMethod = null;
@@ -130,6 +130,15 @@ public abstract class RuleForDeclarations extends Rule {
 				// skip this section to avoid variable definitions from these sections to be moved by the LocalDeclarationOrderRule
 				command = command.getNextSibling();
 				continue;
+
+			} else if (isInMethod && command.firstCodeTokenIsKeyword("ASSIGN")) {
+				// detect dynamic ASSIGN, e.g. 'ASSIGN ('lv_any') TO FIELD-SYMBOL(<...>).' with which we cannot be sure 
+				// whether local variables or parameters are used, so FinalVariableRule, UnusedParameterRule, and UnusedVariablesRule
+				// must be skipped for this method 
+				Token next = command.getFirstCodeToken().getNextCodeToken();
+				if (next.textEquals("(") && next.hasChildren() && next.getFirstChild().isAttached()) {
+					localVariables.setMethodUsesDynamicAssign();
+				}
 
 			} else if (command.firstCodeTokenIsKeyword("DEFINE")) {
 				// skip macro definitions (i.e. DEFINE ... END-OF-DEFINITION sections), 
@@ -171,8 +180,14 @@ public abstract class RuleForDeclarations extends Rule {
 		}
 		if (!localVariables.isEmpty()) {
 			if (!skipMethod)
-				executeOn(code, methodStart, localVariables, releaseRestriction);
+				callExecuteOnMethod(code, methodStart, localVariables, releaseRestriction);
 			localVariables = new LocalVariables(this, null);
+		}
+	}
+
+	private void callExecuteOnMethod(Code code, Command methodStart, LocalVariables localVariables, int releaseRestriction) throws UnexpectedSyntaxAfterChanges {
+		if (methodStart != null && !methodStart.startsAMDPMethod()) {
+			executeOn(code, methodStart, localVariables, releaseRestriction);
 		}
 	}
 
