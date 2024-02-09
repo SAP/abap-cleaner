@@ -813,4 +813,18 @@ class AlignSelectListsTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testSelectSingleForUpdate() {
+		// ensure that SELECT SINGLE FOR UPDATE works in non-strict syntax, too (i.e. if a field list follows)
+		buildSrc("    SELECT SINGLE FOR UPDATE * FROM any_dtab");
+		buildSrc("      INTO ls_any");
+		buildSrc("      WHERE any_key = 1.");
+
+		copyExpFromSrc();
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }
