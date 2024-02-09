@@ -96,7 +96,7 @@ public class EmptyLinesWithinMethodsRule extends Rule {
 			commandForErrorMsg = command;
 			
 			// since event blocks do not have dedicated closers (such as "ENDMETHOD."), the following has to processed at the beginning of the loop:
-			if (command.endsEventBlock())
+			if (command.endsEventBlock() || command.isClassOrInterfaceStart() || command.isClassOrInterfaceEnd())
 				isInMethod = false;
 
 			if (isInMethod && !declarationFound && (command.isDeclaration() || command.isDeclarationInclude())) {

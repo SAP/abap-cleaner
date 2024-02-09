@@ -447,4 +447,19 @@ class EmptyLinesWithinMethodsTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testEmptyLinesAfterClassWithoutMethodsKept() {
+		// ensure that the empty lines after ENDCLASS are kept even if no METHOD is found within the code
+		buildSrc("CLASS any_class IMPLEMENTATION.");
+		buildSrc("ENDCLASS.");
+		buildSrc("");
+		buildSrc("");
+
+		copyExpFromSrc();
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }
