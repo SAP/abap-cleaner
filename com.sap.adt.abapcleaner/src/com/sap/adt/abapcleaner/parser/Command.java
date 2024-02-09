@@ -2261,7 +2261,7 @@ public class Command {
 		} else if (firstCode.isKeyword("EXEC")) {
 			return Language.SQL;
 		
-		} else if (firstCode.matchesOnSiblings(true, "METHOD", TokenSearch.ANY_IDENTIFIER, "BY", "DATABASE", "PROCEDURE|FUNCTION|GRAPH")) {
+		} else if (startsAMDPMethod()) {
 			// for METHOD <identifier> BY DATABASE PROCEDURE|FUNCTION|GRAPH WORKSPACE, see 
 			// https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/index.htm?file=abapmethod_by_db_proc.htm
 			Token languageToken = firstCode.getLastTokenOnSiblings(true, TokenSearch.ASTERISK, "LANGUAGE");
@@ -2283,6 +2283,11 @@ public class Command {
 			return language;
 	}
 	
+	public final boolean startsAMDPMethod() {
+		Token firstCode = getFirstCodeToken();
+		return firstCode != null && firstCode.matchesOnSiblings(true, "METHOD", TokenSearch.ANY_IDENTIFIER, "BY", "DATABASE", "PROCEDURE|FUNCTION|GRAPH");
+	}
+
 	public final Command getStartOfAttachedComments() {
 		Command command = this;
 		while (command.getFirstTokenLineBreaks() == 1 && command.getPrev() != null && command.getPrev().isCommentLine())

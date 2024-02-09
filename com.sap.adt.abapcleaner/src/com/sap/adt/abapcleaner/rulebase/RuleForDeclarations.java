@@ -101,7 +101,7 @@ public abstract class RuleForDeclarations extends Rule {
 			}
 			
 			if (command.endsLocalVariableContext()) {
-				if (!skipMethod)
+				if (!skipMethod && methodStart != null && !methodStart.startsAMDPMethod())
 					executeOn(code, methodStart, localVariables, releaseRestriction);
 				methodStart = null;
 				isInMethod = false;
@@ -110,7 +110,7 @@ public abstract class RuleForDeclarations extends Rule {
 			// do NOT attach the next section with "else if", since "AT SELECTION-SCREEN" may both end and start   
 			// a "local variable context" at the same time
 			if (command.startsLocalVariableContext()) {
-				if (!skipMethod && !localVariables.isEmpty())
+				if (!skipMethod && !localVariables.isEmpty() && methodStart != null && !methodStart.startsAMDPMethod())
 					executeOn(code, methodStart, localVariables, releaseRestriction);
 				methodStart = command;
 				isInMethod = true;
@@ -118,7 +118,8 @@ public abstract class RuleForDeclarations extends Rule {
 				if (curClassOrInterface != null) {
 					curMethod = curClassOrInterface.getMethod(command.getDefinedName()); // may be null
 				}
-				skipMethod = false;
+				// reset skipMethod to false, unless methods are generally skipped by this Rule
+				skipMethod = skipLocalVariableContexts();
 				localVariables = new LocalVariables(this, curMethod);
 			}
 			
