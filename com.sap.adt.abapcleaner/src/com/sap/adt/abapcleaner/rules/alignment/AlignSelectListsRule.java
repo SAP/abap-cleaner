@@ -196,12 +196,13 @@ public class AlignSelectListsRule extends RuleForCommands {
 		boolean skip = false;
 		Token start = null;
 		if (clauseType == SelectClause.SELECT && !query.hasSelectListInSelectClause()) {
-			// SELECT [SINGLE [FOR UPDATE]]
+			// SELECT [SINGLE [FOR UPDATE]], if directly followed 'FROM'
 			skip = true;
 					
 		} else if (clauseType == SelectClause.SELECT || clauseType == SelectClause.FIELDS) {
 			start = clause.firstToken.getNextCodeSibling();
-			while (start.isAnyKeyword("SINGLE", "DISTINCT")) 
+			// skip [DISTINCT] | [SINGLE [FOR UPDATE]]
+			while (start.isAnyKeyword("DISTINCT", "SINGLE", "FOR", "UPDATE")) 
 				start = start.getNextCodeSibling();
 			// skip 'SELECT|FIELDS [DISTINCT] (column_syntax)' and 'SELECT|FIELDS [DISTINCT] *'
 			skip = opensDynamicSyntax(start, clause) || start.textEquals("*") && start == clause.lastToken;
