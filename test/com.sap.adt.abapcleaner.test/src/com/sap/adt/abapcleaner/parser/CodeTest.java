@@ -639,7 +639,7 @@ public class CodeTest extends CodeTestBase {
 			assertFalse(cleanupResult.hasErrorMessage());
 			assertEquals("", cleanupResult.getSelectedText());
 			
-			code = Code.parse(null, ParseParams.createForCleanupRange("test", codeText, ABAP.NEWEST_RELEASE, CleanupRange.create(1, 4, false), CleanupRangeExpandMode.FULL_METHOD));
+			code = Code.parse(null, ParseParams.createForCleanupRange("test", codeText, ABAP.NEWEST_RELEASE, CleanupRange.create(2, 4, false), CleanupRangeExpandMode.FULL_METHOD));
 			cleanupResult = code.toCleanupResult(LINE_SEP);
 			assertTrue(cleanupResult.hasCleanedCode());
 			assertEquals(codeText, cleanupResult.getCleanedCode());
@@ -880,12 +880,12 @@ public class CodeTest extends CodeTestBase {
 		try {
 			// expand cleanup range to full document; expect .cleanupRange to be null
 			Code code = Code.parse(null, ParseParams.createForTest(codeText, ABAP.NEWEST_RELEASE));
-			code.cleanupRange = CleanupRange.create(1, 3, true);
+			code.cleanupRange = CleanupRange.create(2, 3, true);
 			code.expandCleanupRange(CleanupRangeExpandMode.FULL_DOCUMENT);
 			assertEquals(null, code.cleanupRange);
 
 			// provide cleanup range with a start command that is out of range
-			code.cleanupRange = CleanupRange.create(10, 20, true);
+			code.cleanupRange = CleanupRange.create(11, 20, true);
 			code.expandCleanupRange(CleanupRangeExpandMode.FULL_METHOD);
 			assertFalse(code.cleanupRange.expandRange);
 

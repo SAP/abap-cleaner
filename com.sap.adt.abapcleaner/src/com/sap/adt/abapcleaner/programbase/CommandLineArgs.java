@@ -113,11 +113,11 @@ public class CommandLineArgs {
 				String lineRange = nextArg;
 				int sepPos = lineRange.indexOf(LINE_RANGE_SEP);
 				int startLine = (sepPos <= 0) ? -1 : Integer.valueOf(lineRange.substring(0, sepPos));
-				int endLine = (sepPos < 0 || sepPos + 1 >= lineRange.length()) ? -1 : Integer.valueOf(lineRange.substring(sepPos + 1));
-				if (startLine < 0 || endLine < 0 || startLine > endLine) {
-					errors.append("Invalid " + OPT_LINE_RANGE + ": Expected format \"m-n\", e.g. " + LINE_RANGE_EXAMPLE).append(LINE_SEP);
+				int lastLine = (sepPos < 0 || sepPos + 1 >= lineRange.length()) ? -1 : Integer.valueOf(lineRange.substring(sepPos + 1));
+				if (startLine <= 0 || lastLine <= 0 || startLine > lastLine) {
+					errors.append("Invalid " + OPT_LINE_RANGE + ": Expected format \"m-n\" (1-based), e.g. " + LINE_RANGE_EXAMPLE).append(LINE_SEP);
 				} else {
-					cleanupRange = CleanupRange.create(startLine, endLine, true);
+					cleanupRange = CleanupRange.create(startLine, lastLine, true);
 				}
 
 			} else if (arg.equals(OPT_PROFILE) || arg.equals(OPT_PROFILE_DATA)) {

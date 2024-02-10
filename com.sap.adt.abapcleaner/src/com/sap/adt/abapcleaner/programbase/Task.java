@@ -218,7 +218,7 @@ public class Task implements IProgress {
 		
 		// clean: execute active rules
 		if (parseParams.surroundingCode != null)
-			resultingCode.clearUsedRules(); // the ChangeControls are shared between code and codePart
+			resultingCode.clearUsedRulesInCleanupRange(); // the ChangeControls are shared between code and codePart
 		stopwatch.resetAndStart();
 		try {
 			if (cleanupParams.executeSingleRuleOnly()) {

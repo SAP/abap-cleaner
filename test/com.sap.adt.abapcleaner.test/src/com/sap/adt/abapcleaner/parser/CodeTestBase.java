@@ -18,7 +18,8 @@ public abstract class CodeTestBase {
 
 	protected StringBuilder sourceCodeBuilder = new StringBuilder();
 	private int lineCount = 0;
-	private ArrayList<Integer> expandSections = new ArrayList<Integer>();
+	/** contains the 1-based last line (inclusive) of each section */
+	private ArrayList<Integer> expandSectionLastLines = new ArrayList<Integer>();
 	
 	protected void buildSrc(String line) {
 		buildCode(sourceCodeBuilder, line);
@@ -40,7 +41,7 @@ public abstract class CodeTestBase {
 	}
 
 	protected void endOfExpandSection() {
-		expandSections.add(lineCount);
+		expandSectionLastLines.add(lineCount);
 	}
 	
 	private void putAroundSrc(String start, String end) {
@@ -53,13 +54,14 @@ public abstract class CodeTestBase {
 		Code code = testParseCode();
 		
 		// test the cleanup range resulting from various simulated cursor positions 
-		int sectionStart = 0; // 0-based
-		for (int sectionEnd : expandSections) { // 0-based
+		// (all line numbers are 1-based and inclusive)
+		int sectionStartLine = 1; 
+		for (int sectionLastLine : expandSectionLastLines) { 
 
-			for (int line = sectionStart; line < sectionEnd; ++line) {
-				// pretend that cleanup is called from the add-on with the cursor somewhere on the 0-based 'line' number
+			for (int line = sectionStartLine; line <= sectionLastLine; ++line) {
+				// pretend that cleanup is called from the add-on with the cursor somewhere on the 1-based 'line' number
 				// and no code selected (so the line shall be expanded to the surrounding method or declaration section)
-				CleanupRange cleanupRange = CleanupRange.create(line, line + 1, true);
+				CleanupRange cleanupRange = CleanupRange.create(line, line, true);
 				
 				// parse the code each time with a different cleanup range (but don't repeat all the tests in parseCode()
 				code.cleanupRange = cleanupRange;
@@ -67,12 +69,12 @@ public abstract class CodeTestBase {
 				
 				// check the cleanup range to which 'line' was expanded
 				cleanupRange = code.cleanupRange;
-				assertEquals(sectionStart, cleanupRange.startLine);
-				assertEquals(sectionEnd, cleanupRange.endLine);
+				assertEquals(sectionStartLine, cleanupRange.startLine);
+				assertEquals(sectionLastLine, cleanupRange.lastLine);
 				assertFalse(cleanupRange.expandRange); 
 			}
 
-			sectionStart = sectionEnd;
+			sectionStartLine = sectionLastLine + 1;
 		}
 	}
 	

@@ -99,7 +99,7 @@ public class CommandLineArgsTest {
 	
 		assertEquals(anySourceCode, args.sourceCode);
 		assertEquals(20, args.cleanupRange.startLine);
-		assertEquals(35, args.cleanupRange.endLine);
+		assertEquals(35, args.cleanupRange.lastLine);
 		assertTrue(args.cleanupRange.expandRange);
 		assertEquals(anyProfileData, args.profileData);
 		assertEquals("757", args.abapRelease);

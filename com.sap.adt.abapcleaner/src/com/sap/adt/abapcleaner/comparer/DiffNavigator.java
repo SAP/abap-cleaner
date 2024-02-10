@@ -94,7 +94,7 @@ public class DiffNavigator {
 			selStartLine = validLineIndex(setSelectionToStartLine);
 	}
 
-	public final String reprocessSelection(Profile profile, int releaseRestriction, String sourceName) {
+	public final Task reprocessSelection(Profile profile, int releaseRestriction, String sourceName) throws IntegrityBrokenException {
 		int startLine = getSelectionLineMin();
 		int lastLine = getSelectionLineMax();
 
@@ -126,16 +126,18 @@ public class DiffNavigator {
 
 		// widen the selection to include the complete original command in case that was split into multiple commands (e.g. with DeclarationChainRule)
 		if (startCommand.originalCommand != null) {
-			while (startCommand.getPrev() != null && startCommand.originalCommand == startCommand.getPrev().originalCommand)
+			while (startCommand.getPrev() != null && startCommand.originalCommand == startCommand.getPrev().originalCommand) {
 				startCommand = startCommand.getPrev();
+			}
 		}
 		if (lastCommand.originalCommand != null) {
-			while (lastCommand.getNext() != null && lastCommand.originalCommand == lastCommand.getNext().originalCommand)
+			while (lastCommand.getNext() != null && lastCommand.originalCommand == lastCommand.getNext().originalCommand) {
 				lastCommand = lastCommand.getNext();
+			}
 		}
 		
 		int sourceLineOfSelStart = startCommand.getSourceLineNumStart();
-		int sourceLineOfSelEnd = lastCommand.getSourceLineNumEnd();
+		int sourceLineOfSelLast = lastCommand.getSourceLineNumLast();
 		
 		// move the start command to possibly have a parent, but no grandparent (i.e., assuming CLASS ... METHOD ..., move to METHOD level)
 		while (startCommand.getParent() != null && startCommand.getParent().getParent() != null) 
@@ -172,60 +174,65 @@ public class DiffNavigator {
 		while (lastCommand != null && lastCommand.getOpensLevel() && lastCommand.getNextSibling() != null)
 			lastCommand = lastCommand.getNextSibling();
 
-		if (lastCommand == null) 
+		// if the last command is a level-opener without a corresponding closer (such as REPORT, AT SELECTION-SCREEN etc.),
+		// the range may be followed by a child command of the last command; to avoid swapping of such ranges, 
+		// set lastCommand to the very end
+		if (lastCommand == null || lastCommand.hasChildren() || lastCommand.getOpensLevel())
 			lastCommand = code.lastCommand;
 		
 		// determine the complete line range startLine...lastLine, considering left and right display and original commands
-		startLine = diffDoc.findFirstLineOfCommand(startCommand, DisplaySide.RIGHT, false);
-		Command startCommandLeft = (startCommand.originalCommand != null) ? startCommand.originalCommand : startCommand;
-		int startLineLeft = diffDoc.findFirstLineOfCommand(startCommandLeft, DisplaySide.LEFT, false);
-		if (startLineLeft >= 0 && startLineLeft < startLine) {
-			startLine = startLineLeft;
-		}
-		lastLine = diffDoc.findLastLineOfCommand(lastCommand, DisplaySide.RIGHT);
-		Command lastCommandLeft = (lastCommand.originalCommand != null) ? lastCommand.originalCommand : lastCommand;
-		int lastLineLeft = diffDoc.findLastLineOfCommand(lastCommandLeft, DisplaySide.LEFT);
-		if (lastLineLeft >= 0 && lastLineLeft > lastLine) {
-			lastLine = lastLineLeft;
-		}
-		int sourceTextStart = startCommand.getSourceTextStart();
-		int sourceTextEnd = lastCommand.getSourceTextEnd();
-
-		// TODO: this is wrong if the first Token's lineBreaks were changed - we need the original sourceLineNumStart!
-		int lineNumOffset = startCommand.getSourceLineNumStart() - startCommand.getSourceLineBreaksBefore();
-		String codePartText = code.codeText.substring(sourceTextStart, sourceTextEnd);
-
+		startLine = diffDoc.findFirstLineOfCommandOrOriginal(startCommand);
+		lastLine = diffDoc.findLastLineOfCommandOrOriginal(lastCommand);
+		
+		// create a partial cleanup range, but continue to provide the full code text, which is esp. needed for all rules 
+		// that inherit from RuleForDeclarations to evaluate class definitions etc. even if only the method is inside the cleanup range
 		CleanupRange fullCleanupRange = code.getCleanupRange();
-		// partCleanupRange works with the regular line numbers, i.e. we do NOT subtract the lineNumOffset 
-		CleanupRange partCleanupRange = (fullCleanupRange != null) ? CleanupRange.create(fullCleanupRange.startLine, fullCleanupRange.endLine, false) : null;
-		ParseParams parseParams = ParseParams.createForReprocessing(sourceName, codePartText, code.abapRelease, partCleanupRange, CleanupRangeExpandMode.FULL_STATEMENT, lineNumOffset, sourceTextStart, code);
+		CleanupRange partCleanupRange = null;
+		int partSourceLineStart = startCommand.getSourceLineNumStart();
+		int partSourceLineLast = lastCommand.getSourceLineNumLast();
+		if (fullCleanupRange != null) {
+			partSourceLineStart = Math.max(partSourceLineStart, fullCleanupRange.startLine);
+			partSourceLineLast = Math.min(partSourceLineLast, fullCleanupRange.lastLine);
+		}
+		// determine the 0-based values for the partial cleanup range, and add 1 for "end line" (excl.) instead of "last line" (incl.)
+		partCleanupRange = CleanupRange.create(partSourceLineStart, partSourceLineLast, false);
+		
+		// parse the whole code again, but run cleanup only on the partial cleanup range
+		ParseParams parseParams = ParseParams.createForReprocessing(sourceName, code.codeText, code.abapRelease, partCleanupRange, CleanupRangeExpandMode.FULL_STATEMENT, code);
 		Job partJob = Job.createForSingleCodeDocument(parseParams, CleanupParams.createForProfile(profile, false, releaseRestriction));
 		partJob.run();
 		Task result = partJob.getResult();
 		if (!result.getSuccess()) {
-			String errorMsg = result.getErrorMessage();
-			return (errorMsg != null) ? errorMsg : "";
+			return result;
 		}
-
-		// merge parts into full code and diffDoc
+		
+		// replace the reprocessed part of the code 
+		Code newCode = result.getResultingCode();
+		Command newStartCommand = newCode.searchCommandAt(partSourceLineStart);
+		Command newLastCommand = newCode.searchCommandAt(partSourceLineLast); 
 		try {
-			code.replacePart(startCommand, lastCommand, result.getResultingCode());
+			code.replacePart(startCommand, lastCommand, newStartCommand, newLastCommand);
 		} catch (IntegrityBrokenException e) {
 			e.addToLog();
-			return e.getMessage();
+			throw e;
 		}
-		DiffDoc diffDocPart = result.getResultingDiffDoc();
-		diffDoc.replacePart(startLine, lastLine, diffDocPart);
+
+		// replace the reprocessed part of the diffDoc 
+		DiffDoc partDiffDoc = result.getResultingDiffDoc();
+		// determine the complete line range partStartLine...partLastLine, considering left and right display and original commands
+		int partStartLine = partDiffDoc.findFirstLineOfCommandOrOriginal(newStartCommand);
+		int partLastLine = partDiffDoc.findLastLineOfCommandOrOriginal(newLastCommand);
+		diffDoc.replacePart(startLine, lastLine, partDiffDoc, partStartLine, partLastLine);
 
 		// move selection to cover the same commands in the changed code
 		int newSelStartLine = diffDoc.findFirstLineOfSourceLine(sourceLineOfSelStart);
-		int newCurLine = diffDoc.findLastLineOfSourceLine(sourceLineOfSelEnd);
+		int newCurLine = diffDoc.findLastLineOfSourceLine(sourceLineOfSelLast);
 		if (newSelStartLine >= 0 && newCurLine >= 0) {
 			selStartLine = diffDoc.getFirstNonEmptyOrChangedLineInRange(newSelStartLine, newCurLine);
 			curLine = newCurLine; 
 		}
 
-		return null;
+		return result;
 	}
 
 	public final void setSearchMode(boolean searchMode) {

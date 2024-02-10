@@ -33,8 +33,8 @@ public class ParseParams {
 	}
 
 	/** Create parse parameters for re-parsing only a part of an ABAP code document, in order to replace a part of an existing {@link Code} */
-	public static ParseParams createForReprocessing(String sourceName, String partText, String abapRelease, CleanupRange cleanupRange, CleanupRangeExpandMode cleanupRangeExpandMode, int lineNumOffset, int surroundingTextOffset, Code surroundingCode) {
-		return new ParseParams(sourceName, partText, abapRelease, cleanupRange, cleanupRangeExpandMode, lineNumOffset, surroundingTextOffset, surroundingCode);
+	public static ParseParams createForReprocessing(String sourceName, String codeText, String abapRelease, CleanupRange cleanupRange, CleanupRangeExpandMode cleanupRangeExpandMode, Code surroundingCode) {
+		return new ParseParams(sourceName, codeText, abapRelease, cleanupRange, cleanupRangeExpandMode, 1, 0, surroundingCode);
 	}
 	
 	private ParseParams(String sourceName, String codeText, String abapRelease, CleanupRange cleanupRange, CleanupRangeExpandMode cleanupRangeExpandMode, int lineNumOffset, int surroundingTextOffset, Code surroundingCode) {

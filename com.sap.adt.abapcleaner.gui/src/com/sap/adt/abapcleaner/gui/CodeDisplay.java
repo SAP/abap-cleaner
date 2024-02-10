@@ -29,8 +29,10 @@ import com.sap.adt.abapcleaner.base.*;
 import com.sap.adt.abapcleaner.comparer.*;
 import com.sap.adt.abapcleaner.parser.*;
 import com.sap.adt.abapcleaner.programbase.CompareException;
+import com.sap.adt.abapcleaner.programbase.IntegrityBrokenException;
 import com.sap.adt.abapcleaner.programbase.ParseException;
 import com.sap.adt.abapcleaner.programbase.Program;
+import com.sap.adt.abapcleaner.programbase.Task;
 import com.sap.adt.abapcleaner.rulebase.*;
 import org.eclipse.swt.events.DisposeListener;
 import org.eclipse.swt.events.DisposeEvent;
@@ -366,13 +368,18 @@ public class CodeDisplay extends Composite {
 		picCode1.redraw(); 
 	}
 
-	public final void reprocessSelection(Profile profile, int releaseRestriction) {
-		String errorMessage = navigator.reprocessSelection(profile, releaseRestriction, sourceName);
-		if (errorMessage == null) {
-			refreshCode();
-		} else {
-			Message.show(errorMessage, getShell());
+	public final Task reprocessSelection(Profile profile, int releaseRestriction) {
+		try {
+			Task result = navigator.reprocessSelection(profile, releaseRestriction, sourceName);
+			if (result.getSuccess()) {
+				refreshCode();
+				return result;
+			} 
+			Message.show(result.getErrorMessage(), getShell());
+		} catch (IntegrityBrokenException e) {
+			Message.show(e.getMessage(), getShell());
 		}
+		return null;
 	}
 
 	public final void formActivated() {

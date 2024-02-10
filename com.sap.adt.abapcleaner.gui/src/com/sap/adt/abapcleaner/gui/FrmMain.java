@@ -1602,11 +1602,12 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 
 		// show result
 		String abapReleaseInfo = getReleaseInfo(newAbapRelease);
+		updateShellText(sourceName, newAbapRelease, null);
 		shell.setText(Program.PRODUCT_NAME + " - " + sourceName + abapReleaseInfo);
 		codeDisplay.setInfo(sourceName, sourcePath, sourceCode, abapRelease, curProfile.getSingleActiveRule());
 		codeDisplay.refreshCode(result.getResultingCode(), result.getResultingDiffDoc(), topLineIndex, curLineIndex, selectionStartLine);
 		if (Program.showDevFeatures()) {
-			shell.setText(Program.PRODUCT_NAME + " - " + sourceName + abapReleaseInfo + " - " + result.getCalculationTimeInfo());
+			updateShellText(sourceName, newAbapRelease, result);
 		}
 		// remember the resulting Code instance; the CleanupResult will only be created from it when the window is closed
 		resultCode = result.getResultingCode();
@@ -1617,6 +1618,15 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 			}
 		}
 		return true;
+	}
+
+	private void updateShellText(String sourceName, String abapRelease, Task result) {
+		String abapReleaseInfo = getReleaseInfo(abapRelease);
+		String shellText = Program.PRODUCT_NAME + " - " + sourceName + abapReleaseInfo;
+		if (result != null  && Program.showDevFeatures()) {
+			shellText += " - " + result.getCalculationTimeInfo();
+		}
+		shell.setText(shellText);
 	}
 
 	private String getReleaseInfo(String abapRelease) {
@@ -1701,11 +1711,12 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		}
 		String sourceName = persistency.getFileNameWithoutExtension(path);
 		String codeText = persistency.readAllTextFromFile(path);
-		if (keepPositionIfSameFile && codeDisplay != null && StringUtil.equalsIgnoreCaseCheckingForNull(path, codeDisplay.getSourcePath()))
+		if (keepPositionIfSameFile && codeDisplay != null && StringUtil.equalsIgnoreCaseCheckingForNull(path, codeDisplay.getSourcePath())) {
 			return refreshCode(sourceName, path, codeText, ABAP.NEWEST_RELEASE, true, codeDisplay.getTopLineIndex(), codeDisplay.getCurLineIndex(),
 					codeDisplay.getSelectionStartLine(), null, CleanupRangeExpandMode.FULL_DOCUMENT);
-		else
+		} else {
 			return refreshCode(sourceName, path, codeText, ABAP.NEWEST_RELEASE, true);
+		}
 	}
 
 	private CleanupParams getCleanupParamsForStressTest() { // TODO Auto-generated method stub
@@ -2208,7 +2219,10 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 			}
 			boolean changed = codeDisplay.setBlockRuleInSelection(ruleID, blocked);
 			if (changed) {
-				codeDisplay.reprocessSelection(curProfile, settings.releaseRestriction);
+				Task result = codeDisplay.reprocessSelection(curProfile, settings.releaseRestriction);
+				if (result != null && Program.showDevFeatures()) {
+					updateShellText(codeDisplay.getSourceName(), codeDisplay.getAbapRelease(), result);
+				}
 			}
 		}
 		codeDisplay.focusDisplay();
