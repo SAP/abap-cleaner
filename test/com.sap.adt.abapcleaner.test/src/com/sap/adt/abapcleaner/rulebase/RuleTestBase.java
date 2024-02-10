@@ -36,6 +36,7 @@ import com.sap.adt.abapcleaner.programbase.CompareException;
 import com.sap.adt.abapcleaner.programbase.IntegrityBrokenException;
 import com.sap.adt.abapcleaner.programbase.ParseException;
 import com.sap.adt.abapcleaner.programbase.Program;
+import com.sap.adt.abapcleaner.programbase.Task;
 import com.sap.adt.abapcleaner.programbase.UnexpectedSyntaxAfterChanges;
 import com.sap.adt.abapcleaner.programbase.UnexpectedSyntaxBeforeChanges;
 
@@ -650,9 +651,15 @@ public abstract class RuleTestBase {
 			diffNav.moveToFirstLine(true);
 		}
 		diffNav.setBlockRuleInSelection(ruleID, true);
-		String error = diffNav.reprocessSelection(profile, releaseRestrictionFromUI, code.sourceName);
-		if (checkSyntaxAfterParse) {
-			assertNull(error);
+		try {
+			Task result = diffNav.reprocessSelection(profile, releaseRestrictionFromUI, code.sourceName);
+			if (checkSyntaxAfterParse) {
+				assertTrue(result.getSuccess());
+			}
+		} catch (IntegrityBrokenException e) {
+			if (checkSyntaxAfterParse) {
+				fail(e.getMessage());
+			}
 		}
 	}
 

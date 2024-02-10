@@ -73,10 +73,10 @@ public class Command {
 	private int sourceTextEnd;
 	/** the original number of line breaks before this Command, as found in the source code from which this Command was parsed */
 	private int sourceLineBreaksBefore; 
-	/** the original start line number of this Command, as found in the source code from which this Command was parsed */
+	/** the 1-based original start line number of this Command, as found in the source code from which this Command was parsed */
 	private int sourceLineNumStart; 
-	/** the original end line number of this Command, as found in the source code from which this Command was parsed */
-	private int sourceLineNumEnd; 
+	/** the 1-based original end line number of this Command, as found in the source code from which this Command was parsed */
+	private int sourceLineNumLast; 
 	private final Language language;
 	public final Language getLanguage() { return language; }
 	private ChangeControl changeControl;
@@ -130,8 +130,8 @@ public class Command {
 	public final int getSourceLineBreaksBefore() { return sourceLineBreaksBefore; }
 	
 	public final int getSourceLineNumStart() { return sourceLineNumStart; }
-	public final int getSourceLineNumEnd() { return sourceLineNumEnd; }
-	public final boolean containsSourceLineNum(int sourceLineNum) { return sourceLineNumStart <= sourceLineNum && sourceLineNumEnd >= sourceLineNum; }
+	public final int getSourceLineNumLast() { return sourceLineNumLast; }
+	public final boolean containsSourceLineNum(int sourceLineNum) { return sourceLineNumStart <= sourceLineNum && sourceLineNumLast >= sourceLineNum; }
 
 	public final ChangeControl getChangeControl() { return changeControl; }
 
@@ -878,7 +878,7 @@ public class Command {
 		this.sourceTextEnd = sourceTextEnd;
 		sourceLineBreaksBefore = firstToken.lineBreaks;
 		sourceLineNumStart = firstToken.sourceLineNum;
-		sourceLineNumEnd = lastToken.sourceLineNum;
+		sourceLineNumLast = lastToken.sourceLineNum;
 		changeControl = parentCode.getChangeControl(sourceTextStart, sourceTextEnd);
 
 		// code in non-ABAP sections (e.g. EXEC SQL ... ENDEXEC) is kept unchanged, and unless a Token is a COMMENT, is has TokenType NON_ABAP
@@ -2167,11 +2167,25 @@ public class Command {
 		} else { 
 			// Determine whether this Command is part of the cleanup. Note that this depends on the original position 
 			// of the Command which may have changed in the meantime, e.g. with IfBlockAtLoopEndRule and IfBlockAtMethodEndRule.
-			// When applying a Rule, we therefore always visit all Commands. 
-			// If the whole(!) cleanup range is within the empty lines above a Command, return true as well. 
+			// When applying a Rule, we therefore always visit all Commands.
+
+			// both CleanupRange and sourceLineNum.. use 1-based, inclusive values  
 			CleanupRange cleanupRange = parentCode.getCleanupRange();
-			return (cleanupRange.startLine < sourceLineNumEnd && cleanupRange.endLine >= sourceLineNumStart)
-					|| (cleanupRange.startLine >= sourceLineNumStart - firstToken.lineBreaks && cleanupRange.endLine < sourceLineNumStart);
+			int rangeStart = cleanupRange.startLine;
+			int rangeLast = cleanupRange.lastLine;
+
+			if (rangeStart <= sourceLineNumLast && rangeLast >= sourceLineNumStart) {
+				// the cleanup range intersects with the text of the command (NOT just with the empty lines above it)
+				return true;
+			} else if (rangeStart > sourceLineNumStart - firstToken.lineBreaks && rangeLast < sourceLineNumStart) {
+				// the whole(!) cleanup range is within the empty lines above a Command (note that .lineBreaks == 4 means 3 empty lines)
+				return true;
+			} else {
+				return false;
+			}
+			
+			// return (cleanupRange.startLine < sourceLineNumLast && cleanupRange.endLine >= sourceLineNumStart)
+			// 		|| (cleanupRange.startLine >= sourceLineNumStart - firstToken.lineBreaks && cleanupRange.endLine < sourceLineNumStart);
 		}
 	}
 

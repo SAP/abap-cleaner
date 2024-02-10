@@ -87,7 +87,10 @@ public abstract class AbapCleanerHandlerBase extends AbstractAdtEditorHandler {
 			// get the current text selection, from which the cleanup range will be derived
 			ITextSelection selection = (ITextSelection) adtSourcePage.getSelectionProvider().getSelection();
 			boolean expandRange = (selection.getLength() == 0); // this is NOT the same as .isEmpty()
-			CleanupRange cleanupRange = CleanupRange.create(selection.getStartLine(), selection.getEndLine() + 1, expandRange); 
+			// determine the 1-based, inclusive line numbers for the CleanupRange 
+			int startLine = selection.getStartLine() + 1;
+			int lastLine = selection.getEndLine() + 1; // this value is inclusive
+			CleanupRange cleanupRange = CleanupRange.create(startLine, lastLine, expandRange); 
 
 			// get the ABAP release against which this code must compile
          IPadFileResolver resolver = new PadFileResolver(file.getProject());

@@ -406,49 +406,51 @@ public class Code {
 		return newChangeControl;
 	}
 
-	public final void clearUsedRules() {
+	public final void clearUsedRulesInCleanupRange() {
 		Command command = firstCommand;
 		while (command != null) {
-			command.getChangeControl().clearUsedRules();
+			if (command.isInCleanupRange()) {
+				command.getChangeControl().clearUsedRules();
+			}
 			command = command.getNext();
 		}
 	}
 
-	public final void replacePart(Command startCommand, Command lastCommand, Code codePart) throws IntegrityBrokenException {
-		Command command = codePart.firstCommand;
+	public final void replacePart(Command oldStart, Command oldLast, Command newStart, Command newLast) throws IntegrityBrokenException {
+		Command command = newStart;
 		while (command != null) {
 			command.setParentCode(this);
 			command = command.getNext();
 		}
 
-		Command newCommand = codePart.firstCommand;
+		Command newCommand = newStart;
 		while (newCommand != null) {
-			newCommand.setParent(startCommand.getParent());
+			newCommand.setParent(oldStart.getParent());
 			newCommand = newCommand.getNextSibling();
 		}
-		if (startCommand.getParent() != null && startCommand.getParent().getFirstChild() == startCommand)
-			startCommand.getParent().setFirstChild(codePart.firstCommand);
-		if (lastCommand.getParent() != null && lastCommand.getParent().getLastChild() == lastCommand)
-			lastCommand.getParent().setLastChild(codePart.lastCommand);
+		if (oldStart.getParent() != null && oldStart.getParent().getFirstChild() == oldStart)
+			oldStart.getParent().setFirstChild(newStart);
+		if (oldLast.getParent() != null && oldLast.getParent().getLastChild() == oldLast)
+			oldLast.getParent().setLastChild(newLast);
 
-		codePart.firstCommand.setPrev(startCommand.getPrev());
-		codePart.firstCommand.setPrevSibling(startCommand.getPrevSibling());
-		if (codePart.firstCommand.getPrev() != null)
-			codePart.firstCommand.getPrev().setNext(codePart.firstCommand);
-		if (codePart.firstCommand.getPrevSibling() != null)
-			codePart.firstCommand.getPrevSibling().setNextSibling(codePart.firstCommand);
+		newStart.setPrev(oldStart.getPrev());
+		newStart.setPrevSibling(oldStart.getPrevSibling());
+		if (newStart.getPrev() != null)
+			newStart.getPrev().setNext(newStart);
+		if (newStart.getPrevSibling() != null)
+			newStart.getPrevSibling().setNextSibling(newStart);
 
-		codePart.lastCommand.setNext(lastCommand.getNext());
-		codePart.lastCommand.setNextSibling(lastCommand.getNextSibling());
-		if (codePart.lastCommand.getNext() != null)
-			codePart.lastCommand.getNext().setPrev(codePart.lastCommand);
-		if (codePart.lastCommand.getNextSibling() != null)
-			codePart.lastCommand.getNextSibling().setPrevSibling(codePart.lastCommand);
+		newLast.setNext(oldLast.getNext());
+		newLast.setNextSibling(oldLast.getNextSibling());
+		if (newLast.getNext() != null)
+			newLast.getNext().setPrev(newLast);
+		if (newLast.getNextSibling() != null)
+			newLast.getNextSibling().setPrevSibling(newLast);
 
-		if (startCommand == firstCommand)
-			firstCommand = codePart.firstCommand;
-		if (lastCommand == this.lastCommand)
-			this.lastCommand = codePart.lastCommand;
+		if (oldStart == firstCommand)
+			firstCommand = newStart;
+		if (oldLast == this.lastCommand)
+			this.lastCommand = newLast;
 
 		finishBuild();
 
@@ -534,9 +536,9 @@ public class Code {
 		Command startCommand = findFirstCommandInCleanupRange();
 		if (startCommand == null) {
 			// no chance to expand the cleanup range
-			cleanupRange = CleanupRange.create(cleanupRange.startLine, cleanupRange.endLine, false);
+			cleanupRange = CleanupRange.create(cleanupRange.startLine, cleanupRange.lastLine, false);
 			return;
-		}			
+		}
 
 		Command lastCommand = findLastCommandInCleanupRange(); 
 
@@ -615,9 +617,7 @@ public class Code {
 			lastCommand = this.lastCommand;
 		
 		// modify the CleanupRange and prevent further expansion
-		int startLine = startCommand.getSourceLineNumStart() - 1; // sourceLineNumStart is 1-based, but startLine is 0-based
-		int endLine = lastCommand.getSourceLineNumEnd() - 1 + 1; // endLine must be the 0-based line after the Command  
-		cleanupRange = CleanupRange.create(startLine, endLine, false);
+		cleanupRange = CleanupRange.create(startCommand.getSourceLineNumStart(), lastCommand.getSourceLineNumLast(), false);
 	}
 	
 	public int getLineCountInCleanupRange() {
@@ -628,13 +628,13 @@ public class Code {
 			while (command != null) {
 				if (command.isInCleanupRange()) {
 					firstLine = Math.min(firstLine, command.getSourceLineNumStart());
-					lastLine = Math.max(lastLine, command.getSourceLineNumEnd());
+					lastLine = Math.max(lastLine, command.getSourceLineNumLast());
 				}
 				command = command.getNext();
 			}
 		} else if (firstCommand != null && lastCommand != null) {
-			lastLine = lastCommand.getSourceLineNumEnd();
 			firstLine = firstCommand.getSourceLineNumStart();
+			lastLine = lastCommand.getSourceLineNumLast();
 		}
 		if (firstLine == Integer.MAX_VALUE)
 			return 0;
@@ -685,7 +685,7 @@ public class Code {
 	public Command searchCommandAt(int sourceLineNum) {
 		Command command = firstCommand;
 		while (command != null) {
-			if (command.getSourceLineNumStart() <= sourceLineNum && command.getSourceLineNumEnd() >= sourceLineNum) {
+			if (command.containsSourceLineNum(sourceLineNum)) {
 				return command;
 			} 
 			// for performance, move to next sibling, if possible

@@ -226,20 +226,36 @@ public class DiffDoc {
    	return startLine;
    }
    
-   final void replacePart(int startLine, int lastLine, DiffDoc diffDocPart) {
+   final void replacePart(int startLine, int lastLine, DiffDoc partDiffDoc, int partDiffDocLineStart, int partDiffDocLineEnd) {
       lines.subList(startLine, lastLine + 1).clear();
-      lines.addAll(startLine, diffDocPart.lines);
-
+      if (partDiffDocLineStart < 0 || partDiffDocLineEnd < 0) {
+         lines.addAll(startLine, partDiffDoc.lines);
+      } else {
+      	lines.addAll(startLine, partDiffDoc.lines.subList(partDiffDocLineStart, partDiffDocLineEnd + 1));
+      }
+      
       int indexInDocLeft = 0;
       int indexInDocRight = 0;
       for (int i = 0; i < getLineCount(); ++i) {
          DiffLine line = lines.get(i);
          line.index = i;
-         if (line.leftLine != null)
+         if (line.leftLine != null) {
             line.leftLine.indexInDoc = indexInDocLeft++;
-         if (line.rightLine != null)
+         }
+         if (line.rightLine != null) {
             line.rightLine.indexInDoc = indexInDocRight++;
+         }
       }
+   }
+
+   final int findFirstLineOfCommandOrOriginal(Command command) {
+		int startLine = findFirstLineOfCommand(command, DisplaySide.RIGHT, false);
+		Command startCommandLeft = (command.originalCommand != null) ? command.originalCommand : command;
+		int startLineLeft = findFirstLineOfCommand(startCommandLeft, DisplaySide.LEFT, false);
+		if (startLineLeft >= 0 && startLineLeft < startLine) {
+			startLine = startLineLeft;
+		}
+		return startLine;
    }
 
    final int findFirstLineOfCommand(Command command, DisplaySide displaySide, boolean skipEmptyLines) {
@@ -252,6 +268,15 @@ public class DiffDoc {
       return -1;
    }
 
+   final int findLastLineOfCommandOrOriginal(Command command) {
+		int lastLine = findLastLineOfCommand(command, DisplaySide.RIGHT);
+		Command lastCommandLeft = (command.originalCommand != null) ? command.originalCommand : command;
+		int lastLineLeft = findLastLineOfCommand(lastCommandLeft, DisplaySide.LEFT);
+		if (lastLineLeft >= 0 && lastLineLeft > lastLine) {
+			lastLine = lastLineLeft;
+		}
+		return lastLine;
+   }
 
    final int findLastLineOfCommand(Command command, DisplaySide displaySide) {
       for (int i = getLineCount() - 1; i >= 0; --i) {
