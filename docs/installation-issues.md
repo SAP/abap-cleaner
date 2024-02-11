@@ -59,3 +59,11 @@ Details say "No repository found containing: osgi.bundle,..." (or similar).
 [**Back to README**](../README.md#requirements-and-installation)
 
 
+## Menu "Help / Install New Software ..." is grayed out
+
+**Symptom**: In the SAP-internal version of ABAP Development Tools (ADT) installed from Software Center, 
+the ABAP cleaner plug-in cannot be installed, because the ADT menu "Help / Install New Software ..." is grayed out. 
+
+**Solution**: Please change to an extensible ADT version as described in SAP Note 3415582. 
+
+[**Back to README**](../README.md#requirements-and-installation)
