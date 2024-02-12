@@ -6,6 +6,24 @@ as well as bugfixes of reported issues, i.e. anything that enhances or changes t
 For a complete list of changes (including documentation, tests, refactoring etc.), please refer to 
 the list of [commits](../../../commits/main).
 
+## 2024-02-12 (version 1.13.1)
+
+Many **thanks** to [**flying-crane**](https://github.com/flying-crane), [**owelzel**](https://github.com/owelzel), 
+[**ConjuringCoffee**](https://github.com/ConjuringCoffee), [**I034943**](https://github.com/I034943),, [**xczar0**](https://github.com/xczar0),
+[**fmabap**](https://github.com/fmabap), [**this-yash**](https://github.com/this-yash) and [**mraht**](https://github.com/mraht) 
+for your contributions, ideas and bug reports that led to these improvements!
+
+* **Enabled** ABAP cleaner menus for **WebDynpro implementations** ([#220](../../../issues/220))
+* Fixed rule '**Delete unused variables**' etc. for **dynamic ASSIGN** ([#237](../../../issues/237))
+* Fixed rule '**Delete unused variables**' for **CONVERT DATE ... TIME ZONE** ([#243](../../../issues/243))
+* Fixed rule '**Report unused parameters**' for **AMDP methods** ([#244](../../../issues/244))
+* Fixed rule '**Align SELECT lists**' for SELECT **SINGLE FOR UPDATE** * ([#241](../../../issues/241))
+* Fixed rule '**Align SELECT lists**' for FIELDS with one **CASE element** ([#229](../../../issues/229))
+* Fixed rule '**Move pragmas to correct position**' for moving **multiple pragmas to line end** ([#228](../../../issues/228))
+* Fixed rule '**Standardize empty lines within methods**' for classes without methods ([#225](../../../issues/225))
+* Added **grayed-out Install New Software menu** to known **installation issues** ([#235](../../../issues/235))
+* Fixed **partial recalculation** after local **blocking of rule**
+
 ## 2024-01-05 (version 1.13.0)
 
 **Thank you** [**ConjuringCoffee**](https://github.com/ConjuringCoffee), [**kjetil-kilhavn**](https://github.com/kjetil-kilhavn),
