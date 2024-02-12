@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.sap.adt.abapcleaner</groupId>
   <artifactId>parent</artifactId>
-  <version>1.13.1</version>
+  <version>1.13.2-SNAPSHOT</version>
   <name>ABAP cleaner</name>
   <packaging>pom</packaging>
   <modules>
