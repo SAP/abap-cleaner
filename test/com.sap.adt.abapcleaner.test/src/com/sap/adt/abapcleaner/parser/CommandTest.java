@@ -275,6 +275,37 @@ public class CommandTest {
 	}
 	
 	@Test
+	void testAddNextWithMacroOpening() {
+		Command command = buildCommand("METHOD any_method." + SEP + "if_initial it_any_table." + SEP + "if_initial it_any_table." + SEP + "RETURN.").getNext().getNext().getNext();
+		Command newCommand = buildCommand("ENDIF.");
+		try {
+			command.addNext(newCommand);
+			fail();
+		} catch (UnexpectedSyntaxException ex) {
+			// expect an error message that mentions CLASS/PUBLIC/PROTECTED as the expected level opener for PRIVATE [SECTION]
+			assertTrue(ex.getMessage().indexOf("incomplete code block") >= 0);
+			assertTrue(ex.getMessage().indexOf("if_initial") >= 0);
+			assertTrue(ex.getMessage().indexOf("consider hiding") >= 0);
+		}
+	}
+	
+	@Test
+	void testAddNextWithMacroOpeningAndOtherMacro() {
+		Command command = buildCommand("METHOD any_method." + SEP + "if_initial it_any_table." + SEP + "report_as_initial it_any_table." + SEP + "RETURN.").getNext().getNext().getNext();
+		Command newCommand = buildCommand("ENDIF.");
+		try {
+			command.addNext(newCommand);
+			fail();
+		} catch (UnexpectedSyntaxException ex) {
+			// expect an error message that mentions CLASS/PUBLIC/PROTECTED as the expected level opener for PRIVATE [SECTION]
+			assertTrue(ex.getMessage().indexOf("incomplete code block") >= 0);
+			assertTrue(ex.getMessage().indexOf("if_initial") >= 0);
+			assertTrue(ex.getMessage().indexOf("report_as_initial") >= 0);
+			assertTrue(ex.getMessage().indexOf("consider hiding") >= 0);
+		}
+	}
+	
+	@Test
 	void testInsertFirstChildNull() {
 		Command command = buildCommand("IF a = 1.");
 		
@@ -1562,5 +1593,4 @@ public class CommandTest {
 		assertEquals("DATA: a TYPE i," + CRLF + "      b TYPE string.", command.toString(CRLF));
 		assertEquals("DATA: a TYPE i," + LF + "      b TYPE string.", command.toString(LF));
 	}
-	
 }

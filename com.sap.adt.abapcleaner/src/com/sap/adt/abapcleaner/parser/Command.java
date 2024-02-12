@@ -541,11 +541,9 @@ public class Command {
 				// newCommand directly closes this Command
 				addSibling(newCommand);
 			} else if (newCommand.usedLevelCloser.requiresOpener) {
-				String msg = "expected " + usedLevelOpener.getClosersList() + ", but found " + newCommand.usedLevelCloser.text + ". "; 
-				if (belongsToMacroDefinition()) { 
-					msg += "Macro definitions with incomplete code blocks are currently not supported by " + Program.PRODUCT_NAME + ". ";
-				}
-				msg += "Opening command (line " + Cult.format(this.sourceLineNumStart) + "): " + this.toStringForErrorMessage(false);
+				String msg = "expected " + usedLevelOpener.getClosersList() + ", but found " + newCommand.usedLevelCloser.text + ". ";
+				msg += getHintOnMacroUsage();
+				msg += System.lineSeparator() + System.lineSeparator() + "Opening command (line " + Cult.format(this.sourceLineNumStart) + "): " + this.toStringForErrorMessage(false);
 				throw new UnexpectedSyntaxException(this, msg);
 			} else {
 				// remove an optional level closer that does not apply in this case, e.g. 'DEFINE any_macro. CLASS &1 DEFINITION.'
@@ -559,9 +557,7 @@ public class Command {
 			} else if (newCommand.usedLevelCloser.requiresOpener) {
 				String msg = newCommand.usedLevelCloser.text + " found in line " + Cult.format(newCommand.sourceLineNumStart); 
 				msg += ", but no corresponding " + newCommand.usedLevelCloser.getOpenersList() + ". "; 
-				if (belongsToMacroDefinition()) { 
-					msg += "Macro definitions with incomplete code blocks are currently not supported by " + Program.PRODUCT_NAME + ". ";
-				}
+				msg += getHintOnMacroUsage();
 				throw new UnexpectedSyntaxException(this, msg); 
 			} else {
 				newCommand.usedLevelCloser = null;
@@ -582,18 +578,53 @@ public class Command {
 			// increase indentAdd if the existing Command starts more BEGIN OF blocks than it ends
 			int beginOfCount = firstToken.getSequenceCount(true, true, TokenSearch.ASTERISK, "BEGIN", "OF");
 			int endOfCount = firstToken.getSequenceCount(true, true, TokenSearch.ASTERISK, "END", "OF");
-			if (beginOfCount > endOfCount)
+			if (beginOfCount > endOfCount) {
 				newCommand.indentAdd += beginOfCount - endOfCount;
+			}
 		}
 		if (newCommand.isSelectionScreenElement()) {  
 			// decrease indentAdd if the new Command ends more blocks than it starts
 			int beginOfCount = newCommand.firstToken.getSequenceCount(true, true, TokenSearch.ASTERISK, "BEGIN", "OF");
 			int endOfCount = newCommand.firstToken.getSequenceCount(true, true, TokenSearch.ASTERISK, "END", "OF");
-			if (endOfCount > beginOfCount)
+			if (endOfCount > beginOfCount) {
 				newCommand.indentAdd -= (endOfCount - beginOfCount);
+			}
 		}
 	}
 
+	private String getHintOnMacroUsage() {
+		final String LINE_SEP_2 = System.lineSeparator() + System.lineSeparator();
+		final String hint = "If macros cannot be removed, consider hiding both opening and closing commands behind macros.";
+		if (belongsToMacroDefinition()) { 
+			return LINE_SEP_2 + "Macro definitions with incomplete code blocks are currently not supported by " + Program.PRODUCT_NAME + ". "
+				  + LINE_SEP_2 + hint;
+		} else {
+			// create a list of used macros from the previous Commands (up to the start of the METHOD etc.)
+			StringBuilder macroInfo = new StringBuilder();
+			HashSet<String> usedMacros = new HashSet<>();
+			Command command = this;
+			while (command != null && !command.isMethodFunctionFormOrEventBlockStart() && !command.startsLocalVariableContext()) {
+				if (command.usesMacro()) {
+					String macroName = command.firstToken.getText();
+					if (!usedMacros.contains(macroName)) {
+						usedMacros.add(macroName);
+						if (macroInfo.length() > 0) {
+							macroInfo.insert(0, ", ");
+						}
+						macroInfo.insert(0, macroName + " (line " + Cult.format(command.sourceLineNumStart) + ")");
+					}
+				}
+				command = command.getPrev();
+			}
+			if (macroInfo.length() > 0) {
+				return LINE_SEP_2 + "Possibly, a macro definition contains incomplete code blocks, which is not supported by " + Program.PRODUCT_NAME + ". "
+						+ "Used macro(s): " + macroInfo.toString() + ". " 
+						+ LINE_SEP_2 + hint;
+			}
+		}
+		return "";
+	}
+	
 	private void addSibling(Command newCommand) throws UnexpectedSyntaxException {
 		newCommand.parent = parent;
 		newCommand.prevSibling = this;

@@ -48,10 +48,27 @@ Your team may align on a common configuration and create a **team profile** from
 
 ## Demo of ABAP Cleaner
 
-| How to install, use, and configure | The open source journey of ABAP cleaner |
-| --- | --- |
-| For a demo of what ABAP cleaner offers, how it is installed, used and configured, you can watch this [Devtoberfest session on YouTube](https://www.youtube.com/watch?v=0mp0FuJV5_k): | To hear about the story behind ABAP cleaner and its journey to open source, watch this [webinar](https://vods.dm.ux.sap.com/webinars/ospo-webinar-series/vods/abap_cleaner_ospo_webinar-edited_video.mp4) hosted by the SAP Open Source Program Office ([slides](https://d.dam.sap.com/a/m7QFgad/Open-Source%20Project%20ABAP%20Cleaner.pdf)): |
-| [<img src="docs/images/recording_devtoberfest.png" width="640">](https://www.youtube.com/watch?v=0mp0FuJV5_k) | [<img src="docs/images/recording_open_source.png" width="640">](https://vods.dm.ux.sap.com/webinars/ospo-webinar-series/vods/abap_cleaner_ospo_webinar-edited_video.mp4) |
+<table>
+  <tr>
+    <th width="50%">How to install, use, and configure</th>
+    <th width="50%">The open source journey of ABAP cleaner</th>
+  </tr>
+  <tr>
+    <td width="50%">
+      For a demo of what ABAP cleaner offers, how it is installed, used and configured, 
+      you can watch this <a href="https://www.youtube.com/watch?v=0mp0FuJV5_k">Devtoberfest session on YouTube</a>:
+    </td>
+    <td width="50%">
+      To hear about the story behind ABAP cleaner and its journey to open source, 
+      watch this <a href="https://vods.dm.ux.sap.com/webinars/ospo-webinar-series/vods/abap_cleaner_ospo_webinar-edited_video.mp4" target="_blank">webinar</a> 
+      hosted by the SAP Open Source Program Office (<a href="https://d.dam.sap.com/a/m7QFgad/Open-Source%20Project%20ABAP%20Cleaner.pdf" target="_blank">slides</a>):
+    </td>
+  </tr>
+  <tr>
+    <td width="50%"><a href="https://www.youtube.com/watch?v=0mp0FuJV5_k" target="_blank"><img src="docs/images/recording_devtoberfest.png" width="640"></a></td>
+    <td width="50%"><a href="https://vods.dm.ux.sap.com/webinars/ospo-webinar-series/vods/abap_cleaner_ospo_webinar-edited_video.mp4" target="_blank"><img src="docs/images/recording_open_source.png" width="640"></a></td>
+  </tr>
+</table>
 
 
 ## How ABAP Cleaner is Used

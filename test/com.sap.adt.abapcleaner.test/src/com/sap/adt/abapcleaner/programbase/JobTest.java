@@ -108,12 +108,14 @@ public class JobTest {
 		assertTrue(StringUtil.contains(batchDetails, persistency.getFileNameWithoutExtension(code1File)));
 		assertTrue(StringUtil.contains(batchDetails, persistency.getFileNameWithoutExtension(code2File)));
 		assertTrue(StringUtil.contains(batchDetails, persistency.getFileNameWithoutExtension(codeParseErrFile)));
-		assertTrue(StringUtil.contains(batchDetails, "Parse error in line 1: expected ENDDO, but found ENDLOOP. Opening command (line 1): DO 5 TIMES."));
+		assertTrue(StringUtil.contains(batchDetails, "Parse error in line 1: expected ENDDO, but found ENDLOOP."));
+		assertTrue(StringUtil.contains(batchDetails, "Opening command (line 1): DO 5 TIMES."));
 
 		// ensure that the log file reports the parse error
 		assertTrue(persistency.fileExists(errorLogPath));
 		String errorLog = persistency.readAllTextFromFile(errorLogPath);
-		assertTrue(StringUtil.contains(errorLog, "Parse error in line 1: expected ENDDO, but found ENDLOOP. Opening command (line 1): DO 5 TIMES."));
+		assertTrue(StringUtil.contains(errorLog, "Parse error in line 1: expected ENDDO, but found ENDLOOP."));
+		assertTrue(StringUtil.contains(errorLog, "Opening command (line 1): DO 5 TIMES."));
 	}
 
 
