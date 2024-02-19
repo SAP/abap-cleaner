@@ -827,4 +827,25 @@ class AlignSelectListsTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testIntoListWithInlineDeclarations() {
+		// ensure that the line break is introduced before @DATA(, NOT after it, because the inline declaration must be kept together
+		rule.configMaxLineLength.setValue(100);
+
+		buildSrc("    SELECT f1, f2, f3");
+		buildSrc("      FROM any_dtab");
+		buildSrc("      INTO ( @DATA(lv_var_1_with_long_name), @DATA(lv_var_2_with_very_long_name), @DATA(lv_var_3_with_long_name) ).");
+		buildSrc("    ENDSELECT.");
+
+		buildExp("    SELECT f1, f2, f3");
+		buildExp("      FROM any_dtab");
+		buildExp("      INTO ( @DATA(lv_var_1_with_long_name), @DATA(lv_var_2_with_very_long_name),");
+		buildExp("             @DATA(lv_var_3_with_long_name) ).");
+		buildExp("    ENDSELECT.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }
