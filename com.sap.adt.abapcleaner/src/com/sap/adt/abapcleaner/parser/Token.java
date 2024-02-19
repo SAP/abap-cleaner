@@ -2858,16 +2858,36 @@ public class Token {
 		boolean changed = false;
 		int indexInLine = token.getEndIndexInLine();
 		token = token.getNext();
+		Token lastMovableToken = null;
 		while (token != null) {
-			// if needed, move Token to the next line, otherwise directly behind the previous Token
+			// determine whether the Token is (or should be) attached; otherwise, it can be moved to the next line
 			int spacesLeft = (token.isAttached() || token.isCommaOrPeriod() || token.isChainColon()) ? 0 : 1;
+			if (spacesLeft > 0)
+				lastMovableToken = token;
+
+			// if needed, move Token(s) to the next line, otherwise move it directly behind the previous Token
 			if (token.isAsteriskCommentLine() || keepQuotMarkCommentLines && token.isQuotMarkCommentLine()) {
 				// do nothing
-			} else if (token.getPrev().isComment() || indexInLine + spacesLeft + token.getTextLength() > maxLineLength) {
+
+			} else if (token.getPrev().isComment()) {
+				// after a comment, even a comma or period must be kept on the next line
 				if (token.setWhitespace(1, indent)) {
 					changed = true;
 				}
-				indexInLine = indent + token.getTextLength();
+				lastMovableToken = null;
+				indexInLine = token.getEndIndexInLine();
+			
+			} else if (lastMovableToken != null && indexInLine + spacesLeft + token.getTextLength() > maxLineLength) {
+				// break the line before the last movable (= the last non-attached) Token
+				if (lastMovableToken.setWhitespace(1, indent)) {
+					changed = true;
+					if (token != lastMovableToken) {
+						token.setWhitespace(0, spacesLeft);
+					}
+				}
+				lastMovableToken = null;
+				indexInLine = token.getEndIndexInLine();
+			
 			} else {
 				if (token.setWhitespace(0, spacesLeft)) {
 					changed = true;
