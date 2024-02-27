@@ -360,7 +360,7 @@ public class Command {
 		// 'AT LINE-SELECTION' itself! - can be closed with 'AT LINE-SELECTION' etc. 
 		// obsolete event blocks are included: "START-OF-EDITING", "END-OF-SELECTION", "END-OF-EDITING"
 		final String[] eventClosers = new String[] { "AT LINE-SELECTION", "AT SELECTION-SCREEN", "AT USER-COMMAND", "END-OF-PAGE", 
-																	"INITIALIZATION", "LOAD-OF-PROGRAM", "START-OF-SELECTION", "START-OF-EDITING", "END-OF-SELECTION", "END-OF-EDITING", "TOP-OF-PAGE", "CLASS", "FORM" };
+																	"INITIALIZATION", "LOAD-OF-PROGRAM", "START-OF-SELECTION", "START-OF-EDITING", "END-OF-SELECTION", "END-OF-EDITING", "TOP-OF-PAGE", "CLASS", "FORM", "MODULE" };
 		// the parameter startsLocalVariableContext is usually false, because apart from FORM...ENDFORM and FUNCTION...ENDFUNCTION, 
 		// only the event blocks 'AT SELECTION-SCREEN ...' and 'GET ...' (which are implemented internally as procedures) can contain local data, 
 		// while declarative statements in all other event blocks are part of the global data declarations of the ABAP program, 
