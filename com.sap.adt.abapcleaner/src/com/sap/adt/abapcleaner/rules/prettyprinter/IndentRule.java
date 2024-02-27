@@ -162,6 +162,10 @@ public class IndentRule extends Rule {
 
 	public final void executeOn(Code code, Command command, int newIndent) {
 		Token firstToken = command.getFirstToken();
+		// skip commands that follow on the same line as the previous command
+		if (firstToken.lineBreaks == 0 && !command.isFirstCommandInCode()) {
+			return;
+		}
 		if (firstToken.spacesLeft != newIndent) {
 			command.addIndent(newIndent - firstToken.spacesLeft, 0);
 			code.addRuleUse(this, command);

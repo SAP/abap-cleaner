@@ -995,4 +995,23 @@ class IndentTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testTwoCommandsOnSameLine() {
+		// ensure that the assignment (and with it, then WHEN ... THEN ... ELSE ... lines) are NOT moved, 
+		// because they follow on the same line as the WHEN command
+		
+		buildSrc("    CASE sy-tabix.");
+		buildSrc("      WHEN 1. lv_flag = COND #(");
+		buildSrc("                            WHEN lv_cond = 1");
+		buildSrc("                            THEN abap_true");
+		buildSrc("                            ELSE abap_false ).");
+		buildSrc("    ENDCASE.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		copyExpFromSrc();
+		
+		testRule();
+	}
 }
