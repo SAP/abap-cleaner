@@ -61,13 +61,7 @@ public abstract class AbapCleanerHandlerBase extends AbstractAdtEditorHandler {
 		// This is only used by the super class to check whether the command should be enabled/disabled. 
 		// Since there is no extension framework in ADT yet for 3rd party add-ons, piggyback on an existing ID 
 		// from ADT that does similar things.
-		// - With "com.sap.adt.tools.abapsource.ui.prettyPrintBlock", the command is initially also enabled for
-		//   CDS view definitions, database table definitions etc., but an attempt to run it will simply show
-		//   the message "The chosen operation is not enabled." After this (or after the first regular cleanup
-		//   on an ABAP class etc.), the command is only enabled for editors that indeed allow cleanup.
-		// - With "com.sap.adt.tools.abapsource.ui.cleanup.deleteUnusedVariables", this startup issue could be 
-		//   avoided, however, this would not allow running cleanup on WebDynpro implementations. 
-		return "com.sap.adt.tools.abapsource.ui.prettyPrintBlock"; // ...ui.cleanup.deleteUnusedVariables 
+		return "com.sap.adt.tools.abapsource.ui.prettyPrintBlock";  
 	}
 
 	@Override
