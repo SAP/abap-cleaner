@@ -970,4 +970,29 @@ class IndentTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testModuleAfterEventBlock() {
+		// ensure that MODULE is NOT being indented
+
+		buildSrc("REPORT any_report.");
+		buildSrc("");
+		buildSrc("INITIALIZATION.");
+		buildSrc("");
+		buildSrc("   MODULE any_module INPUT.");
+		buildSrc("     DATA lv_any TYPE i.");
+		buildSrc("     lv_any = 1.");
+		buildSrc("   ENDMODULE.");
+
+		buildExp("REPORT any_report.");
+		buildExp("");
+		buildExp("INITIALIZATION.");
+		buildExp("");
+		buildExp("MODULE any_module INPUT.");
+		buildExp("  DATA lv_any TYPE i.");
+		buildExp("  lv_any = 1.");
+		buildExp("ENDMODULE.");
+
+		testRule();
+	}
 }

@@ -1529,4 +1529,26 @@ public class LocalDeclarationOrderTest extends RuleTestBase {
 		
 		testRule();
 	}
+
+	@Test
+	void testModuleUnchanged() {
+		// since the declaration inside MODULE ... ENDMODULE is global, expect it to NOT be processed 
+		
+		buildSrc("REPORT any_report.");
+		buildSrc("");
+		buildSrc("AT SELECTION-SCREEN.");
+		buildSrc("");
+		buildSrc("MODULE any_module INPUT.");
+		buildSrc("  DATA lv_any TYPE i.");
+		buildSrc("  lv_any = 1.");
+		buildSrc("ENDMODULE.");
+		buildSrc("");
+		buildSrc("MODULE other_module OUTPUT.");
+		buildSrc("  WRITE lv_any.");
+		buildSrc("ENDMODULE.");
+
+		copyExpFromSrc();
+
+		testRule();
+	}
 }
