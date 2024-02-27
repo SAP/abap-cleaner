@@ -2163,4 +2163,44 @@ class UnusedVariablesTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testRemoveObsoleteComments() {
+		rule.configActionForVarsNeverUsed.setEnumValue(UnusedVariableAction.ADD_TODO_COMMENT);
+
+		// ensure that all obsolete comments (whether standalone comment lines, inner comment lines, or line-end comments)
+		// are removed
+		
+		buildSrc("  METHOD any_method.");
+		buildSrc("    \" TODO: constant is never used (ABAP cleaner)");
+		buildSrc("    \" TODO: constant is only used in commented-out code (ABAP cleaner)");
+		buildSrc("");
+		buildSrc("    DATA lv_unused TYPE i.");
+		buildSrc("");
+		buildSrc("    rv_result = COND #( WHEN iv_condition = abap_true");
+		buildSrc("                        \" TODO: variable is assigned but only used in commented-out code (ABAP cleaner)");
+		buildSrc("");
+		buildSrc("                        THEN 1");
+		buildSrc("                        \" TODO: variable is assigned but never used (ABAP cleaner)");
+		buildSrc("                        \" TODO: variable is only used in commented-out code (ABAP cleaner)");
+		buildSrc("                        ELSE 2 ).");
+		buildSrc("");
+		buildSrc("    \" TODO: variable is never used (ABAP cleaner)");
+		buildSrc("    rv_result = 2. \" TODO: variable is assigned but never used; add pragma ##NEEDED (ABAP cleaner)");
+		buildSrc("  ENDMETHOD.");
+
+		buildExp("  METHOD any_method.");
+		buildExp("    \" TODO: variable is never used (ABAP cleaner)");
+		buildExp("    DATA lv_unused TYPE i.");
+		buildExp("");
+		buildExp("    rv_result = COND #( WHEN iv_condition = abap_true");
+		buildExp("");
+		buildExp("                        THEN 1");
+		buildExp("                        ELSE 2 ).");
+		buildExp("");
+		buildExp("    rv_result = 2.");
+		buildExp("  ENDMETHOD.");
+
+		testRule();
+	}
 }
