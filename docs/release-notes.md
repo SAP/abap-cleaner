@@ -6,10 +6,20 @@ as well as bugfixes of reported issues, i.e. anything that enhances or changes t
 For a complete list of changes (including documentation, tests, refactoring etc.), please refer to 
 the list of [commits](../../../commits/main).
 
+## 2024-02-27 (version 1.13.2)
+
+**Thanks** a lot to [**JoachimEck**](https://github.com/JoachimEck), [**Falcon7EH**](https://github.com/Falcon7EH) 
+and [**VladGhitulescu**](https://github.com/VladGhitulescu) for the bug reports behind these fixes!
+
+* Enhanced rule '**Delete unused variables**' to **clean up obsolete comments** ([#257](../../../issues/257))
+* Fixed rule '**Rearrange local declarations**' for **MODULE** ... ENDMODULE ([#258](../../../issues/258))
+* Fixed rule '**Align SELECT lists**' for line breaks with **inline declarations** ([#251](../../../issues/251))
+* Fixed rule '**Indent lines**' for multiple **commands on same line** ([#248](../../../issues/248))
+
 ## 2024-02-12 (version 1.13.1)
 
 Many **thanks** to [**flying-crane**](https://github.com/flying-crane), [**owelzel**](https://github.com/owelzel), 
-[**ConjuringCoffee**](https://github.com/ConjuringCoffee), [**I034943**](https://github.com/I034943),, [**xczar0**](https://github.com/xczar0),
+[**ConjuringCoffee**](https://github.com/ConjuringCoffee), [**I034943**](https://github.com/I034943), [**xczar0**](https://github.com/xczar0),
 [**fmabap**](https://github.com/fmabap), [**this-yash**](https://github.com/this-yash) and [**mraht**](https://github.com/mraht) 
 for your contributions, ideas and bug reports that led to these improvements!
 
