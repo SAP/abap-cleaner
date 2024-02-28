@@ -325,4 +325,22 @@ class ValueStatementTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testCommentBeforeParenthesis() {
+		buildSrc("    lt_any = VALUE #( ( a = 1");
+		buildSrc("                        b = 'X' )");
+		buildSrc("                      ( a = 2");
+		buildSrc("                        b = 'X'");
+		buildSrc("                        \" any comment");
+		buildSrc("                        )");
+		buildSrc("                      ( a = 3");
+		buildSrc("                        b = 'Y' ) ).");
+		
+		copyExpFromSrc();
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }

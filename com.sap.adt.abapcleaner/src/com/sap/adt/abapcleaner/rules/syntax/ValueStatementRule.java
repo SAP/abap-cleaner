@@ -183,8 +183,9 @@ public class ValueStatementRule extends RuleForTokens {
 				// identify the assignments that are (still) common to all the rows
 				HashMap<String, AlignLine> remainingAssignments = new HashMap<String, AlignLine>();
 				for (String key : commonAssignments.keySet()) {
-					if (assignmentsInRow.containsKey(key))
+					if (assignmentsInRow.containsKey(key)) {
 						remainingAssignments.put(key, commonAssignments.get(key));
+					}
 				}
 				commonAssignments = remainingAssignments;
 			}
@@ -299,8 +300,14 @@ public class ValueStatementRule extends RuleForTokens {
 					line.setCell(Columns.COMMENT.getValue(), new AlignCellToken(token));
 					token = token.getNext();
 				}
-			} else {
+
+			} else if (token.getNextSibling() != null) {
 				token = token.getNextSibling();
+
+			} else {
+				// make sure table.endToken is not null, but points to the closing parentheses, esp. if there is a comment line before it
+				token = token.getNext();
+				break;
 			}
 		}
 
