@@ -6,6 +6,10 @@ as well as bugfixes of reported issues, i.e. anything that enhances or changes t
 For a complete list of changes (including documentation, tests, refactoring etc.), please refer to 
 the list of [commits](../../../commits/main).
 
+## 2024-02-28 (version 1.13.3)
+
+* Fixed rule '**Shorten VALUE statements**' for **comment line at end** of parenthesis
+
 ## 2024-02-27 (version 1.13.2)
 
 **Thanks** a lot to [**JoachimEck**](https://github.com/JoachimEck), [**Falcon7EH**](https://github.com/Falcon7EH) 
