@@ -31,14 +31,15 @@ public class LogicalExpression {
 
 	private static BindingLevel getBindingLevelOfToken(Token token, boolean isFirstTokenInExpression) {
 		if (token.isKeyword()) {
-			if (token.isKeyword("EQUIV"))
+			if (token.isKeyword("EQUIV")) {
 				return BindingLevel.EQUIV;
-			else if (token.isKeyword("OR"))
+			} else if (token.isKeyword("OR")) {
 				return BindingLevel.OR;
-			else if (token.isKeyword("AND"))
+			} else if (token.isKeyword("AND")) {
 				return BindingLevel.AND;
-			else if (isFirstTokenInExpression && token.isKeyword("NOT"))
+			} else if (isFirstTokenInExpression && token.isKeyword("NOT")) {
 				return BindingLevel.NOT;
+			}
 		}
 		return BindingLevel.UNKNOWN;
 	}
@@ -77,12 +78,14 @@ public class LogicalExpression {
 
 	final Token getFirstToken() { return firstToken; }
 
-	private Token getFirstTokenExceptOpeningParenthesis() { return isInParentheses ? firstToken.getNextCodeToken() : firstToken; }
+	public RelationalExpressionType getRelationalExpressionType() { return relExprType; }
 
-	private Token getLastTokenExceptClosingParenthesis() { return isInParentheses ? lastToken.getPrevCodeToken() : lastToken; }
+	public Token getFirstTokenExceptOpeningParenthesis() { return isInParentheses ? firstToken.getNextCodeToken() : firstToken; }
+
+	public Token getLastTokenExceptClosingParenthesis() { return isInParentheses ? lastToken.getPrevCodeToken() : lastToken; }
 
 	private Token getEndTokenExceptClosingParenthesis() { return isInParentheses ? lastToken : endToken; }
-
+	
 	@Override
 	public String toString() {
 		return getDebuggingText();
@@ -706,6 +709,46 @@ public class LogicalExpression {
 				}
 			}
 			return false;
+		}
+	}
+	
+	public LogicalExpression findComparisonWithAny(String... tokenTexts) {
+		if (relExprType == RelationalExpressionType.COMPARISON) {
+			if (  getFirstTokenExceptOpeningParenthesis().textEqualsAny(tokenTexts)
+				|| getLastTokenExceptClosingParenthesis().textEqualsAny(tokenTexts)) {
+				return this;
+			}
+		} else if (relExprType == RelationalExpressionType.PREDICATE_EXPRESSION) {
+			if (getFirstTokenExceptOpeningParenthesis().textEqualsAny(tokenTexts)) {
+				return this;
+			}
+		}
+		for (LogicalExpression innerExpr : innerExpressions) {
+			LogicalExpression foundExpression = innerExpr.findComparisonWithAny(tokenTexts);
+			if (foundExpression != null) {
+				return foundExpression;
+			}
+		}
+		return null;
+	}
+	
+	public Token getOperator() {
+		return (relExprType == RelationalExpressionType.COMPARISON || relExprType == RelationalExpressionType.PREDICATE_EXPRESSION) ? keywords.get(0) : null;
+	}
+
+	public Term getTerm1() throws UnexpectedSyntaxException {
+		if (relExprType == RelationalExpressionType.COMPARISON || relExprType == RelationalExpressionType.PREDICATE_EXPRESSION) { 
+			return Term.createForTokenRange(getFirstTokenExceptOpeningParenthesis(), keywords.get(0).getPrevCodeToken());
+		} else { 
+			return null;
+		}
+	}
+
+	public Term getTerm2() throws UnexpectedSyntaxException {
+		if (relExprType == RelationalExpressionType.COMPARISON || relExprType == RelationalExpressionType.PREDICATE_EXPRESSION) { 
+			return Term.createForTokenRange(keywords.get(0).getNextCodeToken(), getLastTokenExceptClosingParenthesis());
+		} else { 
+			return null;
 		}
 	}
 }

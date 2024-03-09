@@ -1,6 +1,7 @@
 package com.sap.adt.abapcleaner.parser;
 
 import com.sap.adt.abapcleaner.base.*;
+import com.sap.adt.abapcleaner.base.ABAP.SyField;
 import com.sap.adt.abapcleaner.programbase.*;
 import com.sap.adt.abapcleaner.rulebase.RuleID;
 
@@ -2461,6 +2462,9 @@ public class Command {
 		while (test != null) {
 			// both SY-... and SYST-... could be used to access the same system structure
 			if (test.textEqualsAny(syField.syField, syField.systField) && test.getMemoryAccessType().mayRead) {
+				return true;
+			} else if (syField == SyField.SUBRC && test.isIdentifier() && test.textEqualsAny("cl_abap_unit_assert=>assert_subrc(", "cl_abap_unit_assert=>assert_return_code(")) {
+				// in this special case, it is accepted that SY-SUBRC is checked in a different method
 				return true;
 			}
 			test = test.getNextCodeToken();

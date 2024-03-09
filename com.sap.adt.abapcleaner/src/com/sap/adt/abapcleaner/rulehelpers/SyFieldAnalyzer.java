@@ -19,7 +19,7 @@ public class SyFieldAnalyzer extends ProgramFlowAnalyzer {
 	 *  
 	 * @param syField - the system field 
 	 * @param command - the Command that changes the system field
-	 * @return
+	 * @return - non-null list of commands in which the supplied system field is evaluated 
 	 */
 	public static ArrayList<Command> getSyFieldReadersFor(ABAP.SyField syField, Command command) {
 		SyFieldAnalyzer analyzer = new SyFieldAnalyzer(syField);
