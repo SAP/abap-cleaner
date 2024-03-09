@@ -13,7 +13,8 @@ public class CreateObjectRule extends RuleForCommands {
 	// Replaces CREATE OBJECT o [TYPE t] [EXPORTING ...] with o = NEW [#/t]( ...)
 
 	private final static RuleReference[] references = new RuleReference[] {
-			new RuleReference(RuleSource.ABAP_STYLE_GUIDE, "Prefer NEW to CREATE OBJECT", "#prefer-new-to-create-object") };
+			new RuleReference(RuleSource.ABAP_STYLE_GUIDE, "Prefer NEW to CREATE OBJECT", "#prefer-new-to-create-object"),
+			new RuleReference(RuleSource.CODE_PAL_FOR_ABAP, "Prefer New to Create Object", "prefer-new-to-create-object.md")};
 
 	@Override
 	public RuleID getID() { return RuleID.CREATE_OBJECT; }
