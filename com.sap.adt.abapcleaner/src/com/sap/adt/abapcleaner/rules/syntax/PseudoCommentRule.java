@@ -22,6 +22,7 @@ public class PseudoCommentRule extends RuleForTokens {
 
    private final static RuleReference[] references = new RuleReference[] { 
 			new RuleReference(RuleSource.ABAP_STYLE_GUIDE, "Prefer pragmas to pseudo comments", "#prefer-pragmas-to-pseudo-comments"),
+			new RuleReference(RuleSource.CODE_PAL_FOR_ABAP, "Prefer Pragmas to Pseudo Comments", "prefer-pragmas-to-pseudo-comments.md"),
 			new RuleReference(RuleSource.ABAP_KEYWORD_DOCU, "Pseudo Comments for the Extended Program Check", "abenpseudo_comment_slin.htm"),
 			new RuleReference(RuleSource.ABAP_KEYWORD_DOCU, "Pragmas", "abenpragma.htm") };
 

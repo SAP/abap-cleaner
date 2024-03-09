@@ -22,7 +22,7 @@ public class RuleReference {
 	public static String sourceName(RuleSource source) {
 		switch (source) {
 			case CODE_PAL_FOR_ABAP:
-				return "Clean Code Checks";
+				return "Code Pal for ABAP";
 			case ABAP_STYLE_GUIDE:
 				return "Clean ABAP Styleguide";
 			case ABAP_KEYWORD_DOCU:
