@@ -60,13 +60,13 @@ Your team may align on a common configuration and create a **team profile** from
     </td>
     <td width="50%">
       To hear about the story behind ABAP cleaner and its journey to open source, 
-      watch this <a href="https://vods.dm.ux.sap.com/webinars/ospo-webinar-series/vods/abap_cleaner_ospo_webinar-edited_video.mp4" target="_blank">webinar</a> 
+      watch this <a href="https://www.youtube.com/watch?v=g0kZAI6pxMc" target="_blank">webinar</a> 
       hosted by the SAP Open Source Program Office (<a href="https://d.dam.sap.com/a/m7QFgad/Open-Source%20Project%20ABAP%20Cleaner.pdf" target="_blank">slides</a>):
     </td>
   </tr>
   <tr>
     <td width="50%"><a href="https://www.youtube.com/watch?v=0mp0FuJV5_k" target="_blank"><img src="docs/images/recording_devtoberfest.png" width="640"></a></td>
-    <td width="50%"><a href="https://vods.dm.ux.sap.com/webinars/ospo-webinar-series/vods/abap_cleaner_ospo_webinar-edited_video.mp4" target="_blank"><img src="docs/images/recording_open_source.png" width="640"></a></td>
+    <td width="50%"><a href="https://www.youtube.com/watch?v=g0kZAI6pxMc" target="_blank"><img src="docs/images/recording_open_source.png" width="640"></a></td>
   </tr>
 </table>
 
