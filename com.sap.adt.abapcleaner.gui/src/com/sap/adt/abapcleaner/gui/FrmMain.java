@@ -2580,7 +2580,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 				}
 			}
 		}
-		if (readIndex == 0 && ascending)
+		if (readIndex == paths.length - 1 && ascending)
 			return paths;
 
 		String[] result = new String[paths.length];

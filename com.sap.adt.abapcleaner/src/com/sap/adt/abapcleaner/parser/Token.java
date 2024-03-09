@@ -119,6 +119,8 @@ public class Token {
 
 	public final boolean isCommentAfterCode() { return isComment() && (prev != null) && (lineBreaks == 0); }
 
+	public final boolean isCommentAfterPeriod() { return isComment() && (prev != null) && (lineBreaks == 0) && (prev.isPeriod()); }
+
 	public final boolean isPseudoComment() {
 		// returns true if the comment starts with "#EC (this is NOT case-sensitive, i.e. Extended Check also accepts "#ec and "#Ec;
 		// however, the following word must be upper case: Extended Check accepts "#ec NEEDED but it does NOT accept "#EC needed ) 
@@ -1152,6 +1154,10 @@ public class Token {
 	}
 
 	public final void insertLeftSibling(Term newTerm) throws IntegrityBrokenException {
+		insertLeftSibling(newTerm, false);
+	}
+	
+	public final void insertLeftSibling(Term newTerm, boolean skipIntegrityTest) throws IntegrityBrokenException {
 		if (newTerm == null)
 			throw new NullPointerException("newTerm");
 		if (closesLevel)
@@ -1198,7 +1204,9 @@ public class Token {
 
 		parentCommand.onTermInserted(newTerm);
 		
-		parentCommand.testReferentialIntegrity(true);
+		if (!skipIntegrityTest) {
+			parentCommand.testReferentialIntegrity(true);
+		}
 	}
 
 	public final void copyWhitespaceFrom(Token token) {
@@ -2449,7 +2457,9 @@ public class Token {
 	 */
 	public Token getLastTokenOfLogicalExpression() {
       Token firstCode = parentCommand.getFirstCodeToken();
-
+      if (firstCode == null)
+      	return null;
+      
       // 1. non-SQL cases on top level (parent == null)
       if (this == firstCode && firstCode.isAnyKeyword("IF", "ELSEIF", "CHECK", "WHILE")) {
       	return parentCommand.getLastNonCommentToken().getPrevCodeToken();
@@ -2475,6 +2485,16 @@ public class Token {
          } else {
             return end.getPrevCodeSibling().getPrevCodeToken(); // previous to "UP"
          }
+
+      } else if (firstCode.isKeyword("ASSERT")) {
+      	// ASSERT [ [ID group [SUBKEY sub]] [FIELDS val1 val2 ...] CONDITION ] log_exp.
+      	if (isKeyword("CONDITION")) {
+      		return parentCommand.getLastCodeToken().getPrevCodeToken();
+      	} else if (this == firstCode && !firstCode.matchesOnSiblings(true, TokenSearch.ASTERISK, "CONDITION")) {
+      		return parentCommand.getLastCodeToken().getPrevCodeToken();
+      	} else {
+      		return null;
+      	}
       } 
       
       // 2. xsdbool( ... ) and boolc( ... )

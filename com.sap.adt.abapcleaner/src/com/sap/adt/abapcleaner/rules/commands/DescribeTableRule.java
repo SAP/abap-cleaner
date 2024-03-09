@@ -18,7 +18,8 @@ import com.sap.adt.abapcleaner.rulebase.RuleSource;
 import com.sap.adt.abapcleaner.rulehelpers.SyFieldAnalyzer;
 
 public class DescribeTableRule extends RuleForCommands {
-	private final static RuleReference[] references = new RuleReference[] { new RuleReference(RuleSource.ABAP_CLEANER) };
+	private final static RuleReference[] references = new RuleReference[] { 
+			new RuleReference(RuleSource.ABAP_STYLE_GUIDE, "Prefer functional to procedural language constructs", "#prefer-functional-to-procedural-language-constructs") };
 
 	@Override
 	public RuleID getID() { return RuleID.DESCRIBE_TABLE; }
@@ -43,6 +44,8 @@ public class DescribeTableRule extends RuleForCommands {
 
 	@Override
 	public RuleID[] getDependentRules() { return new RuleID[] { RuleID.UPPER_AND_LOWER_CASE } ; }
+
+	public boolean isEssential() { return true; }
 
 	@Override
    public String getExample() {
@@ -119,10 +122,10 @@ public class DescribeTableRule extends RuleForCommands {
 		
 		// ensure that SY-TFILL and SY-TLENG are never used in the program flow following this statement
 		ArrayList<Command> commandsReadingSyTFill = SyFieldAnalyzer.getSyFieldReadersFor(SyField.TFILL, command);
-		if (commandsReadingSyTFill != null && commandsReadingSyTFill.size() > 0)
+		if (commandsReadingSyTFill.size() > 0)
 			return false;
 		ArrayList<Command> commandsReadingSyTLeng = SyFieldAnalyzer.getSyFieldReadersFor(SyField.TLENG, command);
-		if (commandsReadingSyTLeng != null && commandsReadingSyTLeng.size() > 0)
+		if (commandsReadingSyTLeng.size() > 0)
 			return false;
 
 		// transform "DESCRIBE TABLE itab LINES lin." into "lin = lines( itab )."

@@ -1,6 +1,6 @@
 package com.sap.adt.abapcleaner.rulehelpers;
 
-enum RelationalExpressionType  {
+public enum RelationalExpressionType  {
    NONE,
    COMPARISON, // e.g. "a < b"
    PREDICATE_EXPRESSION, // e.g. "... IS NOT BOUND"

@@ -181,6 +181,10 @@ public class AlignParametersRule extends RuleForCommands {
 		initializeConfiguration();
 	}
 
+	public boolean executeOn(Code code, Command command) throws UnexpectedSyntaxAfterChanges {
+		return executeOn(code, command, ABAP.NO_RELEASE_RESTRICTION);
+	}
+	
 	@Override
 	protected boolean executeOn(Code code, Command command, int releaseRestriction) throws UnexpectedSyntaxAfterChanges {
 		// we do NOT process SQL commands here, as their syntax is completely different (e.g. "WHERE client = :sy-mandt")
@@ -608,6 +612,20 @@ public class AlignParametersRule extends RuleForCommands {
 		}
 		
 		return null;
+	}
+
+	public static HashMap<String, Term> getFunctionalCallParams(Token parentToken) throws UnexpectedSyntaxException {
+		HashMap<String, Term> exprOfParam = new HashMap<>();
+		AlignTable table = new AlignTable(AlignParametersRule.MAX_COLUMN_COUNT);
+		ArrayList<Token> otherLineStarts = new ArrayList<Token>();
+		buildAlignTable(table, parentToken, parentToken.getNextSibling(), ContentType.FUNCTIONAL_CALL_PARAMS, otherLineStarts);
+		for (AlignLine line : table.getLines()) {
+			AlignCell paramCell = line.getCell(Columns.PARAMETER.getValue());
+			String paramName = paramCell.getFirstToken().getText().toUpperCase();
+			AlignCellTerm exprCell = (AlignCellTerm)line.getCell(Columns.EXPRESSION.getValue());
+			exprOfParam.put(paramName, exprCell.getTerm());
+		}
+		return exprOfParam;
 	}
 	
 	public static void buildAlignTable(AlignTable table, Token parentToken, Token end, ContentType contentType, ArrayList<Token> otherLineStarts) throws UnexpectedSyntaxException {
