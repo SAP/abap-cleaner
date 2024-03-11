@@ -9,7 +9,7 @@ This rule is part of the **essential** profile, as it is explicitly demanded by 
 ## References
 
 * [Clean ABAP Styleguide: Omit RECEIVING](https://github.com/SAP/styleguides/blob/main/clean-abap/CleanABAP.md#omit-receiving)
-* [Clean Code Checks: RECEIVING Statement Usage](https://github.com/SAP/code-pal-for-abap/blob/master/docs/checks/receiving-usage.md)
+* [Code Pal for ABAP: RECEIVING Statement Usage](https://github.com/SAP/code-pal-for-abap/blob/master/docs/checks/receiving-usage.md)
 
 ## Options
 

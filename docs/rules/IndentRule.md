@@ -12,7 +12,7 @@ This rule is part of the **essential** profile, as it is explicitly demanded by 
 
 * [Clean ABAP Styleguide: Use the Pretty Printer before activating](https://github.com/SAP/styleguides/blob/main/clean-abap/CleanABAP.md#use-the-pretty-printer-before-activating)
 * [Clean ABAP Styleguide: Use your Pretty Printer team settings](https://github.com/SAP/styleguides/blob/main/clean-abap/CleanABAP.md#use-your-pretty-printer-team-settings)
-* [Clean Code Checks: Comment Position](https://github.com/SAP/code-pal-for-abap/blob/master/docs/checks/comment-position.md)
+* [Code Pal for ABAP: Comment Position](https://github.com/SAP/code-pal-for-abap/blob/master/docs/checks/comment-position.md)
 
 ## Options
 

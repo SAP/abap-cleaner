@@ -11,6 +11,7 @@ This rule is part of the **essential** profile, as it is explicitly demanded by 
 ## References
 
 * [Clean ABAP Styleguide: Prefer pragmas to pseudo comments](https://github.com/SAP/styleguides/blob/main/clean-abap/CleanABAP.md#prefer-pragmas-to-pseudo-comments)
+* [Code Pal for ABAP: Prefer Pragmas to Pseudo Comments](https://github.com/SAP/code-pal-for-abap/blob/master/docs/checks/prefer-pragmas-to-pseudo-comments.md)
 * [ABAP Keyword Documentation: Pseudo Comments for the Extended Program Check](https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/index.htm?file=abenpseudo_comment_slin.htm)
 * [ABAP Keyword Documentation: Pragmas](https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/index.htm?file=abenpragma.htm)
 

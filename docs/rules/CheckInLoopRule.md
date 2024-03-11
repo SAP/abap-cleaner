@@ -9,7 +9,7 @@ This rule is part of the **essential** profile, as it is explicitly demanded by 
 ## References
 
 * [Clean ABAP Styleguide: Avoid CHECK in other positions](https://github.com/SAP/styleguides/blob/main/clean-abap/CleanABAP.md#avoid-check-in-other-positions)
-* [Clean Code Checks: CHECK in LOOP](https://github.com/SAP/code-pal-for-abap/blob/master/docs/checks/check-in-loop.md)
+* [Code Pal for ABAP: CHECK in LOOP](https://github.com/SAP/code-pal-for-abap/blob/master/docs/checks/check-in-loop.md)
 
 ## Options
 

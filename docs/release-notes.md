@@ -6,6 +6,15 @@ as well as bugfixes of reported issues, i.e. anything that enhances or changes t
 For a complete list of changes (including documentation, tests, refactoring etc.), please refer to 
 the list of [commits](../../../commits/main).
 
+## 2024-03-11 (version 1.14.0)
+
+Many **thanks** to [**jelliottp**](https://github.com/jelliottp) for inspiring these improvements!
+
+* Added new rule '**Replace READ TABLE with table expression**' ([#36](../../../issues/36))
+* Added new rule '**Replace DESCRIBE TABLE ... LINES with lines( )**' ([#36](../../../issues/36))
+* Added further **references to Code Pal** for ABAP
+* Updated **link** to webinar on **Open Source journey** of ABAP cleaner
+
 ## 2024-02-28 (version 1.13.3)
 
 * Fixed rule '**Shorten VALUE statements**' for **comment line at end** of parenthesis

@@ -11,7 +11,7 @@ This rule is part of the **essential** profile, as it is explicitly demanded by 
 ## References
 
 * [Clean ABAP Styleguide: Omit the self-reference me when calling an instance attribute or method](https://github.com/SAP/styleguides/blob/main/clean-abap/CleanABAP.md#omit-the-self-reference-me-when-calling-an-instance-attribute-or-method)
-* [Clean Code Checks: Self-Reference](https://github.com/SAP/code-pal-for-abap/blob/master/docs/checks/self-reference.md)
+* [Code Pal for ABAP: Self-Reference](https://github.com/SAP/code-pal-for-abap/blob/master/docs/checks/self-reference.md)
 
 ## Options
 

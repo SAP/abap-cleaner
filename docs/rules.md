@@ -1,6 +1,6 @@
 # Available Cleanup Rules
 
-ABAP cleaner offers 70 cleanup rules with a total of 275 configuration options:
+ABAP cleaner offers 72 cleanup rules with a total of 279 configuration options:
 
 ## Empty Lines
 
@@ -63,6 +63,8 @@ ABAP cleaner offers 70 cleanup rules with a total of 275 configuration options:
 * [Replace obsolete ADD ... TO etc. with \+= etc.](rules/AddToEtcRule.md)
 * [Replace obsolete MOVE ... TO with =](rules/MoveToRule.md)
 * [Replace TRANSLATE with string functions](rules/TranslateRule.md)
+* [Replace DESCRIBE TABLE ... LINES with lines\( \)](rules/DescribeTableRule.md)
+* [Replace READ TABLE with table expression](rules/ReadTableRule.md)
 * [Use assert\_true and assert\_false](rules/AssertEqualsBooleanRule.md)
 * [Use assert\_subrc instead of assert\_equals](rules/AssertEqualsSubrcRule.md)
 * [Use assert class instead of ASSERT](rules/AssertClassRule.md)

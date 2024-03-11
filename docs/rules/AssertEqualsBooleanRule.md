@@ -1,4 +1,4 @@
-[<-- previous rule](TranslateRule.md) | [overview](../rules.md) | [next rule -->](AssertEqualsSubrcRule.md)
+[<-- previous rule](ReadTableRule.md) | [overview](../rules.md) | [next rule -->](AssertEqualsSubrcRule.md)
 
 # Use assert\_true and assert\_false
 

@@ -11,6 +11,7 @@ This rule is part of the **essential** profile, as it is explicitly demanded by 
 ## References
 
 * [Clean ABAP Styleguide: Prefer NEW to CREATE OBJECT](https://github.com/SAP/styleguides/blob/main/clean-abap/CleanABAP.md#prefer-new-to-create-object)
+* [Code Pal for ABAP: Prefer New to Create Object](https://github.com/SAP/code-pal-for-abap/blob/master/docs/checks/prefer-new-to-create-object.md)
 
 ## Options
 

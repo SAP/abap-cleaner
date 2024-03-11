@@ -1,4 +1,4 @@
-[<-- previous rule](MoveToRule.md) | [overview](../rules.md) | [next rule -->](AssertEqualsBooleanRule.md)
+[<-- previous rule](MoveToRule.md) | [overview](../rules.md) | [next rule -->](DescribeTableRule.md)
 
 # Replace TRANSLATE with string functions
 
@@ -11,7 +11,7 @@ This rule is part of the **essential** profile, as it is explicitly demanded by 
 ## References
 
 * [Clean ABAP Styleguide: Prefer functional to procedural language constructs](https://github.com/SAP/styleguides/blob/main/clean-abap/CleanABAP.md#prefer-functional-to-procedural-language-constructs)
-* [Clean Code Checks: Deprecated Key Word Check](https://github.com/SAP/code-pal-for-abap/blob/master/docs/checks/deprecated-key-word.md)
+* [Code Pal for ABAP: Deprecated Key Word Check](https://github.com/SAP/code-pal-for-abap/blob/master/docs/checks/deprecated-key-word.md)
 * [ABAP Keyword Documentation: TRANSLATE](https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/index.htm?file=abaptranslate.htm)
 * [ABAP Keyword Documentation: string\_func - Processing Functions](https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/index.htm?file=abenprocess_functions.htm)
 

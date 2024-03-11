@@ -9,7 +9,7 @@ This rule is part of the **essential** profile, as it is explicitly demanded by 
 ## References
 
 * [Clean ABAP Styleguide: Comment with ", not with \*](https://github.com/SAP/styleguides/blob/main/clean-abap/CleanABAP.md#comment-with--not-with-)
-* [Clean Code Checks: Comment Type](https://github.com/SAP/code-pal-for-abap/blob/master/docs/checks/comment-type.md)
+* [Code Pal for ABAP: Comment Type](https://github.com/SAP/code-pal-for-abap/blob/master/docs/checks/comment-type.md)
 
 ## Options
 

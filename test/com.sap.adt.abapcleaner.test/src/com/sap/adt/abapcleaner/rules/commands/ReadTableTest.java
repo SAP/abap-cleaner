@@ -392,6 +392,19 @@ public class ReadTableTest extends RuleTestBase {
 	}
 
 	@Test
+	void testSyTabixAndAssertSubrcKept() {
+		buildSrc("    READ TABLE its_any WITH KEY comp2 = iv_value2 TRANSPORTING NO FIELDS. \"#EC CI_SORTSEQ");
+		buildSrc("    DATA(lv_line_index) = sy-tabix.");
+		buildSrc("    cl_abap_unit_assert=>assert_subrc( ).");
+
+		copyExpFromSrc();
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
 	void testAssertSubrcWithoutParamsKept() {
 		buildSrc("    READ TABLE its_any WITH KEY comp2 = iv_value2 TRANSPORTING NO FIELDS. \"#EC CI_SORTSEQ");
 		buildSrc("    cl_abap_unit_assert=>assert_subrc( ).");

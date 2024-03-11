@@ -9,7 +9,7 @@ This rule is part of the **essential** profile, as it is explicitly demanded by 
 ## References
 
 * [Clean ABAP Styleguide: Do not chain up-front declarations](https://github.com/SAP/styleguides/blob/main/clean-abap/CleanABAP.md#do-not-chain-up-front-declarations)
-* [Clean Code Checks: Chain Declaration Usage](https://github.com/SAP/code-pal-for-abap/blob/master/docs/checks/chain-declaration-usage.md)
+* [Code Pal for ABAP: Chain Declaration Usage](https://github.com/SAP/code-pal-for-abap/blob/master/docs/checks/chain-declaration-usage.md)
 * [ABAP Keyword Documentation: Only use chained statements where appropriate](https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/index.htm?file=abenchained_statements_guidl.htm)
 
 ## Options

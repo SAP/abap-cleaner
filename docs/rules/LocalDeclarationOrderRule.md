@@ -8,7 +8,7 @@ Moving declarations to their innermost block is discouraged, but may help to ref
 
 ## References
 
-* [Clean Code Checks: Scope of Variable](https://github.com/SAP/code-pal-for-abap/blob/master/docs/checks/scope-of-variable.md)
+* [Code Pal for ABAP: Scope of Variable](https://github.com/SAP/code-pal-for-abap/blob/master/docs/checks/scope-of-variable.md)
 
 ## Options
 
