@@ -97,7 +97,10 @@ public class ReadTableRule extends RuleForCommands {
 			+ LINE_SEP + "    READ TABLE its_any FROM is_any TRANSPORTING NO FIELDS." 
 			+ LINE_SEP + "    CHECK sy-subrc = 0." 
 			+ LINE_SEP 
-			+ LINE_SEP + "    \" replacing [REFERENCE] INTO would require exception handling for CX_SY_TAB_LINE_NOT_FOUND"
+			+ LINE_SEP + "    \" replacing INTO or REFERENCE INTO would require catching the exception CX_SY_TAB_LINE_NOT_FOUND: While"
+			+ LINE_SEP + "    \" VALUE #( itab[ ... ] OPTIONAL ) and REF #( itab[ ... ] OPTIONAL ) work without exception handling, their" 
+			+ LINE_SEP + "    \" behavior differs from READ TABLE if the table line is NOT found: In this case, READ TABLE preserves the old"
+			+ LINE_SEP + "    \" value of the variable, while the VALUE #( ) and REF #( ) constructors would initialize the variable"
 			+ LINE_SEP + "    READ TABLE its_any WITH KEY comp1 = 'abc' INTO DATA(ls_any)." 
 			+ LINE_SEP + "    READ TABLE its_any WITH KEY comp1 = 'def' REFERENCE INTO lr_any." 
 			+ LINE_SEP 

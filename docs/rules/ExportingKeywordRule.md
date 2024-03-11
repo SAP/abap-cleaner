@@ -9,7 +9,7 @@ This rule is part of the **essential** profile, as it is explicitly demanded by 
 ## References
 
 * [Clean ABAP Styleguide: Omit the optional keyword EXPORTING](https://github.com/SAP/styleguides/blob/main/clean-abap/CleanABAP.md#omit-the-optional-keyword-exporting)
-* [Clean Code Checks: Omit Optional EXPORTING](https://github.com/SAP/code-pal-for-abap/blob/master/docs/checks/omit-optional-exporting.md)
+* [Code Pal for ABAP: Omit Optional EXPORTING](https://github.com/SAP/code-pal-for-abap/blob/master/docs/checks/omit-optional-exporting.md)
 
 ## Options
 

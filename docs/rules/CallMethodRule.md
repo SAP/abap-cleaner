@@ -12,7 +12,7 @@ This rule is part of the **essential** profile, as it is explicitly demanded by 
 
 * [Clean ABAP Styleguide: Prefer functional to procedural calls](https://github.com/SAP/styleguides/blob/main/clean-abap/CleanABAP.md#prefer-functional-to-procedural-calls)
 * [Clean ABAP Styleguide: Avoid obsolete language elements](https://github.com/SAP/styleguides/blob/main/clean-abap/CleanABAP.md#avoid-obsolete-language-elements)
-* [Clean Code Checks: CALL METHOD Usage](https://github.com/SAP/code-pal-for-abap/blob/master/docs/checks/call-method-usage.md)
+* [Code Pal for ABAP: CALL METHOD Usage](https://github.com/SAP/code-pal-for-abap/blob/master/docs/checks/call-method-usage.md)
 * [ABAP Keyword Documentation: Formulate static method calls without CALL METHOD](https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/index.htm?file=abenmethod_call_guidl.htm)
 * [ABAP Keyword Documentation: Obsolete Calls: CALL METHOD, Static](https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/index.htm?file=abapcall_method_static.htm)
 

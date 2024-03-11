@@ -9,7 +9,7 @@ This rule is part of the **essential** profile, as it is explicitly demanded by 
 ## References
 
 * [Clean ABAP Styleguide: Prefer IS NOT to NOT IS](https://github.com/SAP/styleguides/blob/main/clean-abap/CleanABAP.md#prefer-is-not-to-not-is)
-* [Clean Code Checks: Prefer IS NOT to NOT IS](https://github.com/SAP/code-pal-for-abap/blob/master/docs/checks/prefer-is-not-to-not-is.md)
+* [Code Pal for ABAP: Prefer IS NOT to NOT IS](https://github.com/SAP/code-pal-for-abap/blob/master/docs/checks/prefer-is-not-to-not-is.md)
 
 ## Options
 

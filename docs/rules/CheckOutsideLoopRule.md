@@ -10,7 +10,7 @@ This rule is part of the **essential** profile, as it is explicitly demanded by 
 
 * [Clean ABAP Styleguide: CHECK vs. RETURN](https://github.com/SAP/styleguides/blob/main/clean-abap/CleanABAP.md#check-vs-return)
 * [Clean ABAP Styleguide: Avoid CHECK in other positions](https://github.com/SAP/styleguides/blob/main/clean-abap/CleanABAP.md#avoid-check-in-other-positions)
-* [Clean Code Checks: CHECK Statement Position](https://github.com/SAP/code-pal-for-abap/blob/master/docs/checks/check-statement-position.md)
+* [Code Pal for ABAP: CHECK Statement Position](https://github.com/SAP/code-pal-for-abap/blob/master/docs/checks/check-statement-position.md)
 
 ## Options
 

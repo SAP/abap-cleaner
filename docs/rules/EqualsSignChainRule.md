@@ -11,7 +11,7 @@ This rule is part of the **essential** profile, as it is explicitly demanded by 
 ## References
 
 * [Clean ABAP Styleguide: Don't chain assignments](https://github.com/SAP/styleguides/blob/main/clean-abap/CleanABAP.md#dont-chain-assignments)
-* [Clean Code Checks: Equals Sign Chaining](https://github.com/SAP/code-pal-for-abap/blob/master/docs/checks/equals-sign-chaining.md)
+* [Code Pal for ABAP: Equals Sign Chaining](https://github.com/SAP/code-pal-for-abap/blob/master/docs/checks/equals-sign-chaining.md)
 
 ## Options
 
