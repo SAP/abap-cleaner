@@ -36,7 +36,7 @@ jobs:
       - name: Build with Maven
         run: mvn --batch-mode --fail-at-end clean verify
       - name: Publish unit test results
-        uses: EnricoMi/publish-unit-test-result-action@v1
+        uses: EnricoMi/publish-unit-test-result-action@v2
         if: always()
         with:
           files: ${{ github.workspace }}/**/target/surefire-reports/*.xml
