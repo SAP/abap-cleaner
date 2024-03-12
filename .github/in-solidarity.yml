@@ -1,5 +1,3 @@
 rules:
   master:
     level: off
-  masterdata:
-    level: off
