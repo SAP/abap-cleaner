@@ -35,8 +35,20 @@ jobs:
           maven-version: 3.9.6
       - name: Build with Maven
         run: mvn --batch-mode --fail-at-end clean verify
-      - name: Publish unit test results
-        uses: EnricoMi/publish-unit-test-result-action@v2
+      - name: Upload Test Results
+        uses: actions/upload-artifact@v4
         if: always()
         with:
-          files: ${{ github.workspace }}/**/target/surefire-reports/*.xml
+          name: Test Results
+          if-no-files-found: warn
+          path: |
+            ${{ github.workspace }}/**/target/surefire-reports/*.xml
+  event_file:
+    name: "Event File"
+    runs-on: ubuntu-latest
+    steps:
+    - name: Upload
+      uses: actions/upload-artifact@v4
+      with:
+        name: Event File
+        path: ${{ github.event_path }}
