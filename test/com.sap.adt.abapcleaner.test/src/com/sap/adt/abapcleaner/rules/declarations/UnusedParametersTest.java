@@ -673,4 +673,36 @@ public class UnusedParametersTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testCallTransformationResult() {
+		buildSrc("CLASS any_class DEFINITION.");
+		buildSrc("  PUBLIC SECTION.");
+		buildSrc("    METHODS serialize RETURNING VALUE(result) TYPE any_type.");
+		buildSrc("ENDCLASS.");
+		buildSrc("");
+		buildSrc("CLASS any_class IMPLEMENTATION.");
+		buildSrc("  METHOD serialize.");
+		buildSrc("    \" TODO: parameter RESULT is never cleared or assigned (ABAP cleaner)");
+		buildSrc("    CALL TRANSFORMATION id");
+		buildSrc("         SOURCE values = object");
+		buildSrc("         RESULT XML result.");
+		buildSrc("  ENDMETHOD.");
+		buildSrc("ENDCLASS.");
+
+		buildExp("CLASS any_class DEFINITION.");
+		buildExp("  PUBLIC SECTION.");
+		buildExp("    METHODS serialize RETURNING VALUE(result) TYPE any_type.");
+		buildExp("ENDCLASS.");
+		buildExp("");
+		buildExp("CLASS any_class IMPLEMENTATION.");
+		buildExp("  METHOD serialize.");
+		buildExp("    CALL TRANSFORMATION id");
+		buildExp("         SOURCE values = object");
+		buildExp("         RESULT XML result.");
+		buildExp("  ENDMETHOD.");
+		buildExp("ENDCLASS.");
+
+		testRule();
+	}
 }
