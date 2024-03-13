@@ -408,10 +408,21 @@ public final class StringUtil {
 		char[] chars = text.toCharArray();
 		for (int i = 0; i < chars.length; ++i) {
 			if (chars[i] == '\\' && i + 1 < chars.length) {
-				// skip char and instead add the next char, i.e. the escaped \ or " char
 				++i;
+				if (chars[i] == 'r') {
+					sb.append('\r');
+				} else if (chars[i] == 'n') {
+					sb.append('\n');
+				} else if (chars[i] == 't') {
+					sb.append('\t');
+				} else {
+					// the escaped \ " | { }
+					sb.append(chars[i]);
+				} 
+				continue;
+			} else {
+				sb.append(chars[i]);
 			}
-			sb.append(chars[i]);
 		}
 		return sb.toString();
 	}

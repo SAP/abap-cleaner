@@ -123,6 +123,10 @@ public final class ABAP {
    /** escape character that can be written before the name of an operand, see
     * <a href="https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/index.htm?file=abennames_escaping.htm">Escape Character for Operands</a>*/
    public static final String OPERAND_ESCAPE_CHAR_STRING = "!";
+   /** escape character to be used inside of string templates to escape the characters | { } */
+   public static final char STRING_TEMPLATE_ESCAPE_CHAR = '\\';
+   /** escape character to be used inside of string templates to escape the characters | { } */
+   public static final String STRING_TEMPLATE_ESCAPE_CHAR_STRING = "\\";
    
    /** Opening parenthesis for linking a text symbol ID to a text field literal, 
     * e.g. 'literal text'(001), where the literal text is overridden if the text symbol TEXT-001 is defined
@@ -1069,12 +1073,13 @@ public final class ABAP {
 			return null;
 		
 		String innerText = text.substring(1, text.length() - 1); 
-		if (text.startsWith(QUOT_MARK_STRING))
+		if (text.startsWith(QUOT_MARK_STRING)) {
 			return innerText.replaceAll(QUOT_MARK_STRING + QUOT_MARK_STRING, QUOT_MARK_STRING);
-		else if (text.startsWith(QUOT_MARK2_STRING))
+		} else if (text.startsWith(QUOT_MARK2_STRING)) {
 			return innerText.replaceAll(QUOT_MARK2_STRING + QUOT_MARK2_STRING, QUOT_MARK2_STRING);
-		else
+		} else {
 			return StringUtil.getUnescapedText(innerText);
+		}
 	}
 
 	/** returns the text field literal '...' for the supplied inner text; e.g. for ab'c, returns 'ab''c' */
@@ -1087,6 +1092,17 @@ public final class ABAP {
 	public static String toTextStringLiteral(String innerText) {
 		String textDelimited = innerText.replaceAll(QUOT_MARK2_STRING, QUOT_MARK2_STRING + QUOT_MARK2_STRING);
 		return QUOT_MARK2_STRING + textDelimited + QUOT_MARK2_STRING;
+	}
+	
+	/** returns the text string template |...| for the supplied inner text; e.g. for ab|{c, returns |ab\|\{c| */
+	public static String toStringTemplate(String innerText) {
+		StringBuilder sb = new StringBuilder();
+		for (char c : innerText.toCharArray()) {
+			if (c == STRING_TEMPLATE_ESCAPE_CHAR || c == PIPE || c == BRACE_OPEN || c == BRACE_CLOSE) 
+				sb.append(STRING_TEMPLATE_ESCAPE_CHAR);
+			sb.append(c);
+		}
+		return PIPE_STRING + sb.toString() + PIPE_STRING;
 	}
 	
 	public static boolean mayBeTextSymbol(String tokenText) {

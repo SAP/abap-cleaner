@@ -171,6 +171,15 @@ public class Token {
 	
 	final boolean getMayBeIdentifier() { return (type == TokenType.IDENTIFIER) || isKeyword() || isTextualComparisonOp(); }
 
+	public final boolean isTextFieldLiteral() {
+		// also ensure that the literal ends with ' to exclude literals with text element IDs: 'text'(idf)
+		return isLiteral() && !StringUtil.isNullOrEmpty(text) && text.length() >=2 && text.charAt(0) == ABAP.QUOT_MARK && text.charAt(text.length() - 1) == ABAP.QUOT_MARK;
+	}
+
+	public final boolean isTextStringLiteral() {
+		return isLiteral() && !StringUtil.isNullOrEmpty(text) && text.charAt(0) == ABAP.QUOT_MARK2;
+	}
+
 	public final boolean isCharacterLiteral() {
 		return isLiteral() && !StringUtil.isNullOrEmpty(text) && (text.charAt(0) == ABAP.QUOT_MARK || text.charAt(0) == ABAP.QUOT_MARK2);
 	}
@@ -180,15 +189,21 @@ public class Token {
 				&& (text.charAt(0) == ABAP.QUOT_MARK || text.charAt(0) == ABAP.QUOT_MARK2 || text.charAt(0) == ABAP.PIPE || text.charAt(0) == ABAP.BRACE_CLOSE);
 	}
 
+	public final boolean isStringTemplate() {
+		return (isLiteral() && !StringUtil.isNullOrEmpty(text) 
+				&& (text.charAt(0) == ABAP.PIPE || text.charAt(0) == ABAP.BRACE_CLOSE)
+				&& (text.charAt(text.length() - 1) == ABAP.PIPE || text.charAt(text.length() - 1) == ABAP.BRACE_OPEN)); 
+	}
+
 	final boolean startsStringTemplate() { return isLiteral() && !StringUtil.isNullOrEmpty(text) && text.charAt(0) == ABAP.PIPE; }
 	
 	final boolean endsStringTemplate() { return isLiteral() && !StringUtil.isNullOrEmpty(text) && text.charAt(text.length() - 1) == ABAP.PIPE; }
 	
 	final boolean startsWithLetter() { return !StringUtil.isNullOrEmpty(text) && Character.isLetter(text.charAt(0)); }
 
-	final boolean startsEmbeddedExpression() { return isStringLiteral() && text.charAt(text.length() - 1) == ABAP.BRACE_OPEN; }
+	public final boolean startsEmbeddedExpression() { return isStringLiteral() && text.charAt(text.length() - 1) == ABAP.BRACE_OPEN; }
 
-	final boolean endsEmbeddedExpression() { return isStringLiteral() && text.charAt(0) == ABAP.BRACE_CLOSE; }
+	public final boolean endsEmbeddedExpression() { return isStringLiteral() && text.charAt(0) == ABAP.BRACE_CLOSE; }
 
 	public final boolean isAssignmentOperator() { return (type == TokenType.ASSIGNMENT_OP); }
 
@@ -721,8 +736,9 @@ public class Token {
 			command.addIndent(-length, rightPos, nextToken);
 
 		command.onTokenRemoved(this);
-		if (!skipIntegrityTest)
+		if (!skipIntegrityTest) {
 			command.testReferentialIntegrity(true);
+		}
 	}
 
 	public final boolean wasRemovedFromCommand() {
@@ -944,7 +960,7 @@ public class Token {
 		prevSibling = newToken;
 
 		if (moveFollowingLinesRight)
-			parentCommand.addIndent(newToken.spacesLeft + newToken.getTextLength(), oldStartIndex);
+			parentCommand.addIndent(newToken.spacesLeft + newToken.getTextLength(), oldStartIndex, this, null, true);
 
 		parentCommand.onTokenInserted(newToken);
 		
@@ -985,12 +1001,19 @@ public class Token {
 	 * inserts the supplied Term as the next sibling, or first child after this Token
 	 */
 	public final void insertNext(Term newTerm) throws IntegrityBrokenException {
+		insertNext(newTerm, false);
+	}
+
+	/**
+	 * inserts the supplied Term as the next sibling, or first child after this Token
+	 */
+	public final void insertNext(Term newTerm, boolean skipIntegrityTest) throws IntegrityBrokenException {
 		if (!opensLevel) {
-			insertRightSibling(newTerm, false);
+			insertRightSibling(newTerm, false, skipIntegrityTest);
 		} else if (hasChildren()) {
-			firstChild.insertLeftSibling(newTerm);
+			firstChild.insertLeftSibling(newTerm, skipIntegrityTest);
 		} else {
-			insertFirstChild(newTerm);
+			insertFirstChild(newTerm, skipIntegrityTest);
 		}
 	}
 
@@ -1001,17 +1024,16 @@ public class Token {
 	 * @throws IntegrityBrokenException 
 	 */
 	public final Token insertRightSibling(Token newToken) throws IntegrityBrokenException {
-		return insertRightSibling(newToken, false);
+		return insertRightSibling(newToken, false, false);
 	}
 
-	/**
-	 * inserts the supplied Token (including its possible children) as a sibling after this Token
-	 * 
-	 * @param newToken
-	 * @param moveFollowingLinesRight
-	 * @throws IntegrityBrokenException 
-	 */
+	/** inserts the supplied Token (including its possible children) as a sibling after this Token */
 	public final Token insertRightSibling(Token newToken, boolean moveFollowingLinesRight) throws IntegrityBrokenException {
+		return insertRightSibling(newToken, moveFollowingLinesRight, false);
+	}
+
+	/** inserts the supplied Token (including its possible children) as a sibling after this Token */
+	public final Token insertRightSibling(Token newToken, boolean moveFollowingLinesRight, boolean skipIntegrityTest) throws IntegrityBrokenException {
 		if (newToken == null)
 			throw new NullPointerException("newToken");
 		if (opensLevel)
@@ -1065,10 +1087,11 @@ public class Token {
 		newToken.prev.next = newToken;
 
 		if (moveFollowingLinesRight)
-			parentCommand.addIndent(newToken.spacesLeft + newToken.getTextLength(), oldStartIndex);
+			parentCommand.addIndent(newToken.spacesLeft + newToken.getTextLength(), oldStartIndex, newToken, null, true);
 
 		parentCommand.onTokenInserted(newToken);
-		parentCommand.testReferentialIntegrity(true);
+		if (!skipIntegrityTest)
+			parentCommand.testReferentialIntegrity(true);
 		
 		return newToken;
 	}
@@ -1080,7 +1103,7 @@ public class Token {
 	 * @throws IntegrityBrokenException 
 	 */
 	public final void insertRightSibling(Term newTerm) throws IntegrityBrokenException {
-		insertRightSibling(newTerm, false);
+		insertRightSibling(newTerm, false, false);
 	}
 
 	/**
@@ -1091,6 +1114,17 @@ public class Token {
 	 * @throws IntegrityBrokenException 
 	 */
 	public final void insertRightSibling(Term newTerm, boolean moveFollowingLinesRight) throws IntegrityBrokenException {
+		insertRightSibling(newTerm, moveFollowingLinesRight, false);
+	}
+
+	/**
+	 * inserts the supplied Term (including its possible children) as a sibling after this Token
+	 * 
+	 * @param newTerm
+	 * @param moveFollowingLinesRight
+	 * @throws IntegrityBrokenException 
+	 */
+	public final void insertRightSibling(Term newTerm, boolean moveFollowingLinesRight, boolean skipIntegrityTest) throws IntegrityBrokenException {
 		if (newTerm == null)
 			throw new NullPointerException("newTerm");
 		if (opensLevel)
@@ -1150,7 +1184,9 @@ public class Token {
 			parentCommand.addIndent(newTerm.firstToken.spacesLeft + newTermWidth, oldStartIndex, newTerm.lastToken, null);
 
 		parentCommand.onTermInserted(newTerm);
-		parentCommand.testReferentialIntegrity(true);
+		if (!skipIntegrityTest) {
+			parentCommand.testReferentialIntegrity(true);
+		}
 	}
 
 	public final void insertLeftSibling(Term newTerm) throws IntegrityBrokenException {
@@ -1671,6 +1707,14 @@ public class Token {
 	}
 
 
+	public final Token getPrevSiblingWhileLevelCloser() {
+		Token token = this;
+		while (token != null && token.closesLevel)
+			token = token.prevSibling;
+		return token;
+	}
+
+
 	public final Token getPrevTokenOfType(TokenType tokenType) {
 		Token result = prev;
 		while (result != null && result.type != tokenType)
@@ -1696,8 +1740,10 @@ public class Token {
 		check(firstChild == null || lastChild != null);
 		check(lastChild == null || firstChild != null);
 		check(lastChild == null || lastChild.next == nextSibling);
-		check(!closesLevel || prevSibling != null);
-		check(!closesLevel || prevSibling.opensLevel);
+		check(opensLevel || nextSibling == null || !nextSibling.closesLevel);
+		check(!opensLevel || nextSibling != null && nextSibling.closesLevel);
+		check(closesLevel || prevSibling == null || !prevSibling.opensLevel);
+		check(!closesLevel || prevSibling != null && prevSibling.opensLevel);
 		if (testCommentPositions) {
 			// there can be no further Token behind a comment (except in the next line)
 			check(prev == null || !prev.isComment() || lineBreaks > 0); 
@@ -1755,8 +1801,9 @@ public class Token {
 			int addSpaceCount = newText.length() - text.length();
 			int minSpacesLeft = next.getStartIndexInLine();
 			this.text = newText;
-			if (addSpaceCount != 0)
+			if (addSpaceCount != 0) {
 				parentCommand.addIndent(addSpaceCount, minSpacesLeft, next, null, true);
+			}
 		}
 	}
 
@@ -2245,8 +2292,21 @@ public class Token {
 		}		
 		
 		// ABAP Data and Communication Interfaces: Remote Function Call
-		// - CALL FUNCTION DESTINATION and RECEIVE RESULTS FROM FUNCTION: see below 
-		// - TODO: CALL TRANSFORMATION
+		// - CALL FUNCTION DESTINATION and RECEIVE RESULTS FROM FUNCTION: see below
+		if (firstToken.matchesOnSiblings(true, "CALL", "TRANSFORMATION") && (prevToken.isKeyword("XML") || prevToken.textEquals("=")) && !(isAttached() && prev.textEquals("("))) {
+			// CALL TRANSFORMATION ID | trans|(name) 
+	      //    [PARAMETERS {p1 = e1 p2 = e2 ...}|(ptab)] 
+	      //    [OPTIONS options] 
+	      //    SOURCE {XML src_xml}  | {{bn1 = e1 bn2 = e2 ...}|(stab)} 
+	      //    RESULT {XML rslt_xml} | {{bn1 = f1 bn2 = f2 ...}|(rtab)}.
+			Token testToken = prevToken;
+			while (testToken != null && !testToken.isAnyKeyword("PARAMETERS", "OPTIONS", "SOURCE", "RESULT")) {
+				testToken = testToken.getPrevCodeSibling();
+			}
+			if (testToken != null && testToken.isKeyword("RESULT")) {
+				return MemoryAccessType.WRITE;
+			}
+		}
 
 		// ABAP Data and Communication Interfaces: OLE Interface
 		// - CREATE OBJECT ole class ...: already covered by "CREATE OBJECT" above
@@ -2835,7 +2895,7 @@ public class Token {
 		return newToken;
 	}
 
-	private void insertFirstChild(Term newTerm) throws IntegrityBrokenException {
+	private void insertFirstChild(Term newTerm, boolean skipIntegrityTest) throws IntegrityBrokenException {
 		if (firstChild != null)
 			throw new IntegrityBrokenException(this, "child token already exists");
 
@@ -2859,7 +2919,9 @@ public class Token {
 		lastChild = newTerm.lastToken;
 
 		parentCommand.onTermInserted(newTerm);
-		parentCommand.testReferentialIntegrity(true);
+		if (!skipIntegrityTest) {
+			parentCommand.testReferentialIntegrity(true);
+		}
 	}
 
 	public boolean isSqlLiteralType() {
@@ -2932,5 +2994,15 @@ public class Token {
 			return false;
 		}
 			
+	}
+
+	public void convertToStartEmbeddedExpression() {
+		text = text.substring(0, text.length() - 1) + ABAP.BRACE_OPEN_STRING;
+		opensLevel = true; 
+	}
+
+	public void convertToEndEmbeddedExpression() { 
+		text = ABAP.BRACE_CLOSE_STRING + text.substring(1);
+		closesLevel = true; 
 	}
 }
