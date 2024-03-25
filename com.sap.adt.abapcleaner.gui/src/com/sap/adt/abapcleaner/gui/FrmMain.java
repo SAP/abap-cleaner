@@ -997,6 +997,30 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 
 		new MenuItem(menuExtras, SWT.SEPARATOR);
 
+		MenuItem mmuExtrasPreprocessCamelCaseNamesFromClip = new MenuItem(menuExtras, SWT.NONE);
+		mmuExtrasPreprocessCamelCaseNamesFromClip.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				try {
+					preprocessCamelCaseNamesFromClip();
+				} catch (Exception ex) {
+				}
+			}
+		});
+		mmuExtrasPreprocessCamelCaseNamesFromClip.setText("Preprocess Known CamelCase Names From Clipboard");
+
+		MenuItem mmuExtrasUpdateCamelCaseNamesFromFolder = new MenuItem(menuExtras, SWT.NONE);
+		mmuExtrasUpdateCamelCaseNamesFromFolder.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				try {
+					updateCamelCaseNamesFromFolder();
+				} catch (Exception ex) {
+				}
+			}
+		});
+		mmuExtrasUpdateCamelCaseNamesFromFolder.setText("Update Resources of Known CamelCase Names From Folder");
+
 		MenuItem mmuExtrasCreateRulesDocumentation = new MenuItem(menuExtras, SWT.NONE);
 		mmuExtrasCreateRulesDocumentation.addSelectionListener(new SelectionAdapter() {
 			@Override
@@ -2266,6 +2290,77 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		});
 	}
 
+	private void preprocessCamelCaseNamesFromClip() {
+		final String GTNC_SUFFIX = "__GTNC"; // use two underscores, so this file will be processed first
+		
+		String clip = SystemClipboard.getText();
+		if (StringUtil.isNullOrEmpty(clip)) {
+			Message.show("Clipboard is empty", shell);
+			return;
+		}
+		String targetDir = showDirDialog(defaultCodeDirectory, "Target directory for known CamelCase names of CDS views and components");
+		if (targetDir == null || targetDir.length() == 0)
+			return;
+
+		CamelCaseNameType nameType;
+		if (clip.startsWith("CDS View Name"))
+			nameType = CamelCaseNameType.VIEW;
+		else if (clip.startsWith("Field Name"))
+			nameType = CamelCaseNameType.FIELD;
+		else {
+			Message.show("Expected clipboard to start with cell 'CDS View Name' or 'Field Name'", shell);
+			return;
+		}
+		
+		String targetFilePrefix = (nameType == CamelCaseNameType.VIEW) ? CamelCaseNames.VIEW_NAMES_SOURCE_PREFIX : CamelCaseNames.FIELD_NAMES_SOURCE_PREFIX;
+		String targetPath = Persistency.get().combinePaths(targetDir, targetFilePrefix + GTNC_SUFFIX + ".csv");
+		StringBuilder sbResult = new StringBuilder();
+		String resultMsg = CamelCaseNames.preprocessFromGTNC(nameType, clip, sbResult);
+		if (sbResult.length() > 0) {
+			Persistency.get().writeAllTextToFile(targetPath, sbResult.toString(), false);
+		}
+		Message.show(resultMsg, shell);
+	}
+
+	private void updateCamelCaseNamesFromFolder() {
+		String sourceDir = showDirDialog(defaultCodeDirectory, "Source directory for known CamelCase names of CDS views and components");
+		if (sourceDir == null || sourceDir.length() == 0)
+			return;
+
+		String targetDir = showDirDialog(defaultCodeDirectory, "Target directory for resources");
+		if (targetDir == null || targetDir.length() == 0)
+			return;
+		
+		updateCamelCaseNames(CamelCaseNameType.VIEW, sourceDir, CamelCaseNames.VIEW_NAMES_SOURCE_PREFIX, targetDir, CamelCaseNames.VIEW_NAMES_RESOURCE);
+		updateCamelCaseNames(CamelCaseNameType.FIELD, sourceDir, CamelCaseNames.FIELD_NAMES_SOURCE_PREFIX, targetDir, CamelCaseNames.FIELD_NAMES_RESOURCE);
+
+		Message.show("Please refresh resources folder in IDE with F5 and restart.", shell);
+	}
+
+	private void updateCamelCaseNames(CamelCaseNameType camelCaseNameType, String sourceDir, String prefix, String targetDir, String resourceFile) {
+		Persistency persistency = Persistency.get();
+		String searchPattern = prefix + "*.csv;" + prefix + "*.txt";
+		String[] paths = persistency.getFilesInDirectory(sourceDir, searchPattern, false);
+		if (paths == null || paths.length == 0) {
+			return;
+		}
+		StringBuilder sbSummary = new StringBuilder();
+		StringBuilder sbDetails = new StringBuilder();
+		boolean checkStartsWithZ = (camelCaseNameType == CamelCaseNameType.VIEW);
+		CamelCaseNames camelCaseNames = CamelCaseNames.createFromTextFiles(camelCaseNameType, paths, sbSummary, sbDetails, checkStartsWithZ);
+		String targetPath = persistency.combinePaths(targetDir, resourceFile);
+		try {
+			camelCaseNames.saveAsResource(targetPath);
+			sbSummary.append("For details, paste the clipboard to Excel.").append(System.lineSeparator());
+			sbSummary.append(System.lineSeparator());
+			sbSummary.append("Resource file saved successfully to '" + targetPath + "'");
+		} catch (IOException e) {
+			sbSummary.append(e.getMessage());
+		}
+		SystemClipboard.setText(sbDetails.toString());
+		Message.show(sbSummary.toString(), "Update CamelCase Names in Resources: " + prefix, shell);
+	}
+	
 	private void createRulesDocumentation() {
 		RuleDocumentation ruleDoc = new RuleDocumentation(Profile.createDefault().getRulesSortedByGroup());
 

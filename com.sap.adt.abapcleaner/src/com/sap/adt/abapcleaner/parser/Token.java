@@ -1790,10 +1790,13 @@ public class Token {
 	 * @param newText
 	 * @param adjustIndent
 	 */
-	public final void setText(String newText, boolean adjustIndent) {
+	public final boolean setText(String newText, boolean adjustIndent) {
 		if (newText == null)
 			throw new NullPointerException("newText");
 		
+		if (text.equals(newText))
+			return false;
+
 		if (!adjustIndent || next == null || next.lineBreaks > 0) {
 			// nothing to adjust
 			this.text = newText;
@@ -1805,6 +1808,7 @@ public class Token {
 				parentCommand.addIndent(addSpaceCount, minSpacesLeft, next, null, true);
 			}
 		}
+		return true;
 	}
 
 	public final String getTextOfKeywordCollocation() {
@@ -2714,11 +2718,11 @@ public class Token {
 	/**
 	 * Returns true if this Token represents a type (dtype, abap_type, enum_type, mesh_type, ref_type, struct_type, table_type),
 	 * not a data object (dobj).
-	 * This could either be in the definition with TYPES type ...,   
+	 * This could either be in the definition with TYPES type ... (this is only checked for includeTypeDef == true),   
 	 * or when the type is used for declaring a data object (e.g. DATA ... TYPE type) or another type (e.g. TYPES ... TYPE STANDARD TABLE OF type)
 	 * or after a constructor operator (e.g. ... = VALUE type( ... )) 
 	 */
-	public boolean isTypeIdentifier() {
+	public boolean isTypeIdentifier(boolean includeTypeDef) {
 		if (type != TokenType.IDENTIFIER)
 			return false;
 
@@ -2738,7 +2742,7 @@ public class Token {
 		
 		// a) definition of a type (always in a TYPES statement)
 		// TYPES [:] [BEGIN OF|BEGIN OF ENUM|BEGIN OF MESH] identifier1 ..., identifier2 ... 
-		if (parentCommand.firstCodeTokenIsKeyword("TYPES")) {
+		if (includeTypeDef && parentCommand.firstCodeTokenIsKeyword("TYPES")) {
 			if (firstKeyword != null && firstKeyword.isKeyword("TYPES")) { 
 				// the Token is the identifier directly after TYPES [:] [BEGIN OF|BEGIN OF ENUM|BEGIN OF MESH] 
 				return true;
@@ -3004,5 +3008,182 @@ public class Token {
 	public void convertToEndEmbeddedExpression() { 
 		text = ABAP.BRACE_CLOSE_STRING + text.substring(1);
 		closesLevel = true; 
+	}
+	
+	/** returns a StrucInfo instance if the Token as a whole is the name of a structure or one of its components */
+	public StrucElement getStrucInfo() {
+		if (!isIdentifier()) {
+			return null;
+
+		} else if (text.indexOf(ABAP.COMPONENT_SELECTOR) > 0) {
+			// this includes cases in ABAP SQL like '@ls_any-comp' 
+			return StrucElement.createPartialForExprWithComponent(this);
+		}
+		
+		// fields inside table expressions: itab[ comp = ... ]
+		Token nextCode = getNextCodeSibling();
+		Token prevCode = getPrevCodeSibling();
+		if (parent != null && parent.textEndsWith("[") && nextCode != null && nextCode.textEquals("=")) {
+			return textEquals(ABAP.TABLE_LINE) ? null : StrucElement.createForComponentName(this, parent);
+		}
+
+		// fields inside constructor expressions: 
+		boolean prevIsAssign = (prevCode != null && prevCode.textEquals("="));
+		boolean nextIsAssign = (nextCode != null && nextCode.textEquals("="));
+		
+		Token prevKeyword = getPrevSiblingOfType(TokenType.KEYWORD);
+		if (parent != null && parent.textEndsWith("(")) {
+			// the constructor may start one level higher, e.g. VALUE #( ( c1 = ... ) )  
+			Token ctorStart = parent.textEquals("(") ? parent.parent : parent;
+			if (ctorStart != null && (ctorStart.isIdentifier() || ctorStart.textEquals("#("))) {
+				Token ctorKeyword = ctorStart.getPrevCodeSibling();
+				if (ctorKeyword == null) {
+					// continue below
+
+				} else if (ctorKeyword.isAnyKeyword("VALUE", "NEW")) {
+					// VALUE #( comp = ... ) or VALUE #( ( comp = ... ) )
+					if (nextIsAssign) {
+						return StrucElement.createForComponentName(this, ctorStart);
+					}
+				
+				} else if (ctorKeyword.isAnyKeyword("FILTER")) {
+					// FILTER type( itab [EXCEPT] [IN ftab] [USING KEY keyname] WHERE c1 op f1 [AND c2 op f2 [...]] ) ...
+					if (nextCode != null && nextCode.isComparisonOperator()) { // this could also be <= etc.
+						return StrucElement.createForComponentName(this, ctorStart);
+					}
+				
+				} else if (ctorKeyword.isKeyword("CORRESPONDING")) {
+					// CORRESPONDING #( ... [MAPPING   { t1 = s1 [DISCARDING DUPLICATES] }
+					//                               | { ( t1 = s1 [DISCARDING DUPLICATES] [MAPPING ...] [EXCEPT ...] ) }
+					//                               | { t1 = [s1] DEFAULT expr1 } ... ]  
+					//                      [EXCEPT ti tj ...] )
+
+					if (prevKeyword != null && prevKeyword.isKeyword("EXCEPT")) {
+						// use the constructor type for the target structure fields
+						return StrucElement.createForComponentName(this, ctorStart);
+					}
+					// determine whether this Token is part of a MAPPING ... assignment, possibly inside parentheses: MAPPING ( t1 = s1 ... )
+					Token prevKeyword2 = (prevKeyword == null && parent.textEquals("(")) ? parent : prevKeyword;
+					while (prevKeyword2 != null && (!prevKeyword2.isKeyword() || prevKeyword2.isAnyKeyword("DEFAULT", "DISCARDING", "DUPLICATES")))
+						prevKeyword2 = prevKeyword2.prevSibling;
+					if (prevKeyword2 != null && prevKeyword2.isKeyword("MAPPING")) {
+						if (nextIsAssign) {
+							// use the constructor type for the target structure fields
+							return StrucElement.createForComponentName(this, ctorStart); 
+						} else if (prevIsAssign) {
+							// use the 'CORRESPONDING' Token for the source structure fields
+							return StrucElement.createForComponentName(this, ctorKeyword); 
+						}
+					} 
+				}
+			}			
+		}
+
+		Token firstCode = parentCommand.getFirstCodeToken();
+		Token prevPrevCode = (prevCode == null) ? null : prevCode.getPrevCodeSibling();
+		Token prevPrevPrevCode = (prevPrevCode == null) ? null : prevPrevCode.getPrevCodeSibling();
+		Token prevPrevKeyword = (prevKeyword == null) ? null : prevKeyword.getPrevCodeSibling();
+
+		// exclude the case of "KEY keyname COMPONENTS" for multiple of the following cases
+		if (prevKeyword != null && prevKeyword.isKeyword("KEY") && nextCode != null && nextCode.isKeyword("COMPONENTS"))
+			return null;
+		
+		if (parentCommand.isAbapSqlOperation()) {
+			if (text.indexOf(ABAP.TILDE) >= 0) {
+				return StrucElement.createPartialForStructureAliasAndField(this, firstCode);
+
+			} else if (textStartsWith(ABAP.AT_SIGN_STRING)) {
+				// it was already checked above whether the text contains no ABAP.COMPONENT_SELECTOR, e.g. '@ls_any-comp' 
+				return null;
+
+			} else if (isAttached() && prev != null && (prev.opensInlineDeclaration() || prev.textEquals("("))) {
+				// @DATA(...), dynamic list etc.
+				return null;
+			
+			} else if (nextCode != null && (nextCode.isComparisonOperator() || nextCode.isAssignmentOperator())) {
+				if (parent != null && parent.getPrevCodeSibling() != null && parent.getPrevCodeSibling().isKeyword("FROM")) {
+					// for parameters, use the view name (i.e. this.parent) as the parent Token, not firstCode, so they form a context 
+					// of their own: thus, if no CamelCase is known for the parameters, they will not prevent the field names from being changed 
+					return StrucElement.createForParameterName(this, parent);
+				} else {
+					return StrucElement.createForComponentName(this, firstCode);
+				}
+			
+			} else if (prevCode != null && (prevCode.isComparisonOperator() || prevCode.isAssignmentOperator()) && textEqualsAny(ABAP.ABAP_TRUE, ABAP.ABAP_FALSE, ABAP.ABAP_SPACE)) {
+				return null;
+			
+			} else if (isSqlLiteralType() || isSqlTypeInCast()) { // e.g. int1`255`
+				return null;
+			
+			} else if (firstCode.isAnyKeyword("INSERT", "UPDATE", "DELETE") && prevKeyword == firstCode) {
+				return StrucElement.createForStructureName(this);
+			
+			} else if (prevKeyword != null && prevKeyword.isAnyKeyword("FROM", "JOIN", "TABLE", "IN")) {
+				return StrucElement.createForStructureName(this);
+			
+			} else if (prevCode != null && prevCode.isKeyword("AS") && nextCode != null && nextCode.isKeyword("ON")) {
+				return StrucElement.createForStructureAlias(this, firstCode);
+			
+			} else if (nextCode != null && nextCode.isKeyword("ON")) {
+				return StrucElement.createForStructureName(this); 
+			
+			} else if (prevPrevPrevCode != null && prevPrevPrevCode.isKeyword("FROM") && prevCode.isKeyword("AS")) {
+				return StrucElement.createForStructureAlias(this, firstCode);
+			
+			} else if (prevCode != null && prevCode.isKeyword("AS")) {
+				return StrucElement.createForComponentAlias(this, firstCode); 
+			
+			} else {
+				return StrucElement.createForComponentName(this, firstCode);
+			}
+			
+		}
+		
+		// Internal Tables 
+		if (firstCode.isKeyword("APPEND") && prevPrevKeyword != null && prevPrevKeyword.isKeyword("SORTED") && prevKeyword.isKeyword("BY")) {
+			// APPEND ... TO itab SORTED BY comp.
+			return StrucElement.createForComponentName(this, firstCode);
+		
+		} else if (firstCode.matchesOnSiblings(true, "DELETE|READ", "TABLE") && nextCode != null && nextCode.textEquals("=")
+				&& prevKeyword != null && prevKeyword.isAnyKeyword("KEY", "COMPONENTS")) {
+			// DELETE TABLE itab WITH TABLE KEY [keyname COMPONENTS] {comp_name1|(name1)} = operand1 ...
+			// READ TABLE itab WITH [TABLE] KEY [keyname COMPONENTS] {comp_name1|(name1)} = operand1 ... 
+			return textEquals(ABAP.TABLE_LINE) ? null : StrucElement.createForComponentName(this, prevKeyword);
+		
+		} else if (firstCode.matchesOnSiblings(true, "READ", "TABLE") && prevKeyword != null && prevKeyword.isAnyKeyword("COMPARING", "TRANSPORTING")) {
+			// READ TABLE itab INTO ... [COMPARING { { comp1 comp2 ...}|{ALL FIELDS}|{NO FIELDS} }] [TRANSPORTING { { comp1 comp2 ...}|{ALL FIELDS} }] ...
+			return StrucElement.createForComponentName(this, firstCode);
+		
+		} else if (firstCode.matchesOnSiblings(true, "LOOP", "AT") && nextCode != null && (nextCode.isComparisonOperator() || nextCode.isKeyword("IS"))) {
+			// LOOP AT itab ... WHERE comp1 = ... AND comp2 IS ... AND comp3 OP ...
+			// LOOP AT GROUP ... INTO FINAL(wa) WHERE comp1 = ... - no need to consider 'GROUP BY ( key1 = wa-comp1 key2 = wa-comp2 ... indx = ... size = ... )'
+			return textEquals(ABAP.TABLE_LINE) ? null : StrucElement.createForComponentName(this, firstCode);
+		
+		} else if (firstCode.matchesOnSiblings(true, "AT", "NEW") || firstCode.matchesOnSiblings(true, "AT", "END", "OF")) {
+			// AT NEW comp1. AT END OF comp2.
+			return StrucElement.createForComponentName(this, firstCode);
+		
+		} else if (firstCode.isKeyword("SORT") && prevKeyword != null && !prevKeyword.isKeyword("SORT")) {
+			// SORT itab ... BY {comp1 [ASCENDING|DESCENDING] [AS TEXT]}...
+			return StrucElement.createForComponentName(this, firstCode);
+		}
+
+		// Declaration
+		if (parentCommand.isDeclaration() || parentCommand.isDeclarationInClassDef()) { // CONSTANTS, DATA, FIELD-SYMBOLS, TYPES, CLASS-DATA, STATICS
+			if (prevKeyword != null && prevKeyword.isAnyKeyword("KEY", "COMPONENTS")) {
+				// DATA ... TYPE ... TABLE OF ... WITH ... KEY ... COMPONENTS comp
+				return StrucElement.createForComponentName(this, prevKeyword); // do not use firstCode here, because the declaration might be chained
+
+			} else if (prevPrevKeyword != null && prevPrevKeyword.isKeyword("TABLE") && prevKeyword.isKeyword("OF")) {
+				return StrucElement.createForStructureName(this);
+
+			}
+		} 
+		
+		if (isTypeIdentifier(false)) { // also checks constructor expressions like 'VALUE type( ... )'
+			return StrucElement.createForStructureName(this);
+		}
+
+		return null;
 	}
 }

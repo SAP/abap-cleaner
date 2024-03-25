@@ -1,7 +1,12 @@
 package com.sap.adt.abapcleaner.base;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -72,6 +77,15 @@ public class FileSystem implements IFileSystem {
       }
 	}
 
+	@Override
+	public BufferedReader getBufferedReader(String path, Charset charSet) {
+		try {
+			return new BufferedReader(new InputStreamReader(new FileInputStream(new File(path)), charSet));
+		} catch (FileNotFoundException e) {
+			return null;
+		}
+	}
+
 	// -------------------------------------------------------------------------
 	// Directory
 	
@@ -104,9 +118,28 @@ public class FileSystem implements IFileSystem {
 	private boolean matchesPattern(String fileName, String searchPattern) {
 		if (searchPattern == null || searchPattern.length() == 0)
 			return true;
-		if (searchPattern.startsWith("*"))
-			return StringUtil.endsWith(fileName, searchPattern.substring(1), true);
-		throw new IllegalArgumentException("Unexpected search pattern!");
+		
+		String[] patterns = StringUtil.split(searchPattern, ';', true);
+		for (String pattern : patterns) {
+			int asteriskPos = pattern.indexOf('*');
+			if (asteriskPos < 0) 
+				throw new IllegalArgumentException();
+	
+			if (asteriskPos > 0) {
+				// compare expected prefix
+				if (!StringUtil.startsWith(fileName, pattern.substring(0, asteriskPos), true)) {
+					continue;
+				}
+			} // do NOT attach with else if
+			if (asteriskPos + 1 < pattern.length()) {
+				// compare expected suffix
+				if (!StringUtil.endsWith(fileName, pattern.substring(asteriskPos + 1), true)) {
+					continue;
+				}
+			}
+			return true;
+		}
+		return false;
 	}
 	
 	@Override

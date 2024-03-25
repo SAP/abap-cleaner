@@ -1,5 +1,7 @@
 package com.sap.adt.abapcleaner.base;
 
+import java.io.BufferedReader;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -133,6 +135,12 @@ public class FileSystemDouble implements IFileSystem {
 		System.arraycopy(appendData, 0, completeData, existingData.length, appendData.length);
 		
 		return writeAllBytesToFile(path, completeData);
+	}
+
+	@Override
+	public BufferedReader getBufferedReader(String path, Charset charSet) {
+		// must be implemented in PersistencyDouble
+		return null;
 	}
 
 	@Override

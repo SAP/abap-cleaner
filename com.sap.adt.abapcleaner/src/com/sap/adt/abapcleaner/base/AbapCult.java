@@ -93,4 +93,8 @@ public final class AbapCult {
 	public static String ToString(int value) {
 		return String.valueOf(value);
 	}
+
+	public static boolean isMixedCase(String text) {
+		return !toUpper(text).equals(text) && !toLower(text).equals(text);
+	}
 }
