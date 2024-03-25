@@ -20,7 +20,7 @@ import java.time.LocalDate;
 import java.util.*;
 
 public abstract class Rule {
-	public static final int RULE_COUNT = 73;
+	public static final int RULE_COUNT = 74;
 	public static final int RULE_GROUP_COUNT = 7;
 
 	protected static final String LINE_SEP = ABAP.LINE_SEPARATOR;
@@ -123,6 +123,7 @@ public abstract class Rule {
          
          // pretty printer
          new UpperAndLowerCaseRule(profile),
+         new CamelCaseNameRule(profile),
          new IndentRule(profile),
          
          // alignment

@@ -645,4 +645,44 @@ class AbapTest {
 		assertFalse(ABAP.mayBeVariableName("</>", true, true)); // '/' not allowed in FIELD-SYMBOLS
 		assertFalse(ABAP.mayBeVariableName("<a/>", true, true)); // '/' not allowed in FIELD-SYMBOLS
 	}
+
+	@Test 
+	void testUnescapeCharLiteral() {
+		assertNull(ABAP.unescapeCharLiteral(""));
+		assertNull(ABAP.unescapeCharLiteral("'"));
+		
+		assertEquals("'abc", ABAP.unescapeCharLiteral("'''abc'"));
+		assertEquals("abc'", ABAP.unescapeCharLiteral("'abc'''"));
+		assertEquals("`abc|", ABAP.unescapeCharLiteral("'`abc|'"));
+
+		assertEquals("`abc", ABAP.unescapeCharLiteral("```abc`"));
+		assertEquals("abc`", ABAP.unescapeCharLiteral("`abc```"));
+		assertEquals("'abc|{}", ABAP.unescapeCharLiteral("`'abc|{}`"));
+
+		assertEquals("|abc{}", ABAP.unescapeCharLiteral("|\\|abc\\{\\}|"));
+		assertEquals("a\tb\rc\n", ABAP.unescapeCharLiteral("|a\\tb\\rc\\n|"));
+		assertEquals("`'abc", ABAP.unescapeCharLiteral("|`'abc|"));
+	}
+
+	@Test 
+	void testToFieldLiteral() {
+		assertEquals("'abc'", ABAP.toTextFieldLiteral("abc"));
+		assertEquals("'''abc'", ABAP.toTextFieldLiteral("'abc"));
+		assertEquals("'a''bc'", ABAP.toTextFieldLiteral("a'bc"));
+		assertEquals("'''abc'''", ABAP.toTextFieldLiteral("'abc'"));
+		assertEquals("'`abc|{}'", ABAP.toTextFieldLiteral("`abc|{}"));
+	}
+
+	@Test
+	void testSplitIdentifierEmpty() {
+		assertEquals(0, ABAP.splitIdentifier(null, true, true).size());
+		assertEquals(0, ABAP.splitIdentifier("", true, true).size());
+	}
+
+	@Test
+	void testNegateIntegerErr() {
+		assertNull(ABAP.negateInteger(""));
+		assertNull(ABAP.negateInteger("'3.1415'"));
+		assertNull(ABAP.negateInteger("xyz"));
+	}
 }

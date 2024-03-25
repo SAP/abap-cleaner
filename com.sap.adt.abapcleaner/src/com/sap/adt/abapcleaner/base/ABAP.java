@@ -25,7 +25,8 @@ public final class ABAP {
    public static final String ABAP_TRUE = "abap_true";
    public static final String ABAP_FALSE = "abap_false";
    public static final String ABAP_SPACE = "space";
-
+   public static final String TABLE_LINE = "table_line";
+   
    public final static String TEXT_SYMBOL_PREFIX = "TEXT-";
    public final static int TEXT_SYMBOL_ID_LENGTH = 3;
 
@@ -821,8 +822,9 @@ public final class ABAP {
 			return dotPos - 1;
 		for (int i = num.length() - 1; i >= 0; --i) {
 			char c = num.charAt(i); 
-			if (c != '-' && c != '\'')
+			if (c != '-' && c != '\'') {
 				return i;
+			}
 		}
 		return num.length();
 	}

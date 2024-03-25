@@ -97,9 +97,25 @@ public final class StringUtil {
 	}
 
 	/**
+	 * returns null only if text == null, otherwise a String array that may have .length == 0 if empty entries shall be removed;
+	 * keeps all quotes "..." together, even if they contain the separator char
+	 */
+	public static String[] split(String text, char separator, boolean removeEmptyEntries, boolean skipQuots) {
+		return split(text, new char[] { separator }, removeEmptyEntries, skipQuots);
+	}
+
+	/**
 	 * returns null only if text == null, otherwise a String array that may have .length == 0 if empty entries shall be removed
 	 */
 	public static String[] split(String text, char[] separators, boolean removeEmptyEntries) {
+		return split(text, separators, removeEmptyEntries, false);
+	}
+
+	/**
+	 * returns null only if text == null, otherwise a String array that may have .length == 0 if empty entries shall be removed;
+	 * keeps all quotes "..." together, even if they contain one of the separator chars
+	 */
+	public static String[] split(String text, char[] separators, boolean removeEmptyEntries, boolean skipQuots) {
 		if (text == null) 
 			return null;
 		else if (text.length() == 0) 
@@ -107,8 +123,23 @@ public final class StringUtil {
 
 		ArrayList<String> results = new ArrayList<String>();
 		int start = 0;
+		boolean skipNextQuot = true;
+		boolean isInQuot = false;
 		for (int i = 0; i < text.length(); ++i) {
 			char c = text.charAt(i);
+
+			if (skipQuots) {
+				if ((skipNextQuot || isInQuot) && c == '"') {
+					isInQuot = !isInQuot;
+					skipNextQuot = true;
+					continue;
+				}
+				if (isInQuot) {
+					continue;
+				}
+			}
+
+			skipNextQuot = (c == '\t');
 			for (char sep : separators) {
 				if (sep == c) {
 					if (i > start) 
@@ -116,6 +147,7 @@ public final class StringUtil {
 					else if (!removeEmptyEntries)
 						results.add("");
 					start = i + 1;
+					skipNextQuot = true;
 					break;
 				}
 			}

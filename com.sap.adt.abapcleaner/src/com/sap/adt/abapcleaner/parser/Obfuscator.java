@@ -351,7 +351,7 @@ public class Obfuscator {
 				sb.append(bit);
 				continue;
 				
-			} else if (bits.size() == 1 && token.isTypeIdentifier() && ABAP.isAbapLowerCaseKeyword(bit)) {
+			} else if (bits.size() == 1 && token.isTypeIdentifier(false) && ABAP.isAbapLowerCaseKeyword(bit)) {
 				// keep basic types like "i", "string"
 				sb.append(bit);
 				continue;
@@ -374,7 +374,7 @@ public class Obfuscator {
 				}
 			
 			} else if (nextBit.equals("(") && nextCode != null && !nextCode.isAttached()) {
-				if (token.isTypeIdentifier()) {
+				if (token.isTypeIdentifier(true)) {
 					newBit = getTypeName(bit, types, "ty_", false);
 				} else {
 					newBit = getNewNameFor(key, methods, "", IdentifierType.METHOD);
@@ -383,7 +383,7 @@ public class Obfuscator {
 			} else if (prevBit.equals("~")) {
 				if (selectClause != SelectClause.NONE) {
 					newBit = getNewNameFor(key, cols, "", IdentifierType.COL);
-				} else if (token.isTypeIdentifier()) {
+				} else if (token.isTypeIdentifier(true)) {
 					newBit = getTypeName(bit, types, "ty_", false);
 				} else {
 					newBit = getNewNameFor(key, methods, "", IdentifierType.METHOD);
@@ -428,7 +428,7 @@ public class Obfuscator {
 					}					
 				} else if (selectClause != SelectClause.NONE) {
 					newBit = getNewNameFor(key, cols, "", IdentifierType.COL);
-				} else if (token.isTypeIdentifier()) {
+				} else if (token.isTypeIdentifier(true)) {
 					newBit = getTypeName(bit, types, "ty_", (bits.size() == 1));
 				} else if (simplify && sb.length() == 0) {
 					newBit = getVariableName(bit, variables, "lv_", key);

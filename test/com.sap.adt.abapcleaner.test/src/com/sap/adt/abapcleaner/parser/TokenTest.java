@@ -1441,45 +1441,45 @@ public class TokenTest {
 	@Test
 	void testIsTypeIdentifier() {
 		// type definition
-		assertTrue(buildCommand("TYPES dtype TYPE c LENGTH 3.", "dtype").isTypeIdentifier());
-		assertTrue(buildCommand("TYPES: dtype TYPE c LENGTH 3.", "dtype").isTypeIdentifier());
-		assertTrue(buildCommand("TYPES: ##PRAGMA dtype TYPE i.", "dtype").isTypeIdentifier());
-		assertTrue(buildCommand("TYPES: dtype TYPE i, dtype2 TYPE c LENGTH 3.", "dtype2").isTypeIdentifier());
-		assertTrue(buildCommand("TYPES dtype TYPE LINE OF ty_tt_any.", "dtype").isTypeIdentifier());
-		assertTrue(buildCommand("TYPES ref_type TYPE REF TO type.", "ref_type").isTypeIdentifier());
-		assertTrue(buildCommand("TYPES BEGIN OF struct_type, comp TYPE i, END OF struct_type.", "struct_type").isTypeIdentifier());
-		assertTrue(buildCommand("INCLUDE TYPE struct_type.", "struct_type").isTypeIdentifier());
-		assertTrue(buildCommand("TYPES BEGIN OF ENUM enum_type, val1 VALUE IS INITIAL, val2, END OF ENUM enum_type.", "enum_type").isTypeIdentifier());
-		assertTrue(buildCommand("TYPES BEGIN OF MESH mesh_type, node TYPE REF TO table_type, END OF MESH mesh_type.", "mesh_type").isTypeIdentifier());
-		assertTrue(buildCommand("TYPES table_type TYPE STANDARD TABLE OF ty_s_struc WITH EMPTY KEY.", "table_type").isTypeIdentifier());
-		assertTrue(buildCommand("TYPES table_type TYPE SORTED TABLE OF ty_s_struc WITH KEY a.", "table_type").isTypeIdentifier());
-		assertTrue(buildCommand("TYPES dtype TYPE RANGE OF type.", "dtype").isTypeIdentifier());
-		assertTrue(buildCommand("TYPES dtype TYPE struct WITH INDICATORS ind.", "dtype").isTypeIdentifier());
+		assertTrue(buildCommand("TYPES dtype TYPE c LENGTH 3.", "dtype").isTypeIdentifier(true));
+		assertTrue(buildCommand("TYPES: dtype TYPE c LENGTH 3.", "dtype").isTypeIdentifier(true));
+		assertTrue(buildCommand("TYPES: ##PRAGMA dtype TYPE i.", "dtype").isTypeIdentifier(true));
+		assertTrue(buildCommand("TYPES: dtype TYPE i, dtype2 TYPE c LENGTH 3.", "dtype2").isTypeIdentifier(true));
+		assertTrue(buildCommand("TYPES dtype TYPE LINE OF ty_tt_any.", "dtype").isTypeIdentifier(true));
+		assertTrue(buildCommand("TYPES ref_type TYPE REF TO type.", "ref_type").isTypeIdentifier(true));
+		assertTrue(buildCommand("TYPES BEGIN OF struct_type, comp TYPE i, END OF struct_type.", "struct_type").isTypeIdentifier(true));
+		assertTrue(buildCommand("INCLUDE TYPE struct_type.", "struct_type").isTypeIdentifier(true));
+		assertTrue(buildCommand("TYPES BEGIN OF ENUM enum_type, val1 VALUE IS INITIAL, val2, END OF ENUM enum_type.", "enum_type").isTypeIdentifier(true));
+		assertTrue(buildCommand("TYPES BEGIN OF MESH mesh_type, node TYPE REF TO table_type, END OF MESH mesh_type.", "mesh_type").isTypeIdentifier(true));
+		assertTrue(buildCommand("TYPES table_type TYPE STANDARD TABLE OF ty_s_struc WITH EMPTY KEY.", "table_type").isTypeIdentifier(true));
+		assertTrue(buildCommand("TYPES table_type TYPE SORTED TABLE OF ty_s_struc WITH KEY a.", "table_type").isTypeIdentifier(true));
+		assertTrue(buildCommand("TYPES dtype TYPE RANGE OF type.", "dtype").isTypeIdentifier(true));
+		assertTrue(buildCommand("TYPES dtype TYPE struct WITH INDICATORS ind.", "dtype").isTypeIdentifier(true));
 
 		// usage in constructor expression
 		// "NEW", "VALUE", "CONV", "CORRESPONDING", "CAST", "REF", "EXACT", "REDUCE", "FILTER", "COND", "SWITCH"};
-		assertTrue(buildCommand("a = VALUE ty_s_any( a = 1 ).", "ty_s_any(").isTypeIdentifier());
-		assertTrue(buildCommand("any_method( a = VALUE ty_tt_any( ( a = 1 ) ) ).", "ty_tt_any(").isTypeIdentifier());
-		assertTrue(buildCommand("a = REF ty( dobj ).", "ty(").isTypeIdentifier());
-		assertTrue(buildCommand("any_method( NEW ty( ) ).", "ty(").isTypeIdentifier());
-		assertTrue(buildCommand("a = CORRESPONDING ty( b ).", "ty(").isTypeIdentifier());
-		assertTrue(buildCommand("a = COND ty( WHEN lv_condition = abap_true THEN b ELSE c ).", "ty(").isTypeIdentifier());
+		assertTrue(buildCommand("a = VALUE ty_s_any( a = 1 ).", "ty_s_any(").isTypeIdentifier(false));
+		assertTrue(buildCommand("any_method( a = VALUE ty_tt_any( ( a = 1 ) ) ).", "ty_tt_any(").isTypeIdentifier(false));
+		assertTrue(buildCommand("a = REF ty( dobj ).", "ty(").isTypeIdentifier(false));
+		assertTrue(buildCommand("any_method( NEW ty( ) ).", "ty(").isTypeIdentifier(false));
+		assertTrue(buildCommand("a = CORRESPONDING ty( b ).", "ty(").isTypeIdentifier(false));
+		assertTrue(buildCommand("a = COND ty( WHEN lv_condition = abap_true THEN b ELSE c ).", "ty(").isTypeIdentifier(false));
 		
 		// usage in a declaration
-		assertTrue(buildCommand("DATA dobj TYPE REF TO ty.", "ty").isTypeIdentifier());
-		assertTrue(buildCommand("DATA: a TYPE i, dobj TYPE STANDARD TABLE OF REF TO ty.", "ty").isTypeIdentifier());
-		assertTrue(buildCommand("CONSTANTS: lc_any TYPE ty.", "ty").isTypeIdentifier());
-		assertTrue(buildCommand("FIELD-SYMBOLS <ls_any> TYPE LINE OF ty_tt_any.", "ty_tt_any").isTypeIdentifier());
-		assertTrue(buildCommand("TYPES dtype TYPE LINE OF ty_tt_any.", "ty_tt_any").isTypeIdentifier());
+		assertTrue(buildCommand("DATA dobj TYPE REF TO ty.", "ty").isTypeIdentifier(false));
+		assertTrue(buildCommand("DATA: a TYPE i, dobj TYPE STANDARD TABLE OF REF TO ty.", "ty").isTypeIdentifier(false));
+		assertTrue(buildCommand("CONSTANTS: lc_any TYPE ty.", "ty").isTypeIdentifier(false));
+		assertTrue(buildCommand("FIELD-SYMBOLS <ls_any> TYPE LINE OF ty_tt_any.", "ty_tt_any").isTypeIdentifier(false));
+		assertTrue(buildCommand("TYPES dtype TYPE LINE OF ty_tt_any.", "ty_tt_any").isTypeIdentifier(false));
 		
 		// negative cases
-		assertFalse(buildCommand("TYPES dtype TYPE LINE OF ty_tt_any.", "TYPES").isTypeIdentifier());
-		assertFalse(buildCommand("a = any_method( b = 1 ).", "any_method(").isTypeIdentifier());
-		assertFalse(buildCommand("a = any_method( b = 1 ).", "b").isTypeIdentifier());
-		assertFalse(buildCommand("* comment", 0).isTypeIdentifier());
-		assertFalse(buildCommand("DATA dobj LIKE dobj2.", "dobj2").isTypeIdentifier());
-		assertFalse(buildCommand("TYPES dtyp LIKE LINE OF dobj.", "dobj").isTypeIdentifier());
-		assertFalse(buildCommand("FIELD-SYMBOLS <ls_any> LIKE LINE OF lt_table.", "lt_table").isTypeIdentifier());
+		assertFalse(buildCommand("TYPES dtype TYPE LINE OF ty_tt_any.", "TYPES").isTypeIdentifier(true));
+		assertFalse(buildCommand("a = any_method( b = 1 ).", "any_method(").isTypeIdentifier(true));
+		assertFalse(buildCommand("a = any_method( b = 1 ).", "b").isTypeIdentifier(true));
+		assertFalse(buildCommand("* comment", 0).isTypeIdentifier(true));
+		assertFalse(buildCommand("DATA dobj LIKE dobj2.", "dobj2").isTypeIdentifier(true));
+		assertFalse(buildCommand("TYPES dtyp LIKE LINE OF dobj.", "dobj").isTypeIdentifier(true));
+		assertFalse(buildCommand("FIELD-SYMBOLS <ls_any> LIKE LINE OF lt_table.", "lt_table").isTypeIdentifier(true));
 	}
 
 	@Test
@@ -1861,4 +1861,15 @@ public class TokenTest {
 		assertFalse(buildCommand("any_method( int1 = 1 ).", 1).isSqlTypeInCast());
 		assertFalse(buildCommand("a = CAST ty_any( int1 ).", 4).isSqlTypeInCast());
 	}
+	
+	@Test
+	void testGetStrucInfo() {
+		assertNull(buildCommand("  \" comment", 0).getStrucInfo());
+		assertNull(buildCommand("  a = 1.", "=").getStrucInfo());
+		assertNull(buildCommand("  a = 1.", "1").getStrucInfo());
+		assertNull(buildCommand("  a = 1.", ".").getStrucInfo());
+
+		assertNull(buildCommand("  DELETE TABLE itab WITH TABLE KEY keyname COMPONENTS comp1 = 1.", "keyname").getStrucInfo());
+		assertNull(buildCommand("  READ TABLE itab WITH TABLE KEY keyname COMPONENTS comp1 = 1.", "keyname").getStrucInfo());
+}
 }

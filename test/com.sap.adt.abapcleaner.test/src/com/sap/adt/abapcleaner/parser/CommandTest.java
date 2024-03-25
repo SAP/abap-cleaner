@@ -799,6 +799,19 @@ public class CommandTest {
 			commands[1].putCommentAboveLineOf(commands[1].firstToken.getNext(), "comment");
 			assertTrue(commands[1].getPrev() == commands[0]);
 
+			// keep an existing comment if it already contains an older version of the comment to be added
+			buildCommand("\" old comment" + SEP + "DATA a TYPE i.").getNext();
+			assertNull(commands[1].putCommentAboveLineOf(commands[1].firstToken.getNext(), "new comment", "very old comment", "old comment"));
+
+			buildCommand("  METHOD any_method." + SEP + "* asterisk comment" + SEP + "  ENDMETHOD.");
+			assertEquals(4, commands[1].putCommentAboveLineOf(commands[1].firstToken, "comment").spacesLeft);
+
+			buildCommand("  METHOD any_method." + SEP + "    any_method( )." + SEP + "  ENDMETHOD.");
+			assertEquals(4, commands[2].putCommentAboveLineOf(commands[2].firstToken, "comment").spacesLeft);
+
+			buildCommand("DATA a TYPE i," + SEP + "     \" old comment" + SEP + "     b TYPE i.");
+			assertNull(commands[0].putCommentAboveLineOf(commands[0].findTokenOfType(TokenType.IDENTIFIER, "b"), "new comment", "very old comment", "old comment"));
+
 		} catch (IntegrityBrokenException | UnexpectedSyntaxException  e) {
 			fail();
 		}
@@ -931,6 +944,10 @@ public class CommandTest {
 		commentToken = command.appendCommentToLineOf(command.firstToken, "old comment");
 		assertTrue(commentToken != null);
 		assertEquals("\" old comment", commentToken.text);
+
+		// keep an existing comment if it already contains an older version of the comment to be added
+		command = buildCommand(code);
+		assertNull(command.appendCommentToLineOf(command.firstToken, "new comment", "very old comment", "old comment"));
 	}
 	
 	@Test
@@ -1099,6 +1116,7 @@ public class CommandTest {
 		assertFalse(buildCommand("a = get_value( ).").isFunctionalCallOrCallChain());
 		assertFalse(buildCommand("DATA(a) = get_value( ).").isFunctionalCallOrCallChain());
 		assertFalse(buildCommand("CALL METHOD any_method EXPORTING a = 1.").isFunctionalCallOrCallChain());
+		assertFalse(buildCommand("* comment").isFunctionalCallOrCallChain());
 	}
 	
 	@Test
@@ -1592,5 +1610,76 @@ public class CommandTest {
 		assertEquals("DATA: a TYPE i," + ABAP.LINE_SEPARATOR + "      b TYPE string.", command.toString());
 		assertEquals("DATA: a TYPE i," + CRLF + "      b TYPE string.", command.toString(CRLF));
 		assertEquals("DATA: a TYPE i," + LF + "      b TYPE string.", command.toString(LF));
+	}
+	
+	@Test
+	void testContainsKeywordOnSiblings() {
+		assertTrue(buildCommand("DATA a TYPE i.").containsKeywordOnSiblings("DATA"));
+		assertFalse(buildCommand("DATA a TYPE i.").containsKeywordOnSiblings("a"));
+		assertTrue(buildCommand("DATA a TYPE i.").containsKeywordOnSiblings("TYPE"));
+		assertFalse(buildCommand("DATA a TYPE i.").containsKeywordOnSiblings("i"));
+		assertFalse(buildCommand("DATA a TYPE i.").containsKeywordOnSiblings("."));
+		assertFalse(buildCommand("DATA a TYPE i ##NO_TEXT.").containsKeywordOnSiblings("##NO_TEXT"));
+		assertFalse(buildCommand("any_method( IMPORTING it_any = lt_any ).").containsKeywordOnSiblings("IMPORTING"));
+	}
+	
+	@Test
+	void testContainsKeywordDeep() {
+		assertTrue(buildCommand("DATA a TYPE i.").containsKeywordDeep("DATA"));
+		assertTrue(buildCommand("DATA a TYPE i.").containsKeywordDeep("TYPE"));
+		assertFalse(buildCommand("any_method( IMPORTING it_any = lt_any ).").containsKeywordDeep("any_method("));
+		assertTrue(buildCommand("any_method( IMPORTING it_any = lt_any ).").containsKeywordDeep("IMPORTING"));
+		assertFalse(buildCommand("any_method( IMPORTING it_any = lt_any ).").containsKeywordDeep("="));
+	}
+	
+	@Test 
+	void testFindTokenOfType() {
+		assertEquals("DATA", buildCommand("DATA a TYPE i.").findTokenOfType(TokenType.KEYWORD, "STATICS", "DATA").text);
+		assertEquals("a", buildCommand("DATA a TYPE i.").findTokenOfType(TokenType.IDENTIFIER, "a", "b", "c").text);
+		assertEquals("TYPE", buildCommand("DATA a TYPE i.").findTokenOfType(TokenType.KEYWORD, "TYPE", "TABLE").text);
+		assertEquals("i", buildCommand("DATA a TYPE i.").findTokenOfType(TokenType.IDENTIFIER, "i", "j", "k").text);
+		assertEquals("it_any", buildCommand("any_method( IMPORTING it_any = lt_any ).").findTokenOfType(TokenType.IDENTIFIER, "lt_any", "it_any").text);
+		assertNull(buildCommand("DATA a TYPE i.").findTokenOfType(TokenType.PRAGMA, "a", "i"));
+		assertNull(buildCommand("DATA a TYPE i.").findTokenOfType(TokenType.IDENTIFIER, "DATA", "TYPE"));
+	}
+
+	@Test
+	void testGetOpeningCommand() {
+		assertNull(buildCommand("DATA a TYPE i.").getOpeningCommand());
+		assertNull(buildCommand("START-OF-SELECTION.").getOpeningCommand());
+		
+		buildCommand("IF a = 1. a = 2. ENDIF");
+		assertEquals(commands[0], commands[2].getOpeningCommand());
+		assertNull(commands[0].getOpeningCommand());
+		assertNull(commands[1].getOpeningCommand());
+		
+		buildCommand("IF a = 1. a = 2. ELSEIF a = 2. a = 3. ELSE. a = 4. ENDIF");
+		assertEquals(commands[0], commands[2].getOpeningCommand());
+		assertEquals(commands[0], commands[4].getOpeningCommand());
+		assertEquals(commands[0], commands[6].getOpeningCommand());
+		assertNull(commands[0].getOpeningCommand());
+		assertNull(commands[1].getOpeningCommand());
+		assertNull(commands[3].getOpeningCommand());
+		assertNull(commands[5].getOpeningCommand());
+	}
+	
+	@Test
+	void testGetClosingCommand() {
+		assertNull(buildCommand("DATA a TYPE i.").getClosingCommand());
+		assertNull(buildCommand("START-OF-SELECTION.").getClosingCommand());
+		
+		buildCommand("IF a = 1. a = 2. ENDIF");
+		assertEquals(commands[2], commands[0].getClosingCommand());
+		assertNull(commands[1].getClosingCommand());
+		assertNull(commands[2].getClosingCommand());
+		
+		buildCommand("IF a = 1. a = 2. ELSEIF a = 2. a = 3. ELSE. a = 4. ENDIF");
+		assertEquals(commands[6], commands[0].getClosingCommand());
+		assertEquals(commands[6], commands[2].getClosingCommand());
+		assertEquals(commands[6], commands[4].getClosingCommand());
+		assertNull(commands[1].getClosingCommand());
+		assertNull(commands[3].getClosingCommand());
+		assertNull(commands[5].getClosingCommand());
+		assertNull(commands[6].getClosingCommand());
 	}
 }

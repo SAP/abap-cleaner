@@ -83,6 +83,7 @@ public enum RuleID  {
 
    // Pretty Printer
    UPPER_AND_LOWER_CASE,
+   CAMEL_CASE_NAME,
    INSET,
 
 	// Alignment 

@@ -496,4 +496,59 @@ class StringUtilTest {
 		assertEquals("test", StringUtil.removePrefixRecursively("lv_test", "LV_", true));
 		assertEquals("test", StringUtil.removePrefixRecursively("lv_lv_test", "LV_", true));
 	}
+
+	@Test
+	void testConsistsOf() {
+		assertTrue(StringUtil.consistsOf("3.1415", "0123456789."));
+		assertFalse(StringUtil.consistsOf("3.1415", "0123456789"));
+		assertFalse(StringUtil.consistsOf("3.1415", "abcde"));
+		assertTrue(StringUtil.consistsOf("", "abc"));
+		assertTrue(StringUtil.consistsOf("", "abc"));
+	}
+	
+	@Test
+	void testRemoveTags() {
+		assertNull(StringUtil.removeTags(null));
+		assertEquals("any text", StringUtil.removeTags("any <b>text</b><br />"));
+		assertEquals("is a<b?", StringUtil.removeTags("is a<b?"));
+		assertEquals("is a < b?", StringUtil.removeTags("is a < b?"));
+		assertEquals("is a<5 or isn't it?", StringUtil.removeTags("is a<5 or <i>isn't</i> it?"));
+	}
+
+	@Test
+	void testContainsAny() {
+		assertFalse(StringUtil.containsAny(null, null));
+		assertFalse(StringUtil.containsAny("a", null));
+		assertFalse(StringUtil.containsAny(null, new String[] {}));
+		assertTrue(StringUtil.containsAny("abc", new String[] { "a", "b" }));
+		assertTrue(StringUtil.containsAny("abc", new String[] { "d", "bc" }));
+		assertTrue(StringUtil.containsAny("abc", new String[] { "a", "b" }));
+		assertFalse(StringUtil.containsAny("abc", new String[] { "cb", "ba" }));
+	}
+
+	@Test
+	void testContains() {
+		assertFalse(StringUtil.contains(null, null));
+		assertFalse(StringUtil.contains("a", null));
+		assertFalse(StringUtil.contains(null, "a"));
+		assertTrue(StringUtil.contains("abc", "a"));
+		assertTrue(StringUtil.contains("abc", "c"));
+		assertTrue(StringUtil.contains("abc", "ab"));
+		assertTrue(StringUtil.contains("abc", "bc"));
+		assertTrue(StringUtil.contains("abc", "abc"));
+		assertFalse(StringUtil.contains("abc", "def"));
+	}
+
+	@Test
+	void testContainsIgnoringCase() {
+		assertFalse(StringUtil.containsIgnoringCase(null, null));
+		assertFalse(StringUtil.containsIgnoringCase("a", null));
+		assertFalse(StringUtil.containsIgnoringCase(null, "a"));
+		assertTrue(StringUtil.containsIgnoringCase("AbC", "a"));
+		assertTrue(StringUtil.containsIgnoringCase("AbC", "c"));
+		assertTrue(StringUtil.containsIgnoringCase("AbC", "aB"));
+		assertTrue(StringUtil.containsIgnoringCase("AbC", "BC"));
+		assertTrue(StringUtil.containsIgnoringCase("AbC", "aBc"));
+		assertFalse(StringUtil.containsIgnoringCase("AbC", "def"));
+	}
 }

@@ -245,12 +245,13 @@ public class UpperAndLowerCaseRule extends RuleForCommands {
 	}
 
 	private CaseStyle getCaseStyleFor(int upperMinusLower) {
-		if (upperMinusLower > 0)
+		if (upperMinusLower > 0) {
 			return CaseStyle.UPPER_CASE;
-		else if (upperMinusLower < 0)
+		} else if (upperMinusLower < 0) {
 			return CaseStyle.LOWER_CASE;
-		else 
+		} else { 
 			return CaseStyle.UNCHANGED;
+		}
 	}
 	
 	@Override
@@ -339,7 +340,7 @@ public class UpperAndLowerCaseRule extends RuleForCommands {
 			// since mixed case identifiers should be kept in this method, only change the text if it is 
 			// fully upper case or fully lower case
 			String changedBit;
-			if (isMixedCase(textBit)) {
+			if (AbapCult.isMixedCase(textBit)) {
 				changedBit = textBit;
 			} else if (identifierStyle == CaseStyle.LOWER_CASE) {
 				changedBit = AbapCult.toLower(textBit);
@@ -350,9 +351,5 @@ public class UpperAndLowerCaseRule extends RuleForCommands {
 			changedTextBuilder.append(changedBit);
 		}
 		return changedTextBuilder.toString();
-	}
-
-	private boolean isMixedCase(String text) {
-		return !AbapCult.toUpper(text).equals(text) && !AbapCult.toLower(text).equals(text);
 	}
 }

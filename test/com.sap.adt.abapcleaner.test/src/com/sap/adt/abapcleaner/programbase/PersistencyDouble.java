@@ -1,5 +1,8 @@
 package com.sap.adt.abapcleaner.programbase;
 
+import java.io.BufferedReader;
+import java.io.StringReader;
+
 import com.sap.adt.abapcleaner.base.FileSystemDouble;
 
 public class PersistencyDouble extends Persistency {
@@ -24,6 +27,12 @@ public class PersistencyDouble extends Persistency {
 		super(fileSystemDouble);
 		
 		this.fileSystemDouble = fileSystemDouble;
+	}
+
+	@Override
+	public BufferedReader getBufferedReader(String path, boolean ansiEncoding) {
+		String text = readAllTextFromFile(path, ansiEncoding);
+		return (text == null) ? null : new BufferedReader(new StringReader(text));
 	}
 
 	// -------------------------------------------------------------------------

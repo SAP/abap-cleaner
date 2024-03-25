@@ -1,5 +1,6 @@
 package com.sap.adt.abapcleaner.base;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.nio.charset.Charset;
 
@@ -74,6 +75,10 @@ public class PersistencyBase {
 		return fileSystem.appendToFile(path, contents.getBytes(getCharset(ansiEncoding)));
 	}
 
+	public BufferedReader getBufferedReader(String path, boolean ansiEncoding) {
+		return fileSystem.getBufferedReader(path, getCharset(ansiEncoding));
+	}
+
 	// -------------------------------------------------------------------------
 	// Directory
 
@@ -84,9 +89,22 @@ public class PersistencyBase {
 		return directoryExists(combinePaths(dir, folder));
 	}
 
+	/**
+	 * returns all files in the specified directory (without sub-directories) that match the specified pattern
+	 * @param path - the directory to search in
+	 * @param searchPattern - one or multiple semicolon-separated patterns containing an asterisk, e.g. *.txt;*.csv
+	 * @return matching files
+	 */
 	public final String[] getFilesInDirectory(String path, String searchPattern) {
 		return getFilesInDirectory(path, searchPattern, false);
 	}
+	/**
+	 * returns all files in the specified directory (with or without sub-directories) that match the specified pattern
+	 * @param path - the directory to search in
+	 * @param searchPattern - one or multiple semicolon-separated patterns containing an asterisk, e.g. *.txt;*.csv
+	 * @param recursive - true to search in sub-directories, too
+	 * @return matching files
+	 */
 	public String[] getFilesInDirectory(String path, String searchPattern, boolean recursive) {
 		return fileSystem.getFilesInDirectory(path, searchPattern, recursive);
 	}

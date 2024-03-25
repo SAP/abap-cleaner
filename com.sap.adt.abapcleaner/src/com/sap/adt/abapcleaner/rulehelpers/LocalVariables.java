@@ -169,7 +169,7 @@ public class LocalVariables {
 	}
 	public VariableInfo addUsage(Token identifier, String name, boolean isAssignment, boolean isUsageInSelfAssignment, boolean isCommentedOut, boolean writesToReferencedMemory) {
 		// determine whether the identifier represent a type (rather than a data object);  
-		boolean isType = identifier.isTypeIdentifier();
+		boolean isType = identifier.isTypeIdentifier(true);
 		
 		String key = getNameKey(getObjectName(name, isInOOContext), isType);
 		VariableInfo varInfo = locals.get(key);
