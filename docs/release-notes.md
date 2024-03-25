@@ -6,6 +6,16 @@ as well as bugfixes of reported issues, i.e. anything that enhances or changes t
 For a complete list of changes (including documentation, tests, refactoring etc.), please refer to 
 the list of [commits](../../../commits/main).
 
+## 2024-03-25 (version 1.15.0)
+
+**Thank you** very much [**jelliottp**](https://github.com/jelliottp), [**BenjaminWeisheit**](https://github.com/BenjaminWeisheit) and
+[**cyb3rko**](https://github.com/cyb3rko) for your contributions, ideas and bug reports that led to these improvements!
+
+* Added new rule '**Use CamelCase for known CDS names**'
+* Added new rule '**Use string templates to assemble text**' ([#116](../../../issues/116))
+* Added new rule '**Replace CONDENSE with string function**' ([#36](../../../issues/36))
+* Fixed rule '**Report unused parameters**' for **CALL TRANSFORMATION** ... RESULT ([#267](../../../issues/267))
+
 ## 2024-03-11 (version 1.14.0)
 
 Many **thanks** to [**jelliottp**](https://github.com/jelliottp) for inspiring these improvements!
