@@ -685,4 +685,11 @@ class AbapTest {
 		assertNull(ABAP.negateInteger("'3.1415'"));
 		assertNull(ABAP.negateInteger("xyz"));
 	}
+	
+	@Test
+	void testIsAbapUpperCaseKeyword() {
+		assertTrue(ABAP.isAbapUpperCaseKeyword("CONDENSE"));
+		assertFalse(ABAP.isAbapUpperCaseKeyword("condense("));
+		assertFalse(ABAP.isAbapUpperCaseKeyword("CONDENSE("));
+	}
 }

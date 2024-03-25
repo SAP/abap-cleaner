@@ -406,6 +406,10 @@ public final class ABAP {
 				return false;
 			}
 		}
+		// the built-in function 'condense( ... )' must be explicitly distinguished from the keyword CONDENSE 
+		if (AbapCult.stringEquals(text, "condense(", true)) {
+			return false;
+		}
 		return true;
 	}
 

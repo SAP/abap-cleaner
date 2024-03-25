@@ -6,6 +6,7 @@ import com.sap.adt.abapcleaner.parser.Code;
 import com.sap.adt.abapcleaner.parser.Command;
 import com.sap.adt.abapcleaner.parser.Token;
 import com.sap.adt.abapcleaner.parser.TokenSearch;
+import com.sap.adt.abapcleaner.parser.TokenType;
 import com.sap.adt.abapcleaner.programbase.IntegrityBrokenException;
 import com.sap.adt.abapcleaner.programbase.UnexpectedSyntaxAfterChanges;
 import com.sap.adt.abapcleaner.programbase.UnexpectedSyntaxBeforeChanges;
@@ -38,7 +39,7 @@ public class CondenseRule extends RuleForCommands {
 	public String getDescription() { return "Replaces the CONDENSE statement with the string processing function condense( )."; }
 
 	@Override
-	public LocalDate getDateCreated() { return LocalDate.of(2024, 3, 24); }
+	public LocalDate getDateCreated() { return LocalDate.of(2024, 3, 22); }
 
 	@Override
 	public RuleReference[] getReferences() { return references; }
@@ -121,9 +122,9 @@ public class CondenseRule extends RuleForCommands {
 		int sourceLineNum = identifier.sourceLineNum;
 
 		// insert 'identifier = ' and remove CONDENSE keyword
-		Token assignedToIdentifier = Token.createForAbap(condenseKeyword.lineBreaks, condenseKeyword.spacesLeft, identifier.getText(), sourceLineNum);
+		Token assignedToIdentifier = Token.createForAbap(condenseKeyword.lineBreaks, condenseKeyword.spacesLeft, identifier.getText(), identifier.type, sourceLineNum);
 		condenseKeyword.insertLeftSibling(assignedToIdentifier);
-		condenseKeyword.insertLeftSibling(Token.createForAbap(0, 1, "=", sourceLineNum));
+		condenseKeyword.insertLeftSibling(Token.createForAbap(0, 1, "=", TokenType.ASSIGNMENT_OP, sourceLineNum));
 		condenseKeyword.removeFromCommand();
 
 		// remove NO-GAPS 
@@ -145,8 +146,8 @@ public class CondenseRule extends RuleForCommands {
 		// insert 'val =' before the identifier, if specified or needed
 		if (configSpecifyValName.getValue() || insertParamDel || insertParamFrom || insertParamTo) {
 			int spacesLeft = (keepOnOneLine ? 1 : maxParamNameLength - "val".length() + 1);
-			identifier.insertLeftSibling(Token.createForAbap(0, 1, "val", sourceLineNum));
-			identifier.insertLeftSibling(Token.createForAbap(0, spacesLeft, "=", sourceLineNum));
+			identifier.insertLeftSibling(Token.createForAbap(0, 1, "val", TokenType.IDENTIFIER, sourceLineNum));
+			identifier.insertLeftSibling(Token.createForAbap(0, spacesLeft, "=", TokenType.ASSIGNMENT_OP, sourceLineNum));
 		}
 		
 		// insert further parameters, if specified or needed
@@ -170,7 +171,7 @@ public class CondenseRule extends RuleForCommands {
 		int sourceLineNum = identifier.sourceLineNum;
 
 		identifier.insertRightSibling(Token.createForAbap(0, 1, actualValue, sourceLineNum));
-		identifier.insertRightSibling(Token.createForAbap(0, spacesLeftOfAssignment, "=", sourceLineNum)); 
-		identifier.insertRightSibling(Token.createForAbap(lineBreaks, indent, paramName, sourceLineNum));
+		identifier.insertRightSibling(Token.createForAbap(0, spacesLeftOfAssignment, "=", TokenType.ASSIGNMENT_OP, sourceLineNum)); 
+		identifier.insertRightSibling(Token.createForAbap(lineBreaks, indent, paramName, TokenType.IDENTIFIER, sourceLineNum));
 	}
 }
