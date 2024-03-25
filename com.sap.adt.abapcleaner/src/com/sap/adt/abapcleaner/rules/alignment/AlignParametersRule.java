@@ -11,6 +11,9 @@ import java.time.LocalDate;
 import java.util.*;
 
 public class AlignParametersRule extends RuleForCommands {
+	public static final String DISPLAY_NAME = "Align parameters and components";
+	public static final String OPTION_NAME_KEEP_OTHER_ONE_LINERS = "Keep other one-liners";
+	
 	public enum Columns {
 		// LET ... IN expressions
 		LET_KEYWORD, 
@@ -70,7 +73,7 @@ public class AlignParametersRule extends RuleForCommands {
 	public RuleGroupID getGroupID() { return RuleGroupID.ALIGNMENT; }
 
 	@Override
-	public String getDisplayName() { return "Align parameters and components"; }
+	public String getDisplayName() { return DISPLAY_NAME; }
 
 	@Override
 	public String getDescription() {
@@ -160,7 +163,7 @@ public class AlignParametersRule extends RuleForCommands {
 	final ConfigBoolValue configAlignAcrossTableRows = new ConfigBoolValue(this, "AlignAcrossTableRows", "Align assignments across rows of table constructors", true, false, LocalDate.of(2023, 6, 9));
 	final ConfigEnumValue<ComponentsOnSingleLine> configKeepComponentsOnSingleLine = new ConfigEnumValue<ComponentsOnSingleLine>(this, "KeepParametersOnSingleLine", "Table rows: Keep multiple components on single line",
 																												new String[] { "never", "if maximum line length B is observed", "always" }, ComponentsOnSingleLine.values(), ComponentsOnSingleLine.IF_BELOW_MAX_LINE_LENGTH);
-	final ConfigEnumValue<ComponentsOnSingleLine> configKeepOtherOneLiners = new ConfigEnumValue<ComponentsOnSingleLine>(this, "KeepOtherOneLiners", "Keep other one-liners",
+	final ConfigEnumValue<ComponentsOnSingleLine> configKeepOtherOneLiners = new ConfigEnumValue<ComponentsOnSingleLine>(this, "KeepOtherOneLiners", OPTION_NAME_KEEP_OTHER_ONE_LINERS,
 																												new String[] { "never", "if maximum line length A is observed", "always" }, ComponentsOnSingleLine.values(), ComponentsOnSingleLine.NEVER, ComponentsOnSingleLine.NEVER, LocalDate.of(2024, 1, 1));
 	final ConfigEnumValue<ContentLeftOfAssignOp> configAllowContentLeftOfAssignOp = new ConfigEnumValue<ContentLeftOfAssignOp>(this, "AllowContentLeftOfAssignOp", "Allow line starts left of assignment operator",
 																															new String[] { "never", "only to keep maximum line length", "always" }, ContentLeftOfAssignOp.values(), ContentLeftOfAssignOp.TO_KEEP_MAX_LINE_LENGTH, ContentLeftOfAssignOp.NEVER, LocalDate.of(2022, 3, 19));
