@@ -73,6 +73,7 @@ public enum RuleID  {
    ADD_TO_ETC,
    MOVE_TO,
    TRANSLATE,
+   CONDENSE,
    DESCRIBE_TABLE,
    READ_TABLE,
    // - ASSERTs
