@@ -688,8 +688,15 @@ class AbapTest {
 	
 	@Test
 	void testIsAbapUpperCaseKeyword() {
-		assertTrue(ABAP.isAbapUpperCaseKeyword("CONDENSE"));
-		assertFalse(ABAP.isAbapUpperCaseKeyword("condense("));
-		assertFalse(ABAP.isAbapUpperCaseKeyword("CONDENSE("));
+		// ensure that built-in functions like "condense(" are correctly distinguished from ABAP keywords "CONDENSE" etc.
+		String[] ambiguousTokens = new String[] { "condense", "escape", "insert", "match", "replace", "translate" };
+		
+		for (String ambiguousToken : ambiguousTokens) {
+			assertTrue(ABAP.isAbapUpperCaseKeyword(ambiguousToken));
+			assertTrue(ABAP.isAbapUpperCaseKeyword(ambiguousToken.toUpperCase()));
+
+			assertFalse(ABAP.isAbapUpperCaseKeyword(ambiguousToken + "("));
+			assertFalse(ABAP.isAbapUpperCaseKeyword(ambiguousToken.toUpperCase() + "("));
+		}
 	}
 }

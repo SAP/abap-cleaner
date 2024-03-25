@@ -1,4 +1,4 @@
-[<-- previous rule](LogicalOperatorPositionRule.md) | [overview](../rules.md) | [next rule -->](EmptyCommandRule.md)
+[<-- previous rule](StringTemplateRule.md) | [overview](../rules.md) | [next rule -->](EmptyCommandRule.md)
 
 # Remove needless parentheses
 

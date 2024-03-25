@@ -1,4 +1,4 @@
-[<-- previous rule](NotIsRule.md) | [overview](../rules.md) | [next rule -->](NeedlessParenthesesRule.md)
+[<-- previous rule](NotIsRule.md) | [overview](../rules.md) | [next rule -->](StringTemplateRule.md)
 
 # Move AND/OR etc. from line end to next line start
 

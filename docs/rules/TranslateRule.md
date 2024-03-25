@@ -1,4 +1,4 @@
-[<-- previous rule](MoveToRule.md) | [overview](../rules.md) | [next rule -->](DescribeTableRule.md)
+[<-- previous rule](MoveToRule.md) | [overview](../rules.md) | [next rule -->](CondenseRule.md)
 
 # Replace TRANSLATE with string functions
 
