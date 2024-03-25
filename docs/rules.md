@@ -1,6 +1,6 @@
 # Available Cleanup Rules
 
-ABAP cleaner offers 72 cleanup rules with a total of 279 configuration options:
+ABAP cleaner offers 75 cleanup rules with a total of 294 configuration options:
 
 ## Empty Lines
 
@@ -44,6 +44,7 @@ ABAP cleaner offers 72 cleanup rules with a total of 279 configuration options:
 * [Prefer =, <>, <= etc. to EQ, NE, LE etc.](rules/ComparisonOperatorRule.md)
 * [Prefer IS NOT to NOT IS](rules/NotIsRule.md)
 * [Move AND/OR etc. from line end to next line start](rules/LogicalOperatorPositionRule.md)
+* [Use string templates to assemble text](rules/StringTemplateRule.md)
 * [Remove needless parentheses](rules/NeedlessParenthesesRule.md)
 * [Remove empty commands](rules/EmptyCommandRule.md)
 * [Shorten VALUE statements](rules/ValueStatementRule.md)
@@ -63,6 +64,7 @@ ABAP cleaner offers 72 cleanup rules with a total of 279 configuration options:
 * [Replace obsolete ADD ... TO etc. with \+= etc.](rules/AddToEtcRule.md)
 * [Replace obsolete MOVE ... TO with =](rules/MoveToRule.md)
 * [Replace TRANSLATE with string functions](rules/TranslateRule.md)
+* [Replace CONDENSE with string function](rules/CondenseRule.md)
 * [Replace DESCRIBE TABLE ... LINES with lines\( \)](rules/DescribeTableRule.md)
 * [Replace READ TABLE with table expression](rules/ReadTableRule.md)
 * [Use assert\_true and assert\_false](rules/AssertEqualsBooleanRule.md)
@@ -73,6 +75,7 @@ ABAP cleaner offers 72 cleanup rules with a total of 279 configuration options:
 ## Pretty Printer
 
 * [Convert upper and lower case](rules/UpperAndLowerCaseRule.md)
+* [Use CamelCase for known CDS names](rules/CamelCaseNameRule.md)
 * [Indent lines](rules/IndentRule.md)
 
 ## Alignment

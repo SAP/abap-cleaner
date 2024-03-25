@@ -1,4 +1,4 @@
-[<-- previous rule](TranslateRule.md) | [overview](../rules.md) | [next rule -->](ReadTableRule.md)
+[<-- previous rule](CondenseRule.md) | [overview](../rules.md) | [next rule -->](ReadTableRule.md)
 
 # Replace DESCRIBE TABLE ... LINES with lines\( \)
 

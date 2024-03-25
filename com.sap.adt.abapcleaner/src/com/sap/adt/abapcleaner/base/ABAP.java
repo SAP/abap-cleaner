@@ -406,8 +406,9 @@ public final class ABAP {
 				return false;
 			}
 		}
-		// the built-in function 'condense( ... )' must be explicitly distinguished from the keyword CONDENSE 
-		if (AbapCult.stringEquals(text, "condense(", true)) {
+		// some built-in functions like 'condense( ... )' and 'translate( ... )' must be explicitly distinguished 
+		// from the corresponding ABAP keywords CONDENSE, TRANSLATE etc.
+		if (AbapCult.stringEqualsAny(true, text, "condense(", "escape(", "insert(", "match(", "replace(", "translate(")) {
 			return false;
 		}
 		return true;
