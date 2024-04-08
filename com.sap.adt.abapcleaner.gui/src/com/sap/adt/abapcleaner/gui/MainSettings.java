@@ -2,10 +2,12 @@ package com.sap.adt.abapcleaner.gui;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import com.sap.adt.abapcleaner.base.ABAP;
 import com.sap.adt.abapcleaner.base.ISettingsReader;
 import com.sap.adt.abapcleaner.base.ISettingsWriter;
+import com.sap.adt.abapcleaner.base.StringUtil;
 import com.sap.adt.abapcleaner.base.TextSettingsReader;
 import com.sap.adt.abapcleaner.base.TextSettingsWriter;
 import com.sap.adt.abapcleaner.parser.CleanupRangeExpandMode;
@@ -60,11 +62,44 @@ public class MainSettings {
 	private static final String KEY_READ_ONLY_PROFILE_DIR_COUNT = "readOnlyProfileDirCount";
 	private static final String KEY_READ_ONLY_PROFILE_NAME_ = "readOnlyProfileName";
 	private static final String KEY_READ_ONLY_PROFILE_DIR_ = "readOnlyProfileDir";
-	
+
+	// workspace-specific cleanup settings
+	private static final String KEY_WORKSPACE_COUNT = "workspaceCount";
+	private static final String KEY_WORKSPACE_DIR_ = "workspaceDir";
+	private static final String KEY_LAST_PROFILE_NAME_ = "lastProfileName";
+	private static final String KEY_CLEANUP_RANGE_EXPAND_MODE_ = "cleanupRangeExpandMode";
+	private static final String KEY_RELEASE_RESTRICTION_ = "releaseRestriction";
+
 	// -------------------------------------------------------------------------
 
-	String curProfileName;
-	CleanupRangeExpandMode cleanupRangeExpandMode;
+	private class CleanupSettings {
+		private String lastProfileName;
+		private CleanupRangeExpandMode cleanupRangeExpandMode;
+		private int releaseRestriction;
+		
+		public CleanupSettings() {
+			this.lastProfileName = Profile.DEFAULT_NAME;
+			this.cleanupRangeExpandMode = CleanupRangeExpandMode.getDefault();
+			this.releaseRestriction = ABAP.NO_RELEASE_RESTRICTION;
+		}
+
+		public CleanupSettings(CleanupSettings template) {
+			this.lastProfileName = template.lastProfileName;
+			this.cleanupRangeExpandMode = template.cleanupRangeExpandMode;
+			this.releaseRestriction = template.releaseRestriction;
+		}
+
+		public CleanupSettings(String lastProfileName, CleanupRangeExpandMode cleanupRangeExpandMode, int releaseRestriction) {
+			this.lastProfileName = lastProfileName;
+			this.cleanupRangeExpandMode = cleanupRangeExpandMode;
+			this.releaseRestriction = releaseRestriction;
+		}
+	}
+
+	private String workspaceDir;
+	private CleanupSettings fallbackCleanupSettings = new CleanupSettings();
+	HashMap<String, CleanupSettings> cleanupSettingsOfWorkspace = new HashMap<>();
+	
 	boolean highlightIndentChanges;
 	boolean highlightInnerSpaceChanges;
 	boolean highlightCaseChanges;
@@ -88,8 +123,6 @@ public class MainSettings {
 	int shellWidth;
 	int shellHeight;
 
-	int releaseRestriction;
-	
 	// settings for FrmProfiles:
 	RuleID profilesLastRuleID;
 	String profilesLastExportDir;
@@ -106,7 +139,20 @@ public class MainSettings {
 	int getShellBottom() { return shellTop + shellHeight; }
 
 	// -------------------------------------------------------------------------
-	
+
+	/***
+	 * 
+	 * @param workspaceDir - the directory of the Eclipse workspace or the stand-alone application .exe
+	 * (if unknown during instantiation, it can be supplied later with .initialize(); otherwise, the fallback cleanup settings will be used)
+	 */
+	MainSettings(String workspaceDir) {
+		this.workspaceDir = workspaceDir;
+	}
+
+	void initialize(String workspaceDir) {
+		this.workspaceDir = workspaceDir;
+	}
+
 	void save() {
 		Persistency persistency = Persistency.get();
 		String path = persistency.getSavePath(FileType.SETTINGS_MAIN_TEXT);
@@ -117,7 +163,7 @@ public class MainSettings {
 	}
 
 	private void save(ISettingsWriter writer) throws IOException {
-		writer.write(KEY_CUR_PROFILE_NAME, curProfileName);
+		writer.write(KEY_CUR_PROFILE_NAME, fallbackCleanupSettings.lastProfileName);
 
 		writer.write(KEY_HIGHLIGHT_INDENT_CHANGES, highlightIndentChanges);
 		writer.write(KEY_HIGHLIGHT_INNER_SPACE_CHANGES, highlightInnerSpaceChanges);
@@ -140,7 +186,7 @@ public class MainSettings {
 		writer.write(KEY_SHELL_WIDTH, shellWidth);
 		writer.write(KEY_SHELL_HEIGHT, shellHeight);
 
-		writer.write(KEY_RELEASE_RESTRICTION, releaseRestriction);
+		writer.write(KEY_RELEASE_RESTRICTION, fallbackCleanupSettings.releaseRestriction);
 		
 		// obsolete profilesHighlightRelease... information:
 		writer.write(KEY_PROFILES_HIGHLIGHT_RELEASE_INDEX, -1);
@@ -161,7 +207,7 @@ public class MainSettings {
 		writer.write(KEY_HIGHLIGHT_DECLARATION_KEYWORDS, highlightDeclarationKeywords);
 		writer.write(KEY_PROFILES_HIGHLIGHT_DECLARATION_KEYWORDS, profilesHighlightDeclarationKeywords);
 		
-		writer.write(KEY_CLEANUP_RANGE_EXPAND_MODE, cleanupRangeExpandMode.getValue());
+		writer.write(KEY_CLEANUP_RANGE_EXPAND_MODE, fallbackCleanupSettings.cleanupRangeExpandMode.getValue());
 		
 		writer.write(KEY_READ_ONLY_PROFILE_DIR_COUNT, readOnlyProfileDirs.size());
 		for (int i = 0; i < readOnlyProfileDirs.size(); ++i) {
@@ -169,6 +215,19 @@ public class MainSettings {
 			ProfileDir profileDir = readOnlyProfileDirs.get(i);
 			writer.write(KEY_READ_ONLY_PROFILE_NAME_ + indexSuffix, profileDir.shortName);
 			writer.write(KEY_READ_ONLY_PROFILE_DIR_ + indexSuffix, profileDir.readOnlyDir);
+		}
+		
+		// save workspace-specific cleanup settings
+		writer.write(KEY_WORKSPACE_COUNT, cleanupSettingsOfWorkspace.size());
+		int index = 0;
+		for (String workspaceDir : cleanupSettingsOfWorkspace.keySet()) {
+			String indexSuffix = String.valueOf(index);
+			CleanupSettings cleanupSettings = cleanupSettingsOfWorkspace.get(workspaceDir);
+			writer.write(KEY_WORKSPACE_DIR_ + indexSuffix, workspaceDir);
+			writer.write(KEY_LAST_PROFILE_NAME_ + indexSuffix, cleanupSettings.lastProfileName);
+			writer.write(KEY_CLEANUP_RANGE_EXPAND_MODE_ + indexSuffix, cleanupSettings.cleanupRangeExpandMode.getValue());
+			writer.write(KEY_RELEASE_RESTRICTION_ + indexSuffix, cleanupSettings.releaseRestriction);
+			++index;
 		}
 	}
 
@@ -190,7 +249,8 @@ public class MainSettings {
 	}
 	
 	private void load(ISettingsReader reader) throws IOException {
-		curProfileName = reader.readString(KEY_CUR_PROFILE_NAME);
+		// last profile name for fallbackCleanupSettings (see below)
+		String lastProfileName = reader.readString(KEY_CUR_PROFILE_NAME);
 
 		highlightIndentChanges = reader.readBool(KEY_HIGHLIGHT_INDENT_CHANGES);
 		highlightInnerSpaceChanges = reader.readBool(KEY_HIGHLIGHT_INNER_SPACE_CHANGES);
@@ -217,6 +277,8 @@ public class MainSettings {
 			setShellBoundsUnspecified();
 		}
 		
+		// release restriction for fallbackCleanupSettings (see below)
+		int releaseRestriction;
 		if (reader.getFileVersion() >= 13) {
 			releaseRestriction = reader.readInt32(KEY_RELEASE_RESTRICTION);
 		} else {
@@ -275,6 +337,8 @@ public class MainSettings {
 			profilesHighlightDeclarationKeywords = true;
 		}
 
+		// cleanup range expand mode for fallbackCleanupSettings (see below)
+		CleanupRangeExpandMode cleanupRangeExpandMode;
 		if (reader.getFileVersion() >= 22) {
 			try {
 				cleanupRangeExpandMode = CleanupRangeExpandMode.forValue(reader.readInt32(KEY_CLEANUP_RANGE_EXPAND_MODE));
@@ -284,6 +348,7 @@ public class MainSettings {
 		} else {
 			cleanupRangeExpandMode = CleanupRangeExpandMode.getDefault();
 		}
+		fallbackCleanupSettings = new CleanupSettings(lastProfileName, cleanupRangeExpandMode, releaseRestriction);
 		
 		readOnlyProfileDirs.clear();		
 		if (reader.getFileVersion() >= 23) {
@@ -295,11 +360,29 @@ public class MainSettings {
 				readOnlyProfileDirs.add(new ProfileDir(shortName, readOnlyDir));
 			}
 		}
+
+		// workspace-specific CleanupSettings
+		cleanupSettingsOfWorkspace.clear();
+		if (reader.getFileVersion() >= 25) {
+			int workspaceCount = reader.readInt32(KEY_WORKSPACE_COUNT);
+			for (int i = 0; i < workspaceCount; ++i) {
+				String indexSuffix = String.valueOf(i);
+				String workspaceDir = reader.readString(KEY_WORKSPACE_DIR_ + indexSuffix);
+				lastProfileName = reader.readString(KEY_LAST_PROFILE_NAME_ + indexSuffix);
+				try {
+					cleanupRangeExpandMode = CleanupRangeExpandMode.forValue(reader.readInt32(KEY_CLEANUP_RANGE_EXPAND_MODE_ + indexSuffix));
+				} catch (IllegalArgumentException e) {
+					cleanupRangeExpandMode = CleanupRangeExpandMode.getDefault();
+				}
+				releaseRestriction = reader.readInt32(KEY_RELEASE_RESTRICTION_ + indexSuffix);
+				cleanupSettingsOfWorkspace.put(workspaceDir, new CleanupSettings(lastProfileName, cleanupRangeExpandMode, releaseRestriction));
+			}
+		}
 	}
 
 	void setDefault() {
-		curProfileName = Profile.DEFAULT_NAME;
-		cleanupRangeExpandMode = CleanupRangeExpandMode.getDefault();
+		fallbackCleanupSettings = new CleanupSettings(Profile.DEFAULT_NAME, CleanupRangeExpandMode.getDefault(), ABAP.NO_RELEASE_RESTRICTION);
+		cleanupSettingsOfWorkspace.clear();
 
 		highlightIndentChanges = true;
 		highlightInnerSpaceChanges = true;
@@ -322,8 +405,6 @@ public class MainSettings {
 		shellMaximized = true;
 		setShellBoundsUnspecified();
 
-		releaseRestriction = ABAP.NO_RELEASE_RESTRICTION;
-		
 		// obsolete:
 		// profilesHighlightReleaseIndex = -1;
 		// profilesHighlightReleaseVersion = "";
@@ -338,6 +419,52 @@ public class MainSettings {
 		wasEssentialProfileCreated = false;
 		profilesDirectory = "";
 		readOnlyProfileDirs.clear();		
+	}
+	
+	/*** returns the workspace-specific cleanup settings; if missing, either creates them, or returns the fallback cleanup settings (depending on createIfMissing) */
+	private CleanupSettings getCleanupSettings(boolean createIfMissing) {
+		if (StringUtil.isNullOrEmpty(workspaceDir))
+			return fallbackCleanupSettings;
+		CleanupSettings cleanupSettings = cleanupSettingsOfWorkspace.get(workspaceDir);
+		if (cleanupSettings == null) {
+			if (createIfMissing) {
+				cleanupSettings = new CleanupSettings(fallbackCleanupSettings);
+				cleanupSettingsOfWorkspace.put(workspaceDir, cleanupSettings);
+			} else {
+				cleanupSettings = fallbackCleanupSettings;
+			}
+		}
+		return cleanupSettings;
+	}
+	
+	String getLastProfileName() {
+		return getCleanupSettings(false).lastProfileName;
+	}
+	
+	CleanupRangeExpandMode getCleanupRangeExpandMode() {
+		return getCleanupSettings(false).cleanupRangeExpandMode;
+	}
+	
+	int getReleaseRestriction() {
+		return getCleanupSettings(false).releaseRestriction;
+	}
+	
+	void setLastProfileName(String lastProfileName) {
+		CleanupSettings cleanupSettings = getCleanupSettings(true);
+		cleanupSettings.lastProfileName = lastProfileName;
+		fallbackCleanupSettings.lastProfileName = lastProfileName;
+	}
+	
+	void setCleanupRangeExpandMode(CleanupRangeExpandMode cleanupRangeExpandMode) {
+		CleanupSettings cleanupSettings = getCleanupSettings(true);
+		cleanupSettings.cleanupRangeExpandMode = cleanupRangeExpandMode;
+		fallbackCleanupSettings.cleanupRangeExpandMode = cleanupRangeExpandMode;
+	}
+
+	void setReleaseRestriction(int releaseRestriction) {
+		CleanupSettings cleanupSettings = getCleanupSettings(true);
+		cleanupSettings.releaseRestriction = releaseRestriction;
+		fallbackCleanupSettings.releaseRestriction = releaseRestriction;
 	}
 
 	boolean areShellBoundsSpecified() { 

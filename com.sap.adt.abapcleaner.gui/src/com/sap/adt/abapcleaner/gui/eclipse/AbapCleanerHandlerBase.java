@@ -5,6 +5,7 @@ import java.io.InputStream;
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
 import org.eclipse.core.resources.IFile;
+import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.jface.dialogs.MessageDialog;
@@ -93,14 +94,17 @@ public abstract class AbapCleanerHandlerBase extends AbstractAdtEditorHandler {
          }
          String abapRelease = resolver.getRelease(); // e.g. "757"
          
+         // get the workspace directory
+         String workspaceDir = ResourcesPlugin.getWorkspace().getRoot().getLocation().toString();
+         
          // execute the cleanup
 			CleanupResult result;
 			if (interactive) {
 	         // get ADT color settings to make code in the ABAP cleaner UI appear similar to code in ADT
 				CodeDisplayColors codeDisplayColors = createCodeDisplayColors(); 
-				result = FrmMain.cleanInteractively(oldSource, abapRelease, cleanupRange, true, adtSourcePage.getTitle(), codeDisplayColors, readOnly);
+				result = FrmMain.cleanInteractively(oldSource, abapRelease, cleanupRange, workspaceDir, true, adtSourcePage.getTitle(), codeDisplayColors, readOnly);
 			} else {
-				result = FrmMain.cleanAutomatically(oldSource, abapRelease, cleanupRange, null, false, ABAP.LINE_SEPARATOR);
+				result = FrmMain.cleanAutomatically(oldSource, abapRelease, cleanupRange, workspaceDir, null, false, ABAP.LINE_SEPARATOR);
 			}
 
 			if (result == null) 

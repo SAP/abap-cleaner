@@ -13,7 +13,7 @@ import com.sap.adt.abapcleaner.parser.TokenTypeRefinerRnd;
 
 public final class Program {
 	/** Technical version used in settings files. */
-	public static final int TECHNICAL_VERSION = 24;
+	public static final int TECHNICAL_VERSION = 25;
 
 	public static final String PRODUCT_NAME = "ABAP cleaner";
 	
@@ -34,14 +34,15 @@ public final class Program {
 	public static void initialize(Persistency persistency, String overrideWorkDir) {
 		if (persistency == null)
 			persistency = Persistency.create(FileSystem.create());
-		
+
+		CodeSource codeSource = Program.class.getProtectionDomain().getCodeSource();
+		String startupPath = new File(codeSource.getLocation().getPath()).getParent(); 
+
 		String workDir = overrideWorkDir;
 		if (StringUtil.isNullOrEmpty(workDir)) {
-			CodeSource codeSource = Program.class.getProtectionDomain().getCodeSource();
-			String startupPath = new File(codeSource.getLocation().getPath()).getParent(); 
 			workDir = persistency.getAppDataDir(APP_DATA_COMPANY_FOLDER_WIN, APP_DATA_FOLDER_WIN, APP_DATA_FOLDER_MAC, APP_DATA_FOLDER_LINUX, startupPath);
 		}
-		persistency.initialize(workDir);
+		persistency.initialize(workDir, startupPath);
 		persistency.ensureDirectoryExists(workDir);
 
 		showDevFeatures = persistency.fileExists(workDir, "devfeatures"); 

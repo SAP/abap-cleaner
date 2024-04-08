@@ -19,7 +19,7 @@ public class PersistencyDouble extends Persistency {
 		
 		// as the workDir, use any directory path that is valid on the local system 
 		String workDir = fileSystemDouble.addDirSep(System.getProperty("java.io.tmpdir"));
-		persistencyDouble.initialize(workDir);
+		persistencyDouble.initialize(workDir, null);
 		return persistencyDouble;
 	}
 

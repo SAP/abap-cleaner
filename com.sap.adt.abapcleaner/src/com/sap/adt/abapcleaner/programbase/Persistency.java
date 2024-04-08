@@ -22,20 +22,26 @@ public class Persistency extends PersistencyBase {
 	// -------------------------------------------------------------------------
 	
 	private String workDir;
+	private String startupPath;
 	private Config config;
 
 	protected Persistency(IFileSystem fileSystem) {
 		super(fileSystem);
 	}
 
-	public final void initialize(String workDir) {
+	public final void initialize(String workDir, String startupPath) {
 		this.workDir = workDir;
+		this.startupPath = startupPath;
 		config = new Config(workDir);
 		config.load(this, combinePaths(workDir, getFileName(FileType.CONFIG_TEXT)));
 	}
 
 	public String getWorkDir() { 
 		return workDir; 
+	}
+
+	public String getStartupPath() { 
+		return startupPath; 
 	}
 
 	public final String getExtension(FileType fileType) {
