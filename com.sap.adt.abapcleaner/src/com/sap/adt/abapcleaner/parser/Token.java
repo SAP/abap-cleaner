@@ -250,7 +250,7 @@ public class Token {
 	/**
 	 * Returns true if the Token text equals the supplied comparison text.  
 	 * To check the Token type at the same time, use {@link #isKeyword(String)} or {@link #isComparisonOperator(String)} 
-	 * (see list of tokens classified as comparison operators in {@link ABAP#isComparisonOperator(String)}) 
+	 * (see list of tokens classified as comparison operators in {@link ABAP#isComparisonOperator(String, boolean)}) 
 	 */
 	public final boolean textEquals(String compareText) {
 		return AbapCult.stringEquals(text, compareText, true);
@@ -371,7 +371,7 @@ public class Token {
 			// "=" will later be differentiated between assignment and comparison operator in Command.finishBuild() / .distinguishOperators()
 			return TokenType.ASSIGNMENT_OP;
 		
-		} else if (ABAP.isComparisonOperator(text)) {
+		} else if (ABAP.isComparisonOperator(text, true)) {
 			return TokenType.COMPARISON_OP;
 		
 		} else if (ABAP.isAbapUpperCaseKeyword(text)) {
@@ -1260,7 +1260,7 @@ public class Token {
 	/**
 	 * Returns true if the Token text equals any of the supplied comparison texts.  
 	 * To check the Token type at the same time, use {@link #isAnyKeyword(String...)} or {@link #isAnyComparisonOperator(String...)} 
-	 * (see list of tokens classified as comparison operators in {@link ABAP#isComparisonOperator(String)}) 
+	 * (see list of tokens classified as comparison operators in {@link ABAP#isComparisonOperator(String, boolean)}) 
 	 */
 	public final boolean textEqualsAny(String... compareTexts) {
 		for (String compareText : compareTexts) {
@@ -1889,7 +1889,7 @@ public class Token {
 				throw new UnexpectedSyntaxException(token, "predicate expression expected");
 			}
 			
-		} else if (ABAP.isComparisonOperator(token.getText())) { // includes BETWEEN and IN
+		} else if (ABAP.isComparisonOperator(token.getText(), true)) { // includes BETWEEN and IN
 			// Comparison Expressions (rel_exp), see https://ldcier1.wdf.sap.corp:44300/sap/public/bc/abap/docu?object=abenlogexp_comp
 			boolean isTernaryOp = token.isComparisonOperator("BETWEEN");
 			Term term2 = Term.createArithmetic(token.getNextCodeSibling());

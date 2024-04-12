@@ -415,15 +415,26 @@ class AbapTest {
 	
 	@Test
 	void testIsComparisonOperator() {
-		assertTrue(ABAP.isComparisonOperator("lt"));
-		assertTrue(ABAP.isComparisonOperator("LT"));
+		assertTrue(ABAP.isComparisonOperator("lt", false));
+		assertTrue(ABAP.isComparisonOperator("LT", false));
 
-		assertTrue(ABAP.isComparisonOperator("ca"));
-		assertTrue(ABAP.isComparisonOperator("CA"));
+		assertTrue(ABAP.isComparisonOperator("ca", false));
+		assertTrue(ABAP.isComparisonOperator("CA", false));
 
-		assertTrue(ABAP.isComparisonOperator("byte-CA"));
-		assertTrue(ABAP.isComparisonOperator("BYTE-CA"));
+		assertTrue(ABAP.isComparisonOperator("byte-CA", false));
+		assertTrue(ABAP.isComparisonOperator("BYTE-CA", false));
 	}
+
+	@Test
+	void testIsComparisonOperatorForObsoleteVariants() {
+		assertFalse(ABAP.isComparisonOperator("><", false));
+		assertFalse(ABAP.isComparisonOperator("=>", false));
+		assertFalse(ABAP.isComparisonOperator("=<", false));
+
+		assertTrue(ABAP.isComparisonOperator("><", true));
+		assertTrue(ABAP.isComparisonOperator("=>", true));
+		assertTrue(ABAP.isComparisonOperator("=<", true));
+}
 
 	@Test
 	void testParameterNull() {
