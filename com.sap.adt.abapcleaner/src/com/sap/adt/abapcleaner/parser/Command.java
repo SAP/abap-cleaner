@@ -3083,6 +3083,16 @@ public class Command {
 				commentAdded = (putCommentAboveLineOf(start, commentText) != null);
 			}
 			return commentAdded;
+
+		} else if (action == ChainElementAction.ADD_PRAGMA_NEEDED) {
+			Token commaOrPeriod = start.getLastTokenDeep(true, TokenSearch.ASTERISK, ".|,");
+			Token neededPragma = Token.createForAbap(0, 1, "##NEEDED", commaOrPeriod.sourceLineNum);
+			if (commaOrPeriod.lineBreaks > 0) {
+				neededPragma.copyWhitespaceFrom(commaOrPeriod);
+				commaOrPeriod.setWhitespace(0, 0);
+			}
+			commaOrPeriod.insertLeftSibling(neededPragma);
+			return true;
 		}
 		
 		// get information on the line to be deleted / commented out and the surrounding lines
