@@ -13,19 +13,6 @@ import java.time.LocalDate;
 public class UnusedVariablesRule extends RuleForDeclarations {
    private final static RuleReference[] references = new RuleReference[] {new RuleReference(RuleSource.ABAP_CLEANER)};
 
-   private static UnusedVariableAction convertToAction(UnusedVariableActionIfAssigned actionIfAssigned) {
-      switch (actionIfAssigned) {
-         case ADD_TODO_COMMENT:
-            return UnusedVariableAction.ADD_TODO_COMMENT;
-         case IGNORE:
-            return UnusedVariableAction.IGNORE;
-         default:
-            throw new IndexOutOfBoundsException("unexpected ActionIfAssigned value");
-      }
-   }
-
-   // ----------------------------------------------------------------------
-
 	@Override
 	public RuleID getID() { return RuleID.UNUSED_VARIABLES; }
 
@@ -65,6 +52,7 @@ public class UnusedVariablesRule extends RuleForDeclarations {
 			+ LINE_SEP 
 			+ LINE_SEP + "    DATA lv_only_assigned TYPE i." 
 			+ LINE_SEP + "    DATA lv_assigned_but_used_incomment TYPE i." 
+			+ LINE_SEP + "    DATA lv_assigned_in_msg TYPE string." 
 			+ LINE_SEP 
 			+ LINE_SEP + "    \" with the ##NEEDED pragma, an unused variable will be kept and no TODO added;" 
 			+ LINE_SEP + "    \" the pragma also prevents a warning from the Extended Check (SLIN)" 
@@ -93,6 +81,11 @@ public class UnusedVariablesRule extends RuleForDeclarations {
 			+ LINE_SEP + "    lv_only_assigned = lv_only_assigned + 2." 
 			+ LINE_SEP + "    MULTIPLY lv_only_assigned BY 2." 
 			+ LINE_SEP 
+			+ LINE_SEP + "    \" without INTO, MESSAGE would interrupt the program flow; therefore," 
+			+ LINE_SEP + "    \" this variable is needed for the intended behavior even if it is never used" 
+			+ LINE_SEP + "    MESSAGE e123(any_message) INTO DATA(lv_message)." 
+			+ LINE_SEP + "    MESSAGE e456(other_message) WITH 'any' 'text' INTO lv_assigned_in_msg." 
+			+ LINE_SEP 
 			+ LINE_SEP + "    lv_assigned_but_used_incomment = 1." 
 			+ LINE_SEP 
 			+ LINE_SEP + "*    this comment mentions the variable lv_unused_a, but that does not count:" 
@@ -109,15 +102,17 @@ public class UnusedVariablesRule extends RuleForDeclarations {
 
 	private static final String[] actionTexts = new String[] { "delete", "comment out with *", "comment out with \"", "add TODO comment", "ignore" };
 	private static final String[] actionTextsIfAssigned = new String[] { "add TODO comment", "ignore" };
+	private static final String[] actionTextsForMessageInto = new String[] { "add pragma ##NEEDED", "add TODO comment", "ignore" };
 
 	final ConfigEnumValue<UnusedVariableAction> configActionForVarsNeverUsed = new ConfigEnumValue<UnusedVariableAction>(this, "MeasureForVarsNeverUsed", "Action for local variables that are never used:", actionTexts, UnusedVariableAction.values(), UnusedVariableAction.DELETE);
 	final ConfigEnumValue<UnusedVariableAction> configActionForVarsOnlyUsedInComment = new ConfigEnumValue<UnusedVariableAction>(this, "MeasureForVarsOnlyUsedInComment", "Action for variables only used in commented-out code:", actionTexts, UnusedVariableAction.values(), UnusedVariableAction.COMMENT_OUT_WITH_ASTERISK);
 	final ConfigEnumValue<UnusedVariableActionIfAssigned> configActionForAssignedVars = new ConfigEnumValue<UnusedVariableActionIfAssigned>(this, "MeasureForAssignedVars", "Action for assigned but unused local variables:", actionTextsIfAssigned, UnusedVariableActionIfAssigned.values(), UnusedVariableActionIfAssigned.ADD_TODO_COMMENT);
 	final ConfigEnumValue<UnusedVariableActionIfAssigned> configActionForAssignedVarsOnlyUsedInComment = new ConfigEnumValue<UnusedVariableActionIfAssigned>(this, "MeasureForAssignedVarsOnlyUsedInComment", "Action for assigned variables only used in commented-out code:", actionTextsIfAssigned, UnusedVariableActionIfAssigned.values(), UnusedVariableActionIfAssigned.ADD_TODO_COMMENT);
+	final ConfigEnumValue<UnusedVariableActionForMessageInto> configActionForVarsAssignedInMessageInto = new ConfigEnumValue<UnusedVariableActionForMessageInto>(this, "MeasureForVarsOnlyAssignedInMessageInto", "Action for variables only assigned in MESSAGE ... INTO:", actionTextsForMessageInto, UnusedVariableActionForMessageInto.values(), UnusedVariableActionForMessageInto.ADD_PRAGMA_NEEDED, UnusedVariableActionForMessageInto.ADD_TODO_COMMENT, LocalDate.of(2024, 4, 12));
 	final ConfigEnumValue<UnusedVariableAction> configActionForConstantsNeverUsed = new ConfigEnumValue<UnusedVariableAction>(this, "MeasureForConstantsNeverUsed", "Action for local constants that are never used:", actionTexts, UnusedVariableAction.values(), UnusedVariableAction.COMMENT_OUT_WITH_ASTERISK);
 	final ConfigEnumValue<UnusedVariableAction> configActionForConstantsOnlyUsedInComment = new ConfigEnumValue<UnusedVariableAction>(this, "MeasureForConstantsOnlyUsedInComment", "Action for constants only used in commented-out code:", actionTexts, UnusedVariableAction.values(), UnusedVariableAction.COMMENT_OUT_WITH_ASTERISK);
  
-	private final ConfigValue[] configValues = new ConfigValue[] { configActionForVarsNeverUsed, configActionForVarsOnlyUsedInComment, configActionForAssignedVars, configActionForAssignedVarsOnlyUsedInComment,
+	private final ConfigValue[] configValues = new ConfigValue[] { configActionForVarsNeverUsed, configActionForVarsOnlyUsedInComment, configActionForAssignedVars, configActionForAssignedVarsOnlyUsedInComment, configActionForVarsAssignedInMessageInto,
 			configActionForConstantsNeverUsed, configActionForConstantsOnlyUsedInComment };
 
 	@Override
@@ -180,7 +175,10 @@ public class UnusedVariablesRule extends RuleForDeclarations {
 				continue;
 			commandForErrorMsg = command;
 
-			if (varInfo.isUsed() || varInfo.isNeeded()) {
+			// determine the action to be taken; this is NOT dependent on "usedCountInSelfAssignment" (neither in active code nor comment code)
+			ChainElementAction action = getAction(varInfo);
+
+			if (varInfo.isUsed() || varInfo.isNeeded() || action == ChainElementAction.ADD_PRAGMA_NEEDED) {
 				// if an earlier cleanup produced a comment above the declaration of this variable, remove it (now that the variable or constant is used)
 				try {
 					if (command.getClosesLevel()) {
@@ -197,15 +195,14 @@ public class UnusedVariablesRule extends RuleForDeclarations {
 				} catch (UnexpectedSyntaxException e) {
 					throw new UnexpectedSyntaxAfterChanges(this, e);
 				}
+			}
+			if (varInfo.isUsed() || varInfo.isNeeded()) {
 				continue;
 			}
 			
-			// determine the action to be taken; this is NOT dependent on "usedCountInSelfAssignment" (neither in active code nor comment code)
-			UnusedVariableAction action = getAction(varInfo);
-			String message = (action == UnusedVariableAction.ADD_TODO_COMMENT) ? getMessage(varInfo, command) : null;
-
+			String message = (action == ChainElementAction.ADD_TODO_COMMENT) ? getMessage(varInfo, command) : null;
 			try {
-				if (command.handleChainElement(varInfo.declarationToken, action.getCorrespondingChainElementAction(), message)) {
+				if (command.handleChainElement(varInfo.declarationToken, action, message)) {
 					code.addRuleUse(this, command);
 				}
 			} catch(UnexpectedSyntaxException ex) {
@@ -297,27 +294,33 @@ public class UnusedVariablesRule extends RuleForDeclarations {
 		}
 	}
 
-	private UnusedVariableAction getAction(VariableInfo varInfo) {
-		UnusedVariableAction action;
-		if (varInfo.isAssigned()) {
+	private ChainElementAction getAction(VariableInfo varInfo) {
+		ChainElementAction action;
+
+		if (varInfo.isUsed() || varInfo.isNeeded()) {
+			action = ChainElementAction.IGNORE; 
+				
+		} else if (varInfo.isAssigned()) {
 			if (varInfo.isUsedInComment()) {
-				action = convertToAction(UnusedVariableActionIfAssigned.forValue(configActionForAssignedVarsOnlyUsedInComment.getValue()));	
+				action = UnusedVariableActionIfAssigned.forValue(configActionForAssignedVarsOnlyUsedInComment.getValue()).getCorrespondingChainElementAction();
+			} else if (varInfo.isAssignedInMessageInto()) {
+				action = UnusedVariableActionForMessageInto.forValue(configActionForVarsAssignedInMessageInto.getValue()).getCorrespondingChainElementAction();	
 			} else {
-				action = convertToAction(UnusedVariableActionIfAssigned.forValue(configActionForAssignedVars.getValue()));	
+				action = UnusedVariableActionIfAssigned.forValue(configActionForAssignedVars.getValue()).getCorrespondingChainElementAction();	
 			}
 		
 		} else if (varInfo.isUsedInComment() || varInfo.isAssignedInComment()) {
 			if (varInfo.isConstant) {
-				action = UnusedVariableAction.forValue(configActionForConstantsOnlyUsedInComment.getValue());
+				action = UnusedVariableAction.forValue(configActionForConstantsOnlyUsedInComment.getValue()).getCorrespondingChainElementAction();
 			} else {
-				action = UnusedVariableAction.forValue(configActionForVarsOnlyUsedInComment.getValue());
+				action = UnusedVariableAction.forValue(configActionForVarsOnlyUsedInComment.getValue()).getCorrespondingChainElementAction();
 			}
 
 		} else {
 			if (varInfo.isConstant) {
-				action = UnusedVariableAction.forValue(configActionForConstantsNeverUsed.getValue());
+				action = UnusedVariableAction.forValue(configActionForConstantsNeverUsed.getValue()).getCorrespondingChainElementAction();
 			} else {
-				action = UnusedVariableAction.forValue(configActionForVarsNeverUsed.getValue());
+				action = UnusedVariableAction.forValue(configActionForVarsNeverUsed.getValue()).getCorrespondingChainElementAction();
 			}
 		}
 		
@@ -325,8 +328,8 @@ public class UnusedVariablesRule extends RuleForDeclarations {
 		// - declared inline with DATA(...) or FIELD-SYMBOL(...)
 		// - declared with DATA/CONSTANTS/STATICS BEGIN OF ... (bound structure data)
 		if (varInfo.isDeclaredInline || varInfo.isBoundStructuredData) {
-			if (action != UnusedVariableAction.IGNORE) { 
-				action = UnusedVariableAction.ADD_TODO_COMMENT;
+			if (action != ChainElementAction.IGNORE && action != ChainElementAction.ADD_PRAGMA_NEEDED) { 
+				action = ChainElementAction.ADD_TODO_COMMENT;
 			}
 		}
 		return action;

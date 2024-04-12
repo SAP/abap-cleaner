@@ -21,6 +21,7 @@ class UnusedVariablesTest extends RuleTestBase {
 		rule.configActionForVarsOnlyUsedInComment.setEnumValue(UnusedVariableAction.COMMENT_OUT_WITH_ASTERISK);
 		rule.configActionForAssignedVars.setEnumValue(UnusedVariableActionIfAssigned.ADD_TODO_COMMENT);
 		rule.configActionForAssignedVarsOnlyUsedInComment.setEnumValue(UnusedVariableActionIfAssigned.ADD_TODO_COMMENT);
+		rule.configActionForVarsAssignedInMessageInto.setEnumValue(UnusedVariableActionForMessageInto.ADD_PRAGMA_NEEDED);
 		rule.configActionForConstantsNeverUsed.setEnumValue(UnusedVariableAction.COMMENT_OUT_WITH_ASTERISK);
 		rule.configActionForConstantsOnlyUsedInComment.setEnumValue(UnusedVariableAction.COMMENT_OUT_WITH_ASTERISK);
 	}
@@ -983,6 +984,8 @@ class UnusedVariablesTest extends RuleTestBase {
 
 	@Test
 	void testMessageIntoUnusedData() {
+		rule.configActionForVarsAssignedInMessageInto.setEnumValue(UnusedVariableActionForMessageInto.ADD_TODO_COMMENT);
+
 		buildSrc("    MESSAGE e111(any_msg_class) WITH iv_item_id INTO DATA(lv_msg).");
 		buildSrc("    mo_message_handler->add_symessage( iv_ctx_type  = if_any_interface=>co_context_item_id");
 		buildSrc("                                       iv_ctx_value = is_item-item_id ).");
@@ -999,6 +1002,8 @@ class UnusedVariablesTest extends RuleTestBase {
 
 	@Test
 	void testMessageIntoUnusedFinal() {
+		rule.configActionForVarsAssignedInMessageInto.setEnumValue(UnusedVariableActionForMessageInto.ADD_TODO_COMMENT);
+
 		buildSrc("    MESSAGE e111(any_msg_class) WITH iv_item_id INTO FINAL(lv_msg).");
 		buildSrc("    mo_message_handler->add_symessage( iv_ctx_type  = if_any_interface=>co_context_item_id");
 		buildSrc("                                       iv_ctx_value = is_item-item_id ).");
@@ -2205,20 +2210,123 @@ class UnusedVariablesTest extends RuleTestBase {
 	}
 
 	@Test
-	void testMessageIntoWithUpfrontDeclaration() {
+	void testAddPragmaNeededForMessageInto() {
 		buildSrc("    DATA lv_msg1 TYPE string.");
-		buildSrc("    DATA lv_msg2 TYPE string.");
+		buildSrc("    DATA: lv_msg2a TYPE string,");
+		buildSrc("          lv_msg2b TYPE string,");
+		buildSrc("          lv_msg2c TYPE string.");
 		buildSrc("");
-		buildSrc("    MESSAGE e123(any_message_class) INTO lv_msg1.");
-		buildSrc("    MESSAGE e123(any_message_class) WITH 'any' INTO lv_msg2.");
+		buildSrc("    MESSAGE i001(any_message_class) INTO lv_msg1.");
+		buildSrc("    MESSAGE i002(any_message_class) WITH 'any' INTO lv_msg2a.");
+		buildSrc("    MESSAGE i002(any_message_class) WITH 'other' INTO lv_msg2c.");
+		buildSrc("");
+		buildSrc("    MESSAGE i003(any_message_class) INTO DATA(lv_msg3).");
+		buildSrc("    MESSAGE i004(any_message_class) WITH 'any' INTO DATA(lv_msg4).");
+
+		buildExp("    DATA lv_msg1 TYPE string ##NEEDED.");
+		buildExp("    DATA: lv_msg2a TYPE string ##NEEDED,");
+		buildExp("          lv_msg2c TYPE string ##NEEDED.");
+		buildExp("");
+		buildExp("    MESSAGE i001(any_message_class) INTO lv_msg1.");
+		buildExp("    MESSAGE i002(any_message_class) WITH 'any' INTO lv_msg2a.");
+		buildExp("    MESSAGE i002(any_message_class) WITH 'other' INTO lv_msg2c.");
+		buildExp("");
+		buildExp("    MESSAGE i003(any_message_class) INTO DATA(lv_msg3) ##NEEDED.");
+		buildExp("    MESSAGE i004(any_message_class) WITH 'any' INTO DATA(lv_msg4) ##NEEDED.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testAddPragmaNeededAndRemoveOldTodo() {
+		buildSrc("    \" TODO: variable is assigned but never used; add pragma ##NEEDED (ABAP cleaner)");
+		buildSrc("    DATA lv_msg1 TYPE string.");
+		buildSrc("    \" TODO: variable is assigned but never used; add pragma ##NEEDED (ABAP cleaner)");
+		buildSrc("    DATA: lv_msg2a TYPE string,");
+		buildSrc("          lv_msg2b TYPE string,");
+		buildSrc("          \" TODO: variable is assigned but never used; add pragma ##NEEDED (ABAP cleaner)");
+		buildSrc("          lv_msg2c TYPE string.");
+		buildSrc("");
+		buildSrc("    MESSAGE i001(any_message_class) INTO lv_msg1.");
+		buildSrc("    MESSAGE i002(any_message_class) WITH 'any' INTO lv_msg2a.");
+		buildSrc("    MESSAGE i002(any_message_class) WITH 'other' INTO lv_msg2c.");
+		buildSrc("");
+		buildSrc("    \" TODO: variable is assigned but never used; add pragma ##NEEDED (ABAP cleaner)");
+		buildSrc("    MESSAGE i003(any_message_class) INTO DATA(lv_msg3).");
+		buildSrc("    \" TODO: variable is assigned but never used; add pragma ##NEEDED (ABAP cleaner)");
+		buildSrc("    MESSAGE i004(any_message_class) WITH 'any' INTO DATA(lv_msg4).");
+
+		buildExp("    DATA lv_msg1 TYPE string ##NEEDED.");
+		buildExp("    DATA: lv_msg2a TYPE string ##NEEDED,");
+		buildExp("          lv_msg2c TYPE string ##NEEDED.");
+		buildExp("");
+		buildExp("    MESSAGE i001(any_message_class) INTO lv_msg1.");
+		buildExp("    MESSAGE i002(any_message_class) WITH 'any' INTO lv_msg2a.");
+		buildExp("    MESSAGE i002(any_message_class) WITH 'other' INTO lv_msg2c.");
+		buildExp("");
+		buildExp("    MESSAGE i003(any_message_class) INTO DATA(lv_msg3) ##NEEDED.");
+		buildExp("    MESSAGE i004(any_message_class) WITH 'any' INTO DATA(lv_msg4) ##NEEDED.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testAddCommentForMessageInto() {
+		rule.configActionForVarsAssignedInMessageInto.setEnumValue(UnusedVariableActionForMessageInto.ADD_TODO_COMMENT);
+
+		buildSrc("    DATA lv_msg1 TYPE string.");
+		buildSrc("    DATA: lv_msg2a TYPE string,");
+		buildSrc("          lv_msg2b TYPE string,");
+		buildSrc("          lv_msg2c TYPE string.");
+		buildSrc("");
+		buildSrc("    MESSAGE i001(any_message_class) INTO lv_msg1.");
+		buildSrc("    MESSAGE i002(any_message_class) WITH 'any' INTO lv_msg2a.");
+		buildSrc("    MESSAGE i002(any_message_class) WITH 'other' INTO lv_msg2c.");
+		buildSrc("");
+		buildSrc("    MESSAGE i003(any_message_class) INTO DATA(lv_msg3).");
+		buildSrc("    MESSAGE i004(any_message_class) WITH 'any' INTO DATA(lv_msg4).");
 
 		buildExp("    \" TODO: variable is assigned but never used; add pragma ##NEEDED (ABAP cleaner)");
 		buildExp("    DATA lv_msg1 TYPE string.");
 		buildExp("    \" TODO: variable is assigned but never used; add pragma ##NEEDED (ABAP cleaner)");
-		buildExp("    DATA lv_msg2 TYPE string.");
+		buildExp("    DATA: lv_msg2a TYPE string,");
+		buildExp("          \" TODO: variable is assigned but never used; add pragma ##NEEDED (ABAP cleaner)");
+		buildExp("          lv_msg2c TYPE string.");
 		buildExp("");
-		buildExp("    MESSAGE e123(any_message_class) INTO lv_msg1.");
-		buildExp("    MESSAGE e123(any_message_class) WITH 'any' INTO lv_msg2.");
+		buildExp("    MESSAGE i001(any_message_class) INTO lv_msg1.");
+		buildExp("    MESSAGE i002(any_message_class) WITH 'any' INTO lv_msg2a.");
+		buildExp("    MESSAGE i002(any_message_class) WITH 'other' INTO lv_msg2c.");
+		buildExp("");
+		buildExp("    \" TODO: variable is assigned but never used; add pragma ##NEEDED (ABAP cleaner)");
+		buildExp("    MESSAGE i003(any_message_class) INTO DATA(lv_msg3).");
+		buildExp("    \" TODO: variable is assigned but never used; add pragma ##NEEDED (ABAP cleaner)");
+		buildExp("    MESSAGE i004(any_message_class) WITH 'any' INTO DATA(lv_msg4).");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testIgnoreMessageInto() {
+		rule.configActionForVarsAssignedInMessageInto.setEnumValue(UnusedVariableActionForMessageInto.IGNORE);
+
+		buildSrc("    DATA lv_msg1 TYPE string.");
+		buildSrc("    DATA: lv_msg2a TYPE string,");
+		buildSrc("          lv_msg2b TYPE string.");
+		buildSrc("");
+		buildSrc("    MESSAGE i001(any_message_class) INTO lv_msg1.");
+		buildSrc("    MESSAGE i002(any_message_class) WITH 'any' INTO lv_msg2a.");
+		buildSrc("    MESSAGE i002(any_message_class) WITH 'other' INTO lv_msg2b.");
+		buildSrc("");
+		buildSrc("    MESSAGE i003(any_message_class) INTO DATA(lv_msg3).");
+		buildSrc("    MESSAGE i004(any_message_class) WITH 'any' INTO DATA(lv_msg4).");
+
+		copyExpFromSrc();
 
 		putAnyMethodAroundSrcAndExp();
 
