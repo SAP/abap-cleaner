@@ -60,9 +60,9 @@ public class ComparisonOperatorRule extends RuleForTokens {
 			+ LINE_SEP + "ENDFORM."; 
    }
 
-	final ConfigEnumValue<ComparisonOperatorType> configPreferredOperatorSet = new ConfigEnumValue<ComparisonOperatorType>(this, "PreferredOperatorSet", "Preferred set of comparison operators:", new String[] { "symbolic (<, <=, =, <>, >=, >)", "textual (LT, LE, EQ, NE, GE, GT)" }, ComparisonOperatorType.values(), ComparisonOperatorType.SYMBOLIC, ComparisonOperatorType.SYMBOLIC, LocalDate.of(2024, 4, 12));
+	final ConfigEnumValue<ComparisonOperatorType> configPreferredOperatorSet = new ConfigEnumValue<ComparisonOperatorType>(this, "PreferredOperatorSet", "Preferred set of comparison operators:", new String[] { "symbolic (<, <=, =, <>, >=, >)", "textual (LT, LE, EQ, NE, GE, GT)" }, ComparisonOperatorType.values(), ComparisonOperatorType.SYMBOLIC, ComparisonOperatorType.SYMBOLIC, LocalDate.of(2024, 4, 11));
 	final ConfigBoolValue configReplaceRegularOperators = new ConfigBoolValue(this, "ReplaceRegularOperators", "Replace regular comparison operators with preferred variant", true);
-	final ConfigBoolValue configReplaceObsoleteOperators = new ConfigBoolValue(this, "ReplaceObsoleteOperators", "Replace obsolete comparison operators (><  =>  =<) with preferred variant", true, false, LocalDate.of(2024, 4, 12));
+	final ConfigBoolValue configReplaceObsoleteOperators = new ConfigBoolValue(this, "ReplaceObsoleteOperators", "Replace obsolete comparison operators (><  =>  =<) with preferred variant", true, false, LocalDate.of(2024, 4, 11));
 
 	private final ConfigValue[] configValues = new ConfigValue[] { configPreferredOperatorSet, configReplaceRegularOperators, configReplaceObsoleteOperators };
 

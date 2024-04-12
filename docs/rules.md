@@ -1,6 +1,6 @@
 # Available Cleanup Rules
 
-ABAP cleaner offers 75 cleanup rules with a total of 294 configuration options:
+ABAP cleaner offers 75 cleanup rules with a total of 298 configuration options:
 
 ## Empty Lines
 
@@ -41,7 +41,7 @@ ABAP cleaner offers 75 cleanup rules with a total of 294 configuration options:
 * [Correct frequent typos](rules/TypoRule.md)
 * [Resolve equals sign chain into several commands](rules/EqualsSignChainRule.md)
 * [Prefer calculation assignment operators \(\+=, -= etc.\)](rules/CalculationAssignmentRule.md)
-* [Prefer =, <>, <= etc. to EQ, NE, LE etc.](rules/ComparisonOperatorRule.md)
+* [Use consistent set of comparison operators](rules/ComparisonOperatorRule.md)
 * [Prefer IS NOT to NOT IS](rules/NotIsRule.md)
 * [Move AND/OR etc. from line end to next line start](rules/LogicalOperatorPositionRule.md)
 * [Use string templates to assemble text](rules/StringTemplateRule.md)
