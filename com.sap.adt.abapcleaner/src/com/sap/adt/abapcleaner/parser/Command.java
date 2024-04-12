@@ -3235,7 +3235,7 @@ public class Command {
 		//   return changesSyField(ABAP.SyField.SUBRC) && SyFieldAnalyzer.getSyFieldReadersFor(ABAP.SyField.SUBRC, this).size() >= 2;
 		//   - getCommandsRelatedToPatternMatch() can then return SyFieldAnalyzer.getSyFieldReadersFor(ABAP.SyField.SUBRC, this);
 
-		return false;
+      return false;
 	}
 	
 	public final ArrayList<Command> getCommandsRelatedToPatternMatch() {

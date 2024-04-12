@@ -658,7 +658,20 @@ public final class ABAP {
 		}
 	}
 
-	public static boolean isComparisonOperator(String text) {
+	public static String getNonObsoleteComparisonOperator(String text) {
+		switch (text) {
+			case "=<":
+				return "<=";
+			case "=>":
+				return ">=";
+			case "><":
+				return "<>";
+			default:
+				return text;
+		}
+	}
+
+	public static boolean isComparisonOperator(String text, boolean includeObsoleteVariants) {
 		switch (AbapCult.toUpper(text)) {
 			// Comparison operators for all data types
 			case "<":
@@ -699,6 +712,11 @@ public final class ABAP {
 			case "BYTE-NS":
 				return true;
 
+			case "=<":
+			case "=>":
+			case "><":
+				return includeObsoleteVariants;
+				
 			// TODO: Comparison operators for bit patterns (O, Z, M) are missing,
 			// see https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/index.htm?file=abenlogexp_op.htm
 
