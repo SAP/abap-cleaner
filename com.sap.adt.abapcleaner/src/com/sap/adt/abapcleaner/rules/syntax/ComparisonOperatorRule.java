@@ -9,7 +9,7 @@ import com.sap.adt.abapcleaner.rulebase.*;
 public class ComparisonOperatorRule extends RuleForTokens {
 	private final static RuleReference[] references = new RuleReference[] { 
 			new RuleReference(RuleSource.ABAP_KEYWORD_DOCU, "Use consistent spelling", "abenlogexp_any_operand.htm"),
-			new RuleReference(RuleSource.ABAP_CLEANER) };
+			new RuleReference(RuleSource.ABAP_KEYWORD_DOCU, "Obsolete Relational Operators", "abenobsolete_logexp_op.htm") };
 
 	private final static String[] textualComparisonOps = new String[] { "LT", "LE", "EQ", "NE", "GE", "GT" };
 	private final static String[] symbolicComparisonOps = new String[] { "<", "<=", "=", "<>", ">=", ">" };
