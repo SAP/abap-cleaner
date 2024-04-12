@@ -35,6 +35,7 @@ public class VariableInfo {
 	private int usedCountInSelfAssignmentInComment;
 
    private int assignedCount;
+   private int assignedCountInMessageInto;
    private int assignedCountInComment;
    
    /** is increased when a field-symbol is found in a write position (NOT an assignment position), e.g. '&lt;fs&gt;-comp = 1.' */
@@ -59,6 +60,7 @@ public class VariableInfo {
 
    public boolean isAssigned() { return assignedCount > 0; }
    public boolean isAssignedAfterDeclaration() { return isDeclaredInline ? (assignedCount > 1) : (assignedCount > 0); }
+   public boolean isAssignedInMessageInto() { return assignedCountInMessageInto > 0; }
    public boolean isAssignedInComment() { return assignedCountInComment > 0; }
    
    public VariableInfo(Token declarationToken, boolean isDeclaredInline, boolean isType, boolean isConstant, boolean isBoundStructuredData) {
@@ -86,7 +88,7 @@ public class VariableInfo {
    	isNeeded = true;
    }
    
-	public void addUsage(Token token, boolean isAssignment, boolean isUsageInSelfAssignment, boolean isCommentedOut, boolean writesToReferencedMemory) {
+	public void addUsage(Token token, boolean isAssignment, boolean isUsageInSelfAssignment, boolean isCommentedOut, boolean writesToReferencedMemory, boolean isAssignedInMessageInto) {
 		if (isCommentedOut) {
 			if (isAssignment) {
 				++assignedCountInComment;
@@ -98,6 +100,9 @@ public class VariableInfo {
 		} else {
 			if (isAssignment) {
 				++assignedCount;
+				if (isAssignedInMessageInto) {
+					++assignedCountInMessageInto;
+				}
 			} else if (isUsageInSelfAssignment) {
 				++usedCountInSelfAssignment;
 			} else {
@@ -106,7 +111,7 @@ public class VariableInfo {
 		}
 		if (writesToReferencedMemory)
 			++writeToReferencedMemoryCount;
-
+		
 		if (token != null) {
 			Command command = token.getParentCommand();
 			enclosingCommandWithCommentUsage = updateEnclosingCommand(enclosingCommandWithCommentUsage, command);
@@ -116,8 +121,10 @@ public class VariableInfo {
 		}
 	}
 
-	public void addAssignment(Token token) {
+	public void addAssignment(Token token, boolean isAssignedInMessageInto) {
 		++assignedCount;
+		if (isAssignedInMessageInto) 
+			++assignedCountInMessageInto;
 
 		if (token != null) {
 			Command command = token.getParentCommand();

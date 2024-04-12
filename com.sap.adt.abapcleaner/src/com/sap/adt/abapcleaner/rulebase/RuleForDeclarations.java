@@ -366,7 +366,7 @@ public abstract class RuleForDeclarations extends Rule {
 			if (!skipLine) {
 				// add declaration
 				String varName = token.getText();
-				VariableInfo varInfo = localVariables.addDeclaration(token, false, isTypeDeclaration, isConstantsDeclaration, isBoundStructuredData, isInOOContext);
+				VariableInfo varInfo = localVariables.addDeclaration(token, false, isTypeDeclaration, isConstantsDeclaration, isBoundStructuredData, isInOOContext, false);
 
 				// if the pragma ##NEEDED or the pseudo comment "#EC NEEDED is defined for this variable, add a "usage" 
 				// to prevent it from being commented out or deleted
@@ -454,7 +454,7 @@ public abstract class RuleForDeclarations extends Rule {
 			boolean isAssignment = isClearCommand || (isAssignmentCommand && i == 0) || (isAddCommand && AbapCult.stringEquals(prevWordText, "TO", true))
 					|| (isSubtractCommand && AbapCult.stringEquals(prevWordText, "FROM", true)) || (isMultiplyOrDivideCommand && i == 1);
 			boolean isUsageInSelfAssignment = !isAssignment && AbapCult.stringEquals(word, assignedToVar, true);
-			localVariables.addUsage(command.getFirstToken(), word, isAssignment, isUsageInSelfAssignment, true, false);
+			localVariables.addUsage(command.getFirstToken(), word, isAssignment, isUsageInSelfAssignment, true, false, false);
 			prevWordText = word;
 		}
 	}
@@ -498,7 +498,7 @@ public abstract class RuleForDeclarations extends Rule {
 		if (firstCode.isKeyword("RETURN")) {
 			Token nextCode = firstCode.getNextCodeToken();
 			if (nextCode != null && !nextCode.isPeriod() && localVariables.returningParameter != null) {
-				localVariables.returningParameter.addUsage(firstCode, true, false, false, false);
+				localVariables.returningParameter.addUsage(firstCode, true, false, false, false, false);
 			}
 		}
 		
@@ -522,9 +522,11 @@ public abstract class RuleForDeclarations extends Rule {
 				addRefConstructor(token, localVariables);
 				
 			} else if (token.opensInlineDeclaration()) {
+				boolean isAssignedInMessageInto = firstCode.isKeyword("MESSAGE") && token.getPrevCodeToken() != null && token.getPrevCodeToken().isKeyword("INTO");
+
 				// process inline declaration
 				token = token.getNext();
-				localVariables.addDeclaration(token, true, false, false, false, isInOOContext);
+				localVariables.addDeclaration(token, true, false, false, false, isInOOContext, isAssignedInMessageInto);
 
 				// if the pragma ##NEEDED is defined for this variable, add a "usage" to prevent it from being commented out or deleted
 				if (isNeededPragmaOrPseudoCommentFound(token, false))
@@ -536,7 +538,7 @@ public abstract class RuleForDeclarations extends Rule {
 				MemoryAccessType accessType = token.getMemoryAccessType();
 				if (accessType == MemoryAccessType.ASSIGN_TO_FS_OR_DREF) {
 					addAssignedFieldSymbolOrDataRef(token, localVariables);
-					localVariables.addInlineDeclaration(token, token.getText());
+					localVariables.addInlineDeclaration(token, token.getText(), isAssignedInMessageInto);
 				}
 	
 			} else if (token.isIdentifier()) {
@@ -561,6 +563,7 @@ public abstract class RuleForDeclarations extends Rule {
 				boolean isAssignment = false;
 				boolean writesToReferencedMemory = false; 
 				boolean isFieldSymbol = ABAP.isFieldSymbol(objectName); 
+				boolean isAssignedInMessageInto = false;
 				if (isFieldSymbol) {
 					// any mentioning of a field symbol is a 'usage', except in "ASSIGN ... TO <...>", "... ASSIGNING <...>" and "UNASSIGN <...>" commands: 
 					// even a write to the memory referenced by the field symbol is not a write to the field symbol itself, as the reference is unchanged
@@ -580,6 +583,7 @@ public abstract class RuleForDeclarations extends Rule {
 						addAssignedFieldSymbolOrDataRef(token, localVariables);
 					} else if (accessType == MemoryAccessType.WRITE) {
 						isAssignment = true;
+						isAssignedInMessageInto = firstCode.isKeyword("MESSAGE") && token.getPrevCodeToken() != null && token.getPrevCodeToken().isKeyword("INTO");
 					} else if (accessType == MemoryAccessType.READ_WRITE || accessType == MemoryAccessType.READ_WRITE_POSSIBLE) {
 						// if the variable is used as an actual CHANGING parameter, add both a usage and an assignment (below); 
 						// same in case of PERFORM ... USING ..., where a write is not prevented by the syntax check (READ_WRITE_POSSIBLE) 
@@ -593,7 +597,7 @@ public abstract class RuleForDeclarations extends Rule {
 					// the functional method call "xyz(" is NOT a usage of the local variable "xyz"; however, this is only true if  
 					// readPos points to the opening parenthesis, because "lo_instance->any_method(" is a usage of "lo_instance"
 				} else {
-					localVariables.addUsage(token, objectName, isAssignment, isUsageInSelfAssignment, false, writesToReferencedMemory);
+					localVariables.addUsage(token, objectName, isAssignment, isUsageInSelfAssignment, false, writesToReferencedMemory, isAssignedInMessageInto);
 				}
 				
 				// in "var+offset(length)" or "struc-component+offset(length), "offset" may be an identifier as well

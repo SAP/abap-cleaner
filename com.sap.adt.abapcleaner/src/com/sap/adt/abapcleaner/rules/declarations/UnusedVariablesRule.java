@@ -336,7 +336,7 @@ public class UnusedVariablesRule extends RuleForDeclarations {
 		if (varInfo.isAssigned()) {
 			if (varInfo.isUsedInComment()) {
 				return varAssignedButOnlyUsedInCommentMsg;
-			} else if (command.firstCodeTokenIsKeyword("MESSAGE")) { // MESSAGE ... INTO DATA( )
+			} else if (varInfo.isAssignedInMessageInto()) {
 				return varAssignedButNeverUsedAddPragmaMsg;
 			} else {
 				return varAssignedButNeverUsedMsg;
