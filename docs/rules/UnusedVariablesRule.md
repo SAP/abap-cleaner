@@ -12,6 +12,7 @@ Note that this rule will skip methods in which macros are used.
 * Action for variables only used in commented-out code: \[comment out with \*\]
 * Action for assigned but unused local variables: \[add TODO comment\]
 * Action for assigned variables only used in commented-out code: \[add TODO comment\]
+* Action for variables only assigned in MESSAGE ... INTO: \[add pragma \#\#NEEDED\]
 * Action for local constants that are never used: \[comment out with \*\]
 * Action for constants only used in commented-out code: \[comment out with \*\]
 
@@ -32,6 +33,7 @@ Note that this rule will skip methods in which macros are used.
 
     DATA lv_only_assigned TYPE i.
     DATA lv_assigned_but_used_incomment TYPE i.
+    DATA lv_assigned_in_msg TYPE string.
 
     " with the ##NEEDED pragma, an unused variable will be kept and no TODO added;
     " the pragma also prevents a warning from the Extended Check (SLIN)
@@ -59,6 +61,11 @@ Note that this rule will skip methods in which macros are used.
     CLEAR lv_only_assigned.
     lv_only_assigned = lv_only_assigned + 2.
     MULTIPLY lv_only_assigned BY 2.
+
+    " without INTO, MESSAGE would interrupt the program flow; therefore,
+    " this variable is needed for the intended behavior even if it is never used
+    MESSAGE e123(any_message) INTO DATA(lv_message).
+    MESSAGE e456(other_message) WITH 'any' 'text' INTO lv_assigned_in_msg.
 
     lv_assigned_but_used_incomment = 1.
 
@@ -90,6 +97,7 @@ Resulting code:
     DATA lv_only_assigned TYPE i.
     " TODO: variable is assigned but only used in commented-out code (ABAP cleaner)
     DATA lv_assigned_but_used_incomment TYPE i.
+    DATA lv_assigned_in_msg TYPE string ##NEEDED.
 
     " with the ##NEEDED pragma, an unused variable will be kept and no TODO added;
     " the pragma also prevents a warning from the Extended Check (SLIN)
@@ -117,6 +125,11 @@ Resulting code:
     CLEAR lv_only_assigned.
     lv_only_assigned = lv_only_assigned + 2.
     MULTIPLY lv_only_assigned BY 2.
+
+    " without INTO, MESSAGE would interrupt the program flow; therefore,
+    " this variable is needed for the intended behavior even if it is never used
+    MESSAGE e123(any_message) INTO DATA(lv_message) ##NEEDED.
+    MESSAGE e456(other_message) WITH 'any' 'text' INTO lv_assigned_in_msg.
 
     lv_assigned_but_used_incomment = 1.
 

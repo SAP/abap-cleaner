@@ -1,48 +1,69 @@
 [<-- previous rule](CalculationAssignmentRule.md) | [overview](../rules.md) | [next rule -->](NotIsRule.md)
 
-# Prefer =, <>, <= etc. to EQ, NE, LE etc.
+# Use consistent set of comparison operators
 
-Replaces keywords \(LT, LE, EQ, NE, GT, GE\) with symbolic comparison operators \(<, <=, =, >=, >, <>\).
+Replaces textual comparison operators \(LT, LE, EQ, NE, GE, GT\) with symbolic comparison operators \(<, <=, =, <>, >=, >\) or vice versa.
 
 ## References
 
 * [ABAP Keyword Documentation: Use consistent spelling](https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/index.htm?file=abenlogexp_any_operand.htm)
+* [ABAP Keyword Documentation: Obsolete Relational Operators](https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/index.htm?file=abenobsolete_logexp_op.htm)
 
 ## Options
 
-* \(no options available for this rule\)
+* Preferred set of comparison operators: \[symbolic \(<, <=, =, <>, >=, >\)\]
+* \[X\] Replace regular comparison operators with preferred variant
+* \[X\] Replace obsolete comparison operators \(><  =>  =<\) with preferred variant
 
 ## Examples
 
 
 ```ABAP
 
-  METHOD prefer_symbolic_comparison_ops.
+CLASS any_class IMPLEMENTATION.
+  METHOD use_consistent_comparison_ops.
     IF a EQ b OR c NE d.
-      IF a LT c AND b GT d
-                AND b LT e.
+      IF a < c AND b > d
+               AND b < e.
         IF a LE d AND c GE b.
-          " do something
+          result = xsdbool( a <= d OR a GE b ).
         ENDIF.
       ENDIF.
     ENDIF.
   ENDMETHOD.
+ENDCLASS.
+
+FORM any_form.
+  " these obsolete variants are only possible outside of the object-oriented context:
+  IF a >< b AND b => c OR c =< d.
+    RETURN.
+  ENDIF.
+ENDFORM.
 ```
 
 Resulting code:
 
 ```ABAP
 
-  METHOD prefer_symbolic_comparison_ops.
+CLASS any_class IMPLEMENTATION.
+  METHOD use_consistent_comparison_ops.
     IF a = b OR c <> d.
       IF a < c AND b > d
                AND b < e.
         IF a <= d AND c >= b.
-          " do something
+          result = xsdbool( a <= d OR a >= b ).
         ENDIF.
       ENDIF.
     ENDIF.
   ENDMETHOD.
+ENDCLASS.
+
+FORM any_form.
+  " these obsolete variants are only possible outside of the object-oriented context:
+  IF a <> b AND b >= c OR c <= d.
+    RETURN.
+  ENDIF.
+ENDFORM.
 ```
 
 ## Related code

@@ -6,6 +6,20 @@ as well as bugfixes of reported issues, i.e. anything that enhances or changes t
 For a complete list of changes (including documentation, tests, refactoring etc.), please refer to 
 the list of [commits](../../../commits/main).
 
+## 2024-04-12 (version 1.16.0)
+
+Many **thanks** to [**HuprichT**](https://github.com/HuprichT), [**mraht**](https://github.com/mraht) and 
+[**ConjuringCoffee**](https://github.com/ConjuringCoffee) for all your ideas!
+
+* Changed **Cleanup Settings** (last profile, cleanup range, syntax restriction) to be **workspace-specific** ([#211](../../../issues/211))
+* Renamed rule '**Prefer =, <>, <= etc. to EQ, NE, LE etc.**' to '**Use consistent set of comparison operators**' ([#273](../../../issues/273))
+* Enhanced rule '**Use consistent set of comparison operators**' with option for **preferred** set ([#273](../../../issues/273))
+* Enhanced rule '**Use consistent set of comparison operators**' with replacement of **obsolete** operators ([#283](../../../issues/283))
+* Enhanced rule '**Delete unused variables**' with option to add **##NEEDED** in case of MESSAGE ... INTO ([#275](../../../issues/275))
+* Enhanced rule '**Delete unused variables**' for **MESSAGE INTO** with **upfront declaration** ([#285](../../../issues/285))
+* Updated **ABAP grammar** file
+* Updated **known CamelCase names** for CDS views and fields
+
 ## 2024-03-25 (version 1.15.0)
 
 **Thank you** very much [**jelliottp**](https://github.com/jelliottp), [**BenjaminWeisheit**](https://github.com/BenjaminWeisheit) and
