@@ -95,7 +95,7 @@ public class LocalVariables {
 		return localsInNonCommentUsageOrder;
 	}
 	
-	public VariableInfo addDeclaration(Token identifier, boolean isDeclaredInline, boolean isType, boolean isConstant, boolean isBoundStructuredData, boolean isInOOContext) throws UnexpectedSyntaxBeforeChanges {
+	public VariableInfo addDeclaration(Token identifier, boolean isDeclaredInline, boolean isType, boolean isConstant, boolean isBoundStructuredData, boolean isInOOContext, boolean isAssignedInMessageInto) throws UnexpectedSyntaxBeforeChanges {
 		if (!identifier.isIdentifier())
 			throw new UnexpectedSyntaxBeforeChanges(rule, identifier, "Expected an identifier, but found " + identifier.getTypeAndTextForErrorMessage() + "!");
 
@@ -113,7 +113,7 @@ public class LocalVariables {
 
 		VariableInfo varInfo = new VariableInfo(identifier, isDeclaredInline, isType, isConstant, isBoundStructuredData);
 		if (isDeclaredInline) {
-			varInfo.addAssignment(identifier);
+			varInfo.addAssignment(identifier, isAssignedInMessageInto);
 		}
 		
 		locals.put(key, varInfo);
@@ -141,11 +141,11 @@ public class LocalVariables {
 		}
 	}
 
-	public void addInlineDeclaration(Token identifier, String name) {
-		addUsage(identifier, name, true, false, false, false);
+	public void addInlineDeclaration(Token identifier, String name, boolean isUsageInMessageInto) {
+		addUsage(identifier, name, true, false, false, false, isUsageInMessageInto);
 	}
 	public void addUsageInLikeOrValueClause(Token identifier, String name, Command methodStart, VariableInfo referringDeclaration) {
-		VariableInfo varInfo = addUsage(identifier, name, false, false, false, false);
+		VariableInfo varInfo = addUsage(identifier, name, false, false, false, false, false);
 		if (varInfo == null) 
 			return;
 
@@ -165,9 +165,9 @@ public class LocalVariables {
 		}
 	}
 	public void addUsage(Token identifier, String name) {
-		addUsage(identifier, name, false, false, false, false);
+		addUsage(identifier, name, false, false, false, false, false);
 	}
-	public VariableInfo addUsage(Token identifier, String name, boolean isAssignment, boolean isUsageInSelfAssignment, boolean isCommentedOut, boolean writesToReferencedMemory) {
+	public VariableInfo addUsage(Token identifier, String name, boolean isAssignment, boolean isUsageInSelfAssignment, boolean isCommentedOut, boolean writesToReferencedMemory, boolean isAssignedInMessageInto) {
 		// determine whether the identifier represent a type (rather than a data object);  
 		boolean isType = identifier.isTypeIdentifier(true);
 		
@@ -186,7 +186,7 @@ public class LocalVariables {
 			localsWithNonCommentUsage.add(varInfo);
 		}
 
-		varInfo.addUsage(identifier, isAssignment, isUsageInSelfAssignment, isCommentedOut, writesToReferencedMemory);
+		varInfo.addUsage(identifier, isAssignment, isUsageInSelfAssignment, isCommentedOut, writesToReferencedMemory, isAssignedInMessageInto);
 		return varInfo;
 	}
 	

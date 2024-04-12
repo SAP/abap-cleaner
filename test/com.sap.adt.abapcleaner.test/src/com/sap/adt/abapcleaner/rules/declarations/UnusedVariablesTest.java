@@ -2203,4 +2203,25 @@ class UnusedVariablesTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testMessageIntoWithUpfrontDeclaration() {
+		buildSrc("    DATA lv_msg1 TYPE string.");
+		buildSrc("    DATA lv_msg2 TYPE string.");
+		buildSrc("");
+		buildSrc("    MESSAGE e123(any_message_class) INTO lv_msg1.");
+		buildSrc("    MESSAGE e123(any_message_class) WITH 'any' INTO lv_msg2.");
+
+		buildExp("    \" TODO: variable is assigned but never used; add pragma ##NEEDED (ABAP cleaner)");
+		buildExp("    DATA lv_msg1 TYPE string.");
+		buildExp("    \" TODO: variable is assigned but never used; add pragma ##NEEDED (ABAP cleaner)");
+		buildExp("    DATA lv_msg2 TYPE string.");
+		buildExp("");
+		buildExp("    MESSAGE e123(any_message_class) INTO lv_msg1.");
+		buildExp("    MESSAGE e123(any_message_class) WITH 'any' INTO lv_msg2.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }
