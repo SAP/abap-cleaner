@@ -956,6 +956,8 @@ public class Command {
 			if (firstCode.matchesOnSiblings(true, "CLASS", TokenSearch.makeOptional(":"), TokenSearch.ANY_IDENTIFIER, "DEFINITION", "DEFERRED")
 					|| firstCode.matchesOnSiblings(true, "CLASS", TokenSearch.makeOptional(":"), TokenSearch.ANY_IDENTIFIER, "DEFINITION", "LOCAL", "FRIENDS")) {
 				usedLevelOpener = null;
+				// in a program, START-OF-SELECTION is NOT closed by CLASS ... DEFINITION DEFERRED: any Command after it is executed as part of START-OF-SELECTION
+				usedLevelCloser = null;
 				firstToken.setOpensLevel(false);
 			}
 		}

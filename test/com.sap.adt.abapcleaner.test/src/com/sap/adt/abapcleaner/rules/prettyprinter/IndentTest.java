@@ -1014,4 +1014,56 @@ class IndentTest extends RuleTestBase {
 		
 		testRule();
 	}
+
+	@Test
+	void testClassDefinitionDeferredChainInEvent() {
+		// ensure that the 'CLASS: ... DEFINITION DEFERRED' chain is accepted by the parser, 
+		// and that it does NOT close the START-OF-SELECTION block: the 'WRITE 2' Command is executed as part of this block
+		
+		buildSrc("REPORT any_report.");
+		buildSrc("");
+		buildSrc("START-OF-SELECTION.");
+		buildSrc("WRITE 1.");
+		buildSrc("CLASS: lcl_any DEFINITION DEFERRED,");
+		buildSrc("       lcl_other DEFINITION DEFERRED.");
+		buildSrc("WRITE 2.");
+		buildSrc("");
+		buildSrc("CLASS lcl_any DEFINITION.");
+		buildSrc("  PUBLIC SECTION.");
+		buildSrc("ENDCLASS.");
+		buildSrc("");
+		buildSrc("CLASS lcl_any IMPLEMENTATION.");
+		buildSrc("ENDCLASS.");
+		buildSrc("");
+		buildSrc("CLASS lcl_other DEFINITION.");
+		buildSrc("  PUBLIC SECTION.");
+		buildSrc("ENDCLASS.");
+		buildSrc("");
+		buildSrc("CLASS lcl_other IMPLEMENTATION.");
+		buildSrc("ENDCLASS.");
+
+		buildExp("REPORT any_report.");
+		buildExp("");
+		buildExp("START-OF-SELECTION.");
+		buildExp("  WRITE 1.");
+		buildExp("  CLASS: lcl_any DEFINITION DEFERRED,");
+		buildExp("         lcl_other DEFINITION DEFERRED.");
+		buildExp("  WRITE 2.");
+		buildExp("");
+		buildExp("CLASS lcl_any DEFINITION.");
+		buildExp("  PUBLIC SECTION.");
+		buildExp("ENDCLASS.");
+		buildExp("");
+		buildExp("CLASS lcl_any IMPLEMENTATION.");
+		buildExp("ENDCLASS.");
+		buildExp("");
+		buildExp("CLASS lcl_other DEFINITION.");
+		buildExp("  PUBLIC SECTION.");
+		buildExp("ENDCLASS.");
+		buildExp("");
+		buildExp("CLASS lcl_other IMPLEMENTATION.");
+		buildExp("ENDCLASS.");
+
+		testRule();
+	}
 }
