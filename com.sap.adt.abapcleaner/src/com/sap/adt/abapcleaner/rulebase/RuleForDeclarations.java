@@ -738,6 +738,7 @@ public abstract class RuleForDeclarations extends Rule {
 		// because the data reference could be passed on and the data changed from any place. This is relevant for: 
 
 		// Both a) and b) is only relevant in the following cases:
+		// - ASSIGN COMPONENT ... OF STRUCTURE struc TO <fs>
 		// - ASSIGN ...itab... TO <fs>
 		// - LOOP AT [GROUP] itab ... ASSIGNING <fs> / REFERENCE INTO dref
 		// - READ TABLE itab ... ASSIGNING <fs> / REFERENCE INTO dref
@@ -754,7 +755,9 @@ public abstract class RuleForDeclarations extends Rule {
 		Token firstCode = fieldSymbolOrDataRef.getParentCommand().getFirstCodeToken();
 		if (firstCode == null)
 			return;
-		Token lastKeyword = firstCode.getLastTokenOnSiblings(true, "ASSIGN");
+		Token lastKeyword = firstCode.getLastTokenOnSiblings(true, "ASSIGN", "COMPONENT", TokenSearch.ASTERISK, "OF", "STRUCTURE");
+		if (lastKeyword == null)
+			lastKeyword = firstCode.getLastTokenOnSiblings(true, "ASSIGN");
 		if (lastKeyword == null)
 			lastKeyword = firstCode.getLastTokenOnSiblings(true, "LOOP", "AT", TokenSearch.makeOptional("GROUP"));
 		if (lastKeyword == null)

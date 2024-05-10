@@ -705,4 +705,18 @@ class FinalVariableTest extends RuleTestBase {
 		
 		testRule();
 	}
+
+	@Test
+	void testAssignComponentOfStructureDataKept() {
+		// ensure that the write access to LS_STRUC is identified, so DATA is kept
+		buildSrc("    DATA(ls_struc) = get_structure( ).");
+		buildSrc("    ASSIGN COMPONENT iv_component_name OF STRUCTURE ls_struc TO FIELD-SYMBOL(<lv_field>).");
+		buildSrc("    CLEAR <lv_field>.");
+
+		copyExpFromSrc();
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }
