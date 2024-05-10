@@ -558,4 +558,25 @@ class AddToEtcTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testMacroDefinition() {
+		buildSrc("DEFINE any_macro.");
+		buildSrc("  ADD &1 TO &2.");
+		buildSrc("  SUBTRACT &1 FROM &2.");
+		buildSrc("  MULTIPLY &1 BY &2.");
+		buildSrc("  DIVIDE &1 BY &2.");
+		buildSrc("END-OF-DEFINITION.");
+
+		buildExp("DEFINE any_macro.");
+		buildExp("  &2 += &1.");
+		buildExp("  &2 -= &1.");
+		buildExp("  &1 *= &2.");
+		buildExp("  &1 /= &2.");
+		buildExp("END-OF-DEFINITION.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }

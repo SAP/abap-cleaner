@@ -1133,4 +1133,9 @@ public final class ABAP {
 	public static boolean mayBeTextSymbol(String tokenText) {
 		return (tokenText.length() == TEXT_SYMBOL_PREFIX.length() + TEXT_SYMBOL_ID_LENGTH) && AbapCult.stringEquals(tokenText.substring(0, TEXT_SYMBOL_PREFIX.length()), TEXT_SYMBOL_PREFIX, true);
 	}
+
+	public static boolean isPlaceholderInMacroDefinition(String tokenText) { 
+		return tokenText.length() == 2 && tokenText.charAt(0) == '&' && Character.isDigit(tokenText.charAt(1)) && tokenText.charAt(1) != '0';  
+	}
+	
 }

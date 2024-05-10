@@ -154,4 +154,23 @@ public class CondenseTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testMacroDefinition() {
+		buildSrc("DEFINE any_macro.");
+		buildSrc("  CONDENSE &1.");
+		buildSrc("  CONDENSE &1 NO-GAPS.");
+		buildSrc("END-OF-DEFINITION.");
+
+		buildExp("DEFINE any_macro.");
+		buildExp("  &1 = condense( &1 ).");
+		buildExp("  &1 = condense( val  = &1");
+		buildExp("                 from = ` `");
+		buildExp("                 to   = `` ).");
+		buildExp("END-OF-DEFINITION.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }	

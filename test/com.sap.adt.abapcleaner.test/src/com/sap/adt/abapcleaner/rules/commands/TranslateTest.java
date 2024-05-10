@@ -269,4 +269,25 @@ public class TranslateTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testMacroDefinition() {
+		buildSrc("DEFINE any_macro.");
+		buildSrc("  TRANSLATE &1 TO UPPER CASE.");
+		buildSrc("  TRANSLATE &1 TO LOWER CASE.");
+		buildSrc("  TRANSLATE &1 USING 'abbaABBA'.");
+		buildSrc("END-OF-DEFINITION.");
+
+		buildExp("DEFINE any_macro.");
+		buildExp("  &1 = to_upper( &1 ).");
+		buildExp("  &1 = to_lower( &1 ).");
+		buildExp("  &1 = translate( val  = &1");
+		buildExp("                  from = `abAB`");
+		buildExp("                  to   = `baBA` ).");
+		buildExp("END-OF-DEFINITION.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }	
