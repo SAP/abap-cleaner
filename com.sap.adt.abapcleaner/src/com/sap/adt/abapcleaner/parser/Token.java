@@ -168,7 +168,7 @@ public class Token {
 	public final boolean isChainColon() { return (type == TokenType.COLON); }
 
 	public final boolean isTextSymbol() { return (type == TokenType.KEYWORD && ABAP.mayBeTextSymbol(text)); }
-	
+
 	final boolean getMayBeIdentifier() { return (type == TokenType.IDENTIFIER) || isKeyword() || isTextualComparisonOp(); }
 
 	public final boolean isTextFieldLiteral() {
@@ -280,7 +280,8 @@ public class Token {
 		// in typical ambiguous cases, prefer the supplied TokenType
 		if (token.type != type) {
 			if ((token.type == TokenType.KEYWORD && type == TokenType.IDENTIFIER) 
-			 || (token.type == TokenType.IDENTIFIER && type == TokenType.KEYWORD)) {
+			 || (token.type == TokenType.IDENTIFIER && type == TokenType.KEYWORD)
+			 || (token.type == TokenType.OTHER_OP && type == TokenType.IDENTIFIER && ABAP.isPlaceholderInMacroDefinition(token.text))) {
 				token.type = type;
 			} else if ((token.type == TokenType.ASSIGNMENT_OP && type == TokenType.COMPARISON_OP) 
 					  || (token.type == TokenType.COMPARISON_OP && type == TokenType.ASSIGNMENT_OP)) {

@@ -236,4 +236,27 @@ class MoveToTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testMacroDefinition() {
+		buildSrc("DEFINE any_macro.");
+		buildSrc("  MOVE &1 TO &2.");
+		buildSrc("  MOVE &1 ?TO &2.");
+		buildSrc("  MOVE EXACT &1 TO &2.");
+		buildSrc("  MOVE: &1 TO &2,");
+		buildSrc("        &3 TO &4.");
+		buildSrc("END-OF-DEFINITION.");
+
+		buildExp("DEFINE any_macro.");
+		buildExp("  &2 = &1.");
+		buildExp("  &2 ?= &1.");
+		buildExp("  &2 = EXACT #( &1 ).");
+		buildExp("  &2 = &1.");
+		buildExp("  &4 = &3.");
+		buildExp("END-OF-DEFINITION.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }
