@@ -6,6 +6,18 @@ as well as bugfixes of reported issues, i.e. anything that enhances or changes t
 For a complete list of changes (including documentation, tests, refactoring etc.), please refer to 
 the list of [commits](../../../commits/main).
 
+## 2024-05-13 (version 1.16.1)
+
+**Thanks** a lot to [**xkollar2**](https://github.com/xkollar2), [**phenschke**](https://github.com/phenschke) and
+[**mraht**](https://github.com/mraht) for the issues behind these improvements!
+
+* Fixed **parser** for CLASS: ... **DEFINITION DEFERRED chains** ([#294](../../../issues/294))
+* Fixed rule '**Use FINAL for immutable variables**' for **ASSIGN COMPONENT** ... OF STRUCTURE ([#297](../../../issues/297))
+* Fixed rule '**Replace TRANSLATE with string functions**' etc. for **placeholders** in macro definitions ([#298](../../../issues/298))
+* Fixed rule '**Align declarations**' for TYPES at the end of an **INCLUDE TYPE** line
+* Fixed rule '**Align parameters and components**' for assignments after **BASE**
+* Updated **known CamelCase names** for CDS views and fields
+
 ## 2024-04-12 (version 1.16.0)
 
 Many **thanks** to [**HuprichT**](https://github.com/HuprichT), [**mraht**](https://github.com/mraht) and 
