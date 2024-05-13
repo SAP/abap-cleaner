@@ -2925,6 +2925,35 @@ class AlignParametersTest extends RuleTestBase {
 	}
 
 	@Test
+	void testTableExprKeyAndComponents() {
+		buildSrc("    lts_any_table = VALUE #( BASE lts_any_table");
+		buildSrc("        \" comment");
+		buildSrc("        ( VALUE #( BASE lts_any_table[ KEY any_key any_comp = '1' other_comp = '2' ]");
+		buildSrc("                   other_comp = 'A' ) )");
+		buildSrc("        \" comment");
+		buildSrc("        ( VALUE #( BASE lts_any_table[ KEY any_key any_comp = '3' other_comp = '4' ]");
+		buildSrc("                   other_comp = 'B' \" comment");
+		buildSrc("                   third_comp = 'C' ) ) ).");
+
+		buildExp("    lts_any_table = VALUE #( BASE lts_any_table");
+		buildExp("                             \" comment");
+		buildExp("                             ( VALUE #( BASE lts_any_table[ KEY any_key");
+		buildExp("                                                            any_comp   = '1'");
+		buildExp("                                                            other_comp = '2' ]");
+		buildExp("                                        other_comp = 'A' ) )");
+		buildExp("                             \" comment");
+		buildExp("                             ( VALUE #( BASE lts_any_table[ KEY any_key");
+		buildExp("                                                            any_comp   = '3'");
+		buildExp("                                                            other_comp = '4' ]");
+		buildExp("                                        other_comp = 'B' \" comment");
+		buildExp("                                        third_comp = 'C' ) ) ).");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
 	void testClosingParenthesesNotMoved() {
 		// ensure that neither the closing parentheses nor the rest of the Command are moved to the right
 		// (this case can happen if ClosingBracketsPositionRule is deactivated)

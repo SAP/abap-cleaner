@@ -454,7 +454,7 @@ public class AlignDeclarationsRule extends AlignDeclarationSectionRuleBase {
 			Command command = startCommand;
 			String keywordOfFirstCommand = firstToken.getText();
 			while (command != endCommand) {
-				if (command.getFirstToken().isAnyKeyword(keywordOfFirstCommand) && command.isSimpleChain()) {
+				if (command.getFirstToken().isAnyKeyword(keywordOfFirstCommand) && command.isSimpleChain() && command.getFirstToken().isFirstTokenInLine()) {
 					Token colon = command.getFirstToken().getNextNonCommentSibling();
 					if (colon.isChainColon() && colon.lineBreaks == 0) {
 						basicIdentifierIndent = Math.max(basicIdentifierIndent, colon.getEndIndexInLine() + 1);
@@ -574,7 +574,16 @@ public class AlignDeclarationsRule extends AlignDeclarationSectionRuleBase {
 		// the keywords (and the colons following them, if any) are included in the table in cases where 
 		// the remaining content shall be aligned behind (not below) the keywords
 		Command command = token.getParentCommand();
-		if (includeKeywordInTable) {
+		Command prevCommand = command.getPrev();
+		
+		// skip the special case of a 'TYPES' at the end of an 'INCLUDE TYPE ...' line, so the 'TYPES:' is kept at line end:
+		// TYPES: BEGIN OF ts_any.
+		//          INCLUDE TYPE ty_s_other AS other. TYPES:
+		//          comp TYPE i,
+		//        END OF ts_any.
+		boolean isTypesAtEndOfIncludeLine = (includeKeywordInTable && token.lineBreaks == 0 && token.textEquals("TYPES") && prevCommand != null && prevCommand.firstCodeTokenIsKeyword("INCLUDE")); 
+
+		if (includeKeywordInTable && !isTypesAtEndOfIncludeLine) {
 			AlignCell newCell;
 			if (command.isSimpleChain()) {
 				Token colon = token.getNextNonCommentSibling();
