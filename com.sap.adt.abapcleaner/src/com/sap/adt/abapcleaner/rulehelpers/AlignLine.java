@@ -79,10 +79,22 @@ public class AlignLine {
 
 	public final Token getFirstToken() {
 		for (AlignCell cell : cells) {
-			if (cell != null)
+			if (cell != null) {
 				return cell.getFirstToken();
+			}
 		}
 		return null;
+	}
+
+	public final int getFirstTokenColumnIndex() {
+		int index = 0;
+		for (AlignCell cell : cells) {
+			if (cell != null) {
+				return index;
+			}
+			++index;
+		}
+		return -1;
 	}
 
 	public final int getLastCellIndex() {

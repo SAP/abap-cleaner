@@ -2860,4 +2860,96 @@ class AlignParametersTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testStructureWithBase() {
+		buildSrc("  ls_any = VALUE #( BASE ls_any compA = 1 componentB = 'ABC' ).");
+		buildSrc("  ls_any = VALUE #( BASE lt_any[ 1 ] compA = 1 componentB = 'ABC' ).");
+
+		buildExp("  ls_any = VALUE #( BASE ls_any");
+		buildExp("                    compA      = 1");
+		buildExp("                    componentB = 'ABC' ).");
+		buildExp("  ls_any = VALUE #( BASE lt_any[ 1 ]");
+		buildExp("                    compA      = 1");
+		buildExp("                    componentB = 'ABC' ).");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testTableRowsOfStructuresWithBase() {
+		buildSrc("  lt_any = VALUE #( ( VALUE #( BASE ls_any compA = 1 componentB = 'ABC' ) ) ).");
+		buildSrc("  lt_any = VALUE #( ( VALUE #( BASE lt_any[ 1 ] compA = 1 componentB = 'ABC' ) ) ).");
+		buildSrc("  lt_any = VALUE #( ( VALUE #( BASE ls_any compA = 1");
+		buildSrc("           componentB = 'ABC' ) )");
+		buildSrc("           ( VALUE #( BASE lt_any[ 1 ] compA = 2");
+		buildSrc("           componentB = 'DEF' ) ) ).");
+
+		buildExp("  lt_any = VALUE #( ( VALUE #( BASE ls_any");
+		buildExp("                               compA      = 1");
+		buildExp("                               componentB = 'ABC' ) ) ).");
+		buildExp("  lt_any = VALUE #( ( VALUE #( BASE lt_any[ 1 ]");
+		buildExp("                               compA      = 1");
+		buildExp("                               componentB = 'ABC' ) ) ).");
+		buildExp("  lt_any = VALUE #( ( VALUE #( BASE ls_any");
+		buildExp("                               compA      = 1");
+		buildExp("                               componentB = 'ABC' ) )");
+		buildExp("                    ( VALUE #( BASE lt_any[ 1 ]");
+		buildExp("                               compA      = 2");
+		buildExp("                               componentB = 'DEF' ) ) ).");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testTableRowsOfOneLinerStrucsWithBase() {
+		rule.configKeepOtherOneLiners.setEnumValue(ComponentsOnSingleLine.ALWAYS);
+
+		buildSrc("  lt_any = VALUE #( ( VALUE #( BASE ls_any compA = 1 componentB = 'ABC' ) ) ).");
+		buildSrc("  lt_any = VALUE #( ( VALUE #( BASE lt_any[ 1 ] compA = 1 componentB = 'ABC' ) ) ).");
+		buildSrc("  lt_any = VALUE #( ( VALUE #( BASE ls_any compA = 1 componentB = 'ABC' ) )");
+		buildSrc("           ( VALUE #( BASE lt_any[ 1 ] compA = 2 componentB = 'DEF' ) ) ).");
+
+		buildExp("  lt_any = VALUE #( ( VALUE #( BASE ls_any compA = 1 componentB = 'ABC' ) ) ).");
+		buildExp("  lt_any = VALUE #( ( VALUE #( BASE lt_any[ 1 ] compA = 1 componentB = 'ABC' ) ) ).");
+		buildExp("  lt_any = VALUE #( ( VALUE #( BASE ls_any compA = 1 componentB = 'ABC' ) )");
+		buildExp("                    ( VALUE #( BASE lt_any[ 1 ] compA = 2 componentB = 'DEF' ) ) ).");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testClosingParenthesesNotMoved() {
+		// ensure that neither the closing parentheses nor the rest of the Command are moved to the right
+		// (this case can happen if ClosingBracketsPositionRule is deactivated)
+		buildSrc("    READ ENTITIES OF C_Any");
+		buildSrc("      ENTITY AnyEntity");
+		buildSrc("      ALL FIELDS");
+		buildSrc("      WITH VALUE #( ( AnyComponent = '1'");
+		buildSrc("        %is_draft = if_abap_behv=>mk-on");
+		buildSrc("      ) )");
+		buildSrc("      RESULT DATA(results_act)");
+		buildSrc("      FAILED DATA(failures_act)");
+		buildSrc("      REPORTED DATA(reported_act).");
+
+		buildExp("    READ ENTITIES OF C_Any");
+		buildExp("      ENTITY AnyEntity");
+		buildExp("      ALL FIELDS");
+		buildExp("      WITH VALUE #( ( AnyComponent = '1'");
+		buildExp("                      %is_draft    = if_abap_behv=>mk-on");
+		buildExp("      ) )");
+		buildExp("      RESULT DATA(results_act)");
+		buildExp("      FAILED DATA(failures_act)");
+		buildExp("      REPORTED DATA(reported_act).");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }

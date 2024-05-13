@@ -524,8 +524,13 @@ public class AlignParametersRule extends RuleForCommands {
 			int startLineBreaks;
 			if (tableStart.forceTableToNextLine) {
 				startLineBreaks = 1;
-			} else { 
-				startLineBreaks = tableStart.continueOnSameLine && (table.getFirstToken() == parentTokenOfFirstLine.getNext() || table.getFirstToken().lineBreaks == 0) ? 0 : 1;
+			} else if (tableStart.continueOnSameLine && table.getFirstToken() == parentTokenOfFirstLine.getNext()) {
+				startLineBreaks = 0;
+			} else if (tableStart.continueOnSameLine && table.getFirstToken().lineBreaks == 0 && table.getFirstTokenColumnIndex() != Columns.PARAMETER.getValue()) {
+				// e.g., keep COMPONENTS on the same line in "its_any[ KEY seckey COMPONENTS comp1 = ..." and only break for "comp2 = ..."
+				startLineBreaks = 0;
+			} else {
+				startLineBreaks = 1;
 			}
 
 			changedCommands = table.align(tableStart.startIndent, startLineBreaks, true);
@@ -567,8 +572,19 @@ public class AlignParametersRule extends RuleForCommands {
 					// in case of WHERE ( ... ), add indent to the whole clause
 					if (other.isKeyword("WHERE") && addIndentEnd.textEquals("(")) {
 						addIndentEnd = addIndentEnd.getNextSibling().getNextSibling();
+					} else if (other.textEquals(")")) {
+						// closing parenthesis found at line start; this can happen if ClosingBracketsPositionRule is deactivated 
+						// or if there is a comment line before the closing parenthesis
+						Token next = other.getNext();
+						if (next != null && next.lineBreaks == 0 && next.textEquals(")")) {
+							// keep multiple closing parentheses where they are, because in this coding style, their line start position
+							// usually depends on the line start of the opening section that corresponds to the last closing parenthesis 
+							continue;
+						}
+						// move the (single) closing parenthesis, but not the rest of the Command
+						addIndentEnd = next;
 					}
-					command.addIndent(otherLineIndent - curIndent, curIndent, other, addIndentEnd);
+					command.addIndent(otherLineIndent - curIndent, curIndent, other, addIndentEnd, true);
 					changed = true;
 				}
 				// if applicable, adjust the line breaks of the first 'otherLine', e.g. moving it behind the parent token 
