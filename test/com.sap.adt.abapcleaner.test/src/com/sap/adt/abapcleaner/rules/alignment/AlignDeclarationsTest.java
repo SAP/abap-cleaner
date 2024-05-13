@@ -1749,4 +1749,31 @@ class AlignDeclarationsTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testTypesAtEndOfIncludeLine() {
+		// expect the second TYPES: to be kept at the end of the respective INCLUDE TYPE line
+
+		buildSrc("    TYPES: BEGIN OF ts_any.");
+		buildSrc("           INCLUDE TYPE ty_s_other AS other. TYPES:");
+		buildSrc("           comp TYPE i,");
+		buildSrc("           END OF ts_any.");
+		buildSrc("    TYPES: BEGIN OF ts_any,");
+		buildSrc("           comp TYPE i.");
+		buildSrc("           INCLUDE TYPE ty_s_other AS other. TYPES");
+		buildSrc("           END OF ts_any.");
+
+		buildExp("    TYPES: BEGIN OF ts_any.");
+		buildExp("             INCLUDE TYPE ty_s_other AS other. TYPES:");
+		buildExp("             comp TYPE i,");
+		buildExp("           END OF ts_any.");
+		buildExp("    TYPES: BEGIN OF ts_any,");
+		buildExp("             comp TYPE i.");
+		buildExp("             INCLUDE TYPE ty_s_other AS other. TYPES");
+		buildExp("           END OF ts_any.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }
