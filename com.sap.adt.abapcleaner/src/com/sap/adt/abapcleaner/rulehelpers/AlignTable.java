@@ -26,6 +26,8 @@ public class AlignTable {
 
 	public final Token getFirstToken() { return isEmpty() ? null : lines.get(0).getFirstToken(); }
 
+	public final int getFirstTokenColumnIndex() { return isEmpty() ? -1 : lines.get(0).getFirstTokenColumnIndex(); }
+
 	public final AlignColumn getColumn(int index) {
 		return (index >= 0 && index < columns.length) ? columns[index] : null;
 	}
