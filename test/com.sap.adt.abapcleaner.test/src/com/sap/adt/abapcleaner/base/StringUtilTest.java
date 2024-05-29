@@ -417,6 +417,16 @@ class StringUtilTest {
 	}
 	
 	@Test
+	void testGetLabelText() {
+		assertEquals("", StringUtil.getLabelText(null));
+		assertEquals("", StringUtil.getLabelText(""));
+		
+		assertEquals("abc", StringUtil.getLabelText("abc"));
+		assertEquals("a && b", StringUtil.getLabelText("a & b"));
+		assertEquals("a &&&& b", StringUtil.getLabelText("a && b"));
+	}
+	
+	@Test
 	void testReadTillEndOfAllowedChars() {
 		assertEquals(null, StringUtil.readTillEndOfAllowedChars(null, 0, "abc"));
 		assertEquals(null, StringUtil.readTillEndOfAllowedChars("", 0, "abc"));

@@ -459,6 +459,22 @@ public final class StringUtil {
 		return sb.toString();
 	}
 
+	/** escapes the mnemonic character & for texts that shall be displayed on an SWT Label */
+	public static String getLabelText(String text) {
+		if (text == null)
+			return "";
+		
+		StringBuilder sb = new StringBuilder();
+		char[] chars = text.toCharArray();
+		for (char c : chars) {
+			// escape the mnemonic character
+			if (c == '&')
+				sb.append("&");
+			sb.append(c);
+		}
+		return sb.toString();
+	}
+	
 	public static String readTillEndOfAllowedChars(String line, int start, String allowedChars) {
 		int end = start;
 		if (line == null)

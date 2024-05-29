@@ -1930,7 +1930,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 	}
 
 	public final void searchTextChanged(String text, boolean found) {
-		lblSearch.setText(text);
+		lblSearch.setText(StringUtil.getLabelText(text));
 		lblSearch.setForeground(found ? searchTextNormalColor : searchTextNotFoundColor);
 	}
 

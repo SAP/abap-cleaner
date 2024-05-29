@@ -732,7 +732,7 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 		lblRuleDescription = new Label(pnlRuleDescription, SWT.NONE);
 		lblRuleDescription.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));
 		lblRuleDescription.setText(".");
-
+		
 		lblRuleHintsAndRestrictions = new Label(pnlRuleDescription, SWT.NONE);
 		lblRuleHintsAndRestrictions.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));
 		lblRuleHintsAndRestrictions.setText(".");
@@ -1174,13 +1174,13 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 
       disposeConfigControls();
 
-      lblRuleName.setText((rule != null && rule.getDisplayName() != null) ? rule.getDisplayName() : "");
+      lblRuleName.setText((rule != null) ? StringUtil.getLabelText(rule.getDisplayName()) : "");
       if (highlighter != null) {
       	highlighter.setRuleNameHighlight(rule);
       }
       
-      lblRuleDescription.setText((rule != null && rule.getDescription() != null) ? rule.getDescription() : "");
-      lblRuleHintsAndRestrictions.setText((rule != null && rule.getHintsAndRestrictions() != null) ? rule.getHintsAndRestrictions() : "");
+      lblRuleDescription.setText((rule != null) ? StringUtil.getLabelText(rule.getDescription()) : "");
+      lblRuleHintsAndRestrictions.setText((rule != null) ? StringUtil.getLabelText(rule.getHintsAndRestrictions()) : "");
 
       // show references
       pnlRuleReferences.setRedraw(false);
@@ -1191,10 +1191,11 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
          String source = "";
          if (reference != null && !StringUtil.isNullOrEmpty(reference.getSourceText())) { 
          	source = reference.getSourceText();
-         	if (!StringUtil.isNullOrEmpty(reference.chapterTitle))
+         	if (!StringUtil.isNullOrEmpty(reference.chapterTitle)) {
          		source += ":";
+         	}
          }
-         lblRuleSources[i].setText(source);
+         lblRuleSources[i].setText(StringUtil.getLabelText(source));
          Rectangle bounds = lblRuleSources[i].getBounds();
          maxRight = Math.max(maxRight, bounds.x + bounds.width);
       }
@@ -1203,7 +1204,7 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
          RuleReference reference = (references == null || i >= references.length) ? null : references[i];
          lblRuleSources[i].setVisible((reference != null));
 
-         lblRuleChapters[i].setText((reference != null && reference.chapterTitle != null) ? reference.chapterTitle : "");
+         lblRuleChapters[i].setText((reference != null) ? StringUtil.getLabelText(reference.chapterTitle) : "");
          ruleChapterLink[i] = (reference != null ? reference.getLink() : null);
          lblRuleChapters[i].setLocation(chapterLeft, lblRuleChapters[i].getLocation().y);
          if (reference != null && highlighter != null) {
