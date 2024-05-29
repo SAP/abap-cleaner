@@ -255,6 +255,7 @@ public class StringTemplateRule extends RuleForCommands {
 		// this loop temporarily violates referential integrity by treating |{ operand }| as three siblings,  
 		// although the operand must be a child of the opening |{ etc.; therefore, all integrity checks must be temporarily skipped 
 		ArrayList<Term> embeddedTerms = new ArrayList<>();
+		Token endOfLastTermInLine = termsInLine.get(termsInLine.size() - 1).lastToken;
 		for (int index = 0; index < termsInLine.size(); ++index) {
 			Term term = termsInLine.get(index);
 			boolean isStringTemplate = term.firstToken.isStringTemplate(); 
@@ -278,7 +279,7 @@ public class StringTemplateRule extends RuleForCommands {
 			}
 			if (prevTerm == null) {
 				// insert |{ before the Term
-				firstToken.insertLeftSibling(Token.createForAbap(firstToken.lineBreaks, firstToken.spacesLeft, "|{", firstToken.sourceLineNum), true, true);
+				firstToken.insertLeftSibling(Token.createForAbap(firstToken.lineBreaks, firstToken.spacesLeft, "|{", firstToken.sourceLineNum), true, endOfLastTermInLine, true);
 				firstToken.setWhitespace();
 			} else if (prevTermIsStringTemplate) {
 				// change (the last Token of) the previous string template to embed this Term, and remove the &&
@@ -286,7 +287,7 @@ public class StringTemplateRule extends RuleForCommands {
 				concatOpsInLine.get(index - 1).removeFromCommand(true, true);
 			} else {
 				// insert }{ before the Term
-				firstToken.insertLeftSibling(Token.createForAbap(firstToken.lineBreaks, firstToken.spacesLeft, "}{", firstToken.sourceLineNum), true, true);
+				firstToken.insertLeftSibling(Token.createForAbap(firstToken.lineBreaks, firstToken.spacesLeft, "}{", firstToken.sourceLineNum), true, endOfLastTermInLine, true);
 				firstToken.setWhitespace();
 				concatOpsInLine.get(index - 1).removeFromCommand(true, true);
 			}

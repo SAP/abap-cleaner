@@ -919,6 +919,19 @@ public class Token {
 	 * @throws IntegrityBrokenException 
 	 */
 	public final Token insertLeftSibling(Token newToken, boolean moveFollowingLinesRight, boolean skipIntegrityTest) throws IntegrityBrokenException {
+		return insertLeftSibling(newToken, moveFollowingLinesRight, null, skipIntegrityTest);
+	}
+
+	/**
+	 * inserts the supplied Token (including its possible children) as a sibling before this Token
+	 * 
+	 * @param newToken
+	 * @param moveFollowingLinesRight
+	 * @param addIndentEndToken
+	 * @param skipIntegrityTest
+	 * @throws IntegrityBrokenException 
+	 */
+	public final Token insertLeftSibling(Token newToken, boolean moveFollowingLinesRight, Token addIndentEndToken, boolean skipIntegrityTest) throws IntegrityBrokenException {
 		if (newToken == null)
 			throw new NullPointerException("newToken");
 		if (closesLevel)
@@ -961,7 +974,7 @@ public class Token {
 		prevSibling = newToken;
 
 		if (moveFollowingLinesRight)
-			parentCommand.addIndent(newToken.spacesLeft + newToken.getTextLength(), oldStartIndex, this, null, true);
+			parentCommand.addIndent(newToken.spacesLeft + newToken.getTextLength(), oldStartIndex, this, addIndentEndToken, true);
 
 		parentCommand.onTokenInserted(newToken);
 		
