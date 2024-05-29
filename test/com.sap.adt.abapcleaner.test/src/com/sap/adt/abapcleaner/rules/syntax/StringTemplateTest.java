@@ -391,4 +391,21 @@ public class StringTemplateTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testConcatOpsAtLineEnd() {
+		buildSrc("    rv_text = iv_date+0(4) && '-' &&");
+		buildSrc("       iv_date+4(2) && '-' &&");
+		buildSrc("       iv_date+6(2) && '-' &&");
+		buildSrc("       iv_add.");
+
+		buildExp("    rv_text = |{ iv_date+0(4) }-| &&");
+		buildExp("       |{ iv_date+4(2) }-| &&");
+		buildExp("       |{ iv_date+6(2) }-| &&");
+		buildExp("       iv_add.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }
