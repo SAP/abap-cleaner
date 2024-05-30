@@ -149,8 +149,9 @@ public class IndentRule extends Rule {
 					else
 						alignMode = AlignWithNextCommandMode.NEVER;
 
-					if (alignMode == AlignWithNextCommandMode.NEVER || (alignMode == AlignWithNextCommandMode.IF_BLANK_LINE_ABOVE && command.getFirstTokenLineBreaks() < 2))
+					if (alignMode == AlignWithNextCommandMode.NEVER || (alignMode == AlignWithNextCommandMode.IF_BLANK_LINE_ABOVE && command.getFirstTokenLineBreaks() < 2)) {
 						alignCommand = null;
+					}
 				}
 			}
 

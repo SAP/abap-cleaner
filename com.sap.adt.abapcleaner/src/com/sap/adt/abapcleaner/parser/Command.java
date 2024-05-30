@@ -575,7 +575,7 @@ public class Command {
 		// be further declaration commands, "INCLUDE TYPE|STRUCTURE ...", or comment lines. 
 
 		newCommand.indentAdd = this.indentAdd;
-		if (isSelectionScreenElement()) {  
+		if (isSelectionScreenElement()) { // || not needed: isDeclaration()    
 			// increase indentAdd if the existing Command starts more BEGIN OF blocks than it ends
 			int beginOfCount = firstToken.getSequenceCount(true, true, TokenSearch.ASTERISK, "BEGIN", "OF");
 			int endOfCount = firstToken.getSequenceCount(true, true, TokenSearch.ASTERISK, "END", "OF");
@@ -583,7 +583,7 @@ public class Command {
 				newCommand.indentAdd += beginOfCount - endOfCount;
 			}
 		}
-		if (newCommand.isSelectionScreenElement()) {  
+		if (newCommand.isSelectionScreenElement()) { // not needed: || newCommand.isDeclaration()  
 			// decrease indentAdd if the new Command ends more blocks than it starts
 			int beginOfCount = newCommand.firstToken.getSequenceCount(true, true, TokenSearch.ASTERISK, "BEGIN", "OF");
 			int endOfCount = newCommand.firstToken.getSequenceCount(true, true, TokenSearch.ASTERISK, "END", "OF");
@@ -1499,9 +1499,40 @@ public class Command {
 		// add indent
 		result += ABAP.INDENT_STEP * indentAdd;
 
+		// in the special case of INCLUDE TYPE|STRUCTURE ... inside of a BEGIN OF ... END OF block, mimic PrettyPrinter 
+		// behavior by making the indentation depend on the previous component / BEGIN OF / END OF line (note that 
+		// PrettyPrinter only does this if the previous Command is a chain, otherwise it indents INCLUDE just like TYPES!)
+		// This is especially important if AlignDeclarationsRule is deactivated. 
+		if (isDeclarationInclude()) {
+			command = getPrevNonCommentCommand();
+			// skip previous INCLUDE TYPE|STRUCTURE lines
+			while (command != null && command.isDeclarationInclude())
+				command = command.getPrevNonCommentCommand();
+			if (command != null && command.isDeclaration() && command.isSimpleChain()) {
+				// make the indent of INCLUDE depend on the previous component / END OF ... / BEGIN OF ... 
+				Token lastChainElemStart = command.getLastChainElementStart();
+				result = lastChainElemStart.getStartIndexInLine();
+				if (lastChainElemStart.matchesOnSiblings(true, "BEGIN", "OF")) {
+					result += ABAP.INDENT_STEP;
+				} // otherwise, use the same indent as the previous component or the 'END OF ...' line
+			}
+		}
+
 		return result;
 	}
 
+	/** returns the first code Token of the last chain element, i.e. the code Token after : or the last , 
+	 * (or returns null for a non-chained Command) */
+	public Token getLastChainElementStart() {
+		Token token = lastToken;
+		while (token != null) {
+			if (token.isChainColon() || token.isComma())
+				return token.getNextCodeSibling();
+			token = token.getPrevCodeSibling();
+		}
+		return null;
+	}
+	
 	public final boolean addIndent(int addSpaceCount, int minSpacesLeft) {
 		return addIndent(addSpaceCount, minSpacesLeft, null, null, false);
 	}

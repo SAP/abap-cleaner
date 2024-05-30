@@ -1066,4 +1066,61 @@ class IndentTest extends RuleTestBase {
 
 		testRule();
 	}
+
+
+	@Test
+	void testPrettyPrintingKeptForIncludeInTypesChain() {
+		// ensure that IndentRule does NOT conflict with the way PrettyPrinter aligns TYPES chains with INCLUDE
+		// (esp. for the case that AlignDeclarationsRule is deactivated)
+
+		buildSrc("    TYPES: BEGIN OF ty_s_any,");
+		buildSrc("             comp1 TYPE i.");
+		buildSrc("             INCLUDE TYPE ty_s_other AS other.");
+		buildSrc("             INCLUDE TYPE ty_s_third.");
+		buildSrc("    TYPES:   comp2 TYPE string,");
+		buildSrc("           END OF ty_s_any.");
+		buildSrc("");
+		buildSrc("    TYPES: BEGIN OF ty_s_any.");
+		buildSrc("             INCLUDE TYPE ty_s_other AS other.");
+		buildSrc("             INCLUDE TYPE ty_s_third.");
+		buildSrc("    TYPES:   comp TYPE string,");
+		buildSrc("           END OF ty_s_any.");
+		buildSrc("");
+		buildSrc("    TYPES:");
+		buildSrc("      BEGIN OF ty_s_any.");
+		buildSrc("        INCLUDE TYPE ty_s_other AS other.");
+		buildSrc("        INCLUDE TYPE ty_s_third.");
+		buildSrc("    TYPES:");
+		buildSrc("        comp TYPE string,");
+		buildSrc("      END OF ty_s_any.");
+
+		copyExpFromSrc();
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testPrettyPrintingKeptForIncludeInTypesNonChain() {
+		// ensure that IndentRule does NOT conflict with the way PrettyPrinter aligns TYPES non-chains with INCLUDE
+		// (esp. for the case that AlignDeclarationsRule is deactivated)
+
+		buildSrc("    TYPES BEGIN OF ty_s_any.");
+		buildSrc("    TYPES comp1 TYPE i.");
+		buildSrc("    INCLUDE TYPE ty_s_other AS other.");
+		buildSrc("    TYPES comp2 TYPE string.");
+		buildSrc("    TYPES END OF ty_s_any.");
+		buildSrc("");
+		buildSrc("    TYPES BEGIN OF ty_s_any.");
+		buildSrc("    INCLUDE TYPE ty_s_other AS other.");
+		buildSrc("    TYPES comp TYPE string.");
+		buildSrc("    TYPES END OF ty_s_any.");
+
+		copyExpFromSrc();
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }
