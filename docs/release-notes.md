@@ -6,6 +6,15 @@ as well as bugfixes of reported issues, i.e. anything that enhances or changes t
 For a complete list of changes (including documentation, tests, refactoring etc.), please refer to 
 the list of [commits](../../../commits/main).
 
+## 2024-06-03 (version 1.16.2)
+
+Many **thanks** to [**hansdampfinger666**](https://github.com/hansdampfinger666) and [**fmabap**](https://github.com/fmabap) 
+for your contributions and ideas that led to these improvements!
+
+* Fixed rule '**Indent lines**' for **PrettyPrinter indentation of INCLUDE** ([#278](../../../issues/278))
+* Fixed rule '**Use string templates to assemble text**' for concatenation **operators at line end** ([#306](../../../issues/306))
+* Updated **known CamelCase names** for CDS views and fields
+
 ## 2024-05-13 (version 1.16.1)
 
 **Thanks** a lot to [**xkollar2**](https://github.com/xkollar2), [**phenschke**](https://github.com/phenschke) and
