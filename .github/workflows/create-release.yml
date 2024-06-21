@@ -16,10 +16,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      - name: Set up JDK 17
+      - name: Set up JDK
         uses: actions/setup-java@v3
         with:
-          java-version: '17'
+          java-version: '21'
           distribution: 'temurin'
       - name: Build with Maven
         run: mvn --batch-mode clean package -DskipTests
@@ -36,7 +36,7 @@ jobs:
           body: | 
             We recommend using the ABAP cleaner **plug-in for ADT** (see [installation instructions](../../blob/main/README.md)), which cleans up your code directly from within ADT, and checks for updates automatically. If you nevertheless prefer to use the **stand-alone version** of ABAP cleaner (e.g. in order to use it with SAP GUI or from the command line), please 
 
-            * make sure Java 17 or 11 (e.g. [SapMachine](https://sap.github.io/SapMachine/) or [Adoptium Temurin](https://adoptium.net/)) is installed on your system, and in the app 'Edit the system environment variables' (Windows), System variable 'Path' contains the path to the java.exe (e.g. C:\Program Files\SapMachine\JDK\17\bin)
+            * make sure Java 21 or 17 (e.g. [SapMachine](https://sap.github.io/SapMachine/) or [Adoptium Temurin](https://adoptium.net/)) is installed on your system, and in the app 'Edit the system environment variables' (Windows), System variable 'Path' contains the path to the java.exe (e.g. C:\Program Files\SapMachine\JDK\17\bin)
             * expand "Assets" below and download the archive for your operating system
             * extract the archive
             * on macOS:

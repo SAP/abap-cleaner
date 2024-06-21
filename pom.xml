@@ -15,9 +15,10 @@
     <module>test</module>
   </modules>
   <properties>
-    <tycho-version>3.0.1</tycho-version>
+    <tycho-version>4.0.8</tycho-version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <executionEnvironment>JavaSE-11</executionEnvironment>
+    <executionEnvironment>JavaSE-17</executionEnvironment>
+    <maven.compiler.release>17</maven.compiler.release>
   </properties>
   <build>
     <plugins>
@@ -72,6 +73,7 @@
         <version>${tycho-version}</version>
         <configuration>
           <trimStackTrace>false</trimStackTrace>
+          <useJDK>BREE</useJDK> <!-- Run tests with BREE execution environment (minimum JDK supported), requires matching entry in ~/.m2/toolchains.xml with id == JavaSE-XX" -->
           <dependencies>
             <!-- avoid CNFE in Surefire when looking for JUnitPlatformProvider -->
             <dependency>
@@ -86,12 +88,12 @@
   <repositories>
     <repository>
       <id>eclipse</id>
-      <url>https://download.eclipse.org/releases/2022-12</url>
+      <url>https://download.eclipse.org/releases/2023-06</url>
       <layout>p2</layout>
     </repository>
     <repository>
       <id>adt</id>
-      <url>https://tools.hana.ondemand.com/2022-12</url>
+      <url>https://tools.hana.ondemand.com/2023-06</url>
       <layout>p2</layout>
     </repository>
   </repositories>
