@@ -5,10 +5,10 @@ Bundle-SymbolicName: com.sap.adt.abapcleaner.gui;singleton:=true
 Bundle-Version: 1.16.3.qualifier
 Bundle-Vendor: %Provider-Name
 Bundle-Localization: plugin
-Bundle-RequiredExecutionEnvironment: JavaSE-11
+Bundle-RequiredExecutionEnvironment: JavaSE-17
 Bundle-ActivationPolicy: lazy
 Eclipse-ExtensibleAPI: true
-Require-Bundle: com.sap.adt.abapcleaner;bundle-version="0.0.0",
+Require-Bundle: com.sap.adt.abapcleaner;bundle-version="1.16.3",
  org.eclipse.core.runtime,
  org.eclipse.core.resources,
  org.eclipse.core.expressions,
@@ -19,10 +19,10 @@ Require-Bundle: com.sap.adt.abapcleaner;bundle-version="0.0.0",
  org.eclipse.ui.ide,
  org.eclipse.ui.workbench,
  org.eclipse.ui.workbench.texteditor,
- com.sap.adt.util.ui,
- com.sap.adt.tools.core.ui,
- com.sap.adt.tools.abapsource,
- com.sap.adt.tools.abapsource.ui
+ com.sap.adt.util.ui;bundle-version="3.38.2",
+ com.sap.adt.tools.core.ui;bundle-version="3.38.2",
+ com.sap.adt.tools.abapsource;bundle-version="3.38.2",
+ com.sap.adt.tools.abapsource.ui;bundle-version="3.38.2"
 Automatic-Module-Name: com.sap.adt.abapcleaner.gui
 Import-Package: com.sap.adt.tools.abapsource.parser.padfileresolver.internal,
  com.sap.rnd.rndrt

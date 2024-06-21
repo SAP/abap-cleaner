@@ -122,7 +122,7 @@ To install and use the **ABAP cleaner plug-in for ABAP Development Tools** (ADT)
    (shortcuts *Ctrl + 4* or *Ctrl + Shift + 4*), see [usage](docs/usage.md).
 
 The **stand-alone version of ABAP cleaner** (for Windows, macOS or Linux) 
-requires Java 17 or 11 (e.g. [SapMachine](https://sap.github.io/SapMachine/) or [Adoptium Temurin](https://adoptium.net/)). 
+requires Java 21 or 17 (e.g. [SapMachine](https://sap.github.io/SapMachine/) or [Adoptium Temurin](https://adoptium.net/)). 
 To install the stand-alone version, please download and extract the latest [Release](../../releases) 
 and follow the installation instructions given there.
 

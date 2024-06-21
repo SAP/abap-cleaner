@@ -1,12 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?pde version="3.5"?>
 
-<product name="ABAP cleaner" uid="com.sap.adt.abapcleaner.app" application="com.sap.adt.abapcleaner.standalone.app" version="1.16.3.qualifier" useFeatures="true" includeLaunchers="true">
+<product name="ABAP cleaner" uid="com.sap.adt.abapcleaner.app" application="com.sap.adt.abapcleaner.standalone.app" version="1.16.3.qualifier" type="features" includeLaunchers="true" autoIncludeRequirements="true">
 
    <configIni use="default">
    </configIni>
 
    <launcherArgs>
+      <vmArgs>-Dosgi.requiredJavaVersion=17
+      </vmArgs>
       <vmArgsMac>-XstartOnFirstThread -Dorg.eclipse.swt.internal.carbon.smallFonts
       </vmArgsMac>
    </launcherArgs>
