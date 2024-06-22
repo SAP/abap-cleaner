@@ -1829,7 +1829,15 @@ public class Command {
 		}
 		String insertText = ABAP.COMMENT_SIGN_STRING + " " + commentText.trim();
 		Token newComment = Token.create(firstInLine.lineBreaks, firstInLine.spacesLeft, insertText, firstInLine.sourceLineNum, language);
-		firstInLine.lineBreaks = 1;
+
+		// if this Command follows another Command on the same line, put both the comment and this Command to an own line
+		if (firstInLine == firstToken && firstInLine.lineBreaks == 0 && !isFirstCommandInCode()) {
+			int indent = getIndent();
+			firstInLine.setWhitespace(1, indent);
+			newComment.setWhitespace(1, indent);
+		} else {
+			firstInLine.lineBreaks = 1;
+		}
 		
 		if (firstInLine.getPrev() == null) {
 			// check whether the comment was already created in a previous cleanup run, potentially checking multiple attached comments

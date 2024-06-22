@@ -45,6 +45,7 @@ public class CommandLineArgs {
 
 	public static String[] getAllOptions() { return allOptions; }
 	
+	@SuppressWarnings("unused")
 	public static CommandLineArgs create(Persistency persistency, String[] args) {
 		if (args == null || args.length == 0)
 			return null;
@@ -110,7 +111,7 @@ public class CommandLineArgs {
 				targetDir = persistency.getAbsolutePath(nextArg);
 
 			} else if (arg.equals(OPT_LINE_RANGE)) {
-				String lineRange = nextArg;
+				String lineRange = (nextArg == null) ? "" : nextArg;
 				int sepPos = lineRange.indexOf(LINE_RANGE_SEP);
 				int startLine = (sepPos <= 0) ? -1 : Integer.valueOf(lineRange.substring(0, sepPos));
 				int lastLine = (sepPos < 0 || sepPos + 1 >= lineRange.length()) ? -1 : Integer.valueOf(lineRange.substring(sepPos + 1));
@@ -163,8 +164,9 @@ public class CommandLineArgs {
 			}
 			
 			// skip next argument, since it was already consumed above
-			if (nextArg != null)
+			if (nextArg != null) {
 				++i;
+			}
 		}
 		
 		if (sourceDir != null && sourceCode != null) {

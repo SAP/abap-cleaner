@@ -409,4 +409,19 @@ public class NeedlessClearTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testClearOnSameLineAsPrevCommand() {
+		buildSrc("    DATA lo_any TYPE REF TO lcl_any.");
+		buildSrc("    FREE lo_any. CLEAR lo_any.");
+
+		buildExp("    DATA lo_any TYPE REF TO lcl_any.");
+		buildExp("    FREE lo_any.");
+		buildExp("    \" TODO: remove needless CLEAR (ABAP cleaner)");
+		buildExp("    CLEAR lo_any.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }
