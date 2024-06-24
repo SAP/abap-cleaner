@@ -2,7 +2,7 @@
 <feature
       id="com.sap.adt.abapcleaner.feature"
       label="ABAP cleaner"
-      version="1.17.1">
+      version="1.17.2.qualifier">
 
    <description>
       ABAP cleaner plug-in for ABAP Development Tools
