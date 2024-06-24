@@ -6,7 +6,7 @@ as well as bugfixes of reported issues, i.e. anything that enhances or changes t
 For a complete list of changes (including documentation, tests, refactoring etc.), please refer to 
 the list of [commits](../../../commits/main).
 
-## 2024-06-24 (version 1.17.0)
+## 2024-06-24 (version 1.17.1)
 
 **Thanks a lot**, [**agoeb**](https://github.com/agoeb) and [**matthewdjb**](https://github.com/matthewdjb) for the bug reports behind these improvements!
 
