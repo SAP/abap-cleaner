@@ -6,6 +6,15 @@ as well as bugfixes of reported issues, i.e. anything that enhances or changes t
 For a complete list of changes (including documentation, tests, refactoring etc.), please refer to 
 the list of [commits](../../../commits/main).
 
+## 2024-06-24 (version 1.17.0)
+
+**Thanks a lot**, [**agoeb**](https://github.com/agoeb) and [**matthewdjb**](https://github.com/matthewdjb) for the bug reports behind these improvements!
+
+* Raised **minimum required** versions to **Java 17** and **ABAP Development Tools 3.38 / Eclipse 2023-06**
+* Fixed rule '**Remove needless CLEAR**' for multiple **commands on same line** ([#315](../../../issues/315))
+* Removed **duplicate resource files** from JAR file ([#325](../../../issues/325))
+* Updated **known CamelCase names** for CDS views and fields
+
 ## 2024-06-03 (version 1.16.2)
 
 Many **thanks** to [**hansdampfinger666**](https://github.com/hansdampfinger666) and [**fmabap**](https://github.com/fmabap) 
