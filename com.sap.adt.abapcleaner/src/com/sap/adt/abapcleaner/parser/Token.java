@@ -2665,7 +2665,7 @@ public class Token {
       				// next SQL clause
       			} else if (end.isAnyKeyword("USING", "UP", "%_HINTS", "PRIVILEGED", "OFFSET", "BYPASSING", "CONNECTION")) {
       				// USING CLIENT / DB hints / ABAP options
-      			} else if (end.isAnyKeyword("INNER", "LEFT", "RIGHT", "CROSS", "ON", "CLIENT")) {
+      			} else if (end.isAnyKeyword("INNER", "LEFT", "RIGHT", "JOIN", "CROSS", "ON", "CLIENT")) {
       				// next join, or ON condition from surrounding join without parentheses 
    				} else if (end.isAnyKeyword("SOURCE", "CHILD", "PERIOD", "SIBLINGS", "DEPTH", "MULTIPLE", "ORPHANS", "CYCLES", "LOAD", "GENERATE", "DISTANCE", "MEASURES", "WHERE", "WITH")) {
    					// additions of HIERARCHY( ... ), HIERARCHY_DESCENDANTS|HIERARCHY_ANCESTORS|HIERARCHY_SIBLINGS( ... ),

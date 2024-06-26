@@ -807,4 +807,27 @@ class AlignSelectFromTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testJoinWithoutInnerLeftOrRight() {
+		buildSrc("    SELECT *");
+		buildSrc("      FROM dtab1");
+		buildSrc("      JOIN");
+		buildSrc("      dtab2 ON dtab1~any_id = dtab2~any_id");
+		buildSrc("      JOIN");
+		buildSrc("      dtab3 ON dtab3~other_id = dtab2~other_id");
+		buildSrc("      INTO TABLE @DATA(lt_table).");
+
+		buildExp("    SELECT *");
+		buildExp("      FROM dtab1");
+		buildExp("             JOIN");
+		buildExp("               dtab2 ON dtab1~any_id = dtab2~any_id");
+		buildExp("                 JOIN");
+		buildExp("                   dtab3 ON dtab3~other_id = dtab2~other_id");
+		buildExp("      INTO TABLE @DATA(lt_table).");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }
