@@ -1245,6 +1245,7 @@ public class TokenTest {
 		assertEndOfLogicalExpression("SELECT FROM any_dtab FIELDS col1, CASE WHEN col2 BETWEEN 100 AND 300 OR col3 < 5 THEN 'a' ELSE 'b' END AS col4 INTO TABLE @FINAL(result).", "WHEN", "THEN");
 		assertEndOfLogicalExpression("SELECT * FROM dtab INTO TABLE lt_any WHERE CASE WHEN col2 BETWEEN 100 AND 300 OR col3 < 5 THEN 'a' ELSE 'b' END = 'b'.", "WHERE", ".");
 		assertEndOfLogicalExpression("SELECT * FROM dtab INTO TABLE lt_any WHERE col1 < ANY ( SELECT col2 FROM other_dtab ) OR col1 > SOME ( SELECT col3 FROM third_dtab ).", "WHERE", ".");
+		assertEndOfLogicalExpression("SELECT * FROM dtab1 JOIN dtab2 ON dtab1~any_id = dtab2~any_id JOIN dtab3 ON dtab3~other_id = dtab2~other_id INTO TABLE @DATA(lt_table).", "ON", "JOIN");
 	}
 
 	private void assertTextEquals(String expResultTokenText, Token resultToken) {
