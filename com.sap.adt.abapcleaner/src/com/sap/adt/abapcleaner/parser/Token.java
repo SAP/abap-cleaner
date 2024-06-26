@@ -2105,10 +2105,17 @@ public class Token {
 		} else if (firstToken.isKeyword("OVERLAY") && prevToken.isKeyword("OVERLAY")) {
 			// OVERLAY text1 WITH text2 [ONLY mask]. 
 			return MemoryAccessType.WRITE;
-		} else if (firstToken.isKeyword("REPLACE") && (nextToken.isKeyword("WITH") || prevToken.isKeyword("RESULTS") || (prevToken.isAnyKeyword("COUNT", "OFFSET", "LENGTH") && prevPrevToken != null && prevPrevToken.isKeyword("REPLACEMENT")))) { 
-			// REPLACE [{FIRST OCCURRENCE}|{ALL OCCURRENCES} OF] pattern IN [section_of] dobj WITH new  [IN {CHARACTER|BYTE} MODE] REPLACEMENT COUNT rcnt, REPLACEMENT OFFSET roff, REPLACEMENT LENGTH rlen
-			// cp. https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/index.htm?file=abapreplace_options.htm
-			return MemoryAccessType.WRITE;
+		} else if (firstToken.isKeyword("REPLACE")) {
+			if (firstToken.matchesOnSiblings(true, TokenSearch.ASTERISK, "INTO")) {
+				// obsolete syntax: REPLACE substring WITH new INTO dobj [IN {BYTE|CHARACTER} MODE] [LENGTH len].
+				if (prevToken.isKeyword("INTO")) {
+					return MemoryAccessType.WRITE;
+				}
+			} else if (nextToken.isKeyword("WITH") || prevToken.isKeyword("RESULTS") || (prevToken.isAnyKeyword("COUNT", "OFFSET", "LENGTH") && prevPrevToken != null && prevPrevToken.isKeyword("REPLACEMENT"))) { 
+				// REPLACE [{FIRST OCCURRENCE}|{ALL OCCURRENCES} OF] pattern IN [section_of] dobj WITH new  [IN {CHARACTER|BYTE} MODE] REPLACEMENT COUNT rcnt, REPLACEMENT OFFSET roff, REPLACEMENT LENGTH rlen
+				// cp. https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/index.htm?file=abapreplace_options.htm
+				return MemoryAccessType.WRITE;
+			}
 
 		} else if (firstToken.matchesOnSiblings(true, "SET", "BIT") && prevToken.isKeyword("OF")) { 
 			// SET BIT bitpos OF byte_string [TO val]. 
