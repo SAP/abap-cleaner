@@ -995,6 +995,7 @@ public class TokenTest {
 		assertAccessType("OVERLAY !text1 WITH ?text2 ONLY mask.");
 		assertAccessType("REPLACE ALL OCCURRENCES OF ?pattern IN SECTION OFFSET ?off LENGTH ?len OF !dobj WITH ?new IN BYTE MODE REPLACEMENT COUNT !rcnt, REPLACEMENT OFFSET !roff, REPLACEMENT LENGTH !rlen RESULTS !result_tab.");
 		assertAccessType("REPLACE ALL OCCURRENCES OF ?pattern IN !dobj WITH ?new IN BYTE MODE REPLACEMENT COUNT !rcnt, REPLACEMENT OFFSET !roff, REPLACEMENT LENGTH !rlen RESULTS !result_tab.");
+		assertAccessType("REPLACE ?substring WITH ?new INTO !dobj IN CHARACTER MODE LENGTH ?len."); // obsolete syntax
 		assertAccessType("SET BIT ?bitpos OF !byte_string TO ?val.");
 		assertAccessType("SHIFT !dobj BY ?num PLACES LEFT DELETING LEADING ?mask IN CHARACTER MODE.");
 		assertAccessType("SPLIT ?dobj AT ?sep INTO TABLE !result_tab.");
