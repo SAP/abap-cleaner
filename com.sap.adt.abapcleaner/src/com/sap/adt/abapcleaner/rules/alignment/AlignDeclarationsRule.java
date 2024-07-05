@@ -660,8 +660,13 @@ public class AlignDeclarationsRule extends AlignDeclarationSectionRuleBase {
 			typeEnd = typeEnd.getNextSibling();
 		}
 		if (typeEnd != typeStart) { // enum members do not have a TYPE / LIKE section
+			// do not include final comment lines (or line-end comment) in the Term
+			Token typeLast = typeEnd.getPrev();
+			while (typeLast != null && typeLast.isComment()) {
+				typeLast = typeLast.getPrev();
+			}
 			// for TYPE ... TABLE OF ..., override text width with 1 to avoid expanding the TYPE column with this cell
-			Term typeInfo = Term.createForTokenRange(typeStart, typeEnd.getPrev());
+			Term typeInfo = Term.createForTokenRange(typeStart, typeLast);
 			newCell = AlignCellTerm.createSpecial(typeInfo, 0, isTable);
 			line.setCell(Columns.TYPE.getValue(), newCell );
 		}

@@ -19,6 +19,7 @@ class SpaceBeforePeriodTest extends RuleTestBase {
 		// setup default test configuration (may be modified in the individual test methods)
 		rule.configExecuteOnComma.setValue(true);
 		rule.configExecuteOnPeriod.setValue(true);
+		rule.configMoveAcrossCommentLines.setValue(true);
 		rule.configExecuteOnClassDefinitionSections.setValue(true);
 	}
 	
@@ -177,6 +178,8 @@ class SpaceBeforePeriodTest extends RuleTestBase {
 
 	@Test
 	void testCommaAndPeriodAfterCommentLinesUnchanged() {
+		rule.configMoveAcrossCommentLines.setValue(false);
+
 		buildSrc("    DATA: lv_value TYPE i");
 		buildSrc("    \" comment line");
 		buildSrc("    , lv_other_value TYPE string");
@@ -184,6 +187,85 @@ class SpaceBeforePeriodTest extends RuleTestBase {
 		buildSrc("    .");
 
 		copyExpFromSrc();
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testSplitOutTrailingCommentLine() {
+		buildSrc("    CLEAR");
+		buildSrc("      ev_any_value");
+		buildSrc("*      comment line");
+		buildSrc("    .");
+
+		buildExp("    CLEAR");
+		buildExp("      ev_any_value.");
+		buildExp("*      comment line");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testMoveAcrossCommentLines() {
+		buildSrc("    CLEAR:");
+		buildSrc("      ev_any_value  ,");
+		buildSrc("      ev_other_value \" line-end comment");
+		buildSrc("*      comment line A");
+		buildSrc("      , ev_third_value");
+		buildSrc("*      comment line B1");
+		buildSrc("      \" comment line B2");
+		buildSrc("      , ev_fourth_value \" line-end comment");
+		buildSrc("*      comment line C1");
+		buildSrc("       \" comment line C2");
+		buildSrc("    .");
+
+		buildExp("    CLEAR:");
+		buildExp("      ev_any_value,");
+		buildExp("      ev_other_value, \" line-end comment");
+		buildExp("*      comment line A");
+		buildExp("      ev_third_value,");
+		buildExp("*      comment line B1");
+		buildExp("      \" comment line B2");
+		buildExp("      ev_fourth_value. \" line-end comment");
+		buildExp("*      comment line C1");
+		buildExp("    \" comment line C2");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testDoNotMoveAcrossCommentLines() {
+		rule.configMoveAcrossCommentLines.setValue(false);
+
+		buildSrc("    CLEAR:");
+		buildSrc("      ev_any_value  ,");
+		buildSrc("      ev_other_value \" line-end comment");
+		buildSrc("*      comment line A");
+		buildSrc("      , ev_third_value");
+		buildSrc("*      comment line B1");
+		buildSrc("      \" comment line B2");
+		buildSrc("      , ev_fourth_value \" line-end comment");
+		buildSrc("*      comment line C1");
+		buildSrc("       \" comment line C2");
+		buildSrc("    .");
+
+		buildExp("    CLEAR:");
+		buildExp("      ev_any_value,");
+		buildExp("      ev_other_value \" line-end comment");
+		buildExp("*      comment line A");
+		buildExp("      , ev_third_value");
+		buildExp("*      comment line B1");
+		buildExp("      \" comment line B2");
+		buildExp("      , ev_fourth_value \" line-end comment");
+		buildExp("*      comment line C1");
+		buildExp("       \" comment line C2");
+		buildExp("    .");
 
 		putAnyMethodAroundSrcAndExp();
 
