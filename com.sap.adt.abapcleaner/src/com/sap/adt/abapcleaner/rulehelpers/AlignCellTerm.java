@@ -82,6 +82,9 @@ public class AlignCellTerm extends AlignCell {
 					}
 					continue;
 				}
+				// keep comment lines unchanged and do not merge into comments 
+				if (token.isCommentLine() || token.getPrev() != null && token.getPrev().isComment())
+					continue;
 				// if the Token is attached to the previous Token, keep it that way as in "DATA lv_textdat1(20) TYPE c."
 				int newSpacesLeft = token.isAttached() ? 0 : 1;
 				if (token.setWhitespace(0, newSpacesLeft)) { 

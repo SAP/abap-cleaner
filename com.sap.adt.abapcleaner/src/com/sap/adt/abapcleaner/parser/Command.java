@@ -1353,6 +1353,7 @@ public class Command {
 
 	public final boolean splitOutTrailingCommentLines(Command originalCommand) throws UnexpectedSyntaxAfterChanges {
 		boolean splitOut = false;
+
 		while (lastToken.isCommentLine() && tokenCount > 1) {
 			Token commentLine = lastToken;
 			commentLine.removeFromCommand(false, true); // skip the integrity test, as it will be performed below
@@ -1362,7 +1363,7 @@ public class Command {
 			} catch (ParseException e) {
 				throw new UnexpectedSyntaxAfterChanges(null, commentLine, "parse error splitting out trailing comment line");
 			}
-			insertRightSibling(newCommand, false, true); // skip the integrity test for this Command, as there may be more comment lines 
+			insertNext(newCommand, true); // skip the integrity test for this Command, as there may be more comment lines 
 			if (!newCommand.isAsteriskCommentLine())
 				newCommand.firstToken.spacesLeft = newCommand.getIndent();
 			splitOut = true;
@@ -1588,6 +1589,26 @@ public class Command {
 		} else {
 			try {
 				prevSibling.insertFirstChild(newCommand, skipIntegrityTest);
+			} catch (UnexpectedSyntaxException e) {
+				throw new IntegrityBrokenException(newCommand, e.getMessage());
+			}
+		}
+	}
+
+	/**
+	 * inserts the supplied Token as the next sibling, or first child after this Token
+	 * 
+	 * @param newToken
+	 * @throws IntegrityBrokenException 
+	 */
+	public final void insertNext(Command newCommand, boolean skipIntegrityTest) throws IntegrityBrokenException {
+		if (!getOpensLevel()) {
+			insertRightSibling(newCommand, false, skipIntegrityTest);
+		} else if (hasChildren()) {
+			firstChild.insertLeftSibling(newCommand);
+		} else {
+			try {
+				insertFirstChild(newCommand, skipIntegrityTest);
 			} catch (UnexpectedSyntaxException e) {
 				throw new IntegrityBrokenException(newCommand, e.getMessage());
 			}

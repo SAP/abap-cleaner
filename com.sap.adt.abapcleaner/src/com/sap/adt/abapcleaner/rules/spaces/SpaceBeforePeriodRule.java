@@ -52,6 +52,9 @@ public class SpaceBeforePeriodRule extends RuleForCommands {
 			+ LINE_SEP + "      ev_any_value  ," 
 			+ LINE_SEP + "      ev_other_value \" comment" 
 			+ LINE_SEP + "      , ev_third_value" 
+			+ LINE_SEP + "*      comment line" 
+			+ LINE_SEP + "       \" another comment line" 
+			+ LINE_SEP + "      , ev_fourth_value" 
 			+ LINE_SEP + "    ." 
 			+ LINE_SEP 
 			+ LINE_SEP + "    TRY ." 
@@ -67,9 +70,10 @@ public class SpaceBeforePeriodRule extends RuleForCommands {
 
 	final ConfigBoolValue configExecuteOnComma = new ConfigBoolValue(this, "ExecuteOnComma", "Remove space before chain commas", true, false, LocalDate.of(2023, 3, 10));
 	final ConfigBoolValue configExecuteOnPeriod = new ConfigBoolValue(this, "ExecuteOnPeriod", "Remove space before period", true);
+	final ConfigBoolValue configMoveAcrossCommentLines = new ConfigBoolValue(this, "MoveAcrossCommentLines", "Move comma or period across comment lines", true, false, LocalDate.of(2024, 7, 5));
 	final ConfigBoolValue configExecuteOnClassDefinitionSections = new ConfigBoolValue(this, "ExecuteOnClassDefinitionSections", "Execute on CLASS ... DEFINITION sections, too", true);
 
-	private final ConfigValue[] configValues = new ConfigValue[] { configExecuteOnPeriod, configExecuteOnComma, configExecuteOnClassDefinitionSections };
+	private final ConfigValue[] configValues = new ConfigValue[] { configExecuteOnPeriod, configExecuteOnComma, configMoveAcrossCommentLines, configExecuteOnClassDefinitionSections };
 
 	@Override
 	public ConfigValue[] getConfigValues() { return configValues; }
@@ -99,7 +103,7 @@ public class SpaceBeforePeriodRule extends RuleForCommands {
 			if (token == null)
 				break;
 			if ((executeOnComma && token.isComma()) || (executeOnPeriod && token.isPeriod())) {
-				if (executeOnCommaOrPeriod(token)) {
+				if (executeOnCommaOrPeriod(command, token)) {
 					changed = true;
 				}
 			}
@@ -108,7 +112,7 @@ public class SpaceBeforePeriodRule extends RuleForCommands {
 		return changed;
 	}
 
-	private boolean executeOnCommaOrPeriod(Token token) throws UnexpectedSyntaxAfterChanges {
+	private boolean executeOnCommaOrPeriod(Command command, Token token) throws UnexpectedSyntaxAfterChanges {
 		Token prev = token.getPrev();
 		if (prev == null)
 			return false;
@@ -124,8 +128,8 @@ public class SpaceBeforePeriodRule extends RuleForCommands {
 			return true;
 		} 
 		
-		// if the previous Token is a whole comment line, do not move the token
-		if (prev.isCommentLine()) {
+		// if the previous Token is a whole comment line, only continue if configured
+		if (prev.isCommentLine() && !configMoveAcrossCommentLines.getValue()) {
 			return false;
 		} 
 
@@ -144,14 +148,26 @@ public class SpaceBeforePeriodRule extends RuleForCommands {
 			return true;
 
 		} else if (token.isPeriod() && next != null) {
-			// do not attempt merge comments before and after the period
+			// do not attempt to merge comments before and after the period
 			return false;
 		
 		} else {
+			// determine whether moving the Token will result in trailing comment lines
+			boolean trailingCommentLines = (token.getNext() == null && prev.isCommentLine());
+			// move to the first comment of multiple line-end comments and comment lines
+			Token firstComment = prev.getPrevWhileComment().getNext();
+
 			// move the period or comma between the code and the line-end comment in the previous line
 			token.removeFromCommand(false, true);
 			token.setWhitespace(0, requiredSpaces);
-			prev.insertLeftSibling(token);
+			if (trailingCommentLines) {
+				// test referential integrity only after splitting out trailing comment lines
+				firstComment.insertLeftSibling(token, false, true);
+				command.splitOutTrailingCommentLines(command);
+				command.testReferentialIntegrity(true);
+			} else {
+				firstComment.insertLeftSibling(token);
+			}
 			return true;
 		}
 	}

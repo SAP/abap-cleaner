@@ -1776,4 +1776,33 @@ class AlignDeclarationsTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testCommaAtLineStart() {
+		// ensure that comment lines between the TYPE and the next comma are not moved to the end of the previous line
+
+		buildSrc("  TYPES: BEGIN OF ty_s_any");
+		buildSrc("           ,value1 TYPE i");
+		buildSrc("*           ,value2 TYPE i");
+		buildSrc("           ,value3 TYPE i");
+		buildSrc("           \" comment line");
+		buildSrc("           ,value4 TYPE i  \" line-end comment");
+		buildSrc("         ,END OF ty_s_any.");
+
+		buildExp("  TYPES: BEGIN OF ty_s_any");
+		buildExp("           ,");
+		buildExp("           value1 TYPE i");
+		buildExp("*           ,value2 TYPE i");
+		buildExp("           ,");
+		buildExp("           value3 TYPE i");
+		buildExp("           \" comment line");
+		buildExp("           ,");
+		buildExp("           value4 TYPE i  \" line-end comment");
+		buildExp("         ,");
+		buildExp("         END OF ty_s_any.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }
