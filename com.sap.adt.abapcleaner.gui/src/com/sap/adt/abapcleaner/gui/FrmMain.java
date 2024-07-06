@@ -58,7 +58,9 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 
 	private static boolean isInitialized = false;
 
-	private CodeDisplayColors codeDisplayColors;
+	private CodeDisplayColors codeDisplayColors; // is set to either codeDisplayColorsADT or codeDisplayColorsStrong  
+	private CodeDisplayColors codeDisplayColorsADT;
+	private CodeDisplayColors codeDisplayColorsClassic;
 	private static final Color searchTextNotFoundColor = new Color(139, 0, 54); // dark red
 	private static Color searchInfoColor;
 	private static Color searchTextNormalColor;
@@ -82,6 +84,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 	private MenuItem mmuCodeCancel;
 	private MenuItem mmuCodeApplyAndClose;
 	private MenuItem mmuCodeExit;
+	private MenuItem mmuUseAdtColors;
 	private MenuItem mmuHighlightDeclarationKeywords;
 	private MenuItem mmuHighlightWritePositions;
 	private MenuItem mmuExtras;
@@ -141,7 +144,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 
 			if (commandLineArgs == null) {
 				// start the interactive (stand-alone) UI
-				cleanInteractively(null, ABAP.NEWEST_RELEASE, null, persistency.getStartupPath(), false, null, null, false);
+				cleanInteractively(null, ABAP.NEWEST_RELEASE, null, persistency.getStartupPath(), false, null, null, null, false);
 
 			} else {
 				if (commandLineArgs.hasErrors()) {
@@ -325,7 +328,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 	}
 
 	public static CleanupResult cleanInteractively(String sourceCode, String abapRelease, CleanupRange cleanupRange, String workspaceDir, boolean isPlugin, String sourcePageTitle,
-			CodeDisplayColors codeDisplayColors, boolean isReadOnly) {
+			CodeDisplayColors codeDisplayColorsADT, CodeDisplayColors codeDisplayColorsClassic, boolean isReadOnly) {
 		initialize();
 
 		Persistency persistency = Persistency.get();
@@ -334,7 +337,9 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		defaultCodeDirectory = (codeDirs == null || codeDirs.length == 0) ? persistency.getWorkDir() : codeDirs[0];
 
 		FrmMain window = new FrmMain();
-		window.codeDisplayColors = (codeDisplayColors != null) ? codeDisplayColors : CodeDisplayColors.createDefault();
+		window.codeDisplayColorsADT = (codeDisplayColorsADT != null) ? codeDisplayColorsADT : CodeDisplayColors.createDefault(ColorProfile.ADT);
+		window.codeDisplayColorsClassic = (codeDisplayColorsClassic != null) ? codeDisplayColorsClassic : CodeDisplayColors.createDefault(ColorProfile.CLASSIC);
+		window.codeDisplayColors = window.codeDisplayColorsADT;
 		window.open(isPlugin, sourcePageTitle, sourceCode, abapRelease, cleanupRange, workspaceDir, isReadOnly);
 
 		if (window.resultCode != null) {
@@ -405,6 +410,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		codeDisplay.setSearchControls(this);
 		codeDisplay.setChangeTypeControls(this);
 		codeDisplay.setFallbackKeyListener(this);
+		codeDisplay.setColors(codeDisplayColors);
 		refreshHighlight();
 
 		if (isPlugin) {
@@ -688,6 +694,23 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 			}
 		});
 		mmuViewZoomOut.setText(getMenuItemTextWithAccelerator("Zoom Out", SWT.CTRL + '-'));
+
+		new MenuItem(menuView, SWT.SEPARATOR);
+
+		mmuUseAdtColors = new MenuItem(menuView, SWT.CHECK);
+		mmuUseAdtColors.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				boolean useAdtColors = mmuUseAdtColors.getSelection();
+				if (settings != null)
+					settings.colorProfile = useAdtColors ? ColorProfile.ADT : ColorProfile.CLASSIC;
+				codeDisplayColors = useAdtColors ? codeDisplayColorsADT : codeDisplayColorsClassic; 
+				if (codeDisplay != null && !codeDisplay.isDisposed()) {
+					codeDisplay.setColors(codeDisplayColors);
+				}
+			}
+		});
+		mmuUseAdtColors.setText("Use ADT-Style Colors");
 
 		new MenuItem(menuView, SWT.SEPARATOR);
 
@@ -1546,9 +1569,12 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		codeDisplay.setHighlightDeclarationKeywords(settings.highlightDeclarationKeywords);
 		codeDisplay.setHighlightWritePositions(settings.highlightWritePositions);
 
+		mmuUseAdtColors.setSelection(settings.colorProfile == ColorProfile.ADT);
 		mmuHighlightDeclarationKeywords.setSelection(settings.highlightDeclarationKeywords);
 		mmuHighlightWritePositions.setSelection(settings.highlightWritePositions);
 
+		codeDisplayColors = (settings.colorProfile == ColorProfile.CLASSIC) ? codeDisplayColorsClassic : codeDisplayColorsADT; 
+		
 		// restore shell bounds
 		try {
 			// allow saved shell bounds to exceed screen size for a few pixels, which happens if the shell was 

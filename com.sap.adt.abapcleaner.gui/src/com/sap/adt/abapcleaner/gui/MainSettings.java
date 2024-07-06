@@ -35,6 +35,7 @@ public class MainSettings {
 	private static final String KEY_MATCH_WHOLE_WORD = "matchWholeWord";
 
 	private static final String KEY_CODE_FONT_SIZE = "codeFontSize";
+	private static final String KEY_COLOR_PROFILE = "colorProfile";
 	private static final String KEY_HIGHLIGHT_DECLARATION_KEYWORDS = "highlightDeclarationKeywords";
 	private static final String KEY_HIGHLIGHT_WRITE_POS = "highlightWritePositions";
 	private static final String KEY_SHOW_VERTICAL_LINE = "showVerticalLine";
@@ -112,6 +113,7 @@ public class MainSettings {
 	boolean matchWholeWord;
 
 	float codeFontSize;
+	ColorProfile colorProfile;
 	boolean highlightDeclarationKeywords;
 	boolean highlightWritePositions;
 	boolean showVerticalLine;
@@ -229,6 +231,8 @@ public class MainSettings {
 			writer.write(KEY_RELEASE_RESTRICTION_ + indexSuffix, cleanupSettings.releaseRestriction);
 			++index;
 		}
+
+		writer.write(KEY_COLOR_PROFILE, colorProfile.getValue());
 	}
 
 	void load() {
@@ -378,6 +382,16 @@ public class MainSettings {
 				cleanupSettingsOfWorkspace.put(workspaceDir, new CleanupSettings(lastProfileName, cleanupRangeExpandMode, releaseRestriction));
 			}
 		}
+		
+		if (reader.getFileVersion() >= 26) {
+			try {
+				colorProfile = ColorProfile.forValue(reader.readInt32(KEY_COLOR_PROFILE));
+			} catch (IllegalArgumentException e) {
+				colorProfile = ColorProfile.getDefault();
+			}
+		} else {
+			colorProfile = ColorProfile.getDefault();
+		}
 	}
 
 	void setDefault() {
@@ -396,6 +410,7 @@ public class MainSettings {
 		matchWholeWord = false;
 
 		codeFontSize = CodeDisplay.DEFAULT_FONT_SIZE;
+		colorProfile = ColorProfile.getDefault();
 		highlightDeclarationKeywords = false;
 		highlightWritePositions = false;
 		showVerticalLine = true;
