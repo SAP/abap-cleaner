@@ -585,4 +585,8 @@ public final class StringUtil {
 			--newLen;
 		return text.substring(0, newLen);
 	}
+	
+	public static String getCountAndUnit(int count, String unitSingular, String unitPlural) {
+		return Cult.format(count) + " " + ((count == 1) ? unitSingular : unitPlural); 
+	}
 }

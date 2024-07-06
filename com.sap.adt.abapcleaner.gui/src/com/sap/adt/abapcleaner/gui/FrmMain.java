@@ -1128,7 +1128,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		});
 		mmuHelpAbout.setText("&About");
 
-		codeDisplay = new CodeDisplay(shell, SWT.NONE);
+		codeDisplay = new CodeDisplay(shell, SWT.NONE, false);
 		codeDisplay.setColors(codeDisplayColors);
 		codeDisplay.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1));
 		codeDisplay.setCodeFontSize(CodeDisplay.DEFAULT_FONT_SIZE);
@@ -1635,7 +1635,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		updateShellText(sourceName, newAbapRelease, null);
 		shell.setText(Program.PRODUCT_NAME + " - " + sourceName + abapReleaseInfo);
 		codeDisplay.setInfo(sourceName, sourcePath, sourceCode, abapRelease, curProfile.getSingleActiveRule());
-		codeDisplay.refreshCode(result.getResultingCode(), result.getResultingDiffDoc(), topLineIndex, curLineIndex, selectionStartLine);
+		codeDisplay.refreshCode(result.getResultingCode(), result.getResultingDiffDoc(), curProfile, topLineIndex, curLineIndex, selectionStartLine);
 		if (Program.showDevFeatures()) {
 			updateShellText(sourceName, newAbapRelease, result);
 		}
@@ -1699,14 +1699,15 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		int selectionChangedIdAtStart = selectionChangedId;
 		Display.getDefault().timerExec(250, new Runnable() {
 			public void run() {
-				if (selectionChangedId == selectionChangedIdAtStart)
+				if (selectionChangedId == selectionChangedIdAtStart) {
 					refreshUsedRules();
+				}
 			}
 		});
 	}
 
 	private void refreshUsedRules() {
-		RuleStats[] newUsedRules = codeDisplay.getRuleStats(curProfile);
+		RuleStats[] newUsedRules = codeDisplay.getRuleStatsOfSelection(curProfile);
 		if (RuleStats.equals(usedRules, newUsedRules))
 			return;
 		usedRules = newUsedRules;

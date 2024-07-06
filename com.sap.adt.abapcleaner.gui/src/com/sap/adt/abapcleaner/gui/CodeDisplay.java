@@ -2,6 +2,7 @@ package com.sap.adt.abapcleaner.gui;
 
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Slider;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.SashForm;
@@ -47,10 +48,14 @@ public class CodeDisplay extends Composite {
 
 	private final boolean SHOW_PAINT_TIMER_STATS = Program.showDevFeatures() && false;
 
+	private boolean forSingleRule;
+	
 	private CodeDisplayColors colors;
 	
 	private Slider vsbCode;
 	private SashForm spcCode;
+	private Label lblCode1;
+	private Label lblCode2;
 	private Canvas picCode1;
 	private Canvas picCode2;
 
@@ -129,8 +134,9 @@ public class CodeDisplay extends Composite {
 	private final PaintStats completePaintStats = new PaintStats(true);
 	private final PaintStats partPaintStats = new PaintStats(false);
 	
-	public CodeDisplay(Composite parent, int style) {
+	public CodeDisplay(Composite parent, int style, boolean forSingleRule) {
 		super(parent, style);
+		this.forSingleRule = forSingleRule;
 		
 		addDisposeListener(new DisposeListener() {
 			public void widgetDisposed(DisposeEvent arg0) {
@@ -161,7 +167,20 @@ public class CodeDisplay extends Composite {
 		spcCode.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1));
 		spcCode.setSashWidth(8);
 
-		picCode1 = new Canvas(spcCode, SWT.NO_BACKGROUND); // see https://www.eclipse.org/articles/Article-SWT-graphics/SWT_graphics.html
+		Composite cpsCode1 = new Composite(spcCode, SWT.NONE);
+		GridLayout glCode1 = new GridLayout(1, false);
+		glCode1.marginWidth = 0;
+		glCode1.marginHeight = 0;
+		cpsCode1.setLayout(glCode1);
+		
+		lblCode1 = new Label(cpsCode1, SWT.NONE);
+		GridData gd_lblCode1 = new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1);
+		gd_lblCode1.horizontalIndent = 5;
+		lblCode1.setLayoutData(gd_lblCode1);
+		lblCode1.setText("Before cleanup");
+
+		picCode1 = new Canvas(cpsCode1, SWT.NO_BACKGROUND); // see https://www.eclipse.org/articles/Article-SWT-graphics/SWT_graphics.html
+		picCode1.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1));
 		picCode1.addMouseWheelListener(new MouseWheelListener() {
 			public void mouseScrolled(MouseEvent arg0) {
 				scrollBy(arg0.count);
@@ -204,7 +223,20 @@ public class CodeDisplay extends Composite {
 			}
 		});
 
-		picCode2 = new Canvas(spcCode, SWT.NO_BACKGROUND);
+		Composite cpsCode2 = new Composite(spcCode, SWT.NONE);
+		GridLayout glCode2 = new GridLayout(1, false);
+		glCode2.marginHeight = 0;
+		glCode2.marginWidth = 0;
+		cpsCode2.setLayout(glCode2);
+
+		lblCode2 = new Label(cpsCode2, SWT.NONE);
+		GridData gd_lblCode2 = new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1);
+		gd_lblCode2.horizontalIndent = 5;
+		lblCode2.setLayoutData(gd_lblCode2);
+		lblCode2.setText("After cleanup");
+
+		picCode2 = new Canvas(cpsCode2, SWT.NO_BACKGROUND);
+		picCode2.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1));
 		picCode2.addMouseWheelListener(new MouseWheelListener() {
 			public void mouseScrolled(MouseEvent arg0) {
 				scrollBy(arg0.count);
@@ -247,7 +279,18 @@ public class CodeDisplay extends Composite {
 		});
 		spcCode.setWeights(new int[] { 1, 1 });
 
-		vsbCode = new Slider(this, SWT.VERTICAL);
+		Composite cpsScroll = new Composite(this, SWT.NONE);
+		cpsScroll.setLayoutData(new GridData(SWT.LEFT, SWT.FILL, false, true, 1, 1));
+		GridLayout glScroll = new GridLayout(1, false);
+		glScroll.marginHeight = 0;
+		glScroll.marginWidth = 0;
+		cpsScroll.setLayout(glScroll);
+
+		Label lblScroll = new Label(cpsScroll, SWT.NONE);
+		lblScroll.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));
+		lblScroll.setText(" ");
+
+		vsbCode = new Slider(cpsScroll, SWT.VERTICAL);
 		vsbCode.setLayoutData(new GridData(SWT.LEFT, SWT.FILL, false, true, 1, 1));
 		vsbCode.addMouseWheelListener(new MouseWheelListener() {
 			public void mouseScrolled(MouseEvent arg0) {
@@ -322,7 +365,7 @@ public class CodeDisplay extends Composite {
 			diffDoc = comp1.compareTo(comp2, null);
 		} catch (CompareException e) {
 		}
-		refreshCode(code, diffDoc, 0, 0, 0);
+		refreshCode(code, diffDoc, null, 0, 0, 0);
 		invalidateDisplay();
 	}
 
@@ -334,18 +377,19 @@ public class CodeDisplay extends Composite {
 		this.rule = rule;
 	}
 
-	public final void refreshCode() {
-		refreshCode(null, null, -1, -1, -1);
+	public final void refreshCode(Profile profile) {
+		refreshCode(null, null, profile, -1, -1, -1);
 	}
 
 	/**
 	 * @param code
 	 * @param diffDoc
+	 * @param profile
 	 * @param setToTopLineIndex       -1 to keep current position, 0 to set to start
 	 * @param setToCurLineIndex       -1 to keep current position, 0 to set to start
 	 * @param setSelectionToStartLine -1 to keep current position, 0 to set to start
 	 */
-	public final void refreshCode(Code code, DiffDoc diffDoc, int setToTopLineIndex, int setToCurLineIndex, int setSelectionToStartLine) {
+	public final void refreshCode(Code code, DiffDoc diffDoc, Profile profile, int setToTopLineIndex, int setToCurLineIndex, int setSelectionToStartLine) {
 		navigator.refreshCode(code, diffDoc, setToTopLineIndex, setToCurLineIndex, setSelectionToStartLine);
 		
 		int lineCount = navigator.getLineCount();
@@ -358,8 +402,42 @@ public class CodeDisplay extends Composite {
 			changeTypeControls.updateChangedLineCount(navigator.getChangeStats());
 
 		invalidateDisplay();
-		if (usedRulesDisplay != null)
+		if (usedRulesDisplay != null) {
 			usedRulesDisplay.selectionChanged();
+		}
+
+		refreshRuleStatsInfo(profile);
+	}
+	
+	private final void refreshRuleStatsInfo(Profile profile) {
+		if (profile == null || forSingleRule) {
+			lblCode2.setText("After cleanup");
+			return ;
+		} 
+
+		// determine number of rules that are active / used / locally blocked
+		RuleStats[] ruleStats = navigator.getRuleStats(profile);
+		int activeRuleCount = profile.getActiveRuleCount();
+		int usedRuleCount = 0;
+		int blockedRuleCount = 0;
+		for (RuleStats ruleStat : ruleStats) {
+			if (ruleStat.isUsed()) {
+				++usedRuleCount;
+			}
+			if (ruleStat.isBlocked()) {
+				++blockedRuleCount;
+			}
+		}
+
+		StringBuilder sbInfo = new StringBuilder();
+		sbInfo.append("After cleanup with " + StringUtil.getCountAndUnit(usedRuleCount, "rule", "rules"));
+		sbInfo.append(" (" + StringUtil.getCountAndUnit(activeRuleCount, "rule", "rules") + " active");
+		sbInfo.append(" in profile '" + profile.name + "'");
+		if (blockedRuleCount > 0) {
+			sbInfo.append(", " + Cult.format(blockedRuleCount) + " blocked locally");
+		}
+		sbInfo.append(")");
+		lblCode2.setText(sbInfo.toString());
 	}
 
 	private void invalidateDisplay() {
@@ -372,7 +450,7 @@ public class CodeDisplay extends Composite {
 		try {
 			Task result = navigator.reprocessSelection(profile, releaseRestriction, sourceName);
 			if (result.getSuccess()) {
-				refreshCode();
+				refreshCode(profile);
 				return result;
 			} 
 			Message.show(result.getErrorMessage(), getShell());
@@ -1110,13 +1188,14 @@ public class CodeDisplay extends Composite {
 		if (isLeftMouseButtonDown) { // e.button == LEFT_MOUSE_BUTTON doesn't work
 			navigator.setCurLine(getLineIndexOfMousePos(e.y, displaySide), false);
 			ensureCurLineIsVisible(true);
-			if (usedRulesDisplay != null)
+			if (usedRulesDisplay != null) {
 				usedRulesDisplay.selectionChanged();
+			}
 		}
 	}
 
-	public final RuleStats[] getRuleStats(Profile profile) {
-		return navigator.getRuleStats(profile);
+	public final RuleStats[] getRuleStatsOfSelection(Profile profile) {
+		return navigator.getRuleStatsOfSelection(profile);
 	}
 
 	public final boolean setBlockRuleInSelection(RuleID ruleID, boolean blocked) {

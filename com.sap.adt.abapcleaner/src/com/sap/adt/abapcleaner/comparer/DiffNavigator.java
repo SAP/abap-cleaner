@@ -12,7 +12,7 @@ import com.sap.adt.abapcleaner.rulebase.*;
  * <li>moving the current line ({@link #curLine}), including moving to the next change of a certain type</li> 
  * <li>selecting multiple lines (from {@link #selStartLine} to {@link #curLine})</li>
  * <li>searching the text on one or both sides of the {@link DiffDoc} and moving to the next match</li>
- * <li>getting statistical information on the current selection ({@link #getRuleStats(Profile)})</li>
+ * <li>getting statistical information on the current selection ({@link #getRuleStatsOfSelection(Profile)})</li>
  * <li>blocking or unblocking ABAP cleaner {@link Rule}s for the current selection ({@link #setBlockRuleInSelection(RuleID, boolean) setBlockRuleInSelection(...)})
  * <li>re-processing the parsing and cleaning of the current selection of code lines ({@link #reprocessSelection(Profile, int, String) reprocessSelection(...)})
  * </ul>
@@ -459,6 +459,10 @@ public class DiffNavigator {
 	}
 
 	public final RuleStats[] getRuleStats(Profile profile) {
+		return diffDoc.getRuleStats(profile);
+	}
+
+	public final RuleStats[] getRuleStatsOfSelection(Profile profile) {
 		return diffDoc.getRuleStatsOfLineRange(profile, getSelectionLineMin(), getSelectionLineMax());
 	}
 
