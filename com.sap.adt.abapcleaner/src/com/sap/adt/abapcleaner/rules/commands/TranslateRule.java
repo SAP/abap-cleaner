@@ -10,18 +10,24 @@ import com.sap.adt.abapcleaner.parser.Token;
 import com.sap.adt.abapcleaner.parser.TokenSearch;
 import com.sap.adt.abapcleaner.parser.TokenType;
 import com.sap.adt.abapcleaner.programbase.IntegrityBrokenException;
+import com.sap.adt.abapcleaner.programbase.Program;
 import com.sap.adt.abapcleaner.programbase.UnexpectedSyntaxAfterChanges;
 import com.sap.adt.abapcleaner.programbase.UnexpectedSyntaxBeforeChanges;
 import com.sap.adt.abapcleaner.rulebase.ConfigBoolValue;
+import com.sap.adt.abapcleaner.rulebase.ConfigInfoStyle;
+import com.sap.adt.abapcleaner.rulebase.ConfigInfoValue;
 import com.sap.adt.abapcleaner.rulebase.ConfigValue;
 import com.sap.adt.abapcleaner.rulebase.Profile;
-import com.sap.adt.abapcleaner.rulebase.RuleForCommands;
+import com.sap.adt.abapcleaner.rulebase.RuleForDeclarations;
 import com.sap.adt.abapcleaner.rulebase.RuleGroupID;
 import com.sap.adt.abapcleaner.rulebase.RuleID;
 import com.sap.adt.abapcleaner.rulebase.RuleReference;
 import com.sap.adt.abapcleaner.rulebase.RuleSource;
+import com.sap.adt.abapcleaner.rulehelpers.ClassInfo;
+import com.sap.adt.abapcleaner.rulehelpers.LocalVariables;
+import com.sap.adt.abapcleaner.rulehelpers.VariableInfo;
 
-public class TranslateRule extends RuleForCommands {
+public class TranslateRule extends RuleForDeclarations {
 	private final static RuleReference[] references = new RuleReference[] {
 			new RuleReference(RuleSource.ABAP_STYLE_GUIDE, "Prefer functional to procedural language constructs", "#prefer-functional-to-procedural-language-constructs"), 
 			new RuleReference(RuleSource.CODE_PAL_FOR_ABAP, "Deprecated Key Word Check", "deprecated-key-word.md"),
@@ -87,9 +93,21 @@ public class TranslateRule extends RuleForCommands {
 			+ LINE_SEP + "    TRANSLATE lv_c_plus_plus USING 'cC+'." 
 			+ LINE_SEP 
 			+ LINE_SEP + "    \" chains can only be processed if they are first unchained" 
+			+ LINE_SEP + "    DATA lv_other_text TYPE char5 VALUE 'abcde'." 
 			+ LINE_SEP + "    TRANSLATE: lv_text TO LOWER CASE, lv_other_text TO UPPER CASE." 
 			+ LINE_SEP 
 			+ LINE_SEP + "    TRANSLATE lv_abc USING: '1 2 3 ', 'a-b-c-'." 
+			+ LINE_SEP 
+			+ LINE_SEP + "    \" unlike TRANSLATE, the string functions do not work on structured data; therefore,"
+			+ LINE_SEP + "    \" changing the next statements might cause syntax errors. You can activate the option"
+			+ LINE_SEP + "    \" 'Only replace TRANSLATE for known unstructured types' to restrict this cleanup rule"
+			+ LINE_SEP + "    \" to cases in which " + Program.PRODUCT_NAME + " can clearly determine the type (as above)"
+			+ LINE_SEP + "    DATA(ls_unknown_type) = get_charlike_structure( )." 
+			+ LINE_SEP + "    DATA ls_ddic_type TYPE some_ddic_type." 
+			+ LINE_SEP + "    DATA ls_other_type TYPE if_any_interface=>ty_s_typedef_out_of_sight." 
+			+ LINE_SEP + "    TRANSLATE ls_unknown_type TO UPPER CASE." 
+			+ LINE_SEP + "    TRANSLATE ls_ddic_type TO LOWER CASE." 
+			+ LINE_SEP + "    TRANSLATE ls_other_type USING 'a1b2'." 
 			+ LINE_SEP + "  ENDMETHOD.";
    }
 
@@ -97,11 +115,22 @@ public class TranslateRule extends RuleForCommands {
    final ConfigBoolValue configReplaceTranslateUsing = new ConfigBoolValue(this, "ReplaceTranslateUsing", "Replace TRANSLATE ... USING", true);
    final ConfigBoolValue configReplaceUnevenMasks = new ConfigBoolValue(this, "ReplaceUnevenMasks", "Replace TRANSLATE ... USING if mask has an uneven number of chars", true);
 	final ConfigBoolValue configProcessChains = new ConfigBoolValue(this, "ProcessChains", "Unchain TRANSLATE: chains (required for processing them with this rule)", true, false, LocalDate.of(2023, 10, 27));
+	final ConfigBoolValue configSkipUnknownTypes = new ConfigBoolValue(this, "SkipUnknownTypes", "Only replace TRANSLATE for known unstructured types (STRING, C, N, CHAR1 etc.)", true, true, LocalDate.of(2024, 7, 6));
+	final ConfigInfoValue configUnknownTypeWarning = new ConfigInfoValue(this, "Warning: deactivating this option might lead to syntax errors if your code contains TRANSLATE with structured types (but at least the syntax check will immediately show this)", ConfigInfoStyle.WARNING);
 
-   private final ConfigValue[] configValues = new ConfigValue[] { configReplaceTranslateToUpperLower, configReplaceTranslateUsing, configReplaceUnevenMasks, configProcessChains };
+   private final ConfigValue[] configValues = new ConfigValue[] { configReplaceTranslateToUpperLower, configReplaceTranslateUsing, configReplaceUnevenMasks, configProcessChains, configSkipUnknownTypes, configUnknownTypeWarning };
 
 	@Override
 	public ConfigValue[] getConfigValues() { return configValues; }
+
+	@Override
+	public boolean isConfigValueEnabled(ConfigValue configValue) {
+		if (configValue == configUnknownTypeWarning) {
+			return !configSkipUnknownTypes.getValue();
+		} else {
+			return true; 
+		}
+	}
 
 	public TranslateRule(Profile profile) {
 		super(profile);
@@ -109,25 +138,56 @@ public class TranslateRule extends RuleForCommands {
 	}
 
 	@Override
-	protected boolean executeOn(Code code, Command command, int releaseRestriction) throws UnexpectedSyntaxBeforeChanges, UnexpectedSyntaxAfterChanges {
+	protected void executeOn(Code code, ClassInfo classOrInterfaceInfo, int releaseRestriction) throws UnexpectedSyntaxAfterChanges {
+		// nothing to do on class definition level
+		return;
+	}
+
+	@Override
+	protected void executeOn(Code code, Command methodStart, LocalVariables localVariables, int releaseRestriction) throws UnexpectedSyntaxAfterChanges {
+		Command command = methodStart;
+		Command methodEnd = command.getNextSibling();
+		while (command != methodEnd) {
+			commandForErrorMsg = command;
+
+			// get the next Command now, in case the current command is unchained into multiple Commands
+			Command nextCommand = command.getNext();
+
+			if (!isCommandBlocked(command)) {
+				try {
+					executeOnCommand(code, command, localVariables, releaseRestriction);
+				} catch (UnexpectedSyntaxBeforeChanges ex) {
+					// log the error and continue with next command
+					ex.addToLog();
+				}
+			}
+			
+			command = nextCommand;
+		}
+	}
+
+	private void executeOnCommand(Code code, Command command, LocalVariables localVariables, int releaseRestriction) throws UnexpectedSyntaxBeforeChanges, UnexpectedSyntaxAfterChanges {
 		// for the syntax of the deprecated TRANSLATE statement, see https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/index.htm?file=abaptranslate.htm
 		Token firstToken = command.getFirstToken();
-		if (firstToken == null)
-			return false;
+		if (firstToken == null) // pro forma
+			return;
 		
 		if (	!firstToken.matchesOnSiblings(true, "TRANSLATE", TokenSearch.ASTERISK, "TO", "UPPER|LOWER", "CASE")
 			&& !firstToken.matchesOnSiblings(true, "TRANSLATE", TokenSearch.ASTERISK, "USING")) {
-			return false;
+			return;
 		}
 		
 		ArrayList<Command> unchainedCommands = unchain(code, command, configProcessChains.getValue());
 		if (unchainedCommands == null || unchainedCommands.isEmpty())
-			return false;
+			return;
 		
 		for (Command unchainedCommand : unchainedCommands) {
 			firstToken = unchainedCommand.getFirstCodeToken();
 			if (firstToken == null) {
 				// skip Command
+			} else if (configSkipUnknownTypes.getValue() && !isVarSureToBeCharlike(firstToken.getNextCodeSibling(), localVariables)) {
+				// skip Command: this variable might represent a structured type, which can be processed with TRANSLATE, 
+				// but would lead to a syntax error with to_upper( ), to_lower( ) or translate( )
 			} else if (firstToken.matchesOnSiblings(false, "TRANSLATE", TokenSearch.ANY_IDENTIFIER, "TO", "UPPER|LOWER", "CASE")) {
 				if (configReplaceTranslateToUpperLower.getValue() && replaceTranslateToUpperOrLower(unchainedCommand, firstToken)) {
 					code.addRuleUse(this, unchainedCommand);
@@ -138,7 +198,13 @@ public class TranslateRule extends RuleForCommands {
 				}
 			}
 		}
-		return false; // addRuleUse() was already called above
+	}
+
+	private boolean isVarSureToBeCharlike(Token identifier, LocalVariables localVariables) {
+		if (identifier == null)
+			return false;
+		VariableInfo varInfo = localVariables.getVariableInfo(identifier, false);
+		return (varInfo != null) && varInfo.hasKnownUnstructuredCharlikeType();
 	}
 
 	private boolean replaceTranslateToUpperOrLower(Command command, Token firstToken) throws UnexpectedSyntaxAfterChanges, IntegrityBrokenException {

@@ -561,4 +561,25 @@ class StringUtilTest {
 		assertTrue(StringUtil.containsIgnoringCase("AbC", "aBc"));
 		assertFalse(StringUtil.containsIgnoringCase("AbC", "def"));
 	}
+	
+	@Test
+	void testHasTrailingDigits() {
+		assertFalse(StringUtil.hasTrailingDigits(null));
+		assertFalse(StringUtil.hasTrailingDigits(""));
+		assertFalse(StringUtil.hasTrailingDigits("a"));
+		assertFalse(StringUtil.hasTrailingDigits("abc"));
+		assertTrue(StringUtil.hasTrailingDigits("abc1"));
+		assertTrue(StringUtil.hasTrailingDigits("abc12"));
+		assertTrue(StringUtil.hasTrailingDigits("123"));
+	}
+	
+	@Test
+	void testRemoveTrailingDigits() {
+		assertEquals(null, StringUtil.removeTrailingDigits(null));
+		assertEquals("", StringUtil.removeTrailingDigits(""));
+		assertEquals("a", StringUtil.removeTrailingDigits("a"));
+		assertEquals("abc", StringUtil.removeTrailingDigits("abc1"));
+		assertEquals("abc", StringUtil.removeTrailingDigits("abc0123456789"));
+		assertEquals("", StringUtil.removeTrailingDigits("246"));
+	}
 }

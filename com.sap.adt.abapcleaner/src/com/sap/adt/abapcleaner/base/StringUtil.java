@@ -572,4 +572,17 @@ public final class StringUtil {
 		}
 		return true;
 	}
+	
+	public static boolean hasTrailingDigits(String text) {
+		return text != null && text.length() > 0 && Character.isDigit(text.charAt(text.length() -1));
+	}
+
+	public static String removeTrailingDigits(String text) {
+		if (text == null)
+			return null;
+		int newLen = text.length();
+		while (newLen > 0 && Character.isDigit(text.charAt(newLen -1)))
+			--newLen;
+		return text.substring(0, newLen);
+	}
 }

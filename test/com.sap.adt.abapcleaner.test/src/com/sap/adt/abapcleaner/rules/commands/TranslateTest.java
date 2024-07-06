@@ -21,10 +21,13 @@ public class TranslateTest extends RuleTestBase {
 		rule.configReplaceTranslateUsing.setValue(true);
 		rule.configReplaceUnevenMasks.setValue(true);
 		rule.configProcessChains.setValue(true);
+		rule.configSkipUnknownTypes.setValue(true);
 	}
 
 	@Test
 	void testTranslateToUpperAndLower() {
+		rule.configSkipUnknownTypes.setValue(false);
+
 		buildSrc("    DATA lv_text TYPE string VALUE `Any Text`.");
 		buildSrc("    TRANSLATE lv_text TO LOWER CASE.");
 		buildSrc("    TRANSLATE is_struc-component TO UPPER CASE.");
@@ -40,6 +43,8 @@ public class TranslateTest extends RuleTestBase {
 
 	@Test
 	void testTranslateToUpperAndLowerWithCommentAndPragma() {
+		rule.configSkipUnknownTypes.setValue(false);
+
 		buildSrc("    DATA lv_text TYPE string VALUE `Any Text`.");
 		buildSrc("    TRANSLATE lv_text TO LOWER CASE ##PRAGMA.");
 		buildSrc("    TRANSLATE is_struc-component TO UPPER CASE. \" `ANY TEXT`");
@@ -251,10 +256,14 @@ public class TranslateTest extends RuleTestBase {
 	void testChainProcessed() {
 		rule.configProcessChains.setValue(true);
 
+		buildSrc("    DATA: lv_text TYPE string, lv_other_text type string, lv_abc TYPE char10.");
+		buildSrc("");
 		buildSrc("    TRANSLATE: lv_text TO LOWER CASE, lv_other_text TO UPPER CASE.");
 		buildSrc("");
 		buildSrc("    TRANSLATE lv_abc USING: '1 2 3 ', 'a-b-c-'.");
 
+		buildExp("    DATA: lv_text TYPE string, lv_other_text type string, lv_abc TYPE char10.");
+		buildExp("");
 		buildExp("    lv_text = to_lower( lv_text ).");
 		buildExp("    lv_other_text = to_upper( lv_other_text ).");
 		buildExp("");
@@ -272,6 +281,8 @@ public class TranslateTest extends RuleTestBase {
 
 	@Test
 	void testMacroDefinition() {
+		rule.configSkipUnknownTypes.setValue(false);
+
 		buildSrc("DEFINE any_macro.");
 		buildSrc("  TRANSLATE &1 TO UPPER CASE.");
 		buildSrc("  TRANSLATE &1 TO LOWER CASE.");
@@ -287,6 +298,163 @@ public class TranslateTest extends RuleTestBase {
 		buildExp("END-OF-DEFINITION.");
 
 		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testUnknownTypesUnchanged() {
+		rule.configSkipUnknownTypes.setValue(true);
+
+		buildSrc("    DATA(ls_unknown_type) = get_charlike_structure( ).");
+		buildSrc("    DATA ls_ddic_type TYPE some_ddic_type.");
+		buildSrc("    DATA ls_other_type TYPE if_any_interface=>ty_s_typedef_out_of_sight.");
+		buildSrc("    TRANSLATE ls_unknown_type TO UPPER CASE.");
+		buildSrc("    TRANSLATE ls_ddic_type TO LOWER CASE.");
+		buildSrc("    TRANSLATE ls_other_type USING 'a1b2'.");
+
+		copyExpFromSrc();
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testKnownCharlikeTypes() {
+		buildSrc("    DATA lv_string1  TYPE string.");
+		buildSrc("    DATA lv_string2  LIKE lv_string1.");
+		buildSrc("    DATA lv_string3  TYPE string VALUE `any`.");
+		buildSrc("    DATA lv_sstring  TYPE sstring.");
+		buildSrc("    DATA lv_char1(3) TYPE c.");
+		buildSrc("    DATA lv_char2    TYPE c LENGTH 2.");
+		buildSrc("    DATA lv_char3    TYPE char3.");
+		buildSrc("    DATA lv_char4    LIKE lv_char1.");
+		buildSrc("    DATA lv_dats1    TYPE dats.");
+		buildSrc("    DATA lv_dats2    TYPE d.");
+		buildSrc("    DATA lv_uname1   TYPE sy-uname.");
+		buildSrc("    DATA lv_uname2   LIKE sy-uname.");
+		buildSrc("    DATA lv_uname3   TYPE syst_uname.");
+		buildSrc("    DATA lv_uname4   LIKE lv_uname2.");
+		buildSrc("");
+		buildSrc("    FIELD-SYMBOLS <lv_clike>     TYPE clike.");
+		buildSrc("    FIELD-SYMBOLS <lv_csequence> TYPE csequence.");
+		buildSrc("");
+		buildSrc("    TRANSLATE lv_string1 TO UPPER CASE.");
+		buildSrc("    TRANSLATE lv_string2 TO LOWER CASE.");
+		buildSrc("    TRANSLATE lv_string3 USING `a1b2`.");
+		buildSrc("    TRANSLATE lv_sstring TO UPPER CASE.");
+		buildSrc("    TRANSLATE lv_char1   TO UPPER CASE.");
+		buildSrc("    TRANSLATE lv_char2   TO LOWER CASE.");
+		buildSrc("    TRANSLATE lv_char3   USING `a1b2`.");
+		buildSrc("    TRANSLATE lv_char4   TO UPPER CASE.");
+		buildSrc("    TRANSLATE lv_dats1   TO UPPER CASE.");
+		buildSrc("    TRANSLATE lv_dats2   TO LOWER CASE.");
+		buildSrc("    TRANSLATE lv_uname1  TO UPPER CASE.");
+		buildSrc("    TRANSLATE lv_uname2  TO LOWER CASE.");
+		buildSrc("    TRANSLATE lv_uname3  USING `a1b2`.");
+		buildSrc("    TRANSLATE lv_uname4  TO UPPER CASE.");
+		buildSrc("");
+		buildSrc("    TRANSLATE <lv_clike>     TO UPPER CASE.");
+		buildSrc("    TRANSLATE <lv_csequence> TO LOWER CASE.");
+
+		buildExp("    DATA lv_string1  TYPE string.");
+		buildExp("    DATA lv_string2  LIKE lv_string1.");
+		buildExp("    DATA lv_string3  TYPE string VALUE `any`.");
+		buildExp("    DATA lv_sstring  TYPE sstring.");
+		buildExp("    DATA lv_char1(3) TYPE c.");
+		buildExp("    DATA lv_char2    TYPE c LENGTH 2.");
+		buildExp("    DATA lv_char3    TYPE char3.");
+		buildExp("    DATA lv_char4    LIKE lv_char1.");
+		buildExp("    DATA lv_dats1    TYPE dats.");
+		buildExp("    DATA lv_dats2    TYPE d.");
+		buildExp("    DATA lv_uname1   TYPE sy-uname.");
+		buildExp("    DATA lv_uname2   LIKE sy-uname.");
+		buildExp("    DATA lv_uname3   TYPE syst_uname.");
+		buildExp("    DATA lv_uname4   LIKE lv_uname2.");
+		buildExp("");
+		buildExp("    FIELD-SYMBOLS <lv_clike>     TYPE clike.");
+		buildExp("    FIELD-SYMBOLS <lv_csequence> TYPE csequence.");
+		buildExp("");
+		buildExp("    lv_string1 = to_upper( lv_string1 ).");
+		buildExp("    lv_string2 = to_lower( lv_string2 ).");
+		buildExp("    lv_string3 = translate( val  = lv_string3");
+		buildExp("                            from = `ab`");
+		buildExp("                            to   = `12` ).");
+		buildExp("    lv_sstring = to_upper( lv_sstring ).");
+		buildExp("    lv_char1 = to_upper( lv_char1 ).");
+		buildExp("    lv_char2 = to_lower( lv_char2 ).");
+		buildExp("    lv_char3 = translate( val  = lv_char3");
+		buildExp("                          from = `ab`");
+		buildExp("                          to   = `12` ).");
+		buildExp("    lv_char4 = to_upper( lv_char4 ).");
+		buildExp("    lv_dats1 = to_upper( lv_dats1 ).");
+		buildExp("    lv_dats2 = to_lower( lv_dats2 ).");
+		buildExp("    lv_uname1 = to_upper( lv_uname1 ).");
+		buildExp("    lv_uname2 = to_lower( lv_uname2 ).");
+		buildExp("    lv_uname3 = translate( val  = lv_uname3");
+		buildExp("                           from = `ab`");
+		buildExp("                           to   = `12` ).");
+		buildExp("    lv_uname4 = to_upper( lv_uname4 ).");
+		buildExp("");
+		buildExp("    <lv_clike> = to_upper( <lv_clike> ).");
+		buildExp("    <lv_csequence> = to_lower( <lv_csequence> ).");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testKnownNonCharlikeTypesUnchanged() {
+		buildSrc("    DATA lv_int1   TYPE int4.");
+		buildSrc("    DATA lv_int2   TYPE sy-colno.");
+		buildSrc("    DATA lv_int3   LIKE sy-colno.");
+		buildSrc("    DATA lv_int4   TYPE syst_colno.");
+		buildSrc("    DATA lv_float  TYPE decfloat16.");
+		buildSrc("    DATA lv_packed TYPE p LENGTH 8 DECIMALS 2.");
+		buildSrc("");
+		buildSrc("    TRANSLATE lv_int1 TO UPPER CASE.");
+		buildSrc("    TRANSLATE lv_int2 TO LOWER CASE.");
+		buildSrc("    TRANSLATE lv_int3 USING `a1b2`.");
+		buildSrc("    TRANSLATE lv_int4   TO UPPER CASE.");
+		buildSrc("    TRANSLATE lv_float   TO LOWER CASE.");
+		buildSrc("    TRANSLATE lv_packed   USING `a1b2`.");
+
+		copyExpFromSrc();
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testValueParameterWithKnownType() {
+		buildSrc("CLASS cl_any_class DEFINITION.");
+		buildSrc("  PUBLIC SECTION.");
+		buildSrc("    METHODS any_method");
+		buildSrc("      RETURNING VALUE(result) TYPE char10.");
+		buildSrc("ENDCLASS.");
+		buildSrc("");
+		buildSrc("CLASS cl_any_class IMPLEMENTATION.");
+		buildSrc("  METHOD any_method.");
+		buildSrc("    result = get_result( ).");
+		buildSrc("    TRANSLATE result TO LOWER CASE.");
+		buildSrc("  ENDMETHOD.");
+		buildSrc("ENDCLASS.");
+
+		buildExp("CLASS cl_any_class DEFINITION.");
+		buildExp("  PUBLIC SECTION.");
+		buildExp("    METHODS any_method");
+		buildExp("      RETURNING VALUE(result) TYPE char10.");
+		buildExp("ENDCLASS.");
+		buildExp("");
+		buildExp("CLASS cl_any_class IMPLEMENTATION.");
+		buildExp("  METHOD any_method.");
+		buildExp("    result = get_result( ).");
+		buildExp("    result = to_lower( result ).");
+		buildExp("  ENDMETHOD.");
+		buildExp("ENDCLASS.");
 
 		testRule();
 	}

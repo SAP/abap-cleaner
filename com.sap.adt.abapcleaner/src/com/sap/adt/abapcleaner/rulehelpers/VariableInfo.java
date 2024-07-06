@@ -3,6 +3,8 @@ package com.sap.adt.abapcleaner.rulehelpers;
 import java.util.ArrayList;
 import java.util.HashSet;
 
+import com.sap.adt.abapcleaner.base.AbapCult;
+import com.sap.adt.abapcleaner.base.StringUtil;
 import com.sap.adt.abapcleaner.parser.Command;
 import com.sap.adt.abapcleaner.parser.Token;
 
@@ -200,5 +202,57 @@ public class VariableInfo {
    
    public Command getEnclosingCommand(boolean considerCommentUsage) { 
    	return considerCommentUsage ? enclosingCommandWithCommentUsage : enclosingCommand; 
+   }
+   
+   /** returns true if the type of the variable is a known character-like type that is not structured */
+   public boolean hasKnownUnstructuredCharlikeType() {
+   	VariableInfo varInfo = this;
+   	while (varInfo.typeSource != null)
+   		varInfo = varInfo.typeSource;
+   	
+   	Token token = varInfo.declarationToken; 
+   	if (token == null) // pro forma
+   		return false;
+   	
+   	// move to the 'TYPE' or 'LIKE' keyword in 'lv_var TYPE ...' or 'VALUE(rv_var) TYPE ...'
+   	token = token.getNext().textEquals(")") ? token.getNext().getNextCodeSibling() : token.getNextCodeSibling();
+   	if (token == null) // pro forma
+   		return false;
+   	boolean isType = token.isKeyword("TYPE");
+   	boolean isLike = token.isKeyword("LIKE");
+   	if (!isType && !isLike)
+   		return false;
+
+   	token = token.getNextCodeSibling();
+   	if (token == null) // pro forma
+   		return false;
+   	
+   	// built-in character-like types: string, c [LENGTH ...], n [LENGTH ...]; 
+   	// built-in date/time types d, t (but not utclong) and corresponding built-in ABAP Dictionary types
+   	if (isType && token.textEqualsAny("string", "c", "n", "d", "t", "datn", "dats", "timn", "tims", "sstring", "lang")) 
+   		return true;
+   	// generic types (only possible for field symbols)
+   	if (isType && token.textEqualsAny("clike", "csequence")) 
+   		return true;
+
+   	// character-like system fields and their types e.g. sy-uname / syst_uname (esp. with length > 1)
+   	String syField = null;
+   	if (token.textStartsWith("sy-")) { // this is also tolerated after TYPE
+   		syField = token.getText().substring("sy-".length());
+   	} else if (isType && token.textStartsWith("syst_")) {
+   		syField = token.getText().substring("syst_".length());
+   	}
+   	if (syField != null && AbapCult.stringEqualsAny(true, syField, "abcde", "cprog", "dbnam", "dbsys", "host", "langu", "ldbpg", "lisel", "msgid", "msgty", "msgv1", "msgv2", "msgv3", "msgv4", "pfkey", "slset", "sysid", "tcode", "title", "ucomm", "uname", "zonlo"))
+	   	return true;
+
+   	// char5, numc5 etc.
+   	String text = token.getText();
+   	if (isType && StringUtil.hasTrailingDigits(text)) {
+	   	String textWithoutDigits = StringUtil.removeTrailingDigits(text);
+	   	if (AbapCult.stringEqualsAny(true, textWithoutDigits, "char", "numc")) { 
+	   		return true;
+	   	}
+   	}   	
+   	return false;
    }
 }
