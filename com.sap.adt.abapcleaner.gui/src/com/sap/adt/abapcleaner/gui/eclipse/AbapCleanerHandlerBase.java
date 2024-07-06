@@ -30,6 +30,7 @@ import org.osgi.framework.FrameworkUtil;
 
 import com.sap.adt.abapcleaner.base.ABAP;
 import com.sap.adt.abapcleaner.gui.CodeDisplayColors;
+import com.sap.adt.abapcleaner.gui.ColorProfile;
 import com.sap.adt.abapcleaner.gui.FrmMain;
 import com.sap.adt.abapcleaner.parser.CleanupRange;
 import com.sap.adt.abapcleaner.parser.CleanupResult;
@@ -101,8 +102,9 @@ public abstract class AbapCleanerHandlerBase extends AbstractAdtEditorHandler {
 			CleanupResult result;
 			if (interactive) {
 	         // get ADT color settings to make code in the ABAP cleaner UI appear similar to code in ADT
-				CodeDisplayColors codeDisplayColors = createCodeDisplayColors(); 
-				result = FrmMain.cleanInteractively(oldSource, abapRelease, cleanupRange, workspaceDir, true, adtSourcePage.getTitle(), codeDisplayColors, readOnly);
+				CodeDisplayColors codeDisplayColorsADT = createCodeDisplayColors(ColorProfile.ADT); 
+				CodeDisplayColors codeDisplayColorsClassic = createCodeDisplayColors(ColorProfile.CLASSIC); 
+				result = FrmMain.cleanInteractively(oldSource, abapRelease, cleanupRange, workspaceDir, true, adtSourcePage.getTitle(), codeDisplayColorsADT, codeDisplayColorsClassic, readOnly);
 			} else {
 				result = FrmMain.cleanAutomatically(oldSource, abapRelease, cleanupRange, workspaceDir, null, false, ABAP.LINE_SEPARATOR);
 			}
@@ -124,7 +126,7 @@ public abstract class AbapCleanerHandlerBase extends AbstractAdtEditorHandler {
 		return null;
 	}
 
-	private CodeDisplayColors createCodeDisplayColors() {
+	private CodeDisplayColors createCodeDisplayColors(ColorProfile colorProfile) {
 		final String namePrefix = "com.sap.adt.tools.abapsource.ui."; 
 
 		ColorRegistry colorRegistry = JFaceResources.getColorRegistry();
@@ -137,7 +139,7 @@ public abstract class AbapCleanerHandlerBase extends AbstractAdtEditorHandler {
 		// Color colError = colorRegistry.get(namePrefix + "error");
 		// Color colSqlScriptBack = colorRegistry.get(namePrefix + "sqlScriptBackground");
 		
-		return new CodeDisplayColors(colMethodBackground, colDefault, colKeyword, colLiteral, colLiteralNumber, colComment);
+		return new CodeDisplayColors(colorProfile, colMethodBackground, colDefault, colKeyword, colLiteral, colLiteralNumber, colComment);
 	}
 	
 	private static void replaceTextInDocument(IDocument document, IAbapSourcePage adtSourcePage, String source,

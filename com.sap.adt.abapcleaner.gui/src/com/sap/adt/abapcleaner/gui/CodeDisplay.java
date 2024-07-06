@@ -337,8 +337,6 @@ public class CodeDisplay extends Composite {
 		// Disable the check that prevents subclassing of SWT components
 	}
 
-	public final void setColors(CodeDisplayColors colors) { this.colors = colors; }
-	
 	public final void setUsedRulesDisplay(IUsedRulesDisplay usedRulesDisplay) { this.usedRulesDisplay = usedRulesDisplay; }
 
 	public final void setSearchControls(ISearchControls searchControls) { this.searchControls = searchControls; }
@@ -1173,6 +1171,11 @@ public class CodeDisplay extends Composite {
 		invalidateDisplay();
 	}
 
+	public final void setColors(CodeDisplayColors colors) { 
+		this.colors = colors;
+		invalidateDisplay();
+	}
+	
 	private final Font changeSize(Font font, float value) {
 		FontData[] fontData = font.getFontData();
 		for (int i = 0; i < fontData.length; ++i)

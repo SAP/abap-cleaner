@@ -13,7 +13,7 @@ import com.sap.adt.abapcleaner.parser.TokenTypeRefinerRnd;
 
 public final class Program {
 	/** Technical version used in settings files. */
-	public static final int TECHNICAL_VERSION = 25;
+	public static final int TECHNICAL_VERSION = 26;
 
 	public static final String PRODUCT_NAME = "ABAP cleaner";
 	
