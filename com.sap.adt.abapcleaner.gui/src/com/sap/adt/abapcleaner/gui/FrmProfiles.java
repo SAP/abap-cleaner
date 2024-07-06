@@ -937,7 +937,7 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 		});
 		btnGenerateExample.setText("Gen. &Ex.");
 
-		codeDisplay = new CodeDisplay(pnlRule, SWT.NONE);
+		codeDisplay = new CodeDisplay(pnlRule, SWT.NONE, true);
 		codeDisplay.setColors(codeDisplayColors);
 		codeDisplay.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1));
 		codeDisplay.setCodeFontSize(CodeDisplay.DEFAULT_FONT_SIZE);
@@ -1308,7 +1308,7 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
       Task result = job.run();
       if (result.getSuccess()) {
          codeDisplay.setInfo(rule.getDisplayName() + " - example", "", curExampleCode, ABAP.NEWEST_RELEASE, rule);
-         codeDisplay.refreshCode(result.getResultingCode(), result.getResultingDiffDoc(), setPosition, setPosition, setPosition);
+         codeDisplay.refreshCode(result.getResultingCode(), result.getResultingDiffDoc(), rule.parentProfile, setPosition, setPosition, setPosition);
          return true;
       } else {
          Message.show(result.getErrorMessage(), shell);
