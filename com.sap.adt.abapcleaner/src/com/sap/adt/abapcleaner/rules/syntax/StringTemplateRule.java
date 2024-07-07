@@ -90,16 +90,21 @@ public class StringTemplateRule extends RuleForCommands {
 			+ LINE_SEP + "    \" escape chars are changed accordingly:" 
 			+ LINE_SEP + "    lv_escape1 = 'To ''be''' && ` or ``not`` to be`." 
 			+ LINE_SEP + "    lv_escape2 = 'String templates must escape |' && ` as well as { and }.`." 
+			+ LINE_SEP 
+			+ LINE_SEP + "    \" you may want to use string templates only on lines that contain operands to embed:" 
+			+ LINE_SEP + "    rv_example  = `3 + 5 = ` && `8` && `. `" 
+			+ LINE_SEP + "               && `a + b = ` && c && `.`." 
 			+ LINE_SEP + "  ENDMETHOD.";
    }
 
 	final ConfigEnumValue<StringTemplateCondition> configStringTemplateCondition = new ConfigEnumValue<StringTemplateCondition>(this, "StringTemplateCondition", "Embed operands with |{ ... }|:",
 			new String[] { "if result is shorter", "if result is shorter or equal", "always" }, StringTemplateCondition.values(), StringTemplateCondition.SHORTER_OR_EQUAL);
-	final ConfigBoolValue configAlwaysConvertLiterals = new ConfigBoolValue(this, "AlwaysConvertLiterals", "Always convert text literals in concatenations", true);
+	final ConfigBoolValue configAlwaysConvertLiterals = new ConfigBoolValue(this, "AlwaysConvertLiterals", "Convert text literals in concatenations regardless of result length", true);
+	final ConfigBoolValue configRequireOperandsOnSameLine = new ConfigBoolValue(this, "RequireOperandsOnSameLine", "Only convert text literals if line contains operands to embed", false, false, LocalDate.of(2024, 7, 6));
 	final ConfigBoolValue configIgnoreMultiLineOperands = new ConfigBoolValue(this, "IgnoreMultiLineOperands", "Ignore multi-line operands at line start or end", true);
 	final ConfigBoolValue configKeepControlCharsSeparate = new ConfigBoolValue(this, "KeepControlCharsSeparate", "Keep string templates with control characters \\t \\n \\r separate", true);
 
-	private final ConfigValue[] configValues = new ConfigValue[] { configStringTemplateCondition, configAlwaysConvertLiterals, configIgnoreMultiLineOperands, configKeepControlCharsSeparate };
+	private final ConfigValue[] configValues = new ConfigValue[] { configStringTemplateCondition, configAlwaysConvertLiterals, configRequireOperandsOnSameLine, configIgnoreMultiLineOperands, configKeepControlCharsSeparate };
 
 	@Override
 	public ConfigValue[] getConfigValues() { return configValues; }
@@ -214,6 +219,11 @@ public class StringTemplateRule extends RuleForCommands {
 				++literalCount;
 			}
 		}
+
+		// if configured, do not convert (and potentially merge) literals if there are no embeddings on the same line
+		if (configRequireOperandsOnSameLine.getValue() && literalCount == termsInLine.size())
+			return false;
+		
 		int literalCountRequiredToEmbed = 0;
 		if (condition == StringTemplateCondition.SHORTER) 
 			literalCountRequiredToEmbed = 2;

@@ -19,6 +19,7 @@ public class StringTemplateTest extends RuleTestBase {
 		// setup default test configuration (may be modified in the individual test methods)
 		rule.configStringTemplateCondition.setEnumValue(StringTemplateCondition.SHORTER_OR_EQUAL);
 		rule.configAlwaysConvertLiterals.setValue(true);
+		rule.configRequireOperandsOnSameLine.setValue(false);
 		rule.configIgnoreMultiLineOperands.setValue(true);
 		rule.configKeepControlCharsSeparate.setValue(true);
 	}
@@ -403,6 +404,34 @@ public class StringTemplateTest extends RuleTestBase {
 		buildExp("       |{ iv_date+4(2) }-| &&");
 		buildExp("       |{ iv_date+6(2) }-| &&");
 		buildExp("       iv_add.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testRequireOperandsOnSameLine() {
+		rule.configRequireOperandsOnSameLine.setValue(true);
+
+		buildSrc("    rv_example  = `3 + 5 = ` && `8` && `. `");
+		buildSrc("               && `a + b = ` && c && `.`.");
+
+		buildExp("    rv_example  = `3 + 5 = ` && `8` && `. `");
+		buildExp("               && |a + b = { c }.|.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testDoNotRequireOperandsOnSameLine() {
+		buildSrc("    rv_example  = `3 + 5 = ` && `8` && `. `");
+		buildSrc("               && `a + b = ` && c && `.`.");
+
+		buildExp("    rv_example  = |3 + 5 = 8. |");
+		buildExp("               && |a + b = { c }.|.");
 
 		putAnyMethodAroundSrcAndExp();
 
