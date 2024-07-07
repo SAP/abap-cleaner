@@ -2981,4 +2981,27 @@ class AlignParametersTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testAlignLoopAtGroupBy() {
+		buildSrc("    LOOP AT lt_table ASSIGNING <fs>");
+		buildSrc("         GROUP BY ( key1 = <fs>-any_component key2 = get_value( <fs>-other_component )");
+		buildSrc("                     indx = GROUP INDEX count = GROUP SIZE )");
+		buildSrc("         ASSIGNING FIELD-SYMBOL(<group>).");
+		buildSrc("      cl_demo_output=>write( |{ <group>-indx } { <group>-key1 } { <group>-key2 } { <group>-count }| ).");
+		buildSrc("    ENDLOOP.");
+
+		buildExp("    LOOP AT lt_table ASSIGNING <fs>");
+		buildExp("         GROUP BY ( key1  = <fs>-any_component");
+		buildExp("                    key2  = get_value( <fs>-other_component )");
+		buildExp("                    indx  = GROUP INDEX");
+		buildExp("                    count = GROUP SIZE )");
+		buildExp("         ASSIGNING FIELD-SYMBOL(<group>).");
+		buildExp("      cl_demo_output=>write( |{ <group>-indx } { <group>-key1 } { <group>-key2 } { <group>-count }| ).");
+		buildExp("    ENDLOOP.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }

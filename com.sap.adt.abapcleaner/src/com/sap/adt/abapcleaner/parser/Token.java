@@ -2501,10 +2501,13 @@ public class Token {
 			// the built-in function is 'shadowed' (even if the method has a different signature) and the method is called.
 
 		} else if (textEquals("(")) {
-			// stand-alone " ( " only starts a component list if it is a row inside a VALUE or NEW constructor expression, 
-			// not if it is part of arithmetic expressions etc.
-			if (parent == null) {
-				// stand-alone " ( " on top level must be part of an arithmetic expression
+			// stand-alone " ( " only starts a component list in case of LOOP AT ... GROUP BY ( ... ) or if it is a row  
+			// inside a VALUE or NEW constructor expression, not if it is part of arithmetic expressions etc.
+			if (parent == null && this.opensGroupKey()) {
+				// LOOP AT ... GROUP BY ( key1 = dobj1 key2 = dobj2 ... [gs = GROUP SIZE] [gi = GROUP INDEX] ) ...
+				return getNextCodeSibling();
+			} else if (parent == null) {
+				// otherwise, stand-alone " ( " on top level must be part of an arithmetic expression
 				return null;
 			} else if (parent.textEquals("(") || !parent.textEndsWith("(")) {
 				return null;
@@ -2520,8 +2523,9 @@ public class Token {
 			// The above conditions already excluded the case " ( ( ".  
 			// do NOT use getPrevCodeToken() here, as it may return the "#(" of the VALUE or NEW constructor, which has TokenType.OTHER_OP
 			Token prev = getPrevCodeSibling();  
-			if (prev != null && !prev.textEquals(")") && (prev.isAssignmentOperator() || prev.isComparisonOperator() || prev.isOtherOp() || prev.isAnyKeyword("UNTIL", "WHILE", "WHERE")))
+			if (prev != null && !prev.textEquals(")") && (prev.isAssignmentOperator() || prev.isComparisonOperator() || prev.isOtherOp() || prev.isAnyKeyword("UNTIL", "WHILE", "WHERE"))) {
 				return null;
+			}
 
 		} else {
 			// as the token opens a level but is not a stand-alone "(", it must be a method call or a constructor expression,  
@@ -2535,7 +2539,15 @@ public class Token {
 		return getNextSibling();
 	}
 	
-	
+	public boolean opensGroupKey() {
+		if (!textEquals("(") || !hasChildren() || next.isAttached())
+			return false;
+		// LOOP AT ... GROUP BY ( key1 = dobj1 key2 = dobj2 ... [gs = GROUP SIZE] [gi = GROUP INDEX] ) ...
+		Token prev = getPrevCodeSibling(); 
+		Token prevPrev = (prev == null) ? null : prev.getPrevCodeSibling();
+		return prevPrev != null && prevPrev.isKeyword("GROUP") && prev.isKeyword("BY") && parentCommand.firstCodeTokenIsKeyword("LOOP");
+	}
+
 	/**
 	 * If this Token starts a logical expression, the last code Token of the logical expression is returned; otherwise null.
 	 * @return
