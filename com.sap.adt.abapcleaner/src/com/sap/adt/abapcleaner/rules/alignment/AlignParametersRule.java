@@ -36,6 +36,7 @@ public class AlignParametersRule extends RuleForCommands {
 		FUNCTIONAL_CALL_PARAMS, 
 		PROCEDURAL_CALL_PARAMS, 
 		TABLE_KEY, 
+		GROUP_KEY,
 		CONSTRUCTOR_EXPR,
 		ROW_IN_VALUE_OR_NEW_CONSTRUCTOR;
 		
@@ -144,12 +145,20 @@ public class AlignParametersRule extends RuleForCommands {
 			+ LINE_SEP + "                         ( item_key = '20220040000101'  event_date = '20220401'  total_qty = '30'  qty_unit = 'DAY'  amount = '1500.00'  currency = 'EUR' )" 
 			+ LINE_SEP + "                         ( item_key = '20220050000101'  event_date = '20220501'  total_qty = '30'  qty_unit = 'DAY'  amount = '2000.00'  currency = 'EUR' ) )." 
 			+ LINE_SEP 
-			+ LINE_SEP + "    READ TABLE lt_any_table_name ASSIGNING <ls_table_row> " 
+			+ LINE_SEP + "    READ TABLE lt_any_table_name ASSIGNING <ls_table_row>" 
 			+ LINE_SEP + "         WITH KEY field1 = ls_any_structure-field1" 
 			+ LINE_SEP + "                  fld2 = ls_any_structure-fld2" 
 			+ LINE_SEP + "                  long_field_name3 = ls_any_structure-long_field_name_3." 
 			+ LINE_SEP 
 			+ LINE_SEP + "    result = VALUE #( BASE result ( id = 1 name = 'abc' ) )."
+			+ LINE_SEP 
+			+ LINE_SEP + "    LOOP AT lt_table ASSIGNING <fs>" 
+			+ LINE_SEP + "         GROUP BY ( key1 = <fs>-any_component key2 = get_value( <fs>-other_component )" 
+			+ LINE_SEP + "                     indx = GROUP INDEX count = GROUP SIZE )" 
+			+ LINE_SEP + "         ASSIGNING FIELD-SYMBOL(<group>)." 
+			+ LINE_SEP 
+			+ LINE_SEP + "      cl_demo_output=>write( |{ <group>-indx } { <group>-key1 } { <group>-key2 } { <group>-count }| )." 
+			+ LINE_SEP + "    ENDLOOP." 
 			+ LINE_SEP + "  ENDMETHOD.";
    }
 
@@ -337,7 +346,7 @@ public class AlignParametersRule extends RuleForCommands {
 	private ContentType determineContentType(Token token) {
 		if (token.textEquals("(")) { 
 			// stand-alone parenthesis, as opposed to "method_name(" or "type_name(" or "#(" 
-			return ContentType.ROW_IN_VALUE_OR_NEW_CONSTRUCTOR;
+			return token.opensGroupKey() ? ContentType.GROUP_KEY : ContentType.ROW_IN_VALUE_OR_NEW_CONSTRUCTOR;
 		}
 		
 		Token prev = token.getPrevCodeSibling();
@@ -377,7 +386,7 @@ public class AlignParametersRule extends RuleForCommands {
 	}
 
 	private int determineBaseIndent(Token token, ContentType contentType) {
-		if (contentType == ContentType.ROW_IN_VALUE_OR_NEW_CONSTRUCTOR) {
+		if (contentType == ContentType.ROW_IN_VALUE_OR_NEW_CONSTRUCTOR || contentType == ContentType.GROUP_KEY) {
 			// rows in a VALUE or NEW constructor expression were already moved when the outer VALUE or NEW constructor itself was processed 
 			return token.getStartIndexInLine();
 		} else { 
@@ -397,7 +406,7 @@ public class AlignParametersRule extends RuleForCommands {
 	}
 
 	private int determineMinimumIndent(Token token, ContentType contentType) {
-		if (contentType == ContentType.ROW_IN_VALUE_OR_NEW_CONSTRUCTOR) {
+		if (contentType == ContentType.ROW_IN_VALUE_OR_NEW_CONSTRUCTOR || contentType == ContentType.GROUP_KEY) {
 			// rows in a VALUE or NEW constructor expression were already moved when the outer VALUE or NEW constructor itself was processed 
 			return token.getStartIndexInLine();
 		} else {
@@ -687,7 +696,9 @@ public class AlignParametersRule extends RuleForCommands {
 				Token parameter = token;
 				Token keyword = parameter.getPrevCodeToken();
 				if (keyword != null) {
-					if (!keyword.isKeyword() || keyword != parameter.getPrevCodeSibling()) {
+					if (contentType == ContentType.GROUP_KEY) {
+						keyword = null; 
+					} else if (!keyword.isKeyword() || keyword != parameter.getPrevCodeSibling()) {
 						keyword = null; 
 					} else if (keyword.isAnyKeyword("EXPORTING", "IMPORTING", "TABLES", "CHANGING", "RECEIVING", "EXCEPTIONS")) {
 						isInExceptions = keyword.isKeyword("EXCEPTIONS");
@@ -701,7 +712,14 @@ public class AlignParametersRule extends RuleForCommands {
 					}
 				}
 				Token assignmentOp = parameter.getNextCodeSibling(); // there may be a comment line between EXPORTING and the first parameter
-				Term expression = Term.createArithmetic(assignmentOp.getNext());
+				Token exprStart = assignmentOp.getNext();
+				Term expression;
+				if (contentType == ContentType.GROUP_KEY && exprStart.matchesOnSiblings(true, "GROUP", "SIZE|INDEX")) {
+					// LOOP AT ... GROUP BY ( key1 = dobj1 key2 = dobj2 ... [gs = GROUP SIZE] [gi = GROUP INDEX] ) ...
+					expression = Term.createForTokenRange(exprStart, exprStart.getNextCodeSibling());
+				} else {
+					expression = Term.createArithmetic(assignmentOp.getNext());
+				}
 				
 				// for "RECEIVE RESULTS FROM FUNCTION func" consider the MESSAGE addition after two special exceptions, 
 				// see https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/abapreceive_para.htm:
@@ -770,7 +788,7 @@ public class AlignParametersRule extends RuleForCommands {
 				if (token == parentToken.getNext() || token.lineBreaks > 0) {
 					if  (token.isPseudoCommentAfterCode()) {
 						// avoid moving pseudo comments to the next line if they refer to the line of the parentToken 
-					} else if (token.isCommentAfterCode() && contentType != ContentType.CONSTRUCTOR_EXPR && contentType != ContentType.ROW_IN_VALUE_OR_NEW_CONSTRUCTOR) {
+					} else if (token.isCommentAfterCode() && contentType != ContentType.CONSTRUCTOR_EXPR && contentType != ContentType.ROW_IN_VALUE_OR_NEW_CONSTRUCTOR && contentType != ContentType.GROUP_KEY) {
 						// line-end comments after method calls usually do not refer to the parameters; therefore, keep them in their place, too
 					} else {
 						// store 'other line starts'; in case this is a keyword like "EXPORTING", this may be removed again later
@@ -839,13 +857,14 @@ public class AlignParametersRule extends RuleForCommands {
 	private TableStart determineTableStart(Token parentToken, int baseIndent, int minimumIndent, ContentType contentType, AlignTable table, ArrayList<Token> otherLineStarts) {
 		AlignColumn keywordColumn = table.getColumn(Columns.KEYWORD.getValue());
 		boolean hasKeywords = !keywordColumn.isEmpty();
-		int addIndent = (contentType == ContentType.ROW_IN_VALUE_OR_NEW_CONSTRUCTOR || hasKeywords) ? ABAP.INDENT_STEP : 2 * ABAP.INDENT_STEP; 
+		int addIndent = (contentType == ContentType.ROW_IN_VALUE_OR_NEW_CONSTRUCTOR || contentType == ContentType.GROUP_KEY || hasKeywords) 
+						  ? ABAP.INDENT_STEP : 2 * ABAP.INDENT_STEP; 
 
 		// determine whether to continue on the same line after parentToken (this may be revised later if there is not enough space)
 		// note that continueOnSameLine may refer to the table (if it starts directly after parentToken) or to otherLineStarts
 		boolean continueOnSameLine;
 		Token firstTokenInTable = table.getFirstToken();
-		if ((contentType == ContentType.CONSTRUCTOR_EXPR) || (contentType == ContentType.ROW_IN_VALUE_OR_NEW_CONSTRUCTOR)) {
+		if ((contentType == ContentType.CONSTRUCTOR_EXPR) || (contentType == ContentType.ROW_IN_VALUE_OR_NEW_CONSTRUCTOR) || (contentType == ContentType.GROUP_KEY)) {
 			continueOnSameLine = true;
 		} else if (firstTokenInTable != null && parentToken.getNext() == firstTokenInTable) {
 			continueOnSameLine = true;
