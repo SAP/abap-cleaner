@@ -14,7 +14,8 @@ This rule is part of the **essential** profile, as it is explicitly demanded by 
 ## Options
 
 * Embed operands with |\{ ... \}|: \[if result is shorter or equal\]
-* \[X\] Always convert text literals in concatenations
+* \[X\] Convert text literals in concatenations regardless of result length
+* \[ \] Only convert text literals if line contains operands to embed
 * \[X\] Ignore multi-line operands at line start or end
 * \[X\] Keep string templates with control characters \\t \\n \\r separate
 
@@ -57,6 +58,10 @@ This rule is part of the **essential** profile, as it is explicitly demanded by 
     " escape chars are changed accordingly:
     lv_escape1 = 'To ''be''' && ` or ``not`` to be`.
     lv_escape2 = 'String templates must escape |' && ` as well as { and }.`.
+
+    " you may want to use string templates only on lines that contain operands to embed:
+    rv_example  = `3 + 5 = ` && `8` && `. `
+               && `a + b = ` && c && `.`.
   ENDMETHOD.
 ```
 
@@ -98,6 +103,10 @@ Resulting code:
     " escape chars are changed accordingly:
     lv_escape1 = |To 'be' or `not` to be|.
     lv_escape2 = |String templates must escape \| as well as \{ and \}.|.
+
+    " you may want to use string templates only on lines that contain operands to embed:
+    rv_example  = |3 + 5 = 8. |
+               && |a + b = { c }.|.
   ENDMETHOD.
 ```
 

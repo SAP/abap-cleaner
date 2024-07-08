@@ -22,6 +22,21 @@ Note that the class name must be adjusted to the respective application \(CX\_..
 
 CLASS cl_product_code IMPLEMENTATION.
   METHOD use_assert_class.
+    " Explanation: Using ASSERT in product code is discouraged, because it immediately dumps, even when the code
+    " is called from a test. You can therefore only test the 'happy' cases. This is unsatisfactory, because for
+    " code to be clean and testable, you should be able to safeguard that assertions work correctly in unhappy cases.
+    
+    " The solution is to not use ASSERT in product code, but to rather call a 'productive' assert class cx_XYZ_assert,
+    " which has methods just like CL_ABAP_UNIT_ASSERT to check your expectations, but is specific to your solution XYZ.
+    " With that, even the 'unhappy' cases can be tested, because your tests can catch cx_XYZ_assert exceptions and
+    " ensure they are raised when they should.
+    
+    " Once you have created such a class (short example see below), this cleanup rule helps to automatically convert
+    " existing ASSERT statements into static cx_XYZ_assert=>...( ) calls. Since the exact desired behavior of the
+    " cx_XYZ_assert class may depend on your solution, the class name is not fixed, but can be configured above.
+    " To exclude accidental use of this rule, this cleanup rule is intentionally deactivated at first, and the
+    " class cx_assert does not exist, but must first be adjusted to your own implementation.
+
     ASSERT lo_instance IS BOUND.
     ASSERT is_any_structure-component IS NOT BOUND.
 
@@ -106,6 +121,21 @@ Resulting code:
 
 CLASS cl_product_code IMPLEMENTATION.
   METHOD use_assert_class.
+    " Explanation: Using ASSERT in product code is discouraged, because it immediately dumps, even when the code
+    " is called from a test. You can therefore only test the 'happy' cases. This is unsatisfactory, because for
+    " code to be clean and testable, you should be able to safeguard that assertions work correctly in unhappy cases.
+
+    " The solution is to not use ASSERT in product code, but to rather call a 'productive' assert class cx_XYZ_assert,
+    " which has methods just like CL_ABAP_UNIT_ASSERT to check your expectations, but is specific to your solution XYZ.
+    " With that, even the 'unhappy' cases can be tested, because your tests can catch cx_XYZ_assert exceptions and
+    " ensure they are raised when they should.
+
+    " Once you have created such a class (short example see below), this cleanup rule helps to automatically convert
+    " existing ASSERT statements into static cx_XYZ_assert=>...( ) calls. Since the exact desired behavior of the
+    " cx_XYZ_assert class may depend on your solution, the class name is not fixed, but can be configured above.
+    " To exclude accidental use of this rule, this cleanup rule is intentionally deactivated at first, and the
+    " class cx_assert does not exist, but must first be adjusted to your own implementation.
+
     cx_assert=>assert_bound( lo_instance ).
     cx_assert=>assert_not_bound( is_any_structure-component ).
 
