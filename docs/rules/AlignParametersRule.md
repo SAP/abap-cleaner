@@ -84,12 +84,20 @@ This rule is part of the **essential** profile, as it is explicitly demanded by 
                          ( item_key = '20220040000101'  event_date = '20220401'  total_qty = '30'  qty_unit = 'DAY'  amount = '1500.00'  currency = 'EUR' )
                          ( item_key = '20220050000101'  event_date = '20220501'  total_qty = '30'  qty_unit = 'DAY'  amount = '2000.00'  currency = 'EUR' ) ).
 
-    READ TABLE lt_any_table_name ASSIGNING <ls_table_row> 
+    READ TABLE lt_any_table_name ASSIGNING <ls_table_row>
          WITH KEY field1 = ls_any_structure-field1
                   fld2 = ls_any_structure-fld2
                   long_field_name3 = ls_any_structure-long_field_name_3.
 
     result = VALUE #( BASE result ( id = 1 name = 'abc' ) ).
+
+    LOOP AT lt_table ASSIGNING <fs>
+         GROUP BY ( key1 = <fs>-any_component key2 = get_value( <fs>-other_component )
+                     indx = GROUP INDEX count = GROUP SIZE )
+         ASSIGNING FIELD-SYMBOL(<group>).
+
+      cl_demo_output=>write( |{ <group>-indx } { <group>-key1 } { <group>-key2 } { <group>-count }| ).
+    ENDLOOP.
   ENDMETHOD.
 ```
 
@@ -147,6 +155,16 @@ Resulting code:
 
     result = VALUE #( BASE result
                       ( id = 1 name = 'abc' ) ).
+
+    LOOP AT lt_table ASSIGNING <fs>
+         GROUP BY ( key1  = <fs>-any_component
+                    key2  = get_value( <fs>-other_component )
+                    indx  = GROUP INDEX
+                    count = GROUP SIZE )
+         ASSIGNING FIELD-SYMBOL(<group>).
+
+      cl_demo_output=>write( |{ <group>-indx } { <group>-key1 } { <group>-key2 } { <group>-count }| ).
+    ENDLOOP.
   ENDMETHOD.
 ```
 

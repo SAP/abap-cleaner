@@ -56,24 +56,25 @@ public final class Program {
 	
 	public static Release[] getReleases() {
 		return new Release[] { 
-				Release.create("1.17.0", 2024, 6, 24), 
-				Release.create("1.16.0", 2024, 4, 12), 
-				Release.create("1.15.0", 2024, 3, 25), 
-				Release.create("1.14.0", 2024, 3, 11), 
-				Release.create("1.13.0", 2024, 1, 5), 
+				Release.create("1.18.0", 2024,  7,  8), 
+				Release.create("1.17.0", 2024,  6, 24), 
+				Release.create("1.16.0", 2024,  4, 12), 
+				Release.create("1.15.0", 2024,  3, 25), 
+				Release.create("1.14.0", 2024,  3, 11), 
+				Release.create("1.13.0", 2024,  1,  5), 
 				Release.create("1.12.0", 2023, 11, 27), 
-				Release.create("1.11.0", 2023, 11, 6), 
-				Release.create("1.10.0", 2023, 11, 1), 
-				Release.create("1.9.0", 2023, 10, 30), 
-				Release.create("1.8.0", 2023, 10, 23), 
-				Release.create("1.7.0", 2023, 10, 10), 
-				Release.create("1.6.0", 2023, 10, 2), 
-				Release.create("1.5.0", 2023, 7, 5), 
-				Release.create("1.4.0", 2023, 6, 12), 
-				Release.create("1.3.0", 2023, 6, 6), 
-				Release.create("1.2.0", 2023, 5, 22), 
-				Release.create("1.1.0", 2023, 5, 7), 
-				Release.create("1.0.0", 2023, 4, 21) 
+				Release.create("1.11.0", 2023, 11,  6), 
+				Release.create("1.10.0", 2023, 11,  1), 
+				Release.create("1.9.0",  2023, 10, 30), 
+				Release.create("1.8.0",  2023, 10, 23), 
+				Release.create("1.7.0",  2023, 10, 10), 
+				Release.create("1.6.0",  2023, 10,  2), 
+				Release.create("1.5.0",  2023,  7,  5), 
+				Release.create("1.4.0",  2023,  6, 12), 
+				Release.create("1.3.0",  2023,  6,  6), 
+				Release.create("1.2.0",  2023,  5, 22), 
+				Release.create("1.1.0",  2023,  5,  7), 
+				Release.create("1.0.0",  2023,  4, 21) 
 		};
 	}
 

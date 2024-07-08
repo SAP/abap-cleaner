@@ -2419,7 +2419,8 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 				"for opening the issues behind these improvements!", "for all your ideas!", "for inspiring these improvements!",
 				"for opening the issues that led to these improvements!" };
 		final String SEP = System.lineSeparator();
-		final int HASH_LENGTH = 7;
+		final int HASH_LENGTH_MIN = 7;
+		final int HASH_LENGTH_MAX = 12;
 
 		String text = SystemClipboard.getText();
 		if (StringUtil.isNullOrEmpty(text)) {
@@ -2437,8 +2438,8 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 
 			// remove hash
 			int spacePos = line.indexOf(' ');
-			if (spacePos == HASH_LENGTH && StringUtil.consistsOf(line.substring(0, HASH_LENGTH), "0123456789abcdef")) {
-				line = line.substring(HASH_LENGTH + 1).trim();
+			if (spacePos >= HASH_LENGTH_MIN && spacePos <= HASH_LENGTH_MAX && StringUtil.consistsOf(line.substring(0, spacePos), "0123456789abcdef")) {
+				line = line.substring(spacePos + 1).trim();
 			}
 
 			// remove initial parenthesis like (HEAD -> v#.#.#), (upstream/main), (tag: v#.#.#)

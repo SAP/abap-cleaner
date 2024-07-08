@@ -14,6 +14,7 @@ This rule is part of the **essential** profile, as it is explicitly demanded by 
 
 * \[X\] Remove space before period
 * \[X\] Remove space before chain commas
+* \[X\] Move comma or period across comment lines
 * \[X\] Execute on CLASS ... DEFINITION sections, too
 
 ## Examples
@@ -39,6 +40,9 @@ CLASS any_class IMPLEMENTATION.
       ev_any_value  ,
       ev_other_value " comment
       , ev_third_value
+*      comment line
+       " another comment line
+      , ev_fourth_value
     .
 
     TRY .
@@ -73,7 +77,10 @@ CLASS any_class IMPLEMENTATION.
     CLEAR:
       ev_any_value,
       ev_other_value, " comment
-      ev_third_value.
+      ev_third_value,
+*      comment line
+       " another comment line
+      ev_fourth_value.
 
     TRY.
         any_operation( ).

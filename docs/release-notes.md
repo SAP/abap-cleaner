@@ -6,6 +6,25 @@ as well as bugfixes of reported issues, i.e. anything that enhances or changes t
 For a complete list of changes (including documentation, tests, refactoring etc.), please refer to 
 the list of [commits](../../../commits/main).
 
+## 2024-07-08 (version 1.18.0)
+
+Great **thanks** to [**vonglan**](https://github.com/vonglan), [**Ennowulff**](https://github.com/Ennowulff),
+[**JoachimEck**](https://github.com/JoachimEck), [**apanys**](https://github.com/apanys), [**MichiFr**](https://github.com/MichiFr),
+[**cawoodmonads**](https://github.com/cawoodmonads), [**ConjuringCoffee**](https://github.com/ConjuringCoffee) and 
+[**openPhiL**](https://github.com/openPhiL) for inspiring these improvements and fixes!
+
+* Added menu "View / **Use ADT-Style Colors**" to select between ADT-style and classic **color profile** for diff view ([#282](../../../issues/282))
+* Added labels "**Before cleanup**" and "**After cleanup**" to diff view ([#249](../../../issues/249))
+* Enhanced rule '**Align parameters and components**' for **group key** in LOOP AT ... GROUP BY ([#330](../../../issues/330))
+* Enhanced rule '**Use string templates to assemble text**' with option for **lines without operands** ([#323](../../../issues/323))
+* Enhanced '**Use assert class instead of ASSERT**' with **explanation** in examples ([#314](../../../issues/314))
+* Fixed rule '**Replace TRANSLATE with string functions**' for unknown, potentially **structured types** ([#318](../../../issues/318))
+* Fixed rule '**Align declarations**' for comment line and **line-start comma** ([#335](../../../issues/335))
+* Fixed rule '**Delete unused variables**' for obsolete **REPLACE ... INTO** ([#331](../../../issues/331))
+* Fixed rule '**Align SELECT ... FROM ... JOIN**' for **ON ... JOIN** ([#332](../../../issues/332))
+* Updated **ABAP grammar file**
+* Updated **known CamelCase names** for CDS views and fields
+
 ## 2024-06-24 (version 1.17.1)
 
 **Thanks a lot**, [**agoeb**](https://github.com/agoeb) and [**matthewdjb**](https://github.com/matthewdjb) for the bug reports behind these improvements!
