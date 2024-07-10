@@ -239,11 +239,11 @@ public class Command {
 	
 	public final boolean endsLoop() { return getClosesLevel() && firstCodeTokenIsAnyKeyword(ABAP.loopEndKeywords); }
 	
-	private boolean isTryStart() { return isLevelOpener("TRY"); }
+	public boolean isTryStart() { return isLevelOpener("TRY"); }
 
-	// private boolean isTryEnd() { return isLevelCloser("ENDTRY"); }
+	public boolean isTryEnd() { return isLevelCloser("ENDTRY"); }
 
-	private boolean isCatch() { return isLevelOpener("CATCH"); }
+	public boolean isCatch() { return isLevelOpener("CATCH"); }
 
 	private boolean isCleanup() { return isLevelOpener("CLEANUP"); } // in TRY ... CATCH ... CLEANUP ... ENDTRY
 
@@ -269,7 +269,7 @@ public class Command {
 		return (token != null && token.isAnyKeyword(texts)); 
 	}
 	
-	final boolean isIntroductoryStatement() {
+	public final boolean isIntroductoryStatement() {
 		return firstToken.isAnyKeyword("CLASS-POOL", "FUNCTION-POOL", "INTERFACE-POOL", "PROGRAM", "REPORT", "TYPE-POOL");
 	}
 

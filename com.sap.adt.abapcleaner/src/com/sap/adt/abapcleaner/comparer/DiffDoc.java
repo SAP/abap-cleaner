@@ -349,4 +349,13 @@ public class DiffDoc {
       }
       return result;
   }
+
+   @Override
+	public String toString() { // for debugging
+   	StringBuilder sb = new StringBuilder();
+   	for (DiffLine line : lines) {
+   		sb.append(line.toString()).append(System.lineSeparator());
+   	}
+   	return sb.toString();
+	}
 }
