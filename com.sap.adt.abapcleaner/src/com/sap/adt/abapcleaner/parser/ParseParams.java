@@ -32,6 +32,11 @@ public class ParseParams {
 		return new ParseParams("test", codeText, abapRelease, null, CleanupRangeExpandMode.FULL_DOCUMENT, 1, 0, null);
 	}
 
+	/** Create parse parameters for parsing a new ABAP code document inside a Unit Test */
+	public static ParseParams createForTest(String codeText, String abapRelease, CleanupRange cleanupRange, CleanupRangeExpandMode cleanupRangeExpandMode) {
+		return new ParseParams("test", codeText, abapRelease, cleanupRange, cleanupRangeExpandMode, 1, 0, null);
+	}
+
 	/** Create parse parameters for re-parsing only a part of an ABAP code document, in order to replace a part of an existing {@link Code} */
 	public static ParseParams createForReprocessing(String sourceName, String codeText, String abapRelease, CleanupRange cleanupRange, CleanupRangeExpandMode cleanupRangeExpandMode, Code surroundingCode) {
 		return new ParseParams(sourceName, codeText, abapRelease, cleanupRange, cleanupRangeExpandMode, 1, 0, surroundingCode);

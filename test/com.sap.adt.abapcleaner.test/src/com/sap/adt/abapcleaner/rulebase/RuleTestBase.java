@@ -25,6 +25,8 @@ import com.sap.adt.abapcleaner.comparer.HighlightBit;
 import com.sap.adt.abapcleaner.comparer.DiffDoc;
 import com.sap.adt.abapcleaner.comparer.DiffLine;
 import com.sap.adt.abapcleaner.comparer.DiffNavigator;
+import com.sap.adt.abapcleaner.parser.CleanupRange;
+import com.sap.adt.abapcleaner.parser.CleanupRangeExpandMode;
 import com.sap.adt.abapcleaner.parser.Code;
 import com.sap.adt.abapcleaner.parser.Command;
 import com.sap.adt.abapcleaner.parser.MemoryAccessType;
@@ -56,6 +58,9 @@ public abstract class RuleTestBase {
 	 * restrictive than the ABAP release against which the code is compiled (e.g. to ensure downports) */
 	protected int releaseRestrictionFromUI;
 
+	protected CleanupRange cleanupRange;
+	protected CleanupRangeExpandMode cleanupRangeExpandMode;
+	
 	protected StringBuilder sourceCodeBuilder = new StringBuilder();
 	protected StringBuilder expCodeBuilder = new StringBuilder();
 
@@ -79,6 +84,8 @@ public abstract class RuleTestBase {
 		getRule().setDefault();
 		abapReleaseOfCode = ABAP.NEWEST_RELEASE; // unless deliberately changed with setAbapRelease()
 		releaseRestrictionFromUI = ABAP.NO_RELEASE_RESTRICTION; // unless deliberately changed with setReleaseRestriction()
+		cleanupRange = null;
+		cleanupRangeExpandMode = CleanupRangeExpandMode.FULL_DOCUMENT;
 	}
 
 	// =========================================================================
@@ -127,7 +134,16 @@ public abstract class RuleTestBase {
 	protected void setReleaseRestrictionFromUI(int releaseRestrictionFromUI) {
 		this.releaseRestrictionFromUI = releaseRestrictionFromUI;
 	}
-	
+
+	protected void setCleanupRange(CleanupRange cleanupRange) {
+		setCleanupRange(cleanupRange, CleanupRangeExpandMode.FULL_METHOD);
+	}
+
+	protected void setCleanupRange(CleanupRange cleanupRange, CleanupRangeExpandMode cleanupRangeExpandMode) {
+		this.cleanupRange = cleanupRange;
+		this.cleanupRangeExpandMode = cleanupRangeExpandMode;
+	}
+
 	protected void buildSrc(String line) {
 		buildCode(sourceCodeBuilder, line);
 	}
@@ -212,7 +228,7 @@ public abstract class RuleTestBase {
 		String sourceCode = sourceCodeBuilder.toString();
 		Code code;
 		try {
-			code = Code.parse(null, ParseParams.createForTest(sourceCode, abapReleaseOfCode));
+			code = Code.parse(null, ParseParams.createForTest(sourceCode, abapReleaseOfCode, cleanupRange, cleanupRangeExpandMode));
 		} catch (ParseException e) {
 			fail(e.getMessage());
 			return;
@@ -399,7 +415,7 @@ public abstract class RuleTestBase {
 		// check the Rule can be effectively blocked
 		try {
 			// parse the source code again and block the rule for all Commands in the Code
-			Code codeBlocked = Code.parse(null, ParseParams.createForTest(sourceCode, abapReleaseOfCode));
+			Code codeBlocked = Code.parse(null, ParseParams.createForTest(sourceCode, abapReleaseOfCode, cleanupRange, cleanupRangeExpandMode));
 			codeBlocked.setBlockedRule(ruleID, true);
 
 			// assert that this time, the code remains unchanged
@@ -644,10 +660,16 @@ public abstract class RuleTestBase {
 			}
 		}
 		
+		// list the source line number of all Commands that constitute the basic structure of the Code 
+		// (CLASS, METHOD, REPORT, FORM, TRY etc.) and must therefore never be deleted in reprocessing
+		// (they may be moved, but that does not change their original source line number) 
+		HashSet<Integer> basicStrucSourceLines = getSourceLinesOfUndeletableCommands(code);
+
 		// reprocess a selection of the code, blocking the rule at the first changed line
+		diffNav.setHighlight(ChangeTypes.createAllChanges());
 		diffNav.moveToFirstLine(true);
 		if (!diffNav.moveToNextChange()) {
-			// the change (if any) must be in the first line
+			// if no 'next change' was found, then the change (if any) must be in the first line
 			diffNav.moveToFirstLine(true);
 		}
 		diffNav.setBlockRuleInSelection(ruleID, true);
@@ -656,11 +678,34 @@ public abstract class RuleTestBase {
 			if (checkSyntaxAfterParse) {
 				assertTrue(result.getSuccess());
 			}
+
+			// ensure that none of the Commands that constitute the basic structure was removed from the code 
+			// during (partial) reprocessing
+			HashSet<Integer> basicStrucSourceLinesAfterReprocess = getSourceLinesOfUndeletableCommands(result.getResultingCode());
+			for (int basicStrucLine : basicStrucSourceLines) {
+				assertTrue(basicStrucSourceLinesAfterReprocess.contains(basicStrucLine));
+			}
 		} catch (IntegrityBrokenException e) {
 			if (checkSyntaxAfterParse) {
 				fail(e.getMessage());
 			}
 		}
+	}
+
+	private HashSet<Integer> getSourceLinesOfUndeletableCommands(Code code) {
+		// list the source line number of all Commands that constitute the basic structure of the Code and must therefore 
+		// never be deleted by (full or partial) cleanup
+		HashSet<Integer> basicStrucLines = new HashSet<>();
+		Command command = code.firstCommand;
+		while (command != null) {
+			if (command.isIntroductoryStatement() || command.isClassOrInterfaceStart() || command.isClassOrInterfaceEnd()
+				|| command.isMethodFunctionFormOrEventBlockStart() || command.isMethodFunctionFormOrEventBlockEnd()
+				|| command.isTryStart() || command.isTryEnd()) {
+				basicStrucLines.add(command.getSourceLineNumStart());
+			}
+			command = command.getNextNonCommentCommand();
+		}
+		return basicStrucLines;
 	}
 
 	private String getTextUntilLineEnd(String code, int start) {

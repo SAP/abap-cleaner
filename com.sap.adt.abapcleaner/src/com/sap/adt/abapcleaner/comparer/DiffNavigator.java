@@ -190,12 +190,19 @@ public class DiffNavigator {
 		CleanupRange partCleanupRange = null;
 		int partSourceLineStart = startCommand.getSourceLineNumStart();
 		int partSourceLineLast = lastCommand.getSourceLineNumLast();
-		if (fullCleanupRange != null) {
-			partSourceLineStart = Math.max(partSourceLineStart, fullCleanupRange.startLine);
-			partSourceLineLast = Math.min(partSourceLineLast, fullCleanupRange.lastLine);
+		if (fullCleanupRange == null) {
+			// use the partial cleanup range
+			partCleanupRange = CleanupRange.create(partSourceLineStart, partSourceLineLast, false);
+		} else if (partSourceLineLast < fullCleanupRange.startLine || partSourceLineStart > fullCleanupRange.lastLine) {
+			// if ever the partial cleanup range does not overlap with the 'full' cleanup range, use the latter
+			partCleanupRange = CleanupRange.create(fullCleanupRange.startLine, fullCleanupRange.lastLine, false);
+		} else {
+			// use the intersection of both ranges as the cleanup range, but keep partSourceLineStart/Last unchanged, 
+			// since otherwise, startCommand/lastCommand would be out of sync for code.replacePart(...) below
+			int intersectSourceLineStart = Math.max(partSourceLineStart, fullCleanupRange.startLine);
+			int intersectSourceLineLast = Math.min(partSourceLineLast, fullCleanupRange.lastLine);
+			partCleanupRange = CleanupRange.create(intersectSourceLineStart, intersectSourceLineLast, false);
 		}
-		// determine the 0-based values for the partial cleanup range, and add 1 for "end line" (excl.) instead of "last line" (incl.)
-		partCleanupRange = CleanupRange.create(partSourceLineStart, partSourceLineLast, false);
 		
 		// parse the whole code again, but run cleanup only on the partial cleanup range
 		ParseParams parseParams = ParseParams.createForReprocessing(sourceName, code.codeText, code.abapRelease, partCleanupRange, CleanupRangeExpandMode.FULL_STATEMENT, code);

@@ -7,6 +7,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.sap.adt.abapcleaner.base.ABAP;
+import com.sap.adt.abapcleaner.parser.CleanupRange;
+import com.sap.adt.abapcleaner.parser.CleanupRangeExpandMode;
 import com.sap.adt.abapcleaner.rulebase.RuleID;
 import com.sap.adt.abapcleaner.rulebase.RuleTestBase;
 
@@ -1332,6 +1334,29 @@ class UpperAndLowerCaseTest extends RuleTestBase {
 
 		putAnyMethodAroundSrcAndExp();
 
+		testRule();
+	}
+
+	@Test
+	void testReprocessingSingleLine() {
+		// ensure that partial reprocessing - and especially the Command ranges supplied to Code.replacePart() - work correctly 
+		// if only one single line is selected for cleanup (checked by RuleTestBase.getSourceLinesOfUndeletableCommands())
+
+		buildSrc("CLASS cl_any_class implementation.");
+		buildSrc("  METHOD any_method.");
+		buildSrc("    return.");
+		buildSrc("  ENDMETHOD.");
+		buildSrc("endclass.");
+
+		buildExp("CLASS cl_any_class implementation.");
+		buildExp("  METHOD any_method.");
+		buildExp("    RETURN.");
+		buildExp("  ENDMETHOD.");
+		buildExp("endclass.");
+
+		// select only the 'return.' line as the cleanup range
+		setCleanupRange(CleanupRange.create(3, 3, false), CleanupRangeExpandMode.FULL_STATEMENT);
+		
 		testRule();
 	}
 }

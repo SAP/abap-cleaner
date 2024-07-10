@@ -49,4 +49,22 @@ public class DiffLine {
    	return (leftLine != null && leftLine.parentCommand.containsSourceLineNum(sourceLineNum))
    	    || (rightLine != null && rightLine.parentCommand.containsSourceLineNum(sourceLineNum));
    }
+
+   @Override
+	public String toString() { // for debugging
+		switch(status) {
+			case EQUAL:
+				return "== " + leftLine.toString();
+			case CHANGED:
+				return "<> " + leftLine.toString() + System.lineSeparator() + "   " + rightLine.toString();
+			case LEFT_DELETED:
+				return "-- " + leftLine.toString();
+			case RIGHT_ADDED:
+				return "++ " + rightLine.toString();
+			case LEFT_DELETED_RIGHT_ADDED:
+				return "-  " + leftLine.toString() + System.lineSeparator() + " + " + rightLine.toString();
+			default:
+				return "";
+		}
+	}
  }
