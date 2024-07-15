@@ -6,6 +6,13 @@ as well as bugfixes of reported issues, i.e. anything that enhances or changes t
 For a complete list of changes (including documentation, tests, refactoring etc.), please refer to 
 the list of [commits](../../../commits/main).
 
+## 2024-07-15 (version 1.18.1)
+
+Great **thanks** to [**suynwa**](https://github.com/suynwa) for the bug report behind this fix!
+
+* Fixed **local blocking of rule** in Rules Used list **for manual selection of cleanup range** from ADT
+* Updated images with ADT-style color profile
+
 ## 2024-07-08 (version 1.18.0)
 
 Great **thanks** to [**vonglan**](https://github.com/vonglan), [**Ennowulff**](https://github.com/Ennowulff),
