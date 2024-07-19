@@ -2,6 +2,7 @@ package com.sap.adt.abapcleaner.parser;
 
 import com.sap.adt.abapcleaner.base.ABAP;
 import com.sap.adt.abapcleaner.base.AbapCult;
+import com.sap.adt.abapcleaner.base.DDL;
 import com.sap.adt.abapcleaner.base.Language;
 import com.sap.adt.abapcleaner.base.StringUtil;
 import com.sap.adt.abapcleaner.programbase.IProgress;
@@ -19,16 +20,21 @@ import com.sap.adt.abapcleaner.programbase.UnexpectedSyntaxException;
 public class Tokenizer {
 	/** regardless of ABAP.LINE_SEPARATOR, contains all possible chars with which lines could be separated */ 
 	private final static String lineSeparatorChars = "\r\n";
-	private final static String spaceChars = " ";
+	private final static String spaceChars = " \u00A0"; // treat non-breaking space like a space (thus making it vanish already at this stage)
 	private final static char[] lineFeedChars = new char[] { '\r', '\n' };
 	
-	private final static char[] abapTokenEndChars = new char[] { ' ', '\r', '\n', ABAP.COMMA_SIGN, ABAP.DOT_SIGN, ABAP.QUOT_MARK, ABAP.QUOT_MARK2, ABAP.COMMENT_SIGN, ABAP.COLON_SIGN, '(', ')' };
+	private final static char[] abapTokenEndChars = new char[] { ' ', '\u00A0', '\r', '\n', ABAP.COMMA_SIGN, ABAP.DOT_SIGN, ABAP.QUOT_MARK, ABAP.QUOT_MARK2, ABAP.COMMENT_SIGN, ABAP.COLON_SIGN, '(', ')' };
 	private final static String abapTokenEndCharsToIncludeInToken = "("; 
+	private final static char[] ddlTokenEndChars = new char[] { ' ', '\u00A0', '\r', '\n', DDL.COMMENT_SIGN, DDL.COLON_SIGN, DDL.QUOT_MARK, DDL.COMMA_SIGN, DDL.SEMICOLON_SIGN, DDL.PARENS_OPEN, DDL.PARENS_CLOSE, DDL.BRACE_OPEN, DDL.BRACE_CLOSE, DDL.BRACKET_OPEN, DDL.BRACKET_CLOSE, '<', '>', '=', '+', '-', '*', '/' };
+	private final static String ddlComparisonOpChars = "<>=";
+	private final static String ddlOtherOpChars = "+=*/";
 	private final static char[] nonAbapTokenEndChars = new char[] { '\r', '\n', ABAP.QUOT_MARK, ABAP.COMMENT_SIGN };
 	
 	private final static char[] stringTemplateEndChars = new char[] { ABAP.BRACE_OPEN, ABAP.PIPE };
 	private final static String[] stringTemplateEscapeSequences = new String[] { "\\|", "\\{", "\\}", "\\\\", "\\r", "\\n", "\\t" };
 
+	private final static TokenType UNKNOWN_TOKEN_TYPE = TokenType.NON_ABAP;
+	
 	static String removeTabs(String text) { 
 		// TODO: clarify whether '\u00a0' should be considered, too 
 		// in some places, a TAB is found; however, both SAP GUI and ADT display this as a single space
@@ -38,7 +44,8 @@ public class Tokenizer {
 	private final String text;
 	private int lineNum;
 	private int readPos;
-
+	private boolean isInMultiLineComment;
+	
 	private Language curLanguage;
 	/** the ABAP keyword "ENDEXEC" or "ENDMETHOD" that will end the current non-ABAP section */
 	private String abapKeywordEndingNonAbapSection = null;
@@ -56,13 +63,52 @@ public class Tokenizer {
 		this.text = removeTabs(text);
 		this.lineNum = lineNumOffset;
 		this.readPos = 0;
+		this.isInMultiLineComment = false;
 		
-		this.curLanguage = Language.ABAP;
+		this.curLanguage = previewLanguage(text);
 		
 		this.progress = progress;
 		this.lastReportedPos = readPos;
 		// don't report progress too often, since tokenization and parsing works at > 1 MB per second
 		this.reportSpan = Math.max(text.length() / 100 + 1, 100000);
+	}
+	
+	private static Language previewLanguage(String text) {
+		int pos = 0;
+		
+		// skip initial spaces or line feeds 
+		while (pos < text.length()) {
+			char c = text.charAt(pos);
+			if (c == 10 || c == 13 || c == ' ') {
+				++pos;
+				continue;
+			}
+			break;
+		}
+		
+		// distinguish between (CDS) DDL and ABAP code
+		if (StringUtil.containsAnyAt(text, pos, DDL.ANNOTATION_SIGN_STRING, DDL.LINE_END_COMMENT, DDL.LINE_END_MINUS_COMMENT, DDL.ASTERISK_COMMENT_START) 
+			|| StringUtil.containsAtIgnoringCase(text, pos, "[define]", "[root]", "abstract", "entity")
+			|| StringUtil.containsAtIgnoringCase(text, pos, "[define]", "[root]", "custom", "entity")
+			|| StringUtil.containsAtIgnoringCase(text, pos, "[define]", "[root]", "view", "[entity]")
+			|| StringUtil.containsAtIgnoringCase(text, pos, "[define]", "table")
+			|| StringUtil.containsAtIgnoringCase(text, pos, "[define]", "hierarchy")
+			|| StringUtil.containsAtIgnoringCase(text, pos, "define", "transient", "view")
+
+			// extension
+			|| StringUtil.containsAtIgnoringCase(text, pos, "extend", "abstract", "entity")
+			|| StringUtil.containsAtIgnoringCase(text, pos, "extend", "custom", "entity")
+			|| StringUtil.containsAtIgnoringCase(text, pos, "extend", "view", "[entity]")
+
+			// ABAP Dictionary Objects in ADT
+			|| StringUtil.containsAtIgnoringCase(text, pos, "define", "structure")
+			|| StringUtil.containsAtIgnoringCase(text, pos, "define", "table")) {
+
+			return Language.DDL;
+
+		} else {
+			return Language.ABAP;
+		}
 	}
 	
 	/** returns the next Token, or null if the code string is exhausted */
@@ -103,9 +149,44 @@ public class Tokenizer {
 
 		// common tokenization for ABAP and non-ABAP code: comments with " and *   
 		String tokenText;
+		TokenType overrideTokenType = UNKNOWN_TOKEN_TYPE;
 		if (readPos == text.length()) {
 			tokenText = "";
 
+		} else if (curLanguage == Language.DDL) {
+			if (isInMultiLineComment || curChar == DDL.COMMENT_SIGN && StringUtil.containsAt(text, readPos, DDL.ASTERISK_COMMENT_START)) {
+				// asterisk comment /*...*/: read up to */ or the next line break
+				tokenText = readAsteriskComment();
+				isInMultiLineComment = !tokenText.endsWith(DDL.ASTERISK_COMMENT_END);
+				overrideTokenType = TokenType.COMMENT;
+				
+			} else if (StringUtil.containsAt(text, readPos, DDL.LINE_END_COMMENT) || StringUtil.containsAt(text, readPos, DDL.LINE_END_MINUS_COMMENT)) {
+				// line end comment: the rest of the line
+				tokenText = readDdlUntil(lineFeedChars);
+				
+			} else if (curChar == DDL.QUOT_MARK) {
+				// read text literal '...', considering escape char ''
+				tokenText = readLiteralUntil(curChar, false);
+
+			} else if (curChar == DDL.COLON_SIGN || curChar == DDL.COMMA_SIGN 
+					|| curChar == DDL.PARENS_OPEN || curChar == DDL.BRACE_OPEN || curChar == DDL.BRACKET_OPEN 
+					|| curChar == DDL.PARENS_CLOSE || curChar == DDL.BRACE_CLOSE || curChar == DDL.BRACKET_CLOSE) {
+				// one-char Tokens (which are all part of ddlTokenEndChars as well)
+				tokenText = text.substring(readPos, readPos + 1);
+
+			} else if (ddlComparisonOpChars.indexOf(curChar) >= 0) {
+				// comparison operator or => operator
+				tokenText = StringUtil.readTillEndOfAllowedChars(text, readPos, ddlComparisonOpChars);
+
+			} else if (ddlOtherOpChars.indexOf(curChar) >= 0) {
+				// arithmetic operator (just one char)
+				tokenText = Character.toString(curChar);
+
+			} else {
+				// normal word, which includes chars from 0-9, a-z, A-Z, as well as ._@# (and < after initial @)
+				tokenText = readDdlUntil(ddlTokenEndChars);
+			}
+			
 		} else if (curChar == ABAP.LINE_COMMENT_SIGN && isAtLineStart) {
 			// line comment: the whole line
 			tokenText = readUntil(lineFeedChars, null);
@@ -156,7 +237,14 @@ public class Tokenizer {
 			lastReportedPos = readPos;
 		}
 
-		return Token.create(lineFeedCount, spaceCount, tokenText, lineNum, curLanguage);
+		Token nextToken = Token.create(lineFeedCount, spaceCount, tokenText, lineNum, curLanguage);
+		if (overrideTokenType != UNKNOWN_TOKEN_TYPE) {
+			// for a single line of a multi-line comment, the TokenType cannot be inferred 
+			nextToken.type = overrideTokenType;
+			nextToken.setOpensLevel(false);
+			nextToken.setClosesLevel(false);
+		}
+		return nextToken;
 	}
 
 	/** changes to a non-ABAP language and instantiates the supplied Token again with that language */
@@ -223,6 +311,47 @@ public class Tokenizer {
 		}
 
 		return text.substring(readPos, tokenEnd);
+	}
+	
+	private String readDdlUntil(char[] delimiterChars) throws UnexpectedSyntaxException {
+		// read until the first delimiter is found
+		// in the special case of an initial @, < is allowed afterwards, because annotations for CDS entities 
+		// (except for CDS view entities) may start with @< for the annotation after a list element in a comma-separated or semicolon-separated list.
+		int start = readPos + 1;
+		if (text.charAt(readPos) == DDL.ANNOTATION_SIGN && start < text.length() && text.charAt(start) == '<') {
+			++start;
+		}
+		int tokenEnd = StringUtil.indexOfAny(text, delimiterChars, start); 
+
+		if (tokenEnd < 0)
+			tokenEnd = text.length();
+
+		// in the special case of association cardinality, do not return "0..", "1.." or "n.." but only "0", "1", or "n"
+		if (tokenEnd - readPos >= 3) {
+			char firstChar = text.charAt(readPos);
+			if ((firstChar == '0' || firstChar == '1' || firstChar == 'n') && text.charAt(readPos + 1) == '.' && text.charAt(readPos + 2) == '.') {
+				tokenEnd = readPos + 1;
+			}
+		}
+		
+		return text.substring(readPos, tokenEnd); 
+	}
+	
+	private String readAsteriskComment() throws UnexpectedSyntaxException {
+		// determine line end position
+		int lineEnd = StringUtil.indexOfAny(text, lineFeedChars, readPos);
+		if (lineEnd < 0)
+			lineEnd = text.length();
+		
+		// determine comment end position
+		int searchStart = readPos + (StringUtil.containsAt(text, readPos, DDL.ASTERISK_COMMENT_START) ? DDL.ASTERISK_COMMENT_START.length() : 0);  
+		int commentEnd = text.indexOf(DDL.ASTERISK_COMMENT_END, searchStart);
+		if (commentEnd < 0)
+			throw new UnexpectedSyntaxException("comment end '" + DDL.ASTERISK_COMMENT_END + "' not found");
+		commentEnd += DDL.ASTERISK_COMMENT_END.length();
+
+		// return the next bit
+		return text.substring(readPos, Math.min(lineEnd, commentEnd));
 	}
 	
 	private String readNonAbap() {

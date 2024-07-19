@@ -172,11 +172,13 @@ public class AlignTable {
 				break;
 			}
 		}
-		
+
+		boolean isDdl = (getFirstToken() != null && getFirstToken().getParentCommand().isDdl());
+		int minSpacesLeft = isDdl ? 0 : 1;
 		boolean isFirstLine = true;
 		for (AlignLine line : lines) {
 			int lineBreaks = isFirstLine ? firstLineBreaks : 1;
-			int spacesLeft = (lineBreaks == 0 && !startsWithFirstTokenInCode) ? 1 : basicIndent;
+			int spacesLeft = (lineBreaks == 0 && !startsWithFirstTokenInCode) ? minSpacesLeft : basicIndent;
 			boolean lineChanged = false;
 
 			// in the special case VALUE or NEW constructors for tables, the AlignTable may contain the assignments for 
@@ -187,7 +189,7 @@ public class AlignTable {
 			if (firstTokenInLine != null // &&  !isFirstLine && firstTokenInLine.lineBreaks == 0 
 					&& prevToken != null && prevToken.textEquals("(") && prevToken.getEndIndexInLine() + 1 == basicIndent) {
 				lineBreaks = 0;
-				spacesLeft = 1;
+				spacesLeft = minSpacesLeft;
 			}
 			
 			int columnIndent = basicIndent;
@@ -222,7 +224,7 @@ public class AlignTable {
 						spacesLeft = columnIndent;
 					} else if (!cell.getFirstToken().isFirstTokenInCode()) {
 						// ensure there is always at least one space
-						spacesLeft = Math.max(spacesLeft, 1);
+						spacesLeft = Math.max(spacesLeft, minSpacesLeft);
 					}
 				} else if (cell.getFirstToken().lineBreaks > lineBreaks) {
 					// if there should be a line break, then also keep multiple existing line breaks

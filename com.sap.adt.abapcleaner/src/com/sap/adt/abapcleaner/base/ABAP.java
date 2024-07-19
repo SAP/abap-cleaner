@@ -541,10 +541,6 @@ public final class ABAP {
 		return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (!isFirstChar && c == '-');
 	}
 
-	public static boolean isCharAllowedForAnyKeyword(char c) {
-		return isCharAllowedForAnyKeyword(c, false);
-	}
-
 	public static boolean isCharAllowedForAnyKeyword(char c, boolean isFirstChar) {
 		// checks against all chars possible in ABAP keywords, even rare ones like numbers (in "PF01") 
 		// and the hyphen (in "FIELD-SYMBOLS", "MOVE-CORRESPONDING", "CLASS-DATA" etc.)
@@ -819,6 +815,7 @@ public final class ABAP {
 			return false;
 		
 		boolean foundDot = false;
+		boolean foundDigit = false;
 		for (int i = start; i < end; ++i) {
 			char c = num.charAt(i);
 			if (allowDot && c == DOT_SIGN) {
@@ -826,11 +823,13 @@ public final class ABAP {
 				if (foundDot)
 					return false;
 				foundDot = true;
-			} else if (c < '0' || c > '9') {
+			} else if (c >= '0' && c <= '9') {
+				foundDigit = true;
+			} else {
 				return false;
 			}
 		}
-		return true;
+		return foundDigit;
 	}
 
 	/**

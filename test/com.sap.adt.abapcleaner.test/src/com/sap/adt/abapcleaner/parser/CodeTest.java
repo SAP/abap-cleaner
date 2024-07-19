@@ -830,23 +830,23 @@ public class CodeTest extends CodeTestBase {
 		
 		// expect lines 2, 3 to be reported as different
 		resultMessage = code.compareWithSource(code2, 10);
-		assertTrue(resultMessage.indexOf("line 2, 3") >= 0);
+		assertTrue(resultMessage.indexOf("line 2@5, 3@3") >= 0);
 		assertFalse(resultMessage.indexOf("line count mismatch") >= 0);
 		
 		// again (with maxReportLineCount < 0), expect lines 2, 3 to be reported as different
 		resultMessage = code.compareWithSource(code2, -1);
-		assertTrue(resultMessage.indexOf("line 2, 3") >= 0);
+		assertTrue(resultMessage.indexOf("line 2@5, 3@3") >= 0);
 		assertFalse(resultMessage.indexOf("line count mismatch") >= 0);
 		
 		// with maxReportLineCount = 1, expect only line 2 to be reported as different, not "2, 3"
 		resultMessage = code.compareWithSource(code2, 1);
-		assertTrue(resultMessage.indexOf("line 2") >= 0);
-		assertFalse(resultMessage.indexOf("line 2,") >= 0);
+		assertTrue(resultMessage.indexOf("line 2@5") >= 0);
+		assertFalse(resultMessage.indexOf("line 2@5,") >= 0);
 		assertFalse(resultMessage.indexOf("line count mismatch") >= 0);
 
 		// expect lines 1, 3 and the line count to be reported as different
 		resultMessage = code.compareWithSource(code3, 10);
-		assertTrue(resultMessage.indexOf("line 1, 3") >= 0);
+		assertTrue(resultMessage.indexOf("line 1@4, 3@3") >= 0);
 		assertTrue(resultMessage.indexOf("line count mismatch") >= 0);
 
 		// expect only the line count to be reported as different
@@ -1142,6 +1142,19 @@ public class CodeTest extends CodeTestBase {
 		
 		found = code.insertStressTestTokentAt(10, StressTestType.COMMENT_LINE);
 		assertFalse(found);
+	}
+	
+	@Test
+	void testDdlWithBaseInfoComment() throws IntegrityBrokenException {
+		String LF = "\n";
+		
+		buildSrc("define view entity I_Any");
+		buildSrc("  as select from dtab { Any }");
+		buildSrc("/*+[internal] {" + LF + "..." + LF + "}*/");
+		
+		Code code = testParseCode();
+		assertEquals("define view entity I_Any" + SEP + "  as select from dtab { Any }" 
+				+ SEP + "/*+[internal] {" + LF + "..." + LF + "}*/", code.toString(SEP));
 	}
 
 }

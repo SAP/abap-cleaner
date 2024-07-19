@@ -342,6 +342,9 @@ public final class StringUtil {
 	}
 	
 	public static int findWholeWord(String text, String word, boolean ignoreCase, String nonDelimiterChars) {
+		if (StringUtil.isNullOrEmpty(text))
+			return -1;
+		
 		if (ignoreCase) {
 			text = text.toUpperCase();
 			word = word.toUpperCase();
@@ -353,18 +356,20 @@ public final class StringUtil {
 				break;
 			if (pos > 0) {
 				char prevChar = text.charAt(pos - 1);
-				if (Character.isLetterOrDigit(prevChar))
+				if (Character.isLetterOrDigit(prevChar)) {
 					continue;
-				if (nonDelimiterChars != null && nonDelimiterChars.indexOf(prevChar) >= 0)
+				} else if (nonDelimiterChars != null && nonDelimiterChars.indexOf(prevChar) >= 0) {
 					continue;
+				}
 			}
 			int end = pos + word.length();
 			if (end < text.length()) {
 				char nextChar = text.charAt(end);
-				if (Character.isLetterOrDigit(nextChar))
+				if (Character.isLetterOrDigit(nextChar)) {
 					continue;
-				if (nonDelimiterChars != null && nonDelimiterChars.indexOf(nextChar) >= 0)
+				} else if (nonDelimiterChars != null && nonDelimiterChars.indexOf(nextChar) >= 0) {
 					continue;
+				}
 			}
 			return pos;
 		}
@@ -529,6 +534,90 @@ public final class StringUtil {
 		return (text.toUpperCase().indexOf(subtext.toUpperCase()) >= 0);
 	}
 	
+	/**
+	 * returns true if the supplied text contains the supplied word or word sequence (case-sensitive), allowing for [optional] words
+	 * @param text - the text to check against the supplied word sequence
+	 * @param start - the start position from which the supplied word sequence is expected
+	 * @param wordSequence - may contain optional words in brackets, e.g. [KEYWORD]
+	 * @return
+	 */
+	public static boolean containsAt(String text, int start, String... wordSequence) {
+		return containsAt(false, text, start, " \r\n", wordSequence);
+	}
+	
+	/**
+	 * returns true if the supplied text contains the supplied word or word sequence (ignoring case), allowing for [optional] words
+	 * @param text - the text to check against the supplied word sequence
+	 * @param start - the start position from which the supplied word sequence is expected
+	 * @param wordSequence - may contain optional words in brackets, e.g. [KEYWORD]
+	 * @return
+	 */
+	public static boolean containsAtIgnoringCase(String text, int start, String... wordSequence) {
+		return containsAt(true, text, start, " \r\n", wordSequence);
+	}
+	
+	private static boolean containsAt(boolean ignoreCase, String text, int start, String charsBetweenWords, String... wordSequence) {
+		if (text == null || wordSequence == null)
+			return false;
+		
+		int wordIndex = 0;
+		int pos = start;
+		for (String word : wordSequence) {
+			boolean isOptional = (word.startsWith("[") && word.endsWith("]"));
+			if (isOptional)
+				word = word.substring(1, word.length() - 1);
+			
+			if (text.length() < pos + word.length()) {
+				if (isOptional) 
+					continue;
+				return false;
+			}
+			String sectionInText = text.substring(pos, pos + word.length());
+			if (ignoreCase ? !word.equalsIgnoreCase(sectionInText) : !word.equals(sectionInText)) {
+				if (isOptional)
+					continue;
+				return false;
+			}
+			
+			++wordIndex;
+			if (wordIndex == wordSequence.length)
+				break;
+
+			// skip chars between words
+			pos += word.length();
+			while (pos < text.length()) {
+				if (charsBetweenWords.indexOf(text.charAt(pos)) < 0)
+					break;
+				++pos;
+			}
+		}
+		return true;
+	}
+	
+	public static boolean containsAnyAt(String text, int start, String... possibleWords) {
+		return containsAnyAt(false, text, start, possibleWords);
+	}
+	
+	public static boolean containsAnyAtIgnoringCase(String text, int start, String... possibleWords) {
+		return containsAnyAt(true, text, start, possibleWords);
+	}
+	
+	private static boolean containsAnyAt(boolean ignoreCase, String text, int start, String... possibleWords) {
+		if (text == null || possibleWords == null || start < 0)
+			return false;
+		
+		int pos = start;
+		for (String word : possibleWords) {
+			if (pos + word.length() < text.length()) {
+				String sectionInText = text.substring(pos, pos + word.length());
+				if (ignoreCase ? word.equalsIgnoreCase(sectionInText) : word.equals(sectionInText)) {
+					return true; 
+				}
+			}
+		}
+		return false;
+	}
+	
 	public static String removeTags(String text) {
 		if (text == null)
 			return null;
@@ -588,5 +677,13 @@ public final class StringUtil {
 	
 	public static String getCountAndUnit(int count, String unitSingular, String unitPlural) {
 		return Cult.format(count) + " " + ((count == 1) ? unitSingular : unitPlural); 
+	}
+	
+	public static char getLastChar(String text) {
+		return (text == null || text.length() == 0) ? '\0' : text.charAt(text.length() - 1);
+	}
+	
+	public static String getLastCharAsString(String text) {
+		return (text == null || text.length() == 0) ? null : text.substring(text.length() - 1);
 	}
 }

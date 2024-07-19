@@ -19,6 +19,8 @@ public class CodeDisplayColors {
 	public final Color textOperator;
 	public final Color textStringLiteral;
 	public final Color textTokenOperator;
+	public final Color textDdlKeyword;
+	public final Color textDdlAnnotation;
 	public final Color textNonAbap;
 
 	// line numbers
@@ -97,9 +99,11 @@ public class CodeDisplayColors {
 		textTokenOperator      = createColor(104, 151, 187, useDark, 159,  52,   0); // ADT reuses the 'identifier' color here
 		textKeyword            = createColor( 86, 165, 228, useDark,   0,   0, 255, keyword);
 		textDeclarationKeyword = createColor(  0, 185, 185, useDark,   0, 153, 153);
-		textStringLiteral      = createColor( 30, 181,  64, useDark,  77, 166,  25, literal);
+		textStringLiteral      = createColor( 30, 181,  64, useDark,   0, 128,   0, literal); 
 		textNumber             = createColor( 91, 233, 254, useDark,  51, 153, 255, literalNumber);
 		textComment            = createColor(128, 128, 128, useDark, 128, 128, 128, comment);
+		textDdlKeyword         = createColor(204, 120,  50, useDark, 127,   0, 116);
+		textDdlAnnotation      = createColor(169, 156, 140, useDark,  51,  92, 162);
 		textNonAbap            = createColor(255, 255, 255, useDark,  64,  64,  64); 
 
 		// line numbers

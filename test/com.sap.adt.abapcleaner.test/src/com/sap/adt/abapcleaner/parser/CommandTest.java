@@ -519,7 +519,7 @@ public class CommandTest {
 	void testCanAddNull() {
 		Command command = buildCommand("DATA a TYPE i.");
 		try {
-			command.canAdd(null);
+			command.canAdd(null, null);
 			fail();
 		} catch(NullPointerException ex) {
 		}
@@ -529,9 +529,9 @@ public class CommandTest {
 	void testCanAddToPragma() {
 		Token tokenInNewLine = Token.createForAbap(1, 4, "\" comment", TokenType.COMMENT, 1);
 		
-		assertFalse(buildCommand("##PRAGMA").canAdd(tokenInNewLine));
-		assertFalse(buildCommand("##PRAGMA ##ANOTHER").canAdd(tokenInNewLine));
-		assertFalse(buildCommand("##PRAGMA ##ANOTHER \" comment").canAdd(tokenInNewLine));
+		assertFalse(buildCommand("##PRAGMA").canAdd(tokenInNewLine, null));
+		assertFalse(buildCommand("##PRAGMA ##ANOTHER").canAdd(tokenInNewLine, null));
+		assertFalse(buildCommand("##PRAGMA ##ANOTHER \" comment").canAdd(tokenInNewLine, null));
 	}
 	
 	@Test 
@@ -1681,5 +1681,133 @@ public class CommandTest {
 		assertNull(commands[3].getClosingCommand());
 		assertNull(commands[5].getClosingCommand());
 		assertNull(commands[6].getClosingCommand());
+	}
+	
+	@Test
+	void testFirstCodeTokenTextEqualsAny() {
+		Command command = buildCommand("a = 1.");
+		
+		assertTrue(command.firstCodeTokenTextEqualsAny("a", "b", "c"));
+		assertFalse(command.firstCodeTokenTextEqualsAny("=", "1", "."));
+		
+		command = buildCommand("* comment");
+		assertFalse(command.firstCodeTokenTextEqualsAny("a", "=", "1", "."));
+		assertFalse(command.firstCodeTokenTextEqualsAny("* comment", "\" comment"));
+	}
+	
+	@Test
+	void testGetCondensedDdlAnnotationName() {
+		Command command = buildCommand("@ AnyAnno . Sub" + SEP + "   . SubSub: {Name: 1} define view I_Any { }");
+		assertEquals("@AnyAnno.Sub.SubSub", command.getCondensedDdlAnnotationName(false));
+
+		command = buildCommand("// @ OtherAnno . Sub   . SubSub: {Name: 1}" + SEP + "define view I_Any { }");
+		assertEquals(null, command.getCondensedDdlAnnotationName(false));
+		assertEquals("@OtherAnno.Sub.SubSub", command.getCondensedDdlAnnotationName(true));
+
+		command = buildCommand("--@ ThirdAnno. Sub .SubSub" + SEP + "define view I_Any { }");
+		assertEquals(null, command.getCondensedDdlAnnotationName(false));
+		assertEquals("@ThirdAnno.Sub.SubSub", command.getCondensedDdlAnnotationName(true));
+	}
+
+	@Test 
+	void testIsDdlAnnotation() {
+		assertTrue(buildCommand("@Anno.AnyAnno: #('value')").isDdlAnnotation());
+		assertTrue(buildCommand("@<Anno.OtherAnno").isDdlAnnotation());
+		assertFalse(buildCommand("REPORT any_report.").isDdlAnnotation());
+	}
+
+	@Test 
+	void testIsDdlAnnotationAfterListElement() {
+		assertFalse(buildCommand("@Anno.AnyAnno: #('value')").isDdlAnnotationAfterListElement());
+		assertTrue(buildCommand("@<Anno.OtherAnno").isDdlAnnotationAfterListElement());
+		assertFalse(buildCommand("REPORT any_report.").isDdlAnnotationAfterListElement());
+	}
+	
+	@Test 
+	void testIsCommentedOutDdlAnnotation() {
+		assertTrue(buildCommand("--@Anno.AnyAnno: #('value')").isCommentedOutDdlAnnotation());
+		assertTrue(buildCommand("-- @ Anno . AnyAnno: #('value')").isCommentedOutDdlAnnotation());
+		assertTrue(buildCommand("// @< Anno.OtherAnno").isCommentedOutDdlAnnotation());
+		assertTrue(buildCommand("// @< Anno . OtherAnno").isCommentedOutDdlAnnotation());
+
+		assertFalse(buildCommand("@Anno.AnyAnno: #('value')").isCommentedOutDdlAnnotation());
+		assertFalse(buildCommand("@<Anno.OtherAnno").isCommentedOutDdlAnnotation());
+		assertFalse(buildCommand("REPORT any_report.").isCommentedOutDdlAnnotation());
+		assertFalse(buildCommand("//REPORT any_report.").isCommentedOutDdlAnnotation());
+	}
+
+	private void assertIsDdlSelectElement(Command command) {
+		assertTrue(command.isDdlListElement());
+		assertTrue(command.isDdlSelectElement());
+		assertFalse(command.isDdlParametersElement());
+	}
+
+	private void assertIsDdlParametersElement(Command command) {
+		assertTrue(command.isDdlListElement());
+		assertFalse(command.isDdlSelectElement());
+		assertTrue(command.isDdlParametersElement());
+	}
+
+	private void assertIsNoDdlListElement(Command command) {
+		assertFalse(command.isDdlListElement());
+		assertFalse(command.isDdlSelectElement());
+		assertFalse(command.isDdlParametersElement());
+	}
+
+	@Test
+	void testIsDdlSelectElement() {
+		buildCommand("define view I_Any with parameters @AnyAnno P_1 : any_type," + SEP + "--comment" + SEP + "P_2 : other_type"
+				+ " as select from dtab { "
+				+ "@OtherAnno AnyField @<ThirdAnno: 'value'," + SEP + "//comment" + SEP + "OtherField }");
+		
+		assertIsNoDdlListElement(commands[0]);		// define view I_Any with parameters
+		
+		assertIsNoDdlListElement(commands[1]); 		// @AnyAnno
+		assertIsDdlParametersElement(commands[2]);	// P_1 : any_type,
+		assertIsNoDdlListElement(commands[3]); 		// --comment
+		assertIsDdlParametersElement(commands[4]); 	// P_2 : other_type
+
+		assertIsNoDdlListElement(commands[5]);		// as select from dtab {
+		
+		assertIsNoDdlListElement(commands[6]); 		// @OtherAnno
+		assertIsDdlSelectElement(commands[7]);  		// AnyField
+		assertIsNoDdlListElement(commands[8]); 		// @<ThirdAnno: 'value',
+		assertIsNoDdlListElement(commands[9]); 		// //comment
+		assertIsDdlSelectElement(commands[10]);  		// OtherField
+		
+		assertIsNoDdlListElement(commands[11]);	// }
+
+		buildCommand("REPORT any_report.");
+		
+		assertIsNoDdlListElement(commands[0]); 	// ABAP, not DDL
+	}
+	
+	@Test
+	void testGetLanguage() {
+		// this mainly tests Tokenizer.previewLanguage()
+
+		assertEquals(Language.DDL, buildCommand("@Anno.SubAnno").getLanguage());
+		assertEquals(Language.DDL, buildCommand("/* comment */").getLanguage());
+		assertEquals(Language.DDL, buildCommand("// comment").getLanguage());
+		assertEquals(Language.DDL, buildCommand("-- comment").getLanguage());
+
+		assertEquals(Language.DDL, buildCommand("define abstract entity Any").getLanguage());
+		assertEquals(Language.DDL, buildCommand("root custom entity Any").getLanguage());
+		assertEquals(Language.DDL, buildCommand("define root view Any").getLanguage());
+		assertEquals(Language.DDL, buildCommand("table Any").getLanguage());
+		assertEquals(Language.DDL, buildCommand("define hierarchy Any").getLanguage());
+		assertEquals(Language.DDL, buildCommand("define transient view Any").getLanguage());
+
+		assertEquals(Language.DDL, buildCommand("extend abstract entity Any").getLanguage());
+		assertEquals(Language.DDL, buildCommand("extend custom entity Any").getLanguage());
+		assertEquals(Language.DDL, buildCommand("extend view Any").getLanguage());
+
+		assertEquals(Language.DDL, buildCommand("define table Any").getLanguage());
+		assertEquals(Language.DDL, buildCommand("define structure Any").getLanguage());
+
+		assertEquals(Language.ABAP, buildCommand("\" comment").getLanguage());
+		assertEquals(Language.ABAP, buildCommand("* comment").getLanguage());
+		assertEquals(Language.ABAP, buildCommand("REPORT any_report.").getLanguage());
+
 	}
 }

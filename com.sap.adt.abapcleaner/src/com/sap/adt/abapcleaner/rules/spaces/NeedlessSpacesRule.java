@@ -579,7 +579,7 @@ public class NeedlessSpacesRule extends Rule {
 				continue;
 			Command changeCommand = token.getParentCommand();
 			commandForErrorMsg = changeCommand;
-			token.setSpacesLeftAdjustingIndent(token.spacesLeft - spacesToSpare);
+			token.setSpacesLeftAdjustingIndent(token.spacesLeft - spacesToSpare, false);
 			code.addRuleUse(this, changeCommand);
 		}
 		return true;

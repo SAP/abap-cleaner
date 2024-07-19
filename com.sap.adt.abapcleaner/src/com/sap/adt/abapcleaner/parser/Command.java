@@ -39,6 +39,11 @@ public class Command {
 	private static HashMap<String, LevelCloser> levelClosers = new HashMap<String, LevelCloser>();
 	private static HashMap<String, LevelOpener> levelOpeners = new HashMap<String, LevelOpener>();
 
+	private static LevelOpener ddlLevelOpenerBrace;
+	private static LevelCloser ddlLevelCloserBrace;
+	private static LevelOpener ddlLevelOpenerParameters;
+	private static LevelCloser ddlLevelCloserParameters;
+
 	// provides runtime-unique IDs of Command instances for serialization
 	private static int globalID = 0;
 
@@ -143,8 +148,6 @@ public class Command {
 	public final boolean getOpensLevel() { return (usedLevelOpener != null); }
 
 	public final boolean getClosesLevel() { return (usedLevelCloser != null); }
-
-	public final Token getLastNonCommentToken() { return (lastToken.isComment() ? lastToken.getPrev() : lastToken); }
 
 	public final Token getLastCodeToken() { return (lastToken.isCode() ? lastToken : lastToken.getPrevCodeToken()); }
 
@@ -257,6 +260,8 @@ public class Command {
 
 	public final boolean isAbap() { return language == Language.ABAP; }
 	
+	public final boolean isDdl() { return language == Language.DDL; }
+	
 	public final boolean isSqlScript() { return language == Language.SQLSCRIPT; }
 	
 	public final boolean firstCodeTokenIsKeyword(String text) {
@@ -267,6 +272,17 @@ public class Command {
 	public final boolean firstCodeTokenIsAnyKeyword(String... texts) { 
 		Token token = getFirstCodeToken();
 		return (token != null && token.isAnyKeyword(texts)); 
+	}
+	
+	public final boolean firstCodeTokenTextEqualsAny(String... texts) { 
+		Token token = getFirstCodeToken();
+		return (token != null && token.textEqualsAny(texts)); 
+	}
+	
+	public final boolean lastCodeTokenIsKeyword(String text) {
+		// only for DDL
+		Token token = getLastCodeToken();
+		return (token != null && token.isKeyword(text)); 
 	}
 	
 	public final boolean isIntroductoryStatement() {
@@ -459,7 +475,18 @@ public class Command {
 		
 		// Obsolete Exception Handling
 		addInnerLevelOpener("CATCH SYSTEM-EXCEPTIONS", "ENDCATCH");
-	}
+		
+		// CDS DDL: use dedicated level openers and closers for the { select list }  
+		ddlLevelOpenerBrace = new LevelOpener(DDL.BRACE_OPEN_STRING, false, false, true);
+		ddlLevelCloserBrace = new LevelCloser(DDL.BRACE_CLOSE_STRING);
+		ddlLevelOpenerBrace.addCloser(ddlLevelCloserBrace);
+		ddlLevelCloserBrace.addOpener(ddlLevelOpenerBrace);
+
+		ddlLevelOpenerParameters = new LevelOpener("PARAMETERS", false, false, true);
+		ddlLevelCloserParameters = new LevelCloser("AS"); // also used for "RETURNS", DDL.BRACE_OPEN_STRING
+		ddlLevelOpenerParameters.addCloser(ddlLevelCloserParameters);
+		ddlLevelCloserParameters.addOpener(ddlLevelOpenerParameters);
+}
 
 	
 	private static void addInnerLevelOpener(String openerText, String... closerTexts) {
@@ -874,10 +901,14 @@ public class Command {
 		++tokenCount;
 	}
 
-	final boolean canAdd(Token newToken) {
+	final boolean canAdd(Token newToken, Command prevCommand) {
 		if (newToken == null)
 			throw new NullPointerException("newToken");
 
+		if (language == Language.DDL) {
+			return canAddToDdl(newToken, prevCommand);
+		}
+		
 		if (firstToken.isCommentLine())
 			return false;
 		
@@ -891,21 +922,124 @@ public class Command {
 				return false;
 		}
 
-		if (language != Language.ABAP) {
+		if (language == Language.ABAP) {
+			Token lastNonCommentToken = getLastNonCommentToken();
+			if (lastNonCommentToken == null || !lastNonCommentToken.isPeriod()) {
+				return true;
+			} else {
+				return lastToken.isPeriod() && newToken.isComment() && (newToken.lineBreaks == 0);
+			}
+		
+		} else {
 			// non-ABAP sections can be closed by "ENDEXEC" or "ENDMETHOD", so if these keywords are found, 
 			// they can NOT be added to this Command, but must start a new one with language = Language.ABAP 
 			return !newToken.isAnyKeyword("ENDEXEC", "ENDMETHOD");
 			
-		} else {
-			Token lastNonCommentToken = getLastNonCommentToken();
-			if (lastNonCommentToken == null || !lastNonCommentToken.isPeriod())
-				return true;
-			else
-				return lastToken.isPeriod() && newToken.isComment() && (newToken.lineBreaks == 0);
 		}
 	}
 
+	private boolean canAddToDdl(Token newToken, Command prevCommand) {
+		// a comment at line end can always be added to previous code
+		if (newToken.isComment() && newToken.lineBreaks == 0)
+			return true;
+		// a comment line cannot add more lines
+		if (firstToken.isComment() && firstToken == lastToken && newToken.lineBreaks > 0) 
+			return false;
+		// the base info comment must be a distinct Command (cp. Code.toString(String))
+		if (newToken.textEquals(DDL.BASE_INFO_COMMENT_START))
+			return false;
+		
+		if (firstToken.isDdlAnnotation()) {
+			// determine whether the annotation is complete
+			// note that there may be spaces and line feeds: "@ AnyAnno . Sub \r\n . SubSub" is a valid annotation
+			
+			// the "," or ";" after an element could be placed after an "@<" annotation following the element
+			if (newToken.textEqualsAny(DDL.listElementSeparators))
+				return true;
+			
+			Token lastNonComment = getLastNonCommentToken();
+			Token colon = findDdlAnnotationColon();
+			if (colon == null) {
+				if (lastNonComment.textEqualsAny(DDL.DOT_SIGN_STRING, DDL.ANNOTATION_SIGN_STRING)) {
+					return true;
+				} else if (newToken.textEqualsAny(DDL.DOT_SIGN_STRING, DDL.COLON_SIGN_STRING)) {
+					return true;
+				} else { 
+					// annotations may contain no ": value" if their default value is used; 
+					// the new Token therefore belongs to the next Command 
+					return false;
+				}
+			}
+			Token value = colon.getNextCodeSibling();
+			if (value != null && value.textEquals("#")) // @Annotation: #('...')
+				value = value.getNextCodeToken();
+			Token valueEnd = (value == null) ? null : (value.getOpensLevel() ? value.getNextCodeSibling() : value);
+			return (valueEnd == null);
+		}
+		if (lastToken.getParent() != null)
+			return true;
+		
+		// determine whether we are on top level of the Command hierarchy
+		Token lastNonCommentToken = getLastNonCommentToken();
+		Command prevCommandParent = (prevCommand == null) ? null : prevCommand.getParent();
+		boolean isAtTopLevel = (prevCommand == null 
+				|| prevCommandParent == null && !prevCommand.getOpensLevel() 
+				|| prevCommandParent != null && prevCommandParent.lastCodeTokenIsKeyword("PARAMETERS") && firstCodeTokenTextEqualsAny(DDL.levelClosersAfterParameterList)); 
+
+		// determine whether we are in a select list or parameter list
+		boolean isInSelectList = false;
+		boolean isInParameterList = false;
+		if (prevCommand != null) {
+			Command listOpener = prevCommand.getOpensLevel() ? prevCommand : prevCommandParent;
+			if (listOpener != null) {
+				Token lastCode = listOpener.getLastCodeToken();
+				if (lastCode != null) {
+					Token firstCode = getFirstCodeToken();
+					isInSelectList = lastCode.textEquals(DDL.BRACE_OPEN_STRING);
+					isInParameterList = lastCode.isKeyword("PARAMETERS") && (firstCode == null || !firstCode.textEqualsAny(DDL.levelClosersAfterParameterList));
+				}
+			}
+		}
+		
+		// start a new Command for the parameter list
+		if (isAtTopLevel && lastNonCommentToken.isKeyword("PARAMETERS")) {
+			Token lastPrev = lastNonCommentToken.getPrevCodeToken();
+			if (lastPrev != null && lastPrev.isKeyword("WITH")) {
+				return false;
+			}
+		}
+		// start a new Command for the select list
+		if (isAtTopLevel && lastNonCommentToken.textEquals(DDL.BRACE_OPEN_STRING)) {
+			return false;
+		}
+		// within in the select or parameter list, start a new Command after each comma (or semicolon, e.g. for "define table" and "define structure")
+		// or if the new Token starts with "@<"
+		if (isInSelectList || isInParameterList) {
+			if (lastNonCommentToken.textEqualsAny(DDL.listElementSeparators) && lastNonCommentToken.getParent() == null) {
+				return false;
+			} else if (newToken.textStartsWith(DDL.ANNOTATION_AFTER_LIST_ELEMENT_PREFIX)) {
+				return false;
+			}
+		}
+		// finish the select list or parameter list
+		if (isInSelectList && !newToken.isComment() && newToken.textEquals(DDL.BRACE_CLOSE_STRING)) {
+			return false;
+		} else if (firstToken.textEquals(DDL.BRACE_CLOSE_STRING)) {
+			// the "}" that ends the select list is a distinct Command 
+			return false;
+		} else if (isInParameterList && newToken.textEqualsAny(DDL.levelClosersAfterParameterList)) {
+			// "AS" / "RETURNS" OR "{" ends the parameter list starts the next Command
+			return false;
+		}
+		
+		return true;
+	}
+
 	public final void finishBuild(int sourceTextStart, int sourceTextEnd) throws ParseException {
+		finishBuild(sourceTextStart, sourceTextEnd, null);
+	}
+	
+	public final void finishBuild(int sourceTextStart, int sourceTextEnd, Command prevCommand) throws ParseException {
 		this.sourceTextStart = sourceTextStart;
 		this.sourceTextEnd = sourceTextEnd;
 		sourceLineBreaksBefore = firstToken.lineBreaks;
@@ -913,6 +1047,11 @@ public class Command {
 		sourceLineNumLast = lastToken.sourceLineNum;
 		changeControl = parentCode.getChangeControl(sourceTextStart, sourceTextEnd);
 
+		if (language == Language.DDL) {
+			finishBuildDdl(prevCommand);
+			return;
+		}
+		
 		// code in non-ABAP sections (e.g. EXEC SQL ... ENDEXEC) is kept unchanged, and unless a Token is a COMMENT, is has TokenType NON_ABAP
 		if (language != Language.ABAP)
 			return;
@@ -1064,6 +1203,47 @@ public class Command {
 		
 		} else {
 			distinguishOperators(false, firstToken, null);
+		}
+	}
+
+	private void finishBuildDdl(Command prevCommand) {
+		Token firstNonComment = getFirstCodeToken();
+		Token lastNonComment = getLastNonCommentToken();
+		
+		if (lastNonComment != null && lastNonComment.textEquals(DDL.BRACE_OPEN_STRING)) {
+			usedLevelOpener = ddlLevelOpenerBrace;
+			lastNonComment.setOpensLevel(false);
+		} else if (lastNonComment != null && lastNonComment.isKeyword("PARAMETERS")) {
+			usedLevelOpener = ddlLevelOpenerBrace;
+		} // do NOT attach the next line with else! 
+		
+		Command prevCommandParent = (prevCommand == null) ? null : prevCommand.getParent(); 
+		if (prevCommandParent != null && prevCommandParent.lastCodeTokenIsKeyword("PARAMETERS")) {
+			if (firstNonComment != null && firstNonComment.textEqualsAny(DDL.levelClosersAfterParameterList)) {
+				usedLevelCloser = ddlLevelCloserBrace;
+			}
+		} else if (firstNonComment != null && firstNonComment.textEquals(DDL.BRACE_CLOSE_STRING)) {
+			usedLevelCloser = ddlLevelCloserBrace;
+			firstNonComment.setClosesLevel(false);
+		}
+		
+		boolean isAnnotation = isDdlAnnotation(); 
+		Token token = firstToken;
+		while (token != null) {
+			Token next = token.getNextCodeToken();
+			if (isAnnotation && token.isKeyword()) {
+				// in annotations, change identifier "entity" from keyword to identifier
+				token.type = TokenType.IDENTIFIER;
+			} else if (!isAnnotation && token.getParent() != null && token.isAnyKeyword("value", "with")){
+				// in replace_regex( pcre => ... value => ... with => ... ), "value" and "with" are identifiers
+				if (next != null && next.textEquals("=>")) {
+					token.type = TokenType.IDENTIFIER;
+				}
+			} else if (!isAnnotation && token.isAnyKeyword("LEFT", "RIGHT") && next != null && next.textEquals("(")) {
+				// "left(...)" and "right(...)" are built-in functions (unlike LEFT|RIGHT OUTER JOIN)
+				token.type = TokenType.IDENTIFIER;
+			}
+			token = token.getNext();
 		}
 	}
 
@@ -1702,7 +1882,7 @@ public class Command {
 		Token token = firstToken;
 		while (token != null) {
 			check(token.getParentCommand() == this);
-			token.testReferentialIntegrity(testCommentPositions);
+			token.testReferentialIntegrity(testCommentPositions && !isDdl());
 			token = token.getNext();
 		}
 	}
@@ -2050,6 +2230,14 @@ public class Command {
 			lastInLine.setText(text, false);
 			return true;
 		}
+	}
+
+	public final Token getLastNonCommentToken() {
+		// DDL can have multiple comment Tokens at the end (esp. while the Command is built)
+		Token token = lastToken;
+		while (token != null && token.isComment())
+			token = token.getPrev();
+		return token;
 	}
 
 	public final Command getNextNonCommentCommand() {
@@ -3280,6 +3468,122 @@ public class Command {
 			command = command.getParent();
 		}
 		return false;
+	}
+
+	public boolean isDdlAnnotation() { 
+		if (!isDdl()) 
+			return false;
+		Token firstCode = getFirstCodeToken();
+		return firstCode != null && firstCode.textStartsWith(DDL.ANNOTATION_SIGN_STRING); 
+	}
+
+	public boolean isDdlAnnotationAfterListElement() { 
+		if (!isDdl()) 
+			return false;
+		Token firstCode = getFirstCodeToken();
+		return firstCode != null && firstCode.textStartsWith(DDL.ANNOTATION_AFTER_LIST_ELEMENT_PREFIX); 
+	}
+
+	public String getCondensedDdlAnnotationName(boolean considerCommentedOutAnnotations) { 
+		if (isDdlAnnotation()) {
+			StringBuilder sbAnnoName = new StringBuilder();
+			Token token = getFirstCodeToken();
+			while (token != null && !token.textEquals(DDL.COLON_SIGN_STRING)) {
+				// do not add spaces or line feeds
+				sbAnnoName.append(token.getText()); 
+				token = token.getNextCodeToken();
+			}
+			return sbAnnoName.toString();
+			
+		} else if (considerCommentedOutAnnotations && isCommentedOutDdlAnnotation()) {
+			String annoName = getFirstToken().getText().substring(DDL.LINE_END_COMMENT.length());
+			int colonPos = annoName.indexOf(DDL.COLON_SIGN);
+			annoName = (colonPos < 0) ? annoName : annoName.substring(0, colonPos);
+			return annoName.replace(" ", "");
+
+		} else {
+			return null;
+		}
+	}
+
+	public Token findDdlAnnotationColon() {
+		Token token = getFirstCodeToken();
+		if (!token.isDdlAnnotation())
+			return null;
+
+		// move to the first name bit
+		if (token.textEquals(DDL.ANNOTATION_SIGN_STRING)) {
+			// "@ AnyAnno" is also valid, therefore move to the "AnyAnno" Token
+			token = token.getNextCodeToken();
+		}
+		
+		// find the ":", considering that there might be spaces, line feeds and even comments in between,  
+		// e.g. "@Annotation . element /* comment */ . subelement  :"
+		while (token != null) {
+			// the next Token must either be "." or ":"
+			token = token.getNextCodeToken();
+			if (token == null)
+				return null;
+			else if (token.textEquals(DDL.COLON_SIGN_STRING))
+				return token;
+			else if (!token.textEquals(DDL.DOT_SIGN_STRING))
+				return null;
+			// move to the next annotation name element
+			token = token.getNextCodeToken();
+		}
+		return null;
+	}
+
+	public boolean isDdlListElement() {
+		return isDdlSelectElement() || isDdlParametersElement();
+	}
+
+	public boolean isDdlSelectElement() { 
+		return isDdlListElement(DDL.BRACE_OPEN_STRING, DDL.BRACE_CLOSE_STRING);
+	}
+
+	public boolean isDdlParametersElement() {
+		return isDdlListElement("PARAMETERS", DDL.levelClosersAfterParameterList);
+	}
+
+	private boolean isDdlListElement(String openingText, String... closingTexts) { 
+		if (!isDdl()) 
+			return false;
+		
+		// the select list is inside of { ... }, and the "{" must be on top level
+		if (parent == null || parent.parent != null || !parent.getLastCodeToken().textEquals(openingText))
+			return false;
+		
+		// exclude annotations and comment lines
+		if (isDdlAnnotation() || isCommentLine())
+			return false;
+		
+		// the Command is a field 
+		// a) if it is at the end of the parameter or select list
+		Command nextNonComment = getNextNonCommentCommand();
+		if (nextNonComment != null && nextNonComment.firstToken.textEqualsAny(closingTexts))
+			return true;
+
+		// b) if it ends with a comma or semicolon 
+		// (note that @< annotation can also end with a semicolon, but isDdlAnnotation() was already excluded above)
+		Token lastCode = getLastCodeToken();
+		if (lastCode != null && lastCode.textEqualsAny(DDL.COMMA_SIGN_STRING, DDL.SEMICOLON_SIGN_STRING))
+			return true;
+
+		// c) if it is followed by an @< annotation 
+		if (nextNonComment != null && nextNonComment.isDdlAnnotationAfterListElement())
+			return true;
+
+		return false;
+	}
+
+	public boolean isCommentedOutDdlAnnotation() { 
+		if (isDdl() && isCommentLine() && firstToken.textStartsWithAny(DDL.LINE_END_COMMENT, DDL.LINE_END_MINUS_COMMENT)) {
+			String text = firstToken.text.substring(DDL.LINE_END_COMMENT.length()).trim();
+			return text.startsWith(DDL.ANNOTATION_SIGN_STRING); 
+		} else {
+			return false;
+		}
 	}
 
 	/** Returns true if the Command matches a hard-coded pattern or condition.

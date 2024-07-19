@@ -61,6 +61,7 @@ public class CodeDisplay extends Composite {
 
 	private Font codeFont;
 	private Font codeFontBold;
+	private Font codeFontItalic;
 	private int visibleLineCount;
 
 	private final DiffNavigator navigator = DiffNavigator.create();
@@ -324,6 +325,7 @@ public class CodeDisplay extends Composite {
 				// see https://help.eclipse.org/2020-12/topic/org.eclipse.platform.doc.isv/reference/api/org/eclipse/swt/graphics/Font.html
 				codeFont = new Font(Display.getCurrent(), fontName, DEFAULT_FONT_SIZE, SWT.NORMAL); 
 				codeFontBold = new Font(Display.getCurrent(), fontName, DEFAULT_FONT_SIZE, SWT.BOLD); 
+				codeFontItalic = new Font(Display.getCurrent(), fontName, DEFAULT_FONT_SIZE, SWT.ITALIC); 
 				break;
 			}
 		}
@@ -573,7 +575,7 @@ public class CodeDisplay extends Composite {
 			LineStatus lineStatus = diffLine.status;
 			boolean highlightChange = (lineStatus == LineStatus.CHANGED) && navigator.isLineHighlighted(diffLine);
 			Color lineBackColor = getLineBackground(lineStatus, isLeft, isSelected, highlightChange, navigator.showAddedAndDeletedLines());
-			if (line != null && (!line.isAbapCommand() || !line.isCommandInCleanupRange()))
+			if (line != null && ((!line.isAbapCommand() && !line.isDdlCommand()) || !line.isCommandInCleanupRange()))
 				lineBackColor = colors.lineOutsideCleanupRange;
 			
 			if (lineBackColor != null && (navigator.showAnyChanges() || lineBackColor == colors.lineSkip || lineBackColor == colors.selLineSkip || lineBackColor == colors.lineOutsideCleanupRange)) {
@@ -643,9 +645,10 @@ public class CodeDisplay extends Composite {
 			String text = line.getText();
 			if (StringUtil.isNullOrEmpty(text) || line.getTextBits() == null)
 				continue;
+			Language language = line.getLanguage();
 			for (TextBit textBit : line.getTextBits()) {
 				g.setForeground(getTextForeground(textBit));
-				g.setFont(getTextFont(textBit));
+				g.setFont(getTextFont(textBit, language));
 				g.drawText(text.substring(textBit.start, textBit.start + textBit.length), (int) (xOffset + charWidth * textBit.start), yOffset, true);
 			}
 
@@ -694,6 +697,10 @@ public class CodeDisplay extends Composite {
 				return colors.textStringLiteral;
 			case COMMENT:
 				return colors.textComment;
+			case DDL_KEYWORD:
+				return colors.textDdlKeyword;
+			case DDL_ANNOTATION:
+				return colors.textDdlAnnotation;
 			case NON_ABAP:
 				return colors.textNonAbap;
 			default:
@@ -701,10 +708,20 @@ public class CodeDisplay extends Composite {
 		}
 	}
 
-	private Font getTextFont(TextBit textBit) {
+	private Font getTextFont(TextBit textBit, Language language) {
 		switch (textBit.type) {
 			case DECLARATION_KEYWORD:
 				return highlightDeclarationKeywords ? codeFontBold : codeFont;
+			
+			case DDL_KEYWORD:
+				return codeFontBold;
+			
+			case DDL_IDENTIFIER_DATA_ELEMENT:
+				return codeFontItalic;
+				
+			case STRING_LITERAL:
+				return codeFont; // (language == Language.CDS_DDL) ? codeFontBold : codeFont;
+			
 			default:
 				return codeFont;
 		}
@@ -1166,6 +1183,7 @@ public class CodeDisplay extends Composite {
 
 		codeFont = changeSize(codeFont, value);
 		codeFontBold = changeSize(codeFontBold, value);
+		codeFontItalic = changeSize(codeFontItalic, value);
 		
 		refreshScrollbarLargeChange();
 		invalidateDisplay();

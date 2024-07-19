@@ -45,9 +45,10 @@ class Parser {
 				if (token == null) {
 					// finalize the last Command 
 					if (curCommand != null) {
-						curCommand.finishBuild(surroundingTextOffset + commandStart, surroundingTextOffset + text.length());
-						if (lastCommand != null)
+						curCommand.finishBuild(surroundingTextOffset + commandStart, surroundingTextOffset + text.length(), lastCommand);
+						if (lastCommand != null) {
 							lastCommand.addNext(curCommand);
+						}
 					}
 					break;
 				}
@@ -55,12 +56,12 @@ class Parser {
 				if (curCommand == null) {
 					// create first command with this Token
 					curCommand = Command.create(code, token, tokenizer.getCurLanguage());
-				} else if (curCommand.canAdd(token)) {
+				} else if (curCommand.canAdd(token, lastCommand)) {
 					// add Token to current command
 					lastToken.addNext(token);
 				} else {
 					// finalize Command
-					curCommand.finishBuild(surroundingTextOffset + commandStart, surroundingTextOffset + tokenStart);
+					curCommand.finishBuild(surroundingTextOffset + commandStart, surroundingTextOffset + tokenStart, lastCommand);
 					if (lastCommand != null)
 						lastCommand.addNext(curCommand);
 
