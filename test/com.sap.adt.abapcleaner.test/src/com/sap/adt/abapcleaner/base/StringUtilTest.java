@@ -582,4 +582,108 @@ class StringUtilTest {
 		assertEquals("abc", StringUtil.removeTrailingDigits("abc0123456789"));
 		assertEquals("", StringUtil.removeTrailingDigits("246"));
 	}
+	
+	@Test
+	void testFindWholeWord() {
+		// empty text
+		assertEquals(-1, StringUtil.findWholeWord(null, "Ab1", true, null));
+		assertEquals(-1, StringUtil.findWholeWord("", "Ab1", false, null));
+
+		// ignore case
+		assertEquals(10, StringUtil.findWholeWord("xab1 de2f ab1 (de2)", "Ab1", true, null));
+		assertEquals(15, StringUtil.findWholeWord("xab1 de2f ab1 (de2)", "DE2", true, null));
+		assertEquals(-1, StringUtil.findWholeWord("xab1 de2f ab1 (de2)", "ab", true, null));
+
+		// case sensitive
+		assertEquals(10, StringUtil.findWholeWord("XAb1 DE2F Ab1 (DE2)", "Ab1", false, null));
+		assertEquals(15, StringUtil.findWholeWord("XAb1 DE2F Ab1 (DE2)", "DE2", false, null));
+		assertEquals(-1, StringUtil.findWholeWord("XAb1 DE2F ab1 (de2)", "Ab1", false, null));
+		assertEquals(-1, StringUtil.findWholeWord("XAb1 DE2F ab1 (de2)", "DE2", false, null));
+		assertEquals(-1, StringUtil.findWholeWord("xab1 de2f ab1 (de2)", "ab", false, null));
+
+		// with non-delimiter chars, ignore case
+		assertEquals(10, StringUtil.findWholeWord("A-b1d+E2_ a-b1 (d+e2)", "A-b1", true, "-+_"));
+		assertEquals(16, StringUtil.findWholeWord("A-b1d+E2_ a-b1 (d+e2)", "d+E2", true, "-+_"));
+		assertEquals(-1, StringUtil.findWholeWord("A-b1d+E2_ a-b1 (d+e2)", "a-b", true, "-+_"));
+
+		// with non-delimiter chars, case sensitive
+		assertEquals(10, StringUtil.findWholeWord("A-b1_d+E2 A-b1 (d+E2)", "A-b1", false, "-+_"));
+		assertEquals(16, StringUtil.findWholeWord("A-b1_d+E2 A-b1 (d+E2)", "d+E2", false, "-+_"));
+		assertEquals(-1, StringUtil.findWholeWord("A-b1_d+E2 a-b1 (d+e2)", "A-b1", false, "-+_"));
+		assertEquals(-1, StringUtil.findWholeWord("A-b1_d+E2 a-b1 (d+e2)", "d+E2", false, "-+_"));
+		assertEquals(-1, StringUtil.findWholeWord("A-b1_d+E2 a-b1 (d+e2)", "a-b", false, "-+_"));
+	}
+	
+	@Test
+	void testContainsAnyAt() {
+		// empty cases
+		assertFalse(StringUtil.containsAnyAt(null, 0, "X", "yz", "BC"));
+		assertFalse(StringUtil.containsAnyAt("a bc def", 0));
+		
+		// out of range cases
+		assertFalse(StringUtil.containsAnyAt("a bc def", -1, "bc"));
+		assertFalse(StringUtil.containsAnyAt("a bc def", 7, "bc"));
+		assertFalse(StringUtil.containsAnyAt("a bc def", 8, "bc"));
+		assertFalse(StringUtil.containsAnyAt("a bc def", 99, "bc"));
+
+		// expect found
+		assertTrue(StringUtil.containsAnyAt("a bc def", 2, "bc", "X", "yz"));
+		assertTrue(StringUtil.containsAnyAt("a bc def", 2, "X", "bc", "yz"));
+		assertTrue(StringUtil.containsAnyAt("a bc def", 2, "X", "yz", "bc"));
+
+		// expect not found due to case
+		assertFalse(StringUtil.containsAnyAt("a bc def", 2, "BC", "X", "yz"));
+		assertFalse(StringUtil.containsAnyAt("a bc def", 2, "X", "Bc", "yz"));
+		assertFalse(StringUtil.containsAnyAt("a bc def", 2, "X", "yz", "bC"));
+
+		// expect not found 
+		assertFalse(StringUtil.containsAnyAt("a bc def", 2, "X", "yz", "def"));
+	}
+	
+	@Test
+	void testContainsAnyAtIgnoringCase() {
+		// empty cases
+		assertFalse(StringUtil.containsAnyAtIgnoringCase(null, 0, "X", "yz", "BC"));
+		assertFalse(StringUtil.containsAnyAtIgnoringCase("a bc def", 0));
+
+		// out of range cases
+		assertFalse(StringUtil.containsAnyAtIgnoringCase("a bc def", -1, "bc"));
+		assertFalse(StringUtil.containsAnyAtIgnoringCase("a bc def", 7, "bc"));
+		assertFalse(StringUtil.containsAnyAtIgnoringCase("a bc def", 8, "bc"));
+		assertFalse(StringUtil.containsAnyAtIgnoringCase("a bc def", 99, "bc"));
+
+		// expect found
+		assertTrue(StringUtil.containsAnyAtIgnoringCase("a bc def", 2, "bc", "X", "yz"));
+		assertTrue(StringUtil.containsAnyAtIgnoringCase("a bc def", 2, "X", "bc", "yz"));
+		assertTrue(StringUtil.containsAnyAtIgnoringCase("a bc def", 2, "X", "yz", "bc"));
+
+		// expect not found, case different
+		assertTrue(StringUtil.containsAnyAtIgnoringCase("a bc def", 2, "BC", "X", "yz"));
+		assertTrue(StringUtil.containsAnyAtIgnoringCase("a bc def", 2, "X", "Bc", "yz"));
+		assertTrue(StringUtil.containsAnyAtIgnoringCase("a bc def", 2, "X", "yz", "bC"));
+
+		// expect not found 
+		assertFalse(StringUtil.containsAnyAtIgnoringCase("a bc def", 2, "X", "yz", "def"));
+	}
+	
+	@Test
+	void testGetCountAndUnit() {
+		assertEquals("0 lines", StringUtil.getCountAndUnit(0, "line", "lines"));
+		assertEquals("1 line", StringUtil.getCountAndUnit(1, "line", "lines"));
+		assertEquals("2 lines", StringUtil.getCountAndUnit(2, "line", "lines"));
+	}
+	
+	@Test
+	void testGetLastChar() {
+		assertEquals('c', StringUtil.getLastChar("abc"));
+		assertEquals('\0', StringUtil.getLastChar(""));
+		assertEquals('\0', StringUtil.getLastChar(null));
+	}
+	
+	@Test
+	void testGetLastCharAsString() {
+		assertEquals("c", StringUtil.getLastCharAsString("abc"));
+		assertEquals(null, StringUtil.getLastCharAsString(""));
+		assertEquals(null, StringUtil.getLastCharAsString(null));
+	}
 }

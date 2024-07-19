@@ -42,6 +42,9 @@ public class Token {
 	private static String[] levelOpeners = new String[] { "(", "[" };
 	private static String[] levelClosers = new String[] { ")", "]" };
 
+	private static String[] ddlLevelOpeners = new String[] { "(", "[", "{", "case" };
+	private static String[] ddlLevelClosers = new String[] { ")", "]", "}", "end" };
+
 	// place and content
 	public int lineBreaks;
 	public int spacesLeft;
@@ -95,6 +98,7 @@ public class Token {
 	boolean collocationContinues;
 
 	public final boolean closesLevel() { return closesLevel; }
+	final void setClosesLevel(boolean value) { closesLevel = value; }
 
 	public final boolean getOpensLevel() { return opensLevel; }
 	final void setOpensLevel(boolean value) { opensLevel = value; }
@@ -106,6 +110,8 @@ public class Token {
 	public final boolean isCommentLine() { return isComment() && isFirstTokenInLine(); }
 
 	public final boolean isQuotMarkCommentLine() { return isCommentLine() && isQuotMarkComment(); }
+
+	public final boolean isDdlLineEndComment() { return isComment() && textStartsWithAny(DDL.LINE_END_COMMENT, DDL.LINE_END_MINUS_COMMENT); }
 
 	public final boolean isAbapDocComment() {
 		// ABAP Doc comments are expected to be comment lines, however, it is syntactically possible to put them as 
@@ -247,6 +253,8 @@ public class Token {
 
 	public final String getSourceName() { return (parentCommand == null) ? null : parentCommand.getSourceName(); }
 	
+	public final boolean isDdlAnnotation() { return text.length() > 0 && text.charAt(0) == DDL.ANNOTATION_SIGN; }
+		
 	/**
 	 * Returns true if the Token text equals the supplied comparison text.  
 	 * To check the Token type at the same time, use {@link #isKeyword(String)} or {@link #isComparisonOperator(String)} 
@@ -329,25 +337,35 @@ public class Token {
 		// (at this point, we only need to identify comments and tell whether the Token opens or closes a level)
 		boolean isAtLineStart = ((this.sourceLineNum == 1 || this.lineBreaks > 0) && this.spacesLeft == 0);
 
-		// even in non-ABAP sections, comments are started with * at line start
-		if (AbapCult.stringStartsWith(text, ABAP.LINE_COMMENT_SIGN_STRING) && isAtLineStart) {
-			type = TokenType.COMMENT;
+		if (language == Language.DDL) {
+			type = inferTypeFromDdlToken(text);
+			if (type == TokenType.KEYWORD || type == TokenType.OTHER_OP) {
+				opensLevel = textEndsWithAny(ddlLevelOpeners);
+				closesLevel = textStartsWithAny(ddlLevelClosers);
+			}			
 
-		} else {			
-			if (language == Language.ABAP) 
-				type = inferTypeFromAbapToken(text);
-			else if (language == Language.SQLSCRIPT) 
-				type = inferTypeFromSqlScriptToken(text);
-			else 
-				type = inferTypeFromOtherToken(text);
-		}
-		
-		if (type == TokenType.KEYWORD || type == TokenType.IDENTIFIER || type == TokenType.OTHER_OP) {
-			closesLevel = textStartsWithAny(levelClosers);
-			opensLevel = textEndsWithAny(levelOpeners);
-		} else if (type == TokenType.LITERAL) {
-			closesLevel = textStartsWith("}");
-			opensLevel = textEndsWith("{");
+		} else {
+			// even in non-ABAP sections, comments are started with * at line start
+			if (AbapCult.stringStartsWith(text, ABAP.LINE_COMMENT_SIGN_STRING) && isAtLineStart) {
+				type = TokenType.COMMENT;
+	
+			} else {			
+				if (language == Language.ABAP)  {
+					type = inferTypeFromAbapToken(text);
+				} else if (language == Language.SQLSCRIPT) { 
+					type = inferTypeFromSqlScriptToken(text);
+				} else { 
+					type = inferTypeFromOtherToken(text);
+				}
+			}
+			
+			if (type == TokenType.KEYWORD || type == TokenType.IDENTIFIER || type == TokenType.OTHER_OP) {
+				closesLevel = textStartsWithAny(levelClosers);
+				opensLevel = textEndsWithAny(levelOpeners);
+			} else if (type == TokenType.LITERAL) {
+				closesLevel = textStartsWith("}");
+				opensLevel = textEndsWith("{");
+			}
 		}
 	}
 
@@ -410,6 +428,39 @@ public class Token {
 		}
 	}
 
+	private static TokenType inferTypeFromDdlToken(String text) {
+		if (AbapCult.stringStartsWith(text, DDL.LINE_END_COMMENT) 
+				|| AbapCult.stringStartsWith(text, DDL.LINE_END_MINUS_COMMENT)
+				|| AbapCult.stringStartsWith(text, DDL.ASTERISK_COMMENT_START)) {
+			return TokenType.COMMENT;
+		
+		} else if (AbapCult.stringStartsWith(text, DDL.QUOT_MARK_STRING) || DDL.isNumeric(text, true)) {
+			return TokenType.LITERAL;
+
+		} else if (DDL.isComparisonOperator(text)) {
+			return TokenType.COMPARISON_OP;
+
+		} else if (DDL.isKeyword(text)) {
+			return TokenType.KEYWORD;
+
+		} else if (ABAP.COLON_SIGN_STRING.equals(text)) {
+			return TokenType.COLON;
+		
+		} else if (ABAP.COMMA_SIGN_STRING.equals(text)) {
+			return TokenType.COMMA;
+		
+		} else {
+			// Assume .IDENTIFIER if at least one letter a-z A-Z or an underscore _ is found, otherwise assume .OTHER_OP. 
+			char[] textChars = text.toCharArray();
+			for (char c : textChars) {
+				if (Character.isLetter(c) || c == '_' || c == '$' || c == '#' || c == '@') {
+					return TokenType.IDENTIFIER;
+				}
+			}
+
+			return TokenType.OTHER_OP; // e.g. ")", "#("
+		}
+	}
 	private static TokenType inferTypeFromSqlScriptToken(String text) {
 		// in non-ABAP sections (e.g. EXEC SQL ... ENDEXEC), everything except comments gets TokenType.NON_ABAP (including literals)  
 		return TokenType.NON_ABAP;
@@ -1259,11 +1310,10 @@ public class Token {
 		}
 	}
 
-	public final void copyWhitespaceFrom(Token token) {
+	public final boolean copyWhitespaceFrom(Token token) {
 		if (token == null)
 			throw new NullPointerException("token");
-		lineBreaks = token.lineBreaks;
-		spacesLeft = token.spacesLeft;
+		return setWhitespace(token.lineBreaks, token.spacesLeft);
 	}
 
 	public final void ensureWhitespace() {
@@ -1338,7 +1388,7 @@ public class Token {
 		return true;
 	}
 
-	public final boolean setSpacesLeftAdjustingIndent(int newSpacesLeft) {
+	public final boolean setSpacesLeftAdjustingIndent(int newSpacesLeft, boolean adjustIfDirectlyBelow) {
 		if (newSpacesLeft == spacesLeft)
 			return false;
 		
@@ -1347,7 +1397,12 @@ public class Token {
 			spacesLeft = newSpacesLeft; 
 		} else {
 			int addSpaceCount = newSpacesLeft - spacesLeft;
-			int minSpacesLeft = (next.lineBreaks == 0) ? next.getStartIndexInLine() : this.getStartIndexInLine() + 1;
+			int minSpacesLeft;
+			if (adjustIfDirectlyBelow) {
+				minSpacesLeft = this.getStartIndexInLine();
+			} else {
+				minSpacesLeft = (next.lineBreaks == 0) ? next.getStartIndexInLine() : this.getStartIndexInLine() + 1;
+			}
 			spacesLeft = newSpacesLeft;
 			parentCommand.addIndent(addSpaceCount, minSpacesLeft, next, null, true);
 		}
@@ -1355,6 +1410,8 @@ public class Token {
 	}
 
 	final ColorType getMainColorType() {
+		boolean isDdl = parentCommand.isDdl();
+		
 		switch (type) {
 			case COMMENT:
 			case PRAGMA:
@@ -1364,24 +1421,47 @@ public class Token {
 				return isStringLiteral() ? ColorType.STRING_LITERAL : ColorType.NUMBER;
 
 			case ASSIGNMENT_OP:
-				return ColorType.USUAL_OPERATOR;
+				if (isDdl) {
+					return ColorType.DDL_KEYWORD;
+				} else {
+					return ColorType.USUAL_OPERATOR;
+				}
 
 			case OTHER_OP:
-				return textEquals(")") && isAttached() ?  ColorType.TOKEN_OPERATOR : ColorType.USUAL_OPERATOR;
+				if (isDdl) {
+					return ColorType.DDL_KEYWORD;
+				} else {
+					return textEquals(")") && isAttached() ?  ColorType.TOKEN_OPERATOR : ColorType.USUAL_OPERATOR;
+				}
 
 			case COMPARISON_OP:
-				if (!StringUtil.isNullOrEmpty(text) && Character.isLetter(text.charAt(0))) // GE, GT, EQ, NE etc.
+				if (isDdl) {
+					return ColorType.DDL_KEYWORD;
+				} else if (!StringUtil.isNullOrEmpty(text) && Character.isLetter(text.charAt(0))) { // GE, GT, EQ, NE etc.
 					return ColorType.KEYWORD;
-				else
+				} else {
 					return ColorType.USUAL_OPERATOR;
+				}
 
 			case KEYWORD:
-				return isDeclarationKeyword() ? ColorType.DECLARATION_KEYWORD : ColorType.KEYWORD;
+				if (isDdl) {
+					return ColorType.DDL_KEYWORD;
+				} else {
+					return isDeclarationKeyword() ? ColorType.DECLARATION_KEYWORD : ColorType.KEYWORD;
+				}
 
 			case IDENTIFIER:
-				MemoryAccessType accessType = getMemoryAccessType(); 
-				return accessType.displayAsWritePos ? ColorType.IDENTIFIER_WRITE_POS : ColorType.IDENTIFIER;
-
+				if (isDdl) {
+					if (isChildOf("cast") && getNextCodeSibling() == null) {
+						return ColorType.DDL_IDENTIFIER_DATA_ELEMENT;
+					} else {
+						return ColorType.IDENTIFIER;
+					}
+				} else {
+					MemoryAccessType accessType = getMemoryAccessType(); 
+					return accessType.displayAsWritePos ? ColorType.IDENTIFIER_WRITE_POS : ColorType.IDENTIFIER;
+				}
+				
 			case NON_ABAP:
 				return ColorType.NON_ABAP;
 
@@ -1408,19 +1488,42 @@ public class Token {
 	}
 
 	final TextBit[] toTextBits(int startIndex, boolean isInOOContext) {
+		boolean isAbap = parentCommand.isAbap();
+		boolean isDdl = parentCommand.isDdl();
 		boolean isSimpleCase = false;
 		
 		// in most cases, the whole Token is of one ColorType
-		ColorType colType = getMainColorType();
-		if (type != TokenType.KEYWORD && type != TokenType.IDENTIFIER && type != TokenType.LITERAL && type != TokenType.OTHER_OP)
+		
+		ColorType colType;
+		if (isDdl && parentCommand.isDdlAnnotation() && type != TokenType.COMMENT) { 
+			// in CDS DDL annotations, everything gets the same color
+			colType = ColorType.DDL_ANNOTATION;
 			isSimpleCase = true;
-		if (type == TokenType.IDENTIFIER && text.charAt(0) == ABAP.FIELD_SYMBOL_START_SIGN)
+		} else {
+			colType = getMainColorType();
+		}
+		
+		if (type != TokenType.KEYWORD && type != TokenType.IDENTIFIER && type != TokenType.LITERAL && type != TokenType.OTHER_OP) {
 			isSimpleCase = true;
-		if (type == TokenType.OTHER_OP && !textEndsWithAny("(", ")")) // "ULINE AT /(20)."
-			isSimpleCase = true;
-
+		} else if (isAbap) {
+			if (isAbap && type == TokenType.IDENTIFIER && text.charAt(0) == ABAP.FIELD_SYMBOL_START_SIGN) {
+				isSimpleCase = true;
+			} else if (isAbap && type == TokenType.OTHER_OP && !textEndsWithAny("(", ")")) { // "ULINE AT /(20)."
+				isSimpleCase = true;
+			}
+		} else if (isDdl) {
+			if (type == TokenType.LITERAL) {
+				isSimpleCase = true;
+			} else if (type == TokenType.IDENTIFIER && textStartsWith(DDL.SESSION_PREFIX + DDL.DOT_SIGN_STRING)) {
+				// session variables are functionally used like variables (and therefore should have TokenType.IDENTIFIER), 
+				// but are displayed like keywords
+				isSimpleCase = true;
+				colType = ColorType.DDL_KEYWORD;
+			}
+		}
+		
 		// literals may be linked to a text symbol ID, having the form 'literal text'(idf), where 'idf' is always 3 characters long
-		if (type == TokenType.LITERAL) {
+		if (isAbap && type == TokenType.LITERAL) {
 			if (text.charAt(0) == ABAP.QUOT_MARK && text.length() >= 7 
 					&& text.charAt(text.length() - 5) == ABAP.TEXT_SYMBOL_ID_OPEN
 					&& text.charAt(text.length() - 1) == ABAP.TEXT_SYMBOL_ID_CLOSE ) {
@@ -1438,7 +1541,7 @@ public class Token {
 		if (isSimpleCase)
 			return new TextBit[] { TextBit.create(startIndex, text.length(), colType) };
 
-		if (isTextSymbol()) {
+		if (isAbap && isTextSymbol()) {
 			// text symbol IDs may be numeric (TEXT-001) or contain letters or _ (TEXT-a01, TEXT-a_2)
 			int prefixLength = ABAP.TEXT_SYMBOL_PREFIX.length();
 			ColorType idColorType = ABAP.consistsOfDigitsOnly(text.substring(prefixLength)) ? ColorType.NUMBER : ColorType.IDENTIFIER;
@@ -1449,19 +1552,28 @@ public class Token {
 		ArrayList<TextBit> result = new ArrayList<TextBit>();
 		int writtenPos = 0;
 		boolean lastWasIdentifier = false;
+		ColorType opColorType = isDdl ? ColorType.DDL_KEYWORD : ColorType.TOKEN_OPERATOR;
 		for (int i = 0; i < text.length(); ++i) {
 			char c = text.charAt(i);
-			boolean isIdentifier = (type == TokenType.KEYWORD) ? ABAP.isCharAllowedForAnyKeyword(c) 
-																				: ABAP.isCharAllowedForVariableNames(text, i, (i == 0), false, isInOOContext);
-			// in some cases, initial '/' does NOT start an identifier with a namespace, e.g. "ULINE AT /.", "ULINE AT /10(20)." or "ULINE at /pos(20)."
-			if (i == 0 && c == '/' && (text.length() <= 1 || text.indexOf('/', 1) < 0)) {
-				isIdentifier = false;
+			boolean isIdentifier;
+			if (isDdl) {
+				isIdentifier = (type == TokenType.KEYWORD) ? DDL.isCharAllowedForAnyKeyword(c, (i == 0)) 
+						 												 : DDL.isCharAllowedForIdentifier(text, i, (i == 0));
+			} else {
+				isIdentifier = (type == TokenType.KEYWORD) ? ABAP.isCharAllowedForAnyKeyword(c, (i == 0)) 
+																		 : ABAP.isCharAllowedForVariableNames(text, i, (i == 0), false, isInOOContext);
+				// in some cases, initial '/' does NOT start an identifier with a namespace, e.g. "ULINE AT /.", "ULINE AT /10(20)." or "ULINE at /pos(20)."
+				if (i == 0 && c == '/' && (text.length() <= 1 || text.indexOf('/', 1) < 0)) {
+					isIdentifier = false;
+				}
 			}
 			if (i > 0 && isIdentifier != lastWasIdentifier) {
 				// if the text bit is not part of the keyword or the identifier, it is considered a token operator (e.g. "->", "=>", "(" etc.)
-				ColorType bitType = lastWasIdentifier ? colType : ColorType.TOKEN_OPERATOR;
+				ColorType bitType = lastWasIdentifier ? colType : opColorType;
 				// in some cases, a Token of type OTHER_OP contains a number, e.g. "ULINE AT /10(20)." and "ULINE AT 10(**)." 
-				if (ABAP.isInteger(text.substring(writtenPos, i)))
+				if (isDdl && AbapCult.stringEquals(text.substring(writtenPos, i), "$projection", true)) 
+					bitType = ColorType.DDL_KEYWORD;
+				if (isAbap && ABAP.isInteger(text.substring(writtenPos, i)))
 					bitType = ColorType.NUMBER;
 				result.add(TextBit.create(startIndex + writtenPos, i - writtenPos, bitType));
 				writtenPos = i;
@@ -1470,7 +1582,7 @@ public class Token {
 		}
 		// process the last bit
 		if (writtenPos < text.length()) {
-			ColorType bitType = lastWasIdentifier ? colType : ColorType.TOKEN_OPERATOR;
+			ColorType bitType = lastWasIdentifier ? colType : opColorType;
 			// in some cases, a Token of type IDENTIFIER contains a number, e.g. "ULINE AT /10." 
 			if (ABAP.isInteger(text.substring(writtenPos)))
 				bitType = ColorType.NUMBER;
@@ -1758,7 +1870,7 @@ public class Token {
 		check(!opensLevel || nextSibling != null && nextSibling.closesLevel);
 		check(closesLevel || prevSibling == null || !prevSibling.opensLevel);
 		check(!closesLevel || prevSibling != null && prevSibling.opensLevel);
-		if (testCommentPositions) {
+		if (testCommentPositions && !parentCommand.isDdl()) {
 			// there can be no further Token behind a comment (except in the next line)
 			check(prev == null || !prev.isComment() || lineBreaks > 0); 
 		}
@@ -2553,6 +2665,10 @@ public class Token {
 	 * @return
 	 */
 	public Token getLastTokenOfLogicalExpression() {
+      if (parentCommand.isDdl()) {
+      	return getLastTokenOfDdlLogicalExpression();
+      }
+
       Token firstCode = parentCommand.getFirstCodeToken();
       if (firstCode == null)
       	return null;
@@ -2699,6 +2815,69 @@ public class Token {
       		return (end == null) ? null : end.getPrevCodeToken();
       	}
       }
+      return null;
+	}
+	
+	/**
+	 * If this Token starts a logical expression in DDL, the last code Token of the logical expression is returned; otherwise null.
+	 * @return
+	 */
+	public Token getLastTokenOfDdlLogicalExpression() {
+      Token firstCode = parentCommand.getFirstCodeToken();
+      if (firstCode == null)
+      	return null;
+      Token prevCode = getPrevCodeToken();
+      
+   	if (isKeyword("WHEN")) {
+   		Token thenToken = getLastTokenOnSiblings(true, TokenSearch.ASTERISK, "THEN"); 
+   		return (thenToken == null) ? null : thenToken.getPrevCodeToken();
+   		
+   	} else if (isAnyKeyword("WHERE", "HAVING") 
+   			|| isKeyword("ON") && (prevCode == null || !prevCode.isKeyword("PROJECTION")) // exclude "AS PROJECTION ON"
+   			|| isKeyword("FILTER") && prevCode != null && prevCode.isKeyword("DEFAULT")) { // "ASSOCIATION ... WITH DEFAULT FILTER"
+
+   		// find the next keyword that does NOT fit into a DDL condition (but instead starts a new clause, join, case, list element etc.)
+   		Token end = getNextCodeSibling();
+   		while (end != null) {
+   			if (end.textEqualsAny(DDL.BRACE_OPEN_STRING, DDL.COMMA_SIGN_STRING, DDL.SEMICOLON_SIGN_STRING)) {
+   				break; // start of select list or end of list element
+   			} else if (!end.isKeyword()) {
+   				// the condition can only end with a keyword or with , ; { (see while condition above)
+				} else if (end.isAnyKeyword("NOT", "AND", "OR")) {
+					// sql_cond -> rel_exp | [NOT] sql_cond [AND|OR sql_cond] ...
+				} else if (end.isAnyKeyword("IS", "BETWEEN", "IN", "LIKE")) {
+					// operand IS [NOT] NULL, operand IS [NOT] INITIAL
+   				// however, EQ, NE etc. as well as BETWEEN, IN, LIKE should be categorized as TokenType.COMPARISON_OP
+				} else if (end.isAnyKeyword("NULL", "INITIAL", "ESCAPE")) {
+					// operand IS [NOT] NULL, operand IS [NOT] INITIAL, operand1 [NOT] LIKE operand2 [ESCAPE esc]
+				} else if (end.isAnyKeyword("CASE", "WHEN", "THEN", "ELSE", "END")) {
+					// CASE as an DDL expression at operand position
+				} else {
+					break;
+   			}
+   			end = end.getNextCodeSibling();
+   		}
+   		// check whether the end meets the expectations, otherwise ignore this logical expressions by returning null
+   		if (end != null) {
+				if (end.textEqualsAny(DDL.BRACE_OPEN_STRING, DDL.COMMA_SIGN_STRING, DDL.SEMICOLON_SIGN_STRING)) {
+					// start of select list or end of list element 
+				} else if (end.isAnyKeyword("UNION", "INTERSECT", "EXCEPT")) {
+   				// end of SELECT
+   			} else if (end.isAnyKeyword("GROUP", "HAVING")) {
+   				// next SELECT clause
+   			} else if (end.isAnyKeyword("INNER", "LEFT", "RIGHT", "JOIN", "CROSS", "EXACT", "MANY", "ONE", "TO", "ASSOCIATION", "COMPOSITION")) {
+   				// next join or association 
+   			} else if (end.isAnyKeyword("WITH")) {
+   				// ASSOCIATION [cardinality] TO target [AS _assoc] ON cds_cond [ WITH DEFAULT FILTER cds_cond ] 
+   			} else {
+   				if (Program.showDevFeatures()) 
+   					throw new IllegalArgumentException("Unexpected end '" + end.getText() + "' of DDL condition: " + parentCommand.toString());
+   				// ignore this unexpected syntax by returning null as if no logical expression was found
+   				end = null;
+   			}
+   		}
+   		return (end == null) ? parentCommand.getLastCodeToken() : end.getPrevCodeToken();
+   	}
       return null;
 	}
 	
@@ -3218,5 +3397,19 @@ public class Token {
 		}
 
 		return null;
+	}
+	
+	public boolean isChildOf(String parentText) {
+		return isChildOfAny(parentText);
+	}
+	
+	public boolean isChildOfAny(String... parentTexts) {
+		Token token = parent;
+		if (token != null && parentCommand.isDdl()) { //  && token.textEqualsAny("(", "{", "[", "#(")
+			token = token.getPrevCodeToken();
+		}
+		if (token == null)
+			return false;
+		return token.textEqualsAny(parentTexts);
 	}
 }

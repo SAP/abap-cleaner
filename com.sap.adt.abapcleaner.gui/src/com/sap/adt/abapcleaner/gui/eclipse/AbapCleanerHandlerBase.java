@@ -63,7 +63,7 @@ public abstract class AbapCleanerHandlerBase extends AbstractAdtEditorHandler {
 		// This is only used by the super class to check whether the command should be enabled/disabled. 
 		// Since there is no extension framework in ADT yet for 3rd party add-ons, piggyback on an existing ID 
 		// from ADT that does similar things.
-		return "com.sap.adt.tools.abapsource.ui.prettyPrintBlock";  
+		return "com.sap.adt.tools.abapsource.ui.prettyPrint"; // for ABAP only: .prettyPrintBlock
 	}
 
 	@Override

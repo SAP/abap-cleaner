@@ -130,10 +130,28 @@ public class Code {
 	}
 	
 	public String toString(String lineSeparator) {
+		boolean isDdl = isDdl();
+		
 		StringBuilder result = new StringBuilder();
 		Command command = firstCommand;
+		boolean isInBaseInfoComment = false;
+		String useLineSeparator = lineSeparator;
+		
 		while (command != null) {
-			result.append(command.toString(lineSeparator));
+			String commandText = command.toString(useLineSeparator); 
+			result.append(commandText);
+
+			if (isDdl && command.isCommentLine()) {
+				if (!isInBaseInfoComment && command.firstToken.textEquals(DDL.BASE_INFO_COMMENT_START)) { 
+					// this special /* ... */ comment, which spans multiple Commands, always uses \n as the line separator
+					isInBaseInfoComment = true;
+					useLineSeparator = DDL.BASE_INFO_COMMENT_LINE_SEP;
+				} else if (isInBaseInfoComment && command.firstToken.textEquals(DDL.BASE_INFO_COMMENT_END)) { 
+					isInBaseInfoComment = false;
+					useLineSeparator = lineSeparator;
+				}
+			}
+			
 			command = command.getNext();
 		}
 		return result.toString();
@@ -164,8 +182,9 @@ public class Code {
 					}
 
 					// add further empty lines, if applicable
-					for (int i = 1; i < token.lineBreaks; ++i)
+					for (int i = 1; i < token.lineBreaks; ++i) {
 						lines.add(DisplayLine.create(command, "", index++));
+					}
 				}
 
 				// add spaces; no TextBits are required for this
@@ -230,7 +249,8 @@ public class Code {
 		if (sourceCode == null)
 			throw new NullPointerException("sourceCode");
 
-		String recompiledCodeText = this.toString();
+		String sourceLineSep = StringUtil.inferLineSeparator(sourceCode);
+		String recompiledCodeText = this.toString(sourceLineSep);
 		if (sourceCode.equals(recompiledCodeText))
 			return null;
 
@@ -240,9 +260,8 @@ public class Code {
 			return null;
 
 		StringBuilder result = new StringBuilder();
-		String sourceLineSep = StringUtil.inferLineSeparator(sourceCode);
 		String[] sourceLines = StringUtil.split(sourceCode, sourceLineSep, false);
-		String[] recompiledLines = StringUtil.split(recompiledCodeText, ABAP.LINE_SEPARATOR, false);
+		String[] recompiledLines = StringUtil.split(recompiledCodeText, sourceLineSep, false);
 		// ignore empty lines at the end
 		int sourceLineCount = sourceLines.length;
 		while (sourceLineCount > 0 && StringUtil.isNullOrEmpty(sourceLines[sourceLineCount - 1]))
@@ -254,9 +273,16 @@ public class Code {
 		int minLineCount = Math.min(sourceLineCount, recompiledLineCount);
 		int findingCount = 0;
 		for (int i = 0; i < minLineCount; ++i) {
-			if (!sourceLines[i].equals(recompiledLines[i])) {
+			// ignore differences regarding final and non-breaking spaces (the Tokenizer preserves them only in comment lines)
+			String sourceLine = StringUtil.trimEnd(sourceLines[i].replace('\u00A0', ' '));
+			String recompiledLine = StringUtil.trimEnd(recompiledLines[i].replace('\u00A0', ' '));
+			
+			if (!sourceLine.equals(recompiledLine)) {
+				int mismatchPos = 0;
+				while (mismatchPos < sourceLine.length() && mismatchPos < recompiledLine.length() && sourceLine.charAt(mismatchPos) == recompiledLine.charAt(mismatchPos))
+					++mismatchPos;
 				result.append((result.length() == 0) ? "Parse result differs in line " : ", ");
-				result.append(AbapCult.ToString(i + 1));
+				result.append(AbapCult.ToString(i + 1) + "@" + AbapCult.ToString(mismatchPos + 1));
 				++findingCount;
 				if (findingCount >= maxReportLineCount && maxReportLineCount >= 0)
 					break;
@@ -528,7 +554,7 @@ public class Code {
 		if (cleanupRange == null || !cleanupRange.expandRange) 
 			return;
 
-		if (mode == CleanupRangeExpandMode.FULL_DOCUMENT) {
+		if (mode == CleanupRangeExpandMode.FULL_DOCUMENT || isDdl()) {
 			cleanupRange = null;
 			return;
 		}
@@ -696,5 +722,9 @@ public class Code {
 			}
 		}
 		return command;
+	}
+	
+	public boolean isDdl() {
+		return firstCommand != null && firstCommand.isDdl();
 	}
 }

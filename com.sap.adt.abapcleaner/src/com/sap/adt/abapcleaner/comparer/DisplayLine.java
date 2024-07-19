@@ -1,5 +1,6 @@
 package com.sap.adt.abapcleaner.comparer;
 
+import com.sap.adt.abapcleaner.base.Language;
 import com.sap.adt.abapcleaner.parser.*;
 import java.util.*;
 
@@ -25,13 +26,19 @@ public class DisplayLine {
 
 	public final boolean isEmpty() { return text.length() == 0; }
 
-	public final java.lang.Iterable<TextBit> getTextBits() { return textBits; }
+	public final Iterable<TextBit> getTextBits() { return textBits; }
 
-	public final java.lang.Iterable<HighlightBit> getHighlightBits() { return highlightBits; }
+	public final Iterable<HighlightBit> getHighlightBits() { return highlightBits; }
+
+	public final int getHighlightBitCount() { return highlightBits == null ? 0 : highlightBits.size(); }
 
 	public final boolean isCommandInCleanupRange() { return parentCommand != null && parentCommand.isInCleanupRange(); }
 
 	public final boolean isAbapCommand() { return parentCommand != null && parentCommand.isAbap(); }
+	
+	public final boolean isDdlCommand() { return parentCommand != null && parentCommand.isDdl(); }
+	
+	public final Language getLanguage() { return (parentCommand != null ? parentCommand.getLanguage() : Language.ABAP); }
 	
 	@Override
 	public String toString() { // for debugging
@@ -55,7 +62,7 @@ public class DisplayLine {
 
 	final void setHighlightBits(ArrayList<HighlightBit> bits) { highlightBits = bits; }
 
-	final String getTextWithHighlightedChanges() {
+	public final String getTextWithHighlightedChanges() {
 		if (highlightBits == null || highlightBits.isEmpty())
 			return text;
 

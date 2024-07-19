@@ -56,8 +56,6 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 	private static final String NO_RELEASE_RESTRICTION_DISPLAY = "Latest ABAP Release";
 	private static final int WATCH_CLIPBOARD_INTERVAL_MS = 100;
 
-	private static boolean isInitialized = false;
-
 	private CodeDisplayColors codeDisplayColors; // is set to either codeDisplayColorsADT or codeDisplayColorsStrong  
 	private CodeDisplayColors codeDisplayColorsADT;
 	private CodeDisplayColors codeDisplayColorsClassic;
@@ -170,11 +168,9 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 	}
 
 	private static void initialize() {
-		if (isInitialized)
-			return;
-
-		Program.initialize(null, "");
-		isInitialized = true;
+		if (!Program.wasInitialized()) {
+			Program.initialize(null, "");
+		}
 	}
 
 	public static void cleanAutomatically(CommandLineArgs commandLineArgs, PrintStream out) throws CommandLineException {
@@ -2081,12 +2077,20 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 				}
 				e.doit = false;
 			}
+
 		} else if (controlPressed && shiftPressed && e.keyCode == SWT.ARROW_RIGHT && Program.showDevFeatures()) {
 			openNextMatchingSampleFile(true);
 			e.doit = false;
 		} else if (controlPressed && shiftPressed && e.keyCode == SWT.ARROW_LEFT && Program.showDevFeatures()) {
 			openNextMatchingSampleFile(false);
 			e.doit = false;
+		} else if (!controlPressed && !shiftPressed && e.keyCode == SWT.F8 && Program.showDevFeatures()) {
+			openNextMatchingSampleFile(true);
+			e.doit = false;
+		} else if (!controlPressed && !shiftPressed && e.keyCode == SWT.F7 && Program.showDevFeatures()) {
+			openNextMatchingSampleFile(false);
+			e.doit = false;
+		
 		} else if (controlPressed && e.keyCode == SWT.F6 && Program.showDevFeatures()) {
 			openNextPatternMatchFile(true);
 			e.doit = false;

@@ -1,5 +1,6 @@
 package com.sap.adt.abapcleaner.rulebase;
 
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -15,6 +16,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 
 import com.sap.adt.abapcleaner.base.ABAP;
+import com.sap.adt.abapcleaner.base.Language;
 import com.sap.adt.abapcleaner.base.StringUtil;
 import com.sap.adt.abapcleaner.comparer.ChangeStats;
 import com.sap.adt.abapcleaner.comparer.ChangeTypes;
@@ -645,17 +647,25 @@ public abstract class RuleTestBase {
 		// highlight functionality
 		for (int mode = 0; mode < 2; ++mode) {
 			boolean expHighlight = (mode == 0);
-			if (expHighlight)
-				diffNav.setHighlight(ChangeTypes.createAllChanges());
-			else
-				diffNav.setHighlight(ChangeTypes.createNoChanges());
+			diffNav.setHighlight(expHighlight ? ChangeTypes.createAllChanges() : ChangeTypes.createNoChanges());
+			
 			for (int line = 0; line < lineCount; ++line) {
 				DiffLine diffLine = diffNav.getLine(line);
 				DisplayLine dispLine = diffLine.rightLine;
-				if (dispLine != null && dispLine.getHighlightBits() != null) {
+				if (dispLine == null) 
+					continue;
+
+				if (dispLine.getHighlightBitCount() > 0) {
 					for (HighlightBit bit : dispLine.getHighlightBits()) {
 						assertEquals(expHighlight, diffNav.isLineBitHighlighted(bit));
 					}
+					assertNotEquals(dispLine.getText(), dispLine.getTextWithHighlightedChanges());
+				}
+				// check consistency of language information
+				if (dispLine.isAbapCommand()) {
+					assertEquals(Language.ABAP, dispLine.getLanguage());
+				} else if (dispLine.isDdlCommand()) {
+					assertEquals(Language.DDL, dispLine.getLanguage());
 				}
 			}
 		}

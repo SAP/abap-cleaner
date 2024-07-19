@@ -28,9 +28,14 @@ public final class Program {
 	private static boolean showDevFeatures;
 	private static Log log;
 	private static ITokenTypeRefiner tokenTypeRefiner;
+	private static boolean wasInitialized;
 	
 	public static boolean showDevFeatures() { return showDevFeatures; }
 
+	public static boolean testDdl() { return showDevFeatures; } // experimental
+
+	public static boolean wasInitialized() { return wasInitialized; }
+	
 	public static void initialize(Persistency persistency, String overrideWorkDir) {
 		if (persistency == null)
 			persistency = Persistency.create(FileSystem.create());
@@ -47,6 +52,7 @@ public final class Program {
 
 		showDevFeatures = persistency.fileExists(workDir, "devfeatures"); 
 		log = null;
+		wasInitialized = false;
 	}
 	
 	public static String getVersion() {

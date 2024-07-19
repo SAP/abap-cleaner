@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import com.sap.adt.abapcleaner.base.ABAP;
 import com.sap.adt.abapcleaner.base.Language;
 import com.sap.adt.abapcleaner.base.StringUtil;
+import com.sap.adt.abapcleaner.comparer.TextBit;
 import com.sap.adt.abapcleaner.programbase.IntegrityBrokenException;
 import com.sap.adt.abapcleaner.programbase.ParseException;
 import com.sap.adt.abapcleaner.programbase.UnexpectedSyntaxAfterChanges;
@@ -49,10 +50,21 @@ public class TokenTest {
 	}
 
 	private Token buildCommand(String codeText, String tokenText) {
-		Command command = buildCommand(codeText);
-		return command.firstToken.getLastTokenDeep(false, TokenSearch.ASTERISK, tokenText);
+		buildCommand(codeText);
+		return findToken(tokenText);
 	}
 
+	private Token findToken(String tokenText) {
+		// find the supplied tokenText in the supplied Command or any following Command
+		Command command = code.firstCommand;
+		Token token = null;
+		while (token == null && command != null) {
+			token = command.firstToken.getLastTokenDeep(false, TokenSearch.ASTERISK, tokenText);
+			command = command.getNext();
+		}
+		return token;
+	}
+	
 	@Test
 	void testIsCommentAfterCode() {
 		assertFalse(buildCommand("a = 1.", 0).isCommentAfterCode());
@@ -1220,33 +1232,53 @@ public class TokenTest {
 		assertEquals(token.getMemoryAccessType(), MemoryAccessType.NONE);
 	}
 	
-	private void assertEndOfLogicalExpression(String commandText, String startTokenText, String expEndTokenText) {
+	private void assertLastTokenOfLogExpr(String commandText, String startTokenText, String expEndTokenText) {
 		Token startToken = buildCommand(commandText, startTokenText);
 		Token lastInLogExpr = startToken.getLastTokenOfLogicalExpression();
-		String actEndTokenText = (lastInLogExpr == null) ? null : lastInLogExpr.getNextCodeToken().getText();
+		String actEndTokenText = (lastInLogExpr == null || lastInLogExpr.getNextCodeToken() == null) ? null : lastInLogExpr.getNextCodeToken().getText();
 		assertEquals(expEndTokenText, actEndTokenText);
 	}
 	
 	@Test
-	void testGetEndOfLogicalExpression() {
-		assertEndOfLogicalExpression("IF a < ( b + 10 ). ##PRAGMA \" comment", "IF", ".");
-		assertEndOfLogicalExpression("ELSEIF a IS INITIAL AND NOT ( b IS INITIAL OR c IS INITIAL ) ##PRAGMA.", "ELSEIF", ".");
-		assertEndOfLogicalExpression("CHECK its_data IS NOT INITIAL.", "CHECK", ".");
+	void testGetLastTokenOfLogicalExpression() {
+		assertLastTokenOfLogExpr("IF a < ( b + 10 ). ##PRAGMA \" comment", "IF", ".");
+		assertLastTokenOfLogExpr("ELSEIF a IS INITIAL AND NOT ( b IS INITIAL OR c IS INITIAL ) ##PRAGMA.", "ELSEIF", ".");
+		assertLastTokenOfLogExpr("CHECK its_data IS NOT INITIAL.", "CHECK", ".");
 
-		assertEndOfLogicalExpression("LOOP AT lts_data ASSIGNING FIELD-SYMBOL(<ls_data>) WHERE a = 1.", "WHERE", ".");
-		assertEndOfLogicalExpression("LOOP AT lts_data ASSIGNING <ls_data> WHERE a = 1 OR ( a = 2 AND b <> 3 ) GROUP BY <ls_data>-comp.", "WHERE", "GROUP");
+		assertLastTokenOfLogExpr("LOOP AT lts_data ASSIGNING FIELD-SYMBOL(<ls_data>) WHERE a = 1.", "WHERE", ".");
+		assertLastTokenOfLogExpr("LOOP AT lts_data ASSIGNING <ls_data> WHERE a = 1 OR ( a = 2 AND b <> 3 ) GROUP BY <ls_data>-comp.", "WHERE", "GROUP");
 
-		assertEndOfLogicalExpression("lv_result = xsdbool( a < 5 ).", "xsdbool(", ")");
+		assertLastTokenOfLogExpr("lv_result = xsdbool( a < 5 ).", "xsdbool(", ")");
 	}
 
 	@Test
-	void testGetEndOfLogicalExpressionAbapSql() {
-		assertEndOfLogicalExpression("SELECT * FROM dtab INTO TABLE lt_any WHERE col1 IS NOT NULL.", "WHERE", ".");
-		assertEndOfLogicalExpression("SELECT * FROM dtab INTO TABLE lt_any WHERE col1 < ANY ( SELECT col2 FROM other_dtab ) OR col1 > SOME ( SELECT col3 FROM third_dtab ).", "WHERE", ".");
-		assertEndOfLogicalExpression("SELECT FROM any_dtab FIELDS col1, CASE WHEN col2 BETWEEN 100 AND 300 OR col3 < 5 THEN 'a' ELSE 'b' END AS col4 INTO TABLE @FINAL(result).", "WHEN", "THEN");
-		assertEndOfLogicalExpression("SELECT * FROM dtab INTO TABLE lt_any WHERE CASE WHEN col2 BETWEEN 100 AND 300 OR col3 < 5 THEN 'a' ELSE 'b' END = 'b'.", "WHERE", ".");
-		assertEndOfLogicalExpression("SELECT * FROM dtab INTO TABLE lt_any WHERE col1 < ANY ( SELECT col2 FROM other_dtab ) OR col1 > SOME ( SELECT col3 FROM third_dtab ).", "WHERE", ".");
-		assertEndOfLogicalExpression("SELECT * FROM dtab1 JOIN dtab2 ON dtab1~any_id = dtab2~any_id JOIN dtab3 ON dtab3~other_id = dtab2~other_id INTO TABLE @DATA(lt_table).", "ON", "JOIN");
+	void testGetLastTokenOfLogicalExpressionAbapSql() {
+		assertLastTokenOfLogExpr("SELECT * FROM dtab INTO TABLE lt_any WHERE col1 IS NOT NULL.", "WHERE", ".");
+		assertLastTokenOfLogExpr("SELECT * FROM dtab INTO TABLE lt_any WHERE col1 < ANY ( SELECT col2 FROM other_dtab ) OR col1 > SOME ( SELECT col3 FROM third_dtab ).", "WHERE", ".");
+		assertLastTokenOfLogExpr("SELECT FROM any_dtab FIELDS col1, CASE WHEN col2 BETWEEN 100 AND 300 OR col3 < 5 THEN 'a' ELSE 'b' END AS col4 INTO TABLE @FINAL(result).", "WHEN", "THEN");
+		assertLastTokenOfLogExpr("SELECT * FROM dtab INTO TABLE lt_any WHERE CASE WHEN col2 BETWEEN 100 AND 300 OR col3 < 5 THEN 'a' ELSE 'b' END = 'b'.", "WHERE", ".");
+		assertLastTokenOfLogExpr("SELECT * FROM dtab INTO TABLE lt_any WHERE col1 < ANY ( SELECT col2 FROM other_dtab ) OR col1 > SOME ( SELECT col3 FROM third_dtab ).", "WHERE", ".");
+		assertLastTokenOfLogExpr("SELECT * FROM dtab1 JOIN dtab2 ON dtab1~any_id = dtab2~any_id JOIN dtab3 ON dtab3~other_id = dtab2~other_id INTO TABLE @DATA(lt_table).", "ON", "JOIN");
+	}
+
+	@Test
+	void testGetLastTokenOfDdlLogicalExpression() {
+		assertLastTokenOfLogExpr("define view entity I_Any as select from dtab as d1 join dtab2 as d2 on d1.any = d2.any and d1.other = d2.other { Any }", "on", "{");
+		assertLastTokenOfLogExpr("define view entity I_Any as select from dtab as d1 association to dtab2 as d2 on d1.any = d2.any and d1.other = d2.other with default filter d2.third = 1 { Any }", "on", "with");
+		assertLastTokenOfLogExpr("define view entity I_Any as select from dtab as d1 association to dtab2 as d2 on d1.any = d2.any and d1.other = d2.other with default filter d2.third = 1 association to dtab3 as d3 on d1.any = d3.any { Any }", "filter", "association");
+
+		assertLastTokenOfLogExpr("define view entity I_Any as select from dtab { Any, case when fld = 1 and other_fld is initial then 0 else 1 end as Other }", "when", "then");
+		assertLastTokenOfLogExpr("define view entity I_Any as select from dtab { Any, case when fld = case when other_fld = 'a' then 1 else 2 end then 0 else 1 end as Other }", "when", "then");
+
+		assertLastTokenOfLogExpr("define view entity I_Any as select from dtab { Any } where fld = 1 and other_fld is initial", "where", null);
+		assertLastTokenOfLogExpr("define view entity I_Any as select from dtab { Any } where fld = 1 and other_fld not between 2 and 3 union all select from dtab2 { Any }", "where", "union");
+		assertLastTokenOfLogExpr("define view entity I_Any as select from dtab { Any } where fld = 1 group by Any", "where", "group");
+
+		assertLastTokenOfLogExpr("define custom entity I_Any { _assoc : association[1:1] to I_Other on _assoc.fld = I_Any.fld; }", "on", ";");
+
+		// Tokens that do not start a logical expression
+		assertLastTokenOfLogExpr("define view entity I_Any as select from dtab as d1 join dtab2 as d2 on d1.any = d2.any and d1.other = d2.other { Any }", "from", null);
+		assertLastTokenOfLogExpr("/*comment*/", "/*comment*/", null);
 	}
 
 	private void assertTextEquals(String expResultTokenText, Token resultToken) {
@@ -1873,5 +1905,123 @@ public class TokenTest {
 
 		assertNull(buildCommand("  DELETE TABLE itab WITH TABLE KEY keyname COMPONENTS comp1 = 1.", "keyname").getStrucInfo());
 		assertNull(buildCommand("  READ TABLE itab WITH TABLE KEY keyname COMPONENTS comp1 = 1.", "keyname").getStrucInfo());
-}
+	}
+
+	private void assertColorType(ColorType expColorType, String tokenText) {
+		Token token = findToken(tokenText);
+		assertEquals(expColorType, token .getMainColorType());
+	}
+
+	@Test 
+	void testGetMainColorTypeDdl() {
+		buildCommand("define view entity I_Any as select from dtab as d1 join dtab2 as d2 on d1.any = d2.any { cast(any_fld as any_type) as Any /*comment*/ } where other_fld = 'literal' and third_fld >= 42");
+		
+		assertColorType(ColorType.DDL_KEYWORD, "view");
+		assertColorType(ColorType.IDENTIFIER, "I_Any");
+		
+		// all operators (assignment, comparison, other) are displayed like keywords
+		assertColorType(ColorType.DDL_KEYWORD, "="); 
+		assertColorType(ColorType.DDL_KEYWORD, "{"); 
+		assertColorType(ColorType.DDL_KEYWORD, "("); 
+		assertColorType(ColorType.DDL_KEYWORD, ")"); 
+		assertColorType(ColorType.DDL_KEYWORD, "}");
+		assertColorType(ColorType.DDL_KEYWORD, ">=");
+		
+		assertColorType(ColorType.COMMENT, "/*comment*/");
+		assertColorType(ColorType.STRING_LITERAL, "'literal'"); 
+		assertColorType(ColorType.NUMBER, "42"); 
+		assertColorType(ColorType.IDENTIFIER, "any_fld");
+		assertColorType(ColorType.DDL_IDENTIFIER_DATA_ELEMENT, "any_type");
+	}
+
+	private void assertTextBits(String tokenText, TextBit... expTextBits) {
+		Token token = findToken(tokenText);
+		TextBit[] actTextBits = token.toTextBits(0, false);
+		
+		assertEquals(expTextBits.length, actTextBits.length);
+		
+		for (int index = 0; index < expTextBits.length; ++index) {
+			TextBit expTextBit = expTextBits[index];
+			TextBit actTextBit = actTextBits[index];
+			assertEquals(expTextBit.start, actTextBit.start);
+			assertEquals(expTextBit.length, actTextBit.length);
+			assertEquals(expTextBit.type, actTextBit.type);
+		}
+	}
+
+	@Test 
+	void testToTextBitsDdlAnnotation() {
+		buildCommand("@Anno.SubAnno: {Any: 'value', Other: 42 }");
+		
+		// expect everything to have ColorType.DDL_ANNOTATION
+		assertTextBits("@Anno.SubAnno", TextBit.create(0, "@Anno.SubAnno".length(), ColorType.DDL_ANNOTATION));
+		assertTextBits("{", TextBit.create(0, "{".length(), ColorType.DDL_ANNOTATION));
+		assertTextBits("Any", TextBit.create(0, "Any".length(), ColorType.DDL_ANNOTATION));
+		assertTextBits(":", TextBit.create(0, ":".length(), ColorType.DDL_ANNOTATION));
+		assertTextBits("'value'", TextBit.create(0, "'value'".length(), ColorType.DDL_ANNOTATION));
+		assertTextBits("42", TextBit.create(0, "42".length(), ColorType.DDL_ANNOTATION));
+		assertTextBits("}", TextBit.create(0, "1".length(), ColorType.DDL_ANNOTATION));
+	}
+
+	@Test 
+	void testToTextBitsDdl() {
+		buildCommand("define view entity I_Any as select from dtab { $projection.Any } where lang = $session.system_language");
+		
+		assertTextBits("$session.system_language", TextBit.create(0, "$session.system_language".length(), ColorType.DDL_KEYWORD));
+		assertTextBits("$projection.Any", TextBit.create(0, "$projection".length(), ColorType.DDL_KEYWORD),
+													 TextBit.create("$projection".length(), ".".length(), ColorType.DDL_KEYWORD),
+													 TextBit.create("$projection.".length(), "Any".length(), ColorType.IDENTIFIER));
+	}
+
+	@Test 
+	void testIsDdlLineEndComment() {
+		buildCommand("/*comment1*/" + System.lineSeparator() + "--comment2" + System.lineSeparator() + "//comment3" + System.lineSeparator() + "@Anno.AnyAnno");
+
+		assertFalse(findToken("/*comment1*/").isDdlLineEndComment());
+		assertTrue(findToken("--comment2").isDdlLineEndComment());
+		assertTrue(findToken("//comment3").isDdlLineEndComment());
+		assertFalse(findToken("@Anno.AnyAnno").isDdlLineEndComment());
+	}
+
+	@Test 
+	void testIsDdlAnnotation() {
+		buildCommand("//comment" + System.lineSeparator() + "@Anno.AnyAnno define view AnyView as select from dtab { Any }");
+
+		assertFalse(findToken("//comment").isDdlAnnotation());
+		assertTrue(findToken("@Anno.AnyAnno").isDdlAnnotation());
+		assertFalse(findToken("define").isDdlAnnotation());
+		assertFalse(findToken("{").isDdlAnnotation());
+	}
+
+	@Test 
+	void testIsDdlAnnotationInParams() {
+		buildCommand("define view I_Any with parameters @Anno.AnyAnno: #('value') P_Any : any_type @<Anno.OtherAnno, P_Other : other_type { Any }");
+
+		assertFalse(findToken("parameters").isDdlAnnotation());
+		assertTrue(findToken("@Anno.AnyAnno").isDdlAnnotation());
+		assertFalse(findToken("P_Any").isDdlAnnotation());
+		assertTrue(findToken("@<Anno.OtherAnno").isDdlAnnotation());
+	}
+
+	@Test 
+	void testTokenTypeDdlIdentifierVersusKeyword() {
+		buildCommand("define view I_Any { @AnyAnno: {entity: 'abc'} left(Any, 3) as AnyField, right(Other, 3) as OtherField, replace_regex(value => 'abc', with => 'def') as ThirdField }");
+
+		// ensure that Command.finishBuild() sets TokenType.IDENTIFIER, although these Tokens look like DDL keywords at first
+		assertEquals(TokenType.IDENTIFIER, findToken("entity").type);
+		assertEquals(TokenType.IDENTIFIER, findToken("left").type);
+		assertEquals(TokenType.IDENTIFIER, findToken("right").type);
+		assertEquals(TokenType.IDENTIFIER, findToken("value").type);
+		assertEquals(TokenType.IDENTIFIER, findToken("with").type);
+	}
+
+	@Test 
+	void testTokenTypeDdlCardinality() {
+		buildCommand("define view I_Any as select from dtab as d1 association [1..*] to dtab2 as d2 on d1.id = d2.id { Any }");
+
+		// ensure that Command.finishBuild() sets TokenType.IDENTIFIER, although these Tokens look like DDL keywords at first
+		assertEquals(TokenType.LITERAL, findToken("1").type);
+		assertEquals(TokenType.OTHER_OP, findToken("..").type);
+		assertEquals(TokenType.OTHER_OP, findToken("*").type);
+	}
 }

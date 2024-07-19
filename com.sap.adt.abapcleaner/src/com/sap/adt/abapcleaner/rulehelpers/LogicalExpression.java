@@ -157,7 +157,8 @@ public class LogicalExpression {
 				token = token.getNextCodeSibling();
 			}
 			if (start != end) {
-				addInnerExpression(start, end.getPrevCodeToken());
+				Token prev = (end == null) ? start.getParentCommand().getLastCodeToken() : end.getPrevCodeToken();
+				addInnerExpression(start, prev);
 			}
 			relExprType = RelationalExpressionType.NONE;
 
