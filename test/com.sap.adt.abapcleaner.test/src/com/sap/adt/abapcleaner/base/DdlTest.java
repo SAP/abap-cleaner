@@ -2,6 +2,8 @@ package com.sap.adt.abapcleaner.base;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.util.ArrayList;
+
 import org.junit.jupiter.api.Test;
 
 public class DdlTest {
@@ -161,5 +163,53 @@ public class DdlTest {
 		assertFalse(DDL.isCharAllowedForIdentifier("$:", 1, false));
 		assertFalse(DDL.isCharAllowedForIdentifier("#+", 1, false));
 		assertFalse(DDL.isCharAllowedForIdentifier("@-", 1, false));
+	}
+	
+	private void assertKnownCollocation(String keywordSequence, String parentFunction) {
+		ArrayList<String> keywords = new ArrayList<String>();
+		boolean assertTrue = false;
+		boolean assertFalse = false;
+		int mainIndex = -1;
+		int index = 0;
+		for (String keyword : StringUtil.split(keywordSequence, ' ', false)) {
+			if (keyword.startsWith("+")) {
+				assertTrue = true;
+				mainIndex = index;
+				keywords.add(keyword.substring(1));
+			} else if (keyword.startsWith("-")) {
+				assertFalse = true;
+				mainIndex = index;
+				keywords.add(keyword.substring(1));
+			} else {
+				keywords.add(keyword);
+			}
+			++index;
+		}
+		if (assertTrue == assertFalse) 
+			fail(); // the supplied keywordSequence must contain exactly one "+" OR exactly one "-"
+		
+		if (assertTrue) {
+			assertTrue(DDL.isKnownCollocation(keywords, mainIndex, parentFunction));
+		} else {
+			assertFalse(DDL.isKnownCollocation(keywords, mainIndex, parentFunction));
+		}
+	}
+
+	@Test
+	void testIsKnownCollocation() {
+		// known collocations
+		assertKnownCollocation("as +select from", null);
+		assertKnownCollocation("root custom +entity", null);
+		assertKnownCollocation("as parent +child hierarchy", null);
+		assertKnownCollocation("+min (", null);
+		assertKnownCollocation("multiple +parents allowed", "hierarchy");
+
+		// unknown collocations
+		assertKnownCollocation("-multiple parents allowed", null); // parent function must be "hierarchy"
+		assertKnownCollocation("-multiple parents allowed", "other_function"); // parent function unknown
+		assertKnownCollocation("provider -contract unknown_keyword", null); // unknown third keyword
+		assertKnownCollocation("provider -contract", null); // third keyword missing
+		assertKnownCollocation("-root", null); // "root" never appears stand-alone
+		assertKnownCollocation("by -method", null); // "implemented" missing
 	}
 }

@@ -1227,21 +1227,77 @@ public class Command {
 			firstNonComment.setClosesLevel(false);
 		}
 		
+		// correct TokenType.KEYWORD into IDENTIFIER in ambiguous cases (typical candidates: contract, depth, parent, period, name, root)
 		boolean isAnnotation = isDdlAnnotation(); 
 		Token token = firstToken;
 		while (token != null) {
-			Token next = token.getNextCodeToken();
-			if (isAnnotation && token.isKeyword()) {
+			Token prevSibling = token.getPrevCodeSibling();
+			Token nextSibling = token.getNextCodeSibling();
+			if (!token.isKeyword()) {
+				token = token.getNext();
+				continue;
+			}
+
+			if (isAnnotation) {
 				// in annotations, change identifier "entity" from keyword to identifier
 				token.type = TokenType.IDENTIFIER;
-			} else if (!isAnnotation && token.getParent() != null && token.isAnyKeyword("value", "with")){
+			
+			} else if (!isAnnotation && token.getParent() != null && token.isAnyKeyword("VALUE", "WITH")){
 				// in replace_regex( pcre => ... value => ... with => ... ), "value" and "with" are identifiers
-				if (next != null && next.textEquals("=>")) {
+				if (nextSibling != null && nextSibling.textEquals("=>")) {
 					token.type = TokenType.IDENTIFIER;
 				}
-			} else if (!isAnnotation && token.isAnyKeyword("LEFT", "RIGHT") && next != null && next.textEquals("(")) {
+			
+			} else if (!isAnnotation && token.isAnyKeyword("LEFT", "RIGHT") && nextSibling != null && nextSibling.textEquals("(")) {
 				// "left(...)" and "right(...)" are built-in functions (unlike LEFT|RIGHT OUTER JOIN)
 				token.type = TokenType.IDENTIFIER;
+				
+			} else if (prevSibling != null && prevSibling.textEndsWith(DDL.DOT_SIGN_STRING) 
+					  || nextSibling != null && nextSibling.textStartsWith(DDL.DOT_SIGN_STRING)) {
+				// "." is always followed and preceded by an identifier
+				token.type = TokenType.IDENTIFIER;
+				
+			} else if ((prevSibling == null || prevSibling.isKeyword("KEY") || prevSibling.textEqualsAny(DDL.COMMA_SIGN_STRING, DDL.SEMICOLON_SIGN_STRING))
+						&& nextSibling != null && nextSibling.isKeyword("AS")) {
+				// simple selection list entry
+				token.type = TokenType.IDENTIFIER;
+				
+			} else if (prevSibling != null && prevSibling.isKeyword("AS") && !token.isAnyKeyword("SELECT", "PROJECTION", "PARENT")) {
+				// AS alias, AS type
+				token.type = TokenType.IDENTIFIER;
+			}
+			
+			// check if the keyword as part of a known collocation
+			if (token.isKeyword()) {
+				// list all keywords of the sequence (if any) to which this keyword belongs
+				Token firstKeyword = token;
+				Token keywordToken = firstKeyword.getPrevCodeSibling();
+				while (keywordToken != null && keywordToken.isKeyword()) {
+					firstKeyword = keywordToken;
+					keywordToken = keywordToken.getPrevCodeSibling();
+				}
+				ArrayList<String> keywordSequence = new ArrayList<>();
+				keywordToken = firstKeyword;
+				int indexInList = 0;
+				while (keywordToken != null && (keywordToken.isKeyword() || keywordToken.textEquals(DDL.PARENS_OPEN_STRING))) {
+					if (keywordToken == token)
+						indexInList = keywordSequence.size();
+					keywordSequence.add(keywordToken.getText());
+					if (keywordToken.textEquals(DDL.PARENS_OPEN_STRING)) // only possible at the end of a sequence
+						break;
+					keywordToken = keywordToken.getNextCodeSibling(); 
+				}
+				// determine the last keyword of the parent function, if any 
+				// (e.g. "HIERARCHY" for the collocation "CHILD TO PARENT ASSOCIATION" inside of "PARENT CHILD HIERARCHY( ... )")
+				String parentKeyword = null;
+				if (token.getParent() != null) {
+					Token parentPrev = token.getParent().getPrevCodeSibling();
+					parentKeyword = (parentPrev == null) ? null : parentPrev.getText();
+				}
+				// if the keyword sequence around token is not a known DDL keyword collocation, token must be an identifier
+				if (!DDL.isKnownCollocation(keywordSequence, indexInList, parentKeyword)) {
+					token.type = TokenType.IDENTIFIER;
+				}
 			}
 			token = token.getNext();
 		}
