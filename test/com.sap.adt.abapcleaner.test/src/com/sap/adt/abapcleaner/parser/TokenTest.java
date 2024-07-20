@@ -2013,6 +2013,25 @@ public class TokenTest {
 		assertEquals(TokenType.IDENTIFIER, findToken("right").type);
 		assertEquals(TokenType.IDENTIFIER, findToken("value").type);
 		assertEquals(TokenType.IDENTIFIER, findToken("with").type);
+
+		buildCommand("define view I_Any as v1 { key contract as Contract, v1 . period as Period, parent as Parent, name, root as Root }");
+		assertEquals(TokenType.IDENTIFIER, findToken("contract").type);
+		assertEquals(TokenType.IDENTIFIER, findToken("period").type);
+		assertEquals(TokenType.IDENTIFIER, findToken("parent").type);
+		assertEquals(TokenType.IDENTIFIER, findToken("name").type);
+		assertEquals(TokenType.IDENTIFIER, findToken("root").type);
+
+		buildCommand("define view I_Any as v1 { key contract_ as Contract, v1 . period_ as Period, parent_ as Parent, Name, root_ as Root }");
+		assertEquals(TokenType.IDENTIFIER, findToken("Contract").type);
+		assertEquals(TokenType.IDENTIFIER, findToken("Period").type);
+		assertEquals(TokenType.IDENTIFIER, findToken("Parent").type);
+		assertEquals(TokenType.IDENTIFIER, findToken("Name").type);
+		assertEquals(TokenType.IDENTIFIER, findToken("Root").type);
+
+		buildCommand("define view entity I_Any as v1 left outer join I_Other as v2 on v1.id = v2.id right outer join I_Third as v3 on v1.id = v3.id { Any }");
+		assertEquals(TokenType.KEYWORD, findToken("entity").type);
+		assertEquals(TokenType.KEYWORD, findToken("left").type);
+		assertEquals(TokenType.KEYWORD, findToken("right").type);
 	}
 
 	@Test 
