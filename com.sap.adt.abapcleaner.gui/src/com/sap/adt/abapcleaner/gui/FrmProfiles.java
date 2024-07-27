@@ -22,15 +22,12 @@ import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.swt.events.KeyAdapter;
 import org.eclipse.swt.events.KeyEvent;
-import org.eclipse.swt.events.MouseAdapter;
-import org.eclipse.swt.events.MouseEvent;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.FontData;
 import org.eclipse.swt.graphics.Point;
-import org.eclipse.swt.graphics.Rectangle;
 
 import org.eclipse.jface.viewers.CheckboxTableViewer;
 import org.eclipse.wb.swt.SWTResourceManager;
@@ -68,10 +65,8 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 
    private int suspendItemCheck = 0;
 
-   private Label[] lblRuleSources;
-   private Label[] lblRuleChapters;
-   private String[] ruleChapterLink;
    private final ArrayList<ConfigControl> configControls = new ArrayList<ConfigControl>();
+   private final ArrayList<RuleReferenceLabel> ruleReferenceLabels = new ArrayList<RuleReferenceLabel>();
    private Object[] itemsInChkRules;
 
    private Shell shell;
@@ -90,14 +85,6 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 	private Label lblRuleDescription;
 	private Label lblRuleHintsAndRestrictions;
 	private Composite pnlRuleReferences;
-	private Label lblRuleSource0;
-	private Label lblRuleSource1;
-	private Label lblRuleSource2;
-	private Label lblRuleSource3;
-	private Label lblRuleChapter0;
-	private Label lblRuleChapter1;
-	private Label lblRuleChapter2;
-	private Label lblRuleChapter3;
 	private Button btnDefaultOptions;
 	private Composite pnlRuleOptions;
 	private CodeDisplay codeDisplay;
@@ -154,9 +141,9 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
       	this.codeDisplayColors = codeDisplayColors;
       	
    		// determine fonts and colors of rule chapters
-         ruleChaptersForeColorNormal = lblRuleChapter0.getForeground();
+         ruleChaptersForeColorNormal = lblRuleDescription.getForeground();
          ruleChaptersForeColorLink = codeDisplayColors.textLink; // dark blue
-         ruleChaptersFontNormal = lblRuleChapter0.getFont();
+         ruleChaptersFontNormal = lblRuleDescription.getFont();
          FontData modelFont = ruleChaptersFontNormal.getFontData()[0]; 
          ruleChaptersFontLink = new Font(display, modelFont.getName(), modelFont.getHeight(), SWT.NORMAL);
 
@@ -293,10 +280,6 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 		createPopupMenuFor(lblRuleName, null, "Copy Rule Name to Clipboard");
 		createPopupMenuFor(lblRuleDescription, lblRuleHintsAndRestrictions, "Copy Rule Description to Clipboard");
 
-      lblRuleSources = new Label[] { lblRuleSource0, lblRuleSource1, lblRuleSource2, lblRuleSource3 };
-      lblRuleChapters = new Label[] { lblRuleChapter0, lblRuleChapter1, lblRuleChapter2, lblRuleChapter3 };
-      ruleChapterLink = new String[lblRuleChapters.length];
-      
 		btnDefaultOptions.setVisible(false);
 
       codeDisplay.setVerticalLine(showVerticalLine, verticalLinePos);
@@ -306,10 +289,6 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 
       // clear Labels to improve display of shell before it is filled with content
       lblRuleName.setText("");
-      for (Label lblRuleSource : lblRuleSources) 
-      	lblRuleSource.setText("");
-      for (Label lblRuleChapter : lblRuleChapters) 
-      	lblRuleChapter.setText("");
       
       btnObfuscate.setVisible(Program.showDevFeatures());
       btnGenerateUnitTestClass.setVisible(Program.showDevFeatures());
@@ -331,7 +310,7 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 				display.sleep();
 			}
 		}
-		
+
 		highlighter.dispose();
 
       if (resultSave) { 
@@ -394,7 +373,7 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 		shell.setMaximized(true);
 		shell.setText("Profiles and Rules");
 		shell.setLayout(new GridLayout(2, false));
-		
+
 		Composite cpsProfilesAndRules = new Composite(shell, SWT.NONE);
 		cpsProfilesAndRules.setLayout(new GridLayout(1, false));
 		cpsProfilesAndRules.setLayoutData(new GridData(SWT.LEFT, SWT.FILL, false, true, 1, 1));
@@ -738,65 +717,6 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 		gl_pnlRuleReferences.marginWidth = 0;
 		pnlRuleReferences.setLayout(gl_pnlRuleReferences);
 		
-		lblRuleSource0 = new Label(pnlRuleReferences, SWT.NONE);
-		GridData gd_lblRuleSource0 = new GridData(SWT.LEFT, SWT.CENTER, false, false, 1, 1);
-		gd_lblRuleSource0.minimumWidth = 120;
-		lblRuleSource0.setLayoutData(gd_lblRuleSource0);
-		lblRuleSource0.setBounds(0, 0, 160, 15);
-		lblRuleSource0.setText(".");
-		
-		lblRuleChapter0 = new Label(pnlRuleReferences, SWT.NONE);
-		lblRuleChapter0.addMouseListener(new MouseAdapter() {
-			@Override
-			public void mouseDown(MouseEvent e) {
-				ruleChapterClicked(0);
-			}
-		});
-		lblRuleChapter0.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, true, false, 1, 1));
-		lblRuleChapter0.setText(".");
-
-		lblRuleSource1 = new Label(pnlRuleReferences, SWT.NONE);
-		lblRuleSource1.setBounds(0, 0, 160, 15);
-		lblRuleSource1.setText(".");
-		
-		lblRuleChapter1 = new Label(pnlRuleReferences, SWT.NONE);
-		lblRuleChapter1.addMouseListener(new MouseAdapter() {
-			@Override
-			public void mouseDown(MouseEvent e) {
-				ruleChapterClicked(1);
-			}
-		});
-		lblRuleChapter1.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, true, false, 1, 1));
-		lblRuleChapter1.setText(".");
-
-		lblRuleSource2 = new Label(pnlRuleReferences, SWT.NONE);
-		lblRuleSource2.setBounds(0, 0, 160, 15);
-		lblRuleSource2.setText(".");
-		
-		lblRuleChapter2 = new Label(pnlRuleReferences, SWT.NONE);
-		lblRuleChapter2.addMouseListener(new MouseAdapter() {
-			@Override
-			public void mouseDown(MouseEvent e) {
-				ruleChapterClicked(2);
-			}
-		});
-		lblRuleChapter2.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, true, false, 1, 1));
-		lblRuleChapter2.setText(".");
-
-		lblRuleSource3 = new Label(pnlRuleReferences, SWT.NONE);
-		lblRuleSource3.setBounds(0, 0, 160, 15);
-		lblRuleSource3.setText(".");
-		
-		lblRuleChapter3 = new Label(pnlRuleReferences, SWT.NONE);
-		lblRuleChapter3.addMouseListener(new MouseAdapter() {
-			@Override
-			public void mouseDown(MouseEvent e) {
-				ruleChapterClicked(3);
-			}
-		});
-		lblRuleChapter3.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, true, false, 1, 1));
-		lblRuleChapter3.setText(".");
-
 		Composite pnlOptionsInfo = new Composite(pnlRule, SWT.NONE);
 		GridData gd_pnlOptionsInfo = new GridData(SWT.FILL, SWT.TOP, false, false, 1, 1);
 		gd_pnlOptionsInfo.verticalIndent = 4;
@@ -1016,10 +936,6 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 		btnOK.setText("&Save Profiles and Exit");
 	}
 	
-   private int getRuleReferenceCount() {
-      return lblRuleSources.length;
-   }
-
    private void setCurrentProfile() {
 		int index = lstProfiles.getSelectionIndex(); 
       if (index >= 0 && profiles != null && profiles.size() > index) {
@@ -1155,10 +1071,9 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
    }
 
    private void setRule(Rule rule) {
-      final int xGap = 8;
-
       curRule = null; // prevent write-back when controls change
 
+      disposeRuleReferenceControls();
       disposeConfigControls();
 
       lblRuleName.setText((rule != null) ? StringUtil.getLabelText(rule.getDisplayName()) : "");
@@ -1169,39 +1084,7 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
       lblRuleDescription.setText((rule != null) ? StringUtil.getLabelText(rule.getDescription()) : "");
       lblRuleHintsAndRestrictions.setText((rule != null) ? StringUtil.getLabelText(rule.getHintsAndRestrictions()) : "");
 
-      // show references
-      pnlRuleReferences.setRedraw(false);
-      int maxRight = 0;
-      RuleReference[] references = (rule == null) ? null : rule.getReferences();
-      for (int i = 0; i < getRuleReferenceCount(); ++i) {
-         RuleReference reference = (references == null || i >= references.length) ? null : references[i];
-         String source = "";
-         if (reference != null && !StringUtil.isNullOrEmpty(reference.getSourceText())) { 
-         	source = reference.getSourceText();
-         	if (!StringUtil.isNullOrEmpty(reference.chapterTitle)) {
-         		source += ":";
-         	}
-         }
-         lblRuleSources[i].setText(StringUtil.getLabelText(source));
-         Rectangle bounds = lblRuleSources[i].getBounds();
-         maxRight = Math.max(maxRight, bounds.x + bounds.width);
-      }
-      int chapterLeft = maxRight + xGap;
-      for (int i = 0; i < getRuleReferenceCount(); ++i) {
-         RuleReference reference = (references == null || i >= references.length) ? null : references[i];
-         lblRuleSources[i].setVisible((reference != null));
-
-         lblRuleChapters[i].setText((reference != null) ? StringUtil.getLabelText(reference.chapterTitle) : "");
-         ruleChapterLink[i] = (reference != null ? reference.getLink() : null);
-         lblRuleChapters[i].setLocation(chapterLeft, lblRuleChapters[i].getLocation().y);
-         if (reference != null && highlighter != null) {
-         	highlighter.setRuleChaptersStyle(lblRuleChapters[i], reference.hasLink());
-            // TODO: set mouse cursor when hovering over lblRuleChapters[i] - this may only be possible with StyledText, which apparently does this automatically for SWT.UNDERLINE_LINK
-         }
-         lblRuleChapters[i].setVisible((reference != null));
-      }
-      pnlRuleReferences.layout();      
-      pnlRuleReferences.setRedraw(true);
+      createRuleReferenceControls(rule);
 
       String exampleCode = (rule == null) ? null : rule.getExample(); 
       refreshExample(rule, exampleCode);
@@ -1212,6 +1095,55 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
       if (rule != null) {
       	settings.profilesLastRuleID = rule.getID();
       }
+   }
+
+   private void disposeRuleReferenceControls() {
+      // dispose of the ruleReferenceControls of the previous rule
+      if (!ruleReferenceLabels.isEmpty()) {
+         for (RuleReferenceLabel ruleReferenceLabel : ruleReferenceLabels) 
+         	ruleReferenceLabel.detachAndDispose();
+         ruleReferenceLabels.clear();
+      }
+   }
+
+   private void createRuleReferenceControls(Rule rule) {
+   	final int xGap = 8;
+   	
+      if (rule == null || rule.getReferences() == null)
+      	return;
+
+      pnlRuleReferences.setRedraw(false);
+      
+      int maxRight = 0;
+      for (RuleReference reference : rule.getReferences()) {
+         String source = "";
+         String chapterTitle = reference.chapterTitle;
+         if (!StringUtil.isNullOrEmpty(reference.getSourceText())) { 
+         	source = reference.getSourceText();
+         	if (!StringUtil.isNullOrEmpty(chapterTitle)) {
+         		source += ":";
+         	}
+         }
+         RuleReferenceLabel ruleReferenceLabel = new RuleReferenceLabel((IConfigDisplay)this, pnlRuleReferences, source, chapterTitle, reference.getLink());
+         ruleReferenceLabels.add(ruleReferenceLabel);
+
+         if (highlighter != null) {
+         	highlighter.setRuleChaptersStyle(ruleReferenceLabel.lblRuleChapter, reference.hasLink());
+            // TODO: set mouse cursor when hovering over lblRuleChapter - this may only be possible with StyledText, which apparently does this automatically for SWT.UNDERLINE_LINK
+         }
+
+         maxRight = Math.max(maxRight, ruleReferenceLabel.getSourceRight());
+      }
+
+      // align the chapter titles 
+      int chapterLeft = maxRight + xGap;
+      for (RuleReferenceLabel ruleReferenceLabel : ruleReferenceLabels) {
+      	ruleReferenceLabel.setChapterLeft(chapterLeft);
+         ruleReferenceLabel.setVisible();
+      }
+
+      pnlRuleReferences.layout();      
+      pnlRuleReferences.setRedraw(true);
    }
 
    private void disposeConfigControls() {
@@ -1244,26 +1176,32 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
          if (configValue instanceof ConfigBoolValue) {
          	ConfigBoolValue configBoolValue = (ConfigBoolValue)configValue;
             configControl = new ConfigCheckBox(configBoolValue, (IConfigDisplay)this, pnlRuleOptions);
+
          } else if (configValue instanceof ConfigIntValue) {
             ConfigIntValue configIntValue = (ConfigIntValue)configValue;
             configControl = new ConfigIntBox(configIntValue, (IConfigDisplay)this, pnlRuleOptions);
+         
          } else if (configValue instanceof ConfigTextValue) {
             ConfigTextValue configTextValue = (ConfigTextValue)configValue;
             configControl = new ConfigTextBox(configTextValue, (IConfigDisplay)this, pnlRuleOptions);
-      	} else if (configValue instanceof ConfigSelectionValue) {
+      	
+         } else if (configValue instanceof ConfigSelectionValue) {
             ConfigSelectionValue configSelectionValue = (ConfigSelectionValue)configValue;
             configControl = new ConfigComboBox(configSelectionValue, (IConfigDisplay)this, pnlRuleOptions);
+         
          } else if (configValue instanceof ConfigInfoValue) {
             ConfigInfoValue configInfoValue = (ConfigInfoValue)configValue;
             configControl = new ConfigLabel(configInfoValue, (IConfigDisplay)this, pnlRuleOptions);
+         
          } else {
            throw new IndexOutOfBoundsException("unknown ConfigControl");
          }
       	configControl.setEnabled(isProfileWritable && rule.isConfigValueEnabled(configValue));
          configControls.add(configControl);
          Control[] controls = configControl.getControls();
-         for (int column = 0; column < controls.length; ++column) 
+         for (int column = 0; column < controls.length; ++column) { 
             controls[column].setVisible(true);
+         }
       }
       
       pnlRuleOptions.layout();
@@ -1424,12 +1362,13 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
       	// rule references
       	if (!curRuleOnly) {
 	      	RuleReference[] references = curRule.getReferences();
-	         for (int i = 0; i < getRuleReferenceCount(); ++i) {
-	            RuleReference reference = (references == null || i >= references.length) ? null : references[i];
-	            if (reference != null) {
-	            	highlighter.setRuleChaptersStyle(lblRuleChapters[i], reference.hasLink());
-	            }
-	         }
+	      	if (references != null) {
+		         for (int i = 0; i < references.length; ++i) {
+		         	if (i < ruleReferenceLabels.size()) {
+		            	highlighter.setRuleChaptersStyle(ruleReferenceLabels.get(i).lblRuleChapter, references[i].hasLink());
+		            }
+		         }
+	      	}
       	}
 
       	// rule configuration
@@ -1712,14 +1651,6 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 			}
 			Message.show(result, title, shell);
 		}
-   }
-
-   private void ruleChapterClicked(int index) {
-   	if (index >= 0 && index < ruleChapterLink.length) {
-	      String link = ruleChapterLink[index];
-	      if (!StringUtil.isNullOrEmpty(link))
-	         ProgramLauncher.startProcess(link);
-   	}
    }
 
    private void chkRulesItemCheck(int index) {
