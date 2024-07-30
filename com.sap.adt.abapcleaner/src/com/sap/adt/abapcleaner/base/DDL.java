@@ -58,6 +58,8 @@ public final class DDL {
    public final static String BASE_INFO_COMMENT_LINE_SEP = "\n";
    public final static String BASE_INFO_COMMENT_END = "}*/";
 
+   public static final int MAX_LINE_LENGTH = 999; // however, activation even works for lines with 4000+ chars
+
    public final static String[] listElementSeparators = new String[] { COMMA_SIGN_STRING, SEMICOLON_SIGN_STRING };
 
    private static class Collocation {
@@ -83,17 +85,18 @@ public final class DDL {
    /* all known DDL keywords; each keyword is mapped to all known DDL keyword collocations in which it can appear 
     * (including single-keyword collocations, if the keyword may appear stand-alone) */
    private final static HashMap<String, ArrayList<Collocation>> ddlKeywords = initializeKeywords(new String[] { 
-   		"abstract entity", "all", "and", "as", "as parent child hierarchy", "as projection on", "association", "association to parent", "avg (", "between", "boxed", "case", "cast (", "composition", "count (", "cross join", "custom entity",  
-   		"define abstract entity", "define custom entity", "define external entity", "define root abstract entity", "define root custom entity", "define root view", "define root view entity", "define structure", "define table", "define table function", 
-   		"define transient view entity", "define view", "define view entity", "distinct", "else", "end", "exact one to exact one", "exact one to many", "exact one to one", "except select", "extend", "extend custom entity", "extend view",  
-   		"extend view entity", "external entity", "external name", "group by", "having", "hierarchy", "hierarchy:ascending", "hierarchy:cache force", "hierarchy:cache off", "hierarchy:cache on", "hierarchy:child to parent association",   
-   		"hierarchy:cycles breakup", "hierarchy:cycles error", "hierarchy:depth", "hierarchy:descending", "hierarchy:directory", "hierarchy:filter by", "hierarchy:generate spantree", "hierarchy:load bulk", "hierarchy:load incremental", "hierarchy:load",  
-   		"hierarchy:multiple parents allowed", "hierarchy:multiple parents leaves", "hierarchy:multiple parents leaves only", "hierarchy:multiple parents not allowed", "hierarchy:nodetype", "hierarchy:orphans error", "hierarchy:orphans ignore", "hierarchy:orphans root", "hierarchy:period from",  
-   		"hierarchy:siblings order by", "hierarchy:source", "hierarchy:start where", "hierarchy:to", "hierarchy:valid from", "hierarchy:with parameters", "implemented by method", "include", "inner", "intersect select", "is initial", "is null", "join", "key",  
-   		"left outer", "like", "localized", "many to exact one", "many to many", "many to one", "max (", "min (", "not", "not null", "null", "on", "one to exact one", "one to many", "one to one", "or", "preserving type", "provided at runtime",  
-   		"provider contract analytical_query", "provider contract transactional_interface", "provider contract transactional_query", "redefine association", "redirected to", "redirected to composition child", "redirected to parent", "reference to",  
-   		"returns", "right outer join", "root abstract entity", "root custom entity", "root view", "root view entity", "select distinct from", "select from", "sum (", "table function", "then", "to", "to exact one", "to many", "to one", "union", "union all",    
-   		"union all select", "union select", "view", "view entity", "virtual", "when", "where", "with", "with default filter", "with federated data", "with foreign key", "with parameters", "with suffix", "with value help" });
+   		"abstract entity", "all", "and", "as", "as parent child hierarchy", "as projection on", "as select", "as select distinct", "association", "association to parent", "avg (", "between", "boxed", "case", "cast (", "composition", "count (",   
+   		"cross join", "custom entity", "define abstract entity", "define custom entity", "define external entity", "define root abstract entity", "define root custom entity", "define root view", "define root view entity", "define structure",  
+   		"define table", "define table function", "define transient view entity", "define view", "define view entity", "distinct", "else", "end", "exact one to exact one", "exact one to many", "exact one to one", "except select", "extend",   
+   		"extend custom entity", "extend view", "extend view entity", "external entity", "external name", "from", "group by", "having", "hierarchy", "hierarchy:ascending", "hierarchy:cache force", "hierarchy:cache off", "hierarchy:cache on",    
+   		"hierarchy:child to parent association", "hierarchy:cycles breakup", "hierarchy:cycles error", "hierarchy:depth", "hierarchy:descending", "hierarchy:directory", "hierarchy:filter by", "hierarchy:generate spantree", "hierarchy:load bulk",   
+   		"hierarchy:load incremental", "hierarchy:load", "hierarchy:multiple parents allowed", "hierarchy:multiple parents leaves", "hierarchy:multiple parents leaves only", "hierarchy:multiple parents not allowed", "hierarchy:nodetype",   
+   		"hierarchy:orphans error", "hierarchy:orphans ignore", "hierarchy:orphans root", "hierarchy:period from", "hierarchy:siblings order by", "hierarchy:source", "hierarchy:start where", "hierarchy:to", "hierarchy:valid from",   
+   		"hierarchy:with parameters", "implemented by method", "include", "inner", "intersect select", "is initial", "is null", "join", "key", "left outer", "like", "localized", "many to exact one", "many to many", "many to one", "max (", "min (",   
+   		"not", "not null", "null", "on", "one to exact one", "one to many", "one to one", "or", "preserving type", "provided at runtime", "provider contract analytical_query", "provider contract transactional_interface",   
+   		"provider contract transactional_query", "redefine association", "redirected to", "redirected to composition child", "redirected to parent", "reference to", "returns", "right outer join", "root abstract entity", "root custom entity",     
+   		"root view", "root view entity", "select distinct from", "select from", "sum (", "table function", "then", "to", "to exact one", "to many", "to one", "union", "union all", "union all select", "union select", "view", "view entity", 
+   		"virtual", "when", "where", "with", "with default filter", "with federated data", "with foreign key", "with parameters", "with suffix", "with value help" });
 
    private final static HashSet<String> builtInFunctions = initializeHashSet(new String[] { 
    		"abap_system_timezone", "abap_user_timezone", "abs", "bintohex", "ceil", "coalesce", "concat", "concat_with_space", "currency_conversion", "curr_to_decfloat_amount", "datn_add_days", "datn_add_months", "datn_days_between", "dats_add_days", "dats_add_months", "dats_days_between", "dats_from_datn", "dats_is_valid", "dats_tims_to_tstmp", "dats_to_datn", "div", "division", "floor", "fltp_to_dec", "get_numeric_value", "hextobin", "instr", "left", "length", "lower", "lpad", "ltrim", "mod", "replace", "replace_regexpr", "replace_regexpr", "right", "round", "rpad", "rtrim", "substring", "tims_from_timn", "tims_is_valid", "tims_to_timn", "tstmpl_from_utcl", "tstmpl_to_utcl", "tstmp_add_seconds", "tstmp_current_utctimestamp", "tstmp_is_valid", "tstmp_seconds_between", "tstmp_to_dats", "tstmp_to_dst", "tstmp_to_tims", "unit_conversion", "upper", "utcl_add_seconds", "utcl_current", "utcl_seconds_between",
@@ -111,19 +114,230 @@ public final class DDL {
 	// [DEFINE] [ROOT] CUSTOM ENTITY custom_entity 
    //   [WITH PARAMETERS parameter1, parameter2, ...] *{* element1; element2; ...; }
    public final static String[] levelClosersAfterParameterList = new String[] { "as", "returns", DDL.BRACE_OPEN_STRING };
-   
-   /** annotations of type ElementRef */
-   public final static String[] elementRefAnnotations = new String[] {  "@Semantics.amount.currencyCode",
-																								"@Semantics.interval.lowerBoundaryElement",
-																								"@Semantics.interval.upperBoundaryElement",
-																								"@Semantics.interval.boundaryCodeElement",
-																								"@Semantics.languageReference",
-																								"@Semantics.largeObject.mimeType", 
-																								"@Semantics.nullValueIndicatorFor",
-																								"@Semantics.quantity.unitOfMeasure",
-																								"@Semantics.quantity.unitOfMeasureIsoCode",
-																								"@Semantics.quantity.unitOfMeasureSapCode",
-																								"@Semantics.timeZoneReference" };
+
+   /** annotations of type ElementRef or KeyElementRef (only ObjectModel.representativeKey) */
+   public final static String[] elementRefAnnotations = new String[] { 
+   		"AccessControl.personalData.blockingIndicator[]",
+   		"Aggregation.referenceElement[]",
+   		"Analytics.dataExtraction.alternativeKey[]",
+   		"Analytics.dataExtraction.delta.byElement.name",
+   		"Analytics.dataExtraction.delta.changeDataCapture.mapping[].viewElement[]",
+   		"Analytics.dataExtraction.filter[].viewElement",
+   		"Analytics.dataExtraction.partitionBy[]",
+   		"Analytics.settings.columns.hierarchicalDisplay.expandTo",
+   		"Analytics.settings.rows.hierarchicalDisplay.expandTo",
+   		"AnalyticsDetails.planning.distributionReference",
+   		"AnalyticsDetails.query.cellReference.characteristicStructureElement",
+   		"AnalyticsDetails.query.cellReference.measureStructureElement",
+   		"AnalyticsDetails.query.elementHierarchy.parent",
+   		"AnalyticsDetails.query.ignoreFurtherFilter.forElement[]",
+   		"API.element.successor",
+   		"Consumption.filter.defaultHierarchyNode.node[].element",
+   		"Consumption.filter.defaultHierarchyNode.nodeType",
+   		"Consumption.groupWithElement",
+   		"Consumption.hierarchyNodeSelection.hierarchyElement",
+   		"Consumption.labelElement",
+   		"Consumption.quickInfoElement",
+   		"Consumption.semanticObjectMapping.additionalBinding[].localElement",
+   		"Consumption.valueHelp",
+   		"Consumption.valueHelpDefinition[].additionalBinding[].localElement",
+   		"Consumption.valueHelpDefinition[].enabled",
+   		"EnterpriseSearch.fieldGroupForSearchQuery[].elements[]",
+   		"EnterpriseSearch.filteringFacet.iconUrl",
+   		"EnterpriseSearch.filteringFacet.order.byReference",
+   		"EnterpriseSearch.navigation.urlBased.urlField",
+   		"EnterpriseSearch.nls.compoundElements[].elements[]",
+   		"EnterpriseSearch.nls.variantElements[].elements[]",
+   		"EnterpriseSearch.resultItemKey[]",
+   		"EnterpriseSearch.title.subTitleField",
+   		"EnterpriseSearch.title.titleField",
+   		"Event.previousValue.element",
+   		"GenericPersistency.format.decimals",
+   		"GenericPersistency.format.displayTemplate",
+   		"GenericPersistency.format.exponentialDisplay.displayFormat",
+   		"GenericPersistency.format.exponentialDisplay.exponentValue",
+   		"GenericPersistency.format.length",
+   		"GenericPersistency.propertyValue[]",
+   		"Hierarchy.parentChild[].recurse.child[]",
+   		"Hierarchy.parentChild[].recurse.parent[]",
+   		"Hierarchy.parentChild[].recurseBy",
+   		"Hierarchy.parentChild[].siblingsOrder[].by",
+   		"ObjectModel.alternativeKey[].element[]",
+   		"ObjectModel.collectiveValueHelp.for.element",
+   		"ObjectModel.derivationFunction.inputElement[]",
+   		"ObjectModel.derivationFunction.result.element",
+   		"ObjectModel.derivationFunction.result.elementHigh",
+   		"ObjectModel.derivationFunction.result.nodeTypeElement",
+   		"ObjectModel.editableFieldFor",
+   		"ObjectModel.interval.upperBoundary",
+   		"ObjectModel.objectIdentifier.oidElement",
+   		"ObjectModel.representativeKey",
+   		"ObjectModel.semanticKey[]",
+   		"ObjectModel.text.element[]",
+   		"ObjectModel.uniqueIdField",
+   		"ObjectModel.value.derivedFrom[]",
+   		"OData.hierarchy.recursiveHierarchy[].descendantCountElement",
+   		"OData.hierarchy.recursiveHierarchy[].distanceFromRootElement",
+   		"OData.hierarchy.recursiveHierarchy[].drillStateElement",
+   		"OData.hierarchy.recursiveHierarchy[].elementWithHierarchy",
+   		"OData.hierarchy.recursiveHierarchy[].externalKeyElement",
+   		"OData.hierarchy.recursiveHierarchy[].nodeElement",
+   		"OData.hierarchy.recursiveHierarchy[].parentNodeElement",
+   		"OData.hierarchy.recursiveHierarchy[].preorderRankElement",
+   		"OData.hierarchy.recursiveHierarchy[].siblingRankElement",
+   		"OData.property.valueControl",
+   		"ODM.oid",
+   		"Semantics.amount.currencyCode",
+   		"Semantics.interval[].boundaryCodeElement",
+   		"Semantics.interval[].lowerBoundaryElement",
+   		"Semantics.interval[].upperBoundaryElement",
+   		"Semantics.languageReference",
+   		"Semantics.largeObject.fileName",
+   		"Semantics.largeObject.mimeType",
+   		"Semantics.nullValueIndicatorFor",
+   		"Semantics.quantity.unitOfMeasure",
+   		"Semantics.quantity.unitOfMeasureIsoCode",
+   		"Semantics.quantity.unitOfMeasureSapCode",
+   		"Semantics.timeZoneReference",
+   		"UI.badge.headLine.criticality",
+   		"UI.badge.headLine.targetElement",
+   		"UI.badge.headLine.url",
+   		"UI.badge.headLine.value",
+   		"UI.badge.imageUrl",
+   		"UI.badge.mainInfo.criticality",
+   		"UI.badge.mainInfo.targetElement",
+   		"UI.badge.mainInfo.url",
+   		"UI.badge.mainInfo.value",
+   		"UI.badge.secondaryInfo.criticality",
+   		"UI.badge.secondaryInfo.targetElement",
+   		"UI.badge.secondaryInfo.url",
+   		"UI.badge.secondaryInfo.value",
+   		"UI.badge.title.criticality",
+   		"UI.badge.title.targetElement",
+   		"UI.badge.title.url",
+   		"UI.badge.title.value",
+   		"UI.chart[].dimensionAttributes[].dimension",
+   		"UI.chart[].dimensions[]",
+   		"UI.chart[].measureAttributes[].measure",
+   		"UI.chart[].measures[]",
+   		"UI.connectedFields[].criticality",
+   		"UI.connectedFields[].semanticObjectBinding[].localElement",
+   		"UI.connectedFields[].targetElement",
+   		"UI.connectedFields[].url",
+   		"UI.connectedFields[].value",
+   		"UI.dataFieldDefault[].criticality",
+   		"UI.dataFieldDefault[].url",
+   		"UI.dataFieldDefault[].value",
+   		"UI.dataPoint.criticality",
+   		"UI.dataPoint.criticalityCalculation.constantThresholds[].aggregationLevel[]",
+   		"UI.dataPoint.criticalityCalculation.deviationRangeHighValueElement",
+   		"UI.dataPoint.criticalityCalculation.deviationRangeLowValueElement",
+   		"UI.dataPoint.criticalityCalculation.toleranceRangeHighValueElement",
+   		"UI.dataPoint.criticalityCalculation.toleranceRangeLowValueElement",
+   		"UI.dataPoint.forecastValue",
+   		"UI.dataPoint.referencePeriod.end",
+   		"UI.dataPoint.referencePeriod.start",
+   		"UI.dataPoint.responsible",
+   		"UI.dataPoint.targetValueElement",
+   		"UI.dataPoint.trend",
+   		"UI.dataPoint.trendCalculation.downDifferenceElement",
+   		"UI.dataPoint.trendCalculation.referenceValue",
+   		"UI.dataPoint.trendCalculation.strongDownDifferenceElement",
+   		"UI.dataPoint.trendCalculation.strongUpDifferenceElement",
+   		"UI.dataPoint.trendCalculation.upDifferenceElement",
+   		"UI.facet[].targetElement",
+   		"UI.facet[].url",
+   		"UI.fieldGroup[].criticality",
+   		"UI.fieldGroup[].semanticObjectBinding[].localElement",
+   		"UI.fieldGroup[].targetElement",
+   		"UI.fieldGroup[].url",
+   		"UI.fieldGroup[].value",
+   		"UI.headerInfo.description.criticality",
+   		"UI.headerInfo.description.targetElement",
+   		"UI.headerInfo.description.url",
+   		"UI.headerInfo.description.value",
+   		"UI.headerInfo.imageUrl",
+   		"UI.headerInfo.title.criticality",
+   		"UI.headerInfo.title.targetElement",
+   		"UI.headerInfo.title.url",
+   		"UI.headerInfo.title.value",
+   		"UI.identification[].criticality",
+   		"UI.identification[].semanticObjectBinding[].localElement",
+   		"UI.identification[].targetElement",
+   		"UI.identification[].url",
+   		"UI.identification[].value",
+   		"UI.kpi[].dataPoint.criticality",
+   		"UI.kpi[].dataPoint.criticalityCalculation.constantThresholds[].aggregationLevel[]",
+   		"UI.kpi[].dataPoint.referencePeriod.end",
+   		"UI.kpi[].dataPoint.referencePeriod.start",
+   		"UI.kpi[].dataPoint.responsible",
+   		"UI.kpi[].dataPoint.trend",
+   		"UI.kpi[].dataPoint.trendCalculation.referenceValue",
+   		"UI.lineItem[].criticality",
+   		"UI.lineItem[].semanticObjectBinding[].localElement",
+   		"UI.lineItem[].targetElement",
+   		"UI.lineItem[].url",
+   		"UI.lineItem[].value",
+   		"UI.note.content.mimeType",
+   		"UI.note.content.value",
+   		"UI.note.title.hidden",
+   		"UI.note.title.value",
+   		"UI.note.type.languageDependent",
+   		"UI.note.type.maxLength",
+   		"UI.note.type.multipleNotes",
+   		"UI.note.type.name",
+   		"UI.presentationVariant[].groupBy[]",
+   		"UI.presentationVariant[].requestAtLeast[]",
+   		"UI.presentationVariant[].sortOrder[].by",
+   		"UI.presentationVariant[].total[]",
+   		"UI.presentationVariant[].totalBy[]",
+   		"UI.presentationVariant[].visualizations[].element",
+   		"UI.selectionField[].element",
+   		"UI.statusInfo[].criticality",
+   		"UI.statusInfo[].semanticObjectBinding[].localElement",
+   		"UI.statusInfo[].targetElement",
+   		"UI.statusInfo[].url",
+   		"UI.statusInfo[].value" };
+
+   /** annotations of type ParameterRef */
+   public final static String[] parameterRefAnnotations = new String[] {
+   		"Consumption.dynamicLabel.binding[].parameter",
+   		"Consumption.valueHelpDefinition[].additionalBinding[].localParameter",
+   		"Semantics.interval[].lowerBoundaryParameter",
+   		"Semantics.interval[].upperBoundaryParameter",
+   		"UI.connectedFields[].semanticObjectBinding[].localParameter",
+   		"UI.fieldGroup[].semanticObjectBinding[].localParameter",
+   		"UI.identification[].semanticObjectBinding[].localParameter",
+   		"UI.lineItem[].semanticObjectBinding[].localParameter",
+   		"UI.selectionVariant[].parameters[].name",
+   		"UI.statusInfo[].semanticObjectBinding[].localParameter" };
+
+   /** annotations of type AssociationRef */
+   public final static String[] associationRefAnnotations = new String[] {
+   		"AccessControl.privilegedAssociations[]",
+   		"Analytics.document.defaultAssociationToStorage",
+   		"AnalyticsDetails.query.hierarchyAssociation",
+   		"AnalyticsDetails.variable.hierarchyAssociation",
+   		"Consumption.filter.hierarchyAssociation",
+   		"Consumption.valueHelpDefinition[].association",
+   		"Hierarchy.parentChild[].directory",
+   		"ObjectModel.foreignKey.association",
+   		"ObjectModel.hierarchy.association",
+   		"ObjectModel.text.association",
+   		"ObjectModel.text.reference.association",
+   		"ObjectModel.unitConversionRate.association" };
+
+   /** annotations of type EntityRef */
+   public final static String[] entityRefAnnotations = new String[] {
+   		"Analytics.document.storageForEntity[]",
+   		"Consumption.derivation.lookupEntity",
+   		"Consumption.valueHelpDefinition[].entity.name",
+   		"EnterpriseSearch.hierarchy.parentChild.definition",
+   		"ObjectModel.action[].parameter.dataType",
+   		"ObjectModel.action[].result.dataType",
+   		"ObjectModel.leadingEntity.name",
+   		"OData.hierarchy.recursiveHierarchy[].entity.name",
+   		"VDM.auxiliaryEntity.for.entity" };
 
    private static String getDdlKeywordKey(String ddlKeyword) {
 		return AbapCult.toLower(ddlKeyword);
@@ -301,5 +515,61 @@ public final class DDL {
 			}
 		}
 		return false;
+	}
+
+	/** validates the input (which may be comma-, semicolon- or space-separated and may have spaces around periods) 
+	 * and returns it as a comma-separated list of condensed annotation names with allowed chars only, 
+	 * e.g. "ObjectModel.usageType, ObjectModel.lifecycle.*, Consumption". The @ sign is not returned */
+	public static String toAnnotationList(String list) {
+		final String separator = COMMA_SIGN_STRING + " ";
+		
+		if (StringUtil.isNullOrEmpty(list))
+			return "";
+
+		// allow comma- or semicolon-separated input
+		String[] annotations = StringUtil.split(list, new char[] { COMMA_SIGN, SEMICOLON_SIGN }, true);
+		if (annotations == null || annotations.length == 0)
+			return "";
+
+		StringBuilder sb = new StringBuilder();
+		
+		for (int annoIndex = 0; annoIndex < annotations.length; ++annoIndex) {
+			String annotation = annotations[annoIndex];
+			String[] elements = StringUtil.split(annotation, ' ', true);
+			if (elements == null)
+				continue;
+			
+			boolean expectDot = false;
+			
+			for (String element : elements) {
+				if (element.equals(DOT_SIGN_STRING)) {
+					if (expectDot) { // otherwise, ignore this dot
+						sb.append(DOT_SIGN_STRING);
+						expectDot = false;
+					}
+				} else {
+					// reduce the element to the valid chars
+					StringBuilder sbElement = new StringBuilder();
+					for (char c : element.toCharArray()) {
+						if (Character.isLetterOrDigit(c) || c == '_' || c == '.') {
+							sbElement.append(c);
+						}
+					}
+					element = sbElement.toString();
+					if (element.length() > 0) {
+						// if the input was 'space separated', add commas
+						if (expectDot)
+							sb.append(separator);
+						sb.append(element);
+						expectDot = !element.endsWith(DOT_SIGN_STRING);
+					}
+				}
+			}
+			
+			if (annoIndex + 1 < annotations.length) {
+				sb.append(separator);
+			}
+		}
+		return sb.toString();
 	}
 }

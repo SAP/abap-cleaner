@@ -13,6 +13,9 @@ import org.eclipse.swt.widgets.Text;
 import com.sap.adt.abapcleaner.rulebase.*;
 
 class ConfigTextBox extends ConfigControl {
+	// even if the configuration allows for a longer text, the width of the control should not exceed 100 chars
+	private final int MAX_WIDTH_IN_CHARS = 100;  
+	
    private Label lblDescription;
    private Text txtValue;
    private Label lblEmpty;
@@ -47,8 +50,10 @@ class ConfigTextBox extends ConfigControl {
       // set the width hint depending on the width of the maximum value
       GC gc = new GC(txtValue);
       gc.setFont(txtValue.getFont());
-      GridData gridData = new GridData(SWT.BEGINNING, SWT.CENTER, false, false);
-      gridData.widthHint = (int) (gc.getFontMetrics().getAverageCharacterWidth() * configValue.getMaxLength());
+      boolean grabExcessHorizontalSpace = (configValue.getMaxLength() >= MAX_WIDTH_IN_CHARS);
+      GridData gridData = new GridData((grabExcessHorizontalSpace ? SWT.FILL : SWT.BEGINNING), SWT.CENTER, grabExcessHorizontalSpace, false);
+      int maxWidthInChars = Math.min(configValue.getMaxLength(), MAX_WIDTH_IN_CHARS);
+      gridData.widthHint = (int) (gc.getFontMetrics().getAverageCharacterWidth() * maxWidthInChars);
       txtValue.setLayoutData(gridData);
       gc.dispose();
 
@@ -71,8 +76,9 @@ class ConfigTextBox extends ConfigControl {
 
    @Override
    public void setDefault() {
-      if (txtValue != null)
+      if (txtValue != null) {
          txtValue.setText(getConfigTextValue().defaultValue);
+      }
    }
 
    @Override

@@ -71,7 +71,7 @@ class ConfigIntBox extends ConfigControl {
       // set the width hint depending on the width of the maximum value
       GC gc = new GC(txtValue);
       gc.setFont(txtValue.getFont());
-      GridData gridData = new GridData(SWT.END, SWT.CENTER, false, false);
+      GridData gridData = new GridData(SWT.BEGINNING, SWT.CENTER, false, false);
       gridData.widthHint = gc.stringExtent(SettingsCult.toString(configValue.maxValue)).x;
       txtValue.setLayoutData(gridData);
       gc.dispose();

@@ -104,7 +104,11 @@ public enum RuleID  {
    ALIGN_LOGICAL_EXPRESSIONS,
    ALIGN_COND_EXPRESSIONS,
    ALIGN_FORM_DECLARATION,
-   ALIGN_PERFORM;
+   ALIGN_PERFORM, 
+   
+   // DDL Annotations
+   DDL_ANNO_LAYOUT,
+   DDL_ANNO_NESTING;
 
 	public static final int SIZE = java.lang.Integer.SIZE;
 

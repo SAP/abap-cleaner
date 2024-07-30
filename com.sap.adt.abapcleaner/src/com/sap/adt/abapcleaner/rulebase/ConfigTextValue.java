@@ -3,6 +3,7 @@ package com.sap.adt.abapcleaner.rulebase;
 import java.time.LocalDate;
 
 import com.sap.adt.abapcleaner.base.ABAP;
+import com.sap.adt.abapcleaner.base.DDL;
 import com.sap.adt.abapcleaner.base.StringUtil;
 
 /**
@@ -19,8 +20,11 @@ public class ConfigTextValue extends ConfigValue {
 	
 	public final void setValue(String value) {
 		// validate the input value, also preventing 'ABAP Injection'
-		if (textType == ConfigTextType.ABAP_CLASS) 
+		if (textType == ConfigTextType.ABAP_CLASS) {
 			value = ABAP.toVariableName(value);
+		} else if (textType == ConfigTextType.DDL_ANNOTATION_LIST) {
+			value = DDL.toAnnotationList(value); 
+		}
 
 		rule.setString(settingName, (value != null) ? value : "");
 	}
@@ -66,6 +70,8 @@ public class ConfigTextValue extends ConfigValue {
 		switch(textType) {
 			case ABAP_CLASS:
 				return 30;
+			case DDL_ANNOTATION_LIST:
+				return 1024;
 			default:
 				return 30;
 		}

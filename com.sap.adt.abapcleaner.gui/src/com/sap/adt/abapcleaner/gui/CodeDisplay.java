@@ -149,6 +149,10 @@ public class CodeDisplay extends Composite {
 					codeFontBold.dispose();
 					codeFontBold = null;
 				}
+				if (codeFontItalic != null) {
+					codeFontItalic.dispose();
+					codeFontItalic = null;
+				}
 			}
 		});
 		addKeyListener(new KeyAdapter() {
@@ -1316,39 +1320,41 @@ public class CodeDisplay extends Composite {
 			Command command = getCommandAt(getCurLineIndex());
 			boolean addMethod = false;
 			boolean addClassDef = false;
-			while (command != null) {
-				command = command.getParent();
-				if (command == null)
-					break;
-				if (command.isMethodFunctionFormOrEventBlockStart()) {
-					addMethod = true;
-					break;
-				} else if (command.isDeclarationSectionStart()) {
-					addClassDef = true;
-					break;
-				}
-			}
-			if (!addMethod && !addClassDef) {
-				// if neither a method nor a class definition was found in the parent hierarchy, we assume that the code 
-				// snippet is inside of a method - unless METHOD, FORM, or FUNCTION is found anywhere else in the code
-				addMethod = true;
-				command = navigator.getCommandAt(0);
+			if (command.isAbap()) {
 				while (command != null) {
+					command = command.getParent();
+					if (command == null)
+						break;
 					if (command.isMethodFunctionFormOrEventBlockStart()) {
-						addMethod = false;
+						addMethod = true;
+						break;
+					} else if (command.isDeclarationSectionStart()) {
+						addClassDef = true;
 						break;
 					}
-					command = command.getNext();
 				}
-			}
-			if (addMethod) {
-				sb.append(LINE_SEP);
-				sb.append("\t\t").append("putAnyMethodAroundSrcAndExp();").append(LINE_SEP);
-			} else if (addClassDef) {
-				sb.append(LINE_SEP);
-				sb.append("\t\t").append("putAnyClassDefAroundSrcAndExp();").append(LINE_SEP);
-			}
-			
+				if (!addMethod && !addClassDef) {
+					// if neither a method nor a class definition was found in the parent hierarchy, we assume that the code 
+					// snippet is inside of a method - unless METHOD, FORM, or FUNCTION is found anywhere else in the code
+					addMethod = true;
+					command = navigator.getCommandAt(0);
+					while (command != null) {
+						if (command.isMethodFunctionFormOrEventBlockStart()) {
+							addMethod = false;
+							break;
+						}
+						command = command.getNext();
+					}
+				}
+				if (addMethod) {
+					sb.append(LINE_SEP);
+					sb.append("\t\t").append("putAnyMethodAroundSrcAndExp();").append(LINE_SEP);
+				} else if (addClassDef) {
+					sb.append(LINE_SEP);
+					sb.append("\t\t").append("putAnyClassDefAroundSrcAndExp();").append(LINE_SEP);
+				}
+			}			
+
 			// build the test method end
 			sb.append(LINE_SEP);
 			sb.append("\t\t").append("testRule();").append(LINE_SEP);

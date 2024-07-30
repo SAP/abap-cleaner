@@ -7,7 +7,9 @@ public enum RuleGroupID  {
    SYNTAX,
    COMMANDS,
    PRETTY_PRINTER,
-   ALIGNMENT;
+   ALIGNMENT, 
+   
+   DDL_ANNOTATIONS;
 
    public static final int SIZE = java.lang.Integer.SIZE;
 

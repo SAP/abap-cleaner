@@ -9,6 +9,8 @@ import com.sap.adt.abapcleaner.programbase.UnexpectedSyntaxAfterChanges;
 import com.sap.adt.abapcleaner.programbase.UnexpectedSyntaxBeforeChanges;
 import com.sap.adt.abapcleaner.rules.alignment.*;
 import com.sap.adt.abapcleaner.rules.commands.*;
+import com.sap.adt.abapcleaner.rules.ddl.annotations.DdlAnnotationNestingRule;
+import com.sap.adt.abapcleaner.rules.ddl.annotations.DdlAnnotationLayoutRule;
 import com.sap.adt.abapcleaner.rules.declarations.*;
 import com.sap.adt.abapcleaner.rules.emptylines.*;
 import com.sap.adt.abapcleaner.rules.prettyprinter.*;
@@ -20,11 +22,12 @@ import java.time.LocalDate;
 import java.util.*;
 
 public abstract class Rule {
-	public static final int RULE_COUNT = 75;
-	public static final int RULE_GROUP_COUNT = 7;
+	public static final int RULE_COUNT = 77;
+	public static final int RULE_GROUP_COUNT = 8;
 
 	protected static final String LINE_SEP = ABAP.LINE_SEPARATOR;
 	protected static Language[] abapOnly =  new Language[] { Language.ABAP };
+	protected static Language[] ddlOnly =  new Language[] { Language.DDL };
 
 	private static final String KEY_IS_ACTIVE = "isActive";
 	private static final String KEY_SETTING_COUNT = "settingCount";
@@ -144,7 +147,11 @@ public abstract class Rule {
          new AlignLogicalExpressionsRule(profile),
          new AlignCondExpressionsRule(profile),
          new AlignFormDeclarationRule(profile),
-         new AlignPerformRule(profile)
+         new AlignPerformRule(profile), 
+         
+         // DDL annotations
+         new DdlAnnotationLayoutRule(profile),
+         new DdlAnnotationNestingRule(profile)
       };
 
 		StringBuilder errors = new StringBuilder();

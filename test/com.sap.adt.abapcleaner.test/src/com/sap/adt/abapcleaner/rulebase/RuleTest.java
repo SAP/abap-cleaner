@@ -324,6 +324,8 @@ class RuleTest {
 			ConfigValue[] configValues = rule.getConfigValues();
 
 			for (ConfigValue configValue : configValues) {
+				if (configValue instanceof ConfigInfoValue)
+					continue;
 				String settingNameUpper = configValue.settingName.toUpperCase();
 				if (names.contains(settingNameUpper)) {
 					fail("rule '" + rule.getDisplayName() + "' has two options with the same setting name '" + configValue.settingName + "'!");
