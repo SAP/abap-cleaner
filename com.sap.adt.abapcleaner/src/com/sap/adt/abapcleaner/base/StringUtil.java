@@ -686,4 +686,11 @@ public final class StringUtil {
 	public static String getLastCharAsString(String text) {
 		return (text == null || text.length() == 0) ? null : text.substring(text.length() - 1);
 	}
+	
+	public static String getNumberWithLeadingZeros(int value, int digits) {
+		String number = String.valueOf(value);
+		if (number.length() < digits)
+			number = repeatChar('0', digits - number.length()) + number;
+		return number;
+	}
 }

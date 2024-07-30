@@ -547,7 +547,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 				}
 			}
 		});
-		shell.setImage(SWTResourceManager.getImage(FrmMain.class, "/ShellImage.png"));
+		shell.setImage(SWTResourceManager.getImage(FrmMain.class, "/ShellImage.png")); 
 		shell.setSize(1008, 729);
 		shell.setMaximized(true);
 		shell.setText(Program.PRODUCT_NAME);

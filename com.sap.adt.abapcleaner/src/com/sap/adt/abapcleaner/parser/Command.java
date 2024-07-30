@@ -43,6 +43,8 @@ public class Command {
 	private static LevelCloser ddlLevelCloserBrace;
 	private static LevelOpener ddlLevelOpenerParameters;
 	private static LevelCloser ddlLevelCloserParameters;
+	private static LevelOpener ddlLevelOpenerSelect;
+	private static LevelCloser ddlLevelCloserSelect;
 
 	// provides runtime-unique IDs of Command instances for serialization
 	private static int globalID = 0;
@@ -486,7 +488,12 @@ public class Command {
 		ddlLevelCloserParameters = new LevelCloser("AS"); // also used for "RETURNS", DDL.BRACE_OPEN_STRING
 		ddlLevelOpenerParameters.addCloser(ddlLevelCloserParameters);
 		ddlLevelCloserParameters.addOpener(ddlLevelOpenerParameters);
-}
+
+		ddlLevelOpenerSelect = new LevelOpener("SELECT", false, false, true);
+		ddlLevelCloserSelect = new LevelCloser("FROM"); 
+		ddlLevelOpenerSelect.addCloser(ddlLevelCloserSelect);
+		ddlLevelCloserSelect.addOpener(ddlLevelOpenerSelect);
+	}
 
 	
 	private static void addInnerLevelOpener(String openerText, String... closerTexts) {
@@ -533,6 +540,14 @@ public class Command {
 	 */
 	public static Command create(Token firstToken, Command originalCommand) {
 		return new Command(originalCommand.parentCode, firstToken, false, originalCommand, Language.ABAP);
+	}
+	
+	/**
+	 * Creates a new Command (while executing a {@link Rule}) that belongs to the supplied {@link #originalCommand}
+	 * (splitting out parts of its code, adding a comment etc.)
+	 */
+	public static Command create(Token firstToken, Command originalCommand, Language language) {
+		return new Command(originalCommand.parentCode, firstToken, false, originalCommand, language);
 	}
 	
 	private Command(Code parentCode, Token firstToken, boolean appendToCode, Command originalCommand, Language language) {
@@ -960,9 +975,13 @@ public class Command {
 			Token lastNonComment = getLastNonCommentToken();
 			Token colon = findDdlAnnotationColon();
 			if (colon == null) {
-				if (lastNonComment.textEqualsAny(DDL.DOT_SIGN_STRING, DDL.ANNOTATION_SIGN_STRING)) {
+				if (lastNonComment.textEquals(DDL.ANNOTATION_SIGN_STRING)) {
 					return true;
-				} else if (newToken.textEqualsAny(DDL.DOT_SIGN_STRING, DDL.COLON_SIGN_STRING)) {
+				} else if (lastNonComment.textEndsWith(DDL.DOT_SIGN_STRING)) {
+					return true;
+				} else if (newToken.textStartsWith(DDL.DOT_SIGN_STRING)) {
+					return true;
+				} else if (newToken.textEquals(DDL.COLON_SIGN_STRING)) {
 					return true;
 				} else { 
 					// annotations may contain no ": value" if their default value is used; 
@@ -971,7 +990,7 @@ public class Command {
 				}
 			}
 			Token value = colon.getNextCodeSibling();
-			if (value != null && value.textEquals("#")) // @Annotation: #('...')
+			if (value != null && value.textEquals("#")) // unchecked expression #(...)
 				value = value.getNextCodeToken();
 			Token valueEnd = (value == null) ? null : (value.getOpensLevel() ? value.getNextCodeSibling() : value);
 			return (valueEnd == null);
@@ -987,7 +1006,8 @@ public class Command {
 				|| prevCommandParent != null && prevCommandParent.lastCodeTokenIsKeyword("PARAMETERS") && firstCodeTokenTextEqualsAny(DDL.levelClosersAfterParameterList)); 
 
 		// determine whether we are in a select list or parameter list
-		boolean isInSelectList = false;
+		boolean isInSelectListWithBraces = false;
+		boolean isInSelectListWithoutBraces = false;
 		boolean isInParameterList = false;
 		if (prevCommand != null) {
 			Command listOpener = prevCommand.getOpensLevel() ? prevCommand : prevCommandParent;
@@ -995,7 +1015,8 @@ public class Command {
 				Token lastCode = listOpener.getLastCodeToken();
 				if (lastCode != null) {
 					Token firstCode = getFirstCodeToken();
-					isInSelectList = lastCode.textEquals(DDL.BRACE_OPEN_STRING);
+					isInSelectListWithBraces = lastCode.textEquals(DDL.BRACE_OPEN_STRING);
+					isInSelectListWithoutBraces = lastCode.isAnyKeyword("SELECT", "DISTINCT");
 					isInParameterList = lastCode.isKeyword("PARAMETERS") && (firstCode == null || !firstCode.textEqualsAny(DDL.levelClosersAfterParameterList));
 				}
 			}
@@ -1011,10 +1032,14 @@ public class Command {
 		// start a new Command for the select list
 		if (isAtTopLevel && lastNonCommentToken.textEquals(DDL.BRACE_OPEN_STRING)) {
 			return false;
+		} else if (isAtTopLevel && lastNonCommentToken.textEqualsAny("SELECT", "DISTINCT") && !newToken.isComment() && !newToken.isAnyKeyword("DISTINCT", "FROM")) {
+			// first form of DDIC-based views with no braces: 
+			// [DEFINE] [ROOT] VIEW ddic_based_view [name_list] [parameter_list] AS SELECT [DISTINCT] element1, element2, ... FROM data_source ...
+			return false;
 		}
 		// within in the select or parameter list, start a new Command after each comma (or semicolon, e.g. for "define table" and "define structure")
 		// or if the new Token starts with "@<"
-		if (isInSelectList || isInParameterList) {
+		if (isInSelectListWithBraces || isInSelectListWithoutBraces || isInParameterList) {
 			if (lastNonCommentToken.textEqualsAny(DDL.listElementSeparators) && lastNonCommentToken.getParent() == null) {
 				return false;
 			} else if (newToken.textStartsWith(DDL.ANNOTATION_AFTER_LIST_ELEMENT_PREFIX)) {
@@ -1022,7 +1047,9 @@ public class Command {
 			}
 		}
 		// finish the select list or parameter list
-		if (isInSelectList && !newToken.isComment() && newToken.textEquals(DDL.BRACE_CLOSE_STRING)) {
+		if (isInSelectListWithBraces && !newToken.isComment() && newToken.textEquals(DDL.BRACE_CLOSE_STRING)) {
+			return false;
+		} else if (isInSelectListWithoutBraces && !newToken.isComment() && newToken.isKeyword("FROM")) {
 			return false;
 		} else if (firstToken.textEquals(DDL.BRACE_CLOSE_STRING)) {
 			// the "}" that ends the select list is a distinct Command 
@@ -1213,6 +1240,8 @@ public class Command {
 		if (lastNonComment != null && lastNonComment.textEquals(DDL.BRACE_OPEN_STRING)) {
 			usedLevelOpener = ddlLevelOpenerBrace;
 			lastNonComment.setOpensLevel(false);
+		} else if (lastNonComment != null && lastNonComment.isAnyKeyword("SELECT", "DISTINCT")) {
+			usedLevelOpener = ddlLevelOpenerSelect;
 		} else if (lastNonComment != null && lastNonComment.isKeyword("PARAMETERS")) {
 			usedLevelOpener = ddlLevelOpenerBrace;
 		} // do NOT attach the next line with else! 
@@ -1224,6 +1253,10 @@ public class Command {
 			}
 		} else if (firstNonComment != null && firstNonComment.textEquals(DDL.BRACE_CLOSE_STRING)) {
 			usedLevelCloser = ddlLevelCloserBrace;
+			firstNonComment.setClosesLevel(false);
+			
+		} else if (firstNonComment != null && firstNonComment.isKeyword("FROM")) {
+			usedLevelCloser = ddlLevelCloserSelect;
 			firstNonComment.setClosesLevel(false);
 		}
 		
@@ -1672,6 +1705,16 @@ public class Command {
 				String sep = token.isAttached() ? "" : (showLineBreaks && token.lineBreaks > 0 ? " | " : " ");
 				result.append(sep + token.text);
 			}
+		}
+		return result.toString();
+	}
+
+	public String toStringWithoutWhitespace() {
+		StringBuilder result = new StringBuilder();
+		Token token = firstToken;
+		while (token != null) {
+			result.append(token.text);
+			token = token.getNext();
 		}
 		return result.toString();
 	}
@@ -3533,6 +3576,10 @@ public class Command {
 		return firstCode != null && firstCode.textStartsWith(DDL.ANNOTATION_SIGN_STRING); 
 	}
 
+	public boolean isDdlAnnotationBeforeListElement() { 
+		return isDdlAnnotation() && !isDdlAnnotationAfterListElement(); 
+	}
+
 	public boolean isDdlAnnotationAfterListElement() { 
 		if (!isDdl()) 
 			return false;
@@ -3576,14 +3623,8 @@ public class Command {
 		// find the ":", considering that there might be spaces, line feeds and even comments in between,  
 		// e.g. "@Annotation . element /* comment */ . subelement  :"
 		while (token != null) {
-			// the next Token must either be "." or ":"
-			token = token.getNextCodeToken();
-			if (token == null)
-				return null;
-			else if (token.textEquals(DDL.COLON_SIGN_STRING))
+			if (token.textEquals(DDL.COLON_SIGN_STRING))
 				return token;
-			else if (!token.textEquals(DDL.DOT_SIGN_STRING))
-				return null;
 			// move to the next annotation name element
 			token = token.getNextCodeToken();
 		}

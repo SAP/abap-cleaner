@@ -27,14 +27,16 @@ abstract class ConfigControl {
       Control[] controls = getControls();
       detachControls();
       configDisplay.remove(controls);
-      for (Control control : controls)
+      for (Control control : controls) {
          control.dispose();
+      }
    }
    
    protected void removeListeners(Control control, int eventType) {
    	Listener[] listeners = control.getListeners(eventType);
-   	for (Listener listener : listeners)
+   	for (Listener listener : listeners) {
    		control.removeListener(eventType, listener);
+   	}
    }
 
    ConfigValue getConfigValue() {

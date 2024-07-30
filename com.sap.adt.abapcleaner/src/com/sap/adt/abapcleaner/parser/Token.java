@@ -201,6 +201,10 @@ public class Token {
 				&& (text.charAt(text.length() - 1) == ABAP.PIPE || text.charAt(text.length() - 1) == ABAP.BRACE_OPEN)); 
 	}
 
+	public final boolean isDdlStringLiteral() {
+		return isLiteral() && !StringUtil.isNullOrEmpty(text) && text.charAt(0) == DDL.QUOT_MARK && text.charAt(text.length() - 1) == DDL.QUOT_MARK;
+	}
+
 	final boolean startsStringTemplate() { return isLiteral() && !StringUtil.isNullOrEmpty(text) && text.charAt(0) == ABAP.PIPE; }
 	
 	final boolean endsStringTemplate() { return isLiteral() && !StringUtil.isNullOrEmpty(text) && text.charAt(text.length() - 1) == ABAP.PIPE; }
@@ -2831,6 +2835,14 @@ public class Token {
    	if (isKeyword("WHEN")) {
    		Token thenToken = getLastTokenOnSiblings(true, TokenSearch.ASTERISK, "THEN"); 
    		return (thenToken == null) ? null : thenToken.getPrevCodeToken();
+   		
+   	} else if (parent != null && parent.textEquals(DDL.BRACKET_OPEN_STRING) && !parentCommand.isDdlAnnotation()
+   			&& (    textEquals(DDL.COLON_SIGN_STRING) && getNextSibling() != null && !getNextSibling().isAnyKeyword("INNER", "LEFT", "WHERE")
+   			     || isAnyKeyword("INNER", "OUTER") && getNextSibling() != null && !getNextSibling().isKeyword("WHERE")
+   				  || isKeyword("WHERE"))) {
+
+   		// path expression: ... [ [cardinality] [INNER|{LEFT OUTER}] [WHERE] [cds_cond] ] ...
+   		return parent.getNextCodeSibling().getPrevCodeToken();
    		
    	} else if (isAnyKeyword("WHERE", "HAVING") 
    			|| isKeyword("ON") && (prevCode == null || !prevCode.isKeyword("PROJECTION")) // exclude "AS PROJECTION ON"

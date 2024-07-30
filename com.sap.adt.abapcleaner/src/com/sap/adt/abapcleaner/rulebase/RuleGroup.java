@@ -40,11 +40,14 @@ public class RuleGroup {
 			case COMMANDS:
 				return "Commands";
 
+			case PRETTY_PRINTER:
+				return "Pretty Printer";
+
 			case ALIGNMENT:
 				return "Alignment";
 
-			case PRETTY_PRINTER:
-				return "Pretty Printer";
+			case DDL_ANNOTATIONS:
+				return "DDL Annotations";
 
 			default:
 				throw new IndexOutOfBoundsException("Unknown RuleGroup!");

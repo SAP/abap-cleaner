@@ -292,8 +292,9 @@ public class DiffDoc {
    final int findLineIndexOfLineNum(int docLineNum, DisplaySide displaySide) {
       for (int i = getLineCount() - 1; i >= 0; --i) {
          DisplayLine line = lines.get(i).getDisplayLine(displaySide);
-         if (line != null && line.indexInDoc == docLineNum)
+         if (line != null && line.indexInDoc == docLineNum) {
             return i;
+         }
       }
       return -1;
    }

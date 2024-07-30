@@ -9,7 +9,7 @@ import com.sap.adt.abapcleaner.rulebase.RuleTestBase;
 class AlignAbapDocTest extends RuleTestBase {
 	private AlignAbapDocRule rule;
 	
-	AlignAbapDocTest () {
+	AlignAbapDocTest() {
 		super(RuleID.ALIGN_ABAP_DOC);
 		rule = (AlignAbapDocRule)getRule();
 	}
@@ -20,7 +20,6 @@ class AlignAbapDocTest extends RuleTestBase {
 		rule.configAlignAcrossEmptyLines.setValue(true);
 		rule.configAlignAcrossNonEmptyLines.setValue(true);
 	}
-
 
 	@Test
 	void testAlignParametersAndRaising() {

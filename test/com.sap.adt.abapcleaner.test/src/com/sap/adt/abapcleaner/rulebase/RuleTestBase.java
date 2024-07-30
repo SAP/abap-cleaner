@@ -331,7 +331,7 @@ public abstract class RuleTestBase {
 					}
 				} else {
 					wasAnyTokenAdded = true;
-					if (!wasAnyNonCommentLetterAdded && !token.isComment() && token.textContainsAnyLetter()) {
+					if (!wasAnyNonCommentLetterAdded && command.isAbap() && !token.isComment() && token.textContainsAnyLetter()) {
 						wasAnyNonCommentLetterAdded = true;
 						firstText = token.getText();
 					}
@@ -519,7 +519,8 @@ public abstract class RuleTestBase {
 		
 		// selection functionality
 		diffNav.selectAll();
-		assertTrue(diffNav.areLinesSelected());
+		if (diffNav.getLineCount() > 1)
+			assertTrue(diffNav.areLinesSelected());
 		assertEquals(lineCount - 1, diffNav.getCurLine());
 		assertEquals(0, diffNav.getSelStartLine());
 		assertEquals(0, diffNav.getSelectionLineMin());
@@ -561,8 +562,13 @@ public abstract class RuleTestBase {
 		assertEquals(lineCount / 2, diffNav.getCurLine());
 		
 		assertFalse(diffNav.moveToLineInDoc(-1, DisplaySide.RIGHT));
-		assertTrue(diffNav.moveToLineInDoc(1, DisplaySide.LEFT));
-		assertTrue(diffNav.moveToLineInDoc(1, DisplaySide.RIGHT));
+		if (diffNav.getLineCount() > 1) {
+			int expLineCount = StringUtil.instrCount(expCodeBuilder.toString(), '\n');
+			if (expLineCount > 1) {
+				assertTrue(diffNav.moveToLineInDoc(1, DisplaySide.LEFT));
+				assertTrue(diffNav.moveToLineInDoc(1, DisplaySide.RIGHT));
+			}
+		}
 		
 		// page move functionality
 		final int step = 3;

@@ -27,7 +27,7 @@ class ConfigLabel extends ConfigControl {
 
       lblDescription = new Label(parent, SWT.NONE);
       if (configValue.isHeading()) {
-      	lblDescription.setFont(SWTResourceManager.getFont("Segoe UI", 9, SWT.BOLD));
+      	lblDescription.setFont(SWTResourceManager.getFont("Segoe UI", 9, SWT.BOLD | SWT.ITALIC));
       }
       lblDescription.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false, 3, 1));
       lblDescription.setText(configValue.description);
