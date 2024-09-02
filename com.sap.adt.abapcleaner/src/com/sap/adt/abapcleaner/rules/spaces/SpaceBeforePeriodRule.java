@@ -92,7 +92,7 @@ public class SpaceBeforePeriodRule extends RuleForCommands {
 
 		boolean executeOnComma = configExecuteOnComma.getValue();
 		boolean executeOnPeriod = configExecuteOnPeriod.getValue();
-		if (!executeOnComma && !executeOnPeriod )
+		if (!executeOnComma && !executeOnPeriod)
 			return false;
 
 		// find all commas and the period (but use a shortcut if only the period shall be processed)
@@ -163,7 +163,7 @@ public class SpaceBeforePeriodRule extends RuleForCommands {
 			if (trailingCommentLines) {
 				// test referential integrity only after splitting out trailing comment lines
 				firstComment.insertLeftSibling(token, false, true);
-				command.splitOutTrailingCommentLines(command);
+				command.splitOutTrailingCommentLines(command, true);
 				command.testReferentialIntegrity(true);
 			} else {
 				firstComment.insertLeftSibling(token);

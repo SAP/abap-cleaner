@@ -100,7 +100,11 @@ public class DdlAnnotationScope {
 					Token lastOfExpr = token.getNextCodeToken().getNextCodeSibling();
 					do {
 						token = token.getNext();
-						sbExpr.append(token.getText());
+						// include spaces, but put everything to one line 
+						int spaces = (token.lineBreaks > 0) ? 1 : token.spacesLeft;
+						if (spaces > 0)
+							sbExpr.append(StringUtil.repeatChar(' ', spaces));
+						sbExpr.append(token.getText()); 
 					} while (token != lastOfExpr);
 					valueText = sbExpr.toString();
 					// token is now at the end of the unchecked expression
@@ -568,8 +572,8 @@ public class DdlAnnotationScope {
 		ArrayList<Command> newCommands = writer.getNewCommands();
 
 		// check the changed Commands against the existing ones and insert changes
-		Command insertBefore = getFirstCommand();
-		Command endCommand = getLastCommand().getNextNonCommentCommand(); // remember this now, before scope.lastCommand may get detached from the context
+		Command insertBefore = firstCommand;
+		Command endCommand = lastCommand.getNextNonCommentCommand(); // remember this now, before scope.lastCommand may get detached from the context
 		for (Command newCommand : newCommands) {
 			HashSet<Command> originalCommands = writer.getOriginalCommandsOf(newCommand);
 
@@ -586,8 +590,13 @@ public class DdlAnnotationScope {
 					insertBefore = deleteOldCommandAndReturnNext(code, insertBefore, rule);
 				}
 			}
+			Command insertBeforeComment = (insertBefore == firstCommand) ? insertBefore : insertBefore.getStartOfAttachedComments();
+			// if newCommand originates from the very first line in the code document, it could start with 0 line breaks
+			if (insertBeforeComment.getPrev() != null && newCommand.getFirstTokenLineBreaks() == 0)
+				newCommand.getFirstToken().setLineBreaks(1);
+			
 			// insert the new Command 
-			insertBefore.insertLeftSibling(newCommand);
+			insertBeforeComment.insertLeftSibling(newCommand);
 			code.addRuleUse(rule, newCommand);
 		}
 

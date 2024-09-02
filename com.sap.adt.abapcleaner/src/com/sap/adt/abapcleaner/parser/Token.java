@@ -341,8 +341,8 @@ public class Token {
 		// (at this point, we only need to identify comments and tell whether the Token opens or closes a level)
 		boolean isAtLineStart = ((this.sourceLineNum == 1 || this.lineBreaks > 0) && this.spacesLeft == 0);
 
-		if (language == Language.DDL) {
-			type = inferTypeFromDdlToken(text);
+		if (language == Language.DDL || language == Language.DCL) {
+			type = inferTypeFromDdlToken(text, language);
 			if (type == TokenType.KEYWORD || type == TokenType.OTHER_OP) {
 				opensLevel = textEndsWithAny(ddlLevelOpeners);
 				closesLevel = textStartsWithAny(ddlLevelClosers);
@@ -432,7 +432,7 @@ public class Token {
 		}
 	}
 
-	private static TokenType inferTypeFromDdlToken(String text) {
+	private static TokenType inferTypeFromDdlToken(String text, Language language) {
 		if (AbapCult.stringStartsWith(text, DDL.LINE_END_COMMENT) 
 				|| AbapCult.stringStartsWith(text, DDL.LINE_END_MINUS_COMMENT)
 				|| AbapCult.stringStartsWith(text, DDL.ASTERISK_COMMENT_START)) {
@@ -444,7 +444,10 @@ public class Token {
 		} else if (DDL.isComparisonOperator(text)) {
 			return TokenType.COMPARISON_OP;
 
-		} else if (DDL.isKeyword(text)) {
+		} else if (language == Language.DDL && DDL.isDdlKeyword(text)) {
+			return TokenType.KEYWORD;
+
+		} else if (language == Language.DCL && DDL.isDclKeyword(text)) {
 			return TokenType.KEYWORD;
 
 		} else if (ABAP.COLON_SIGN_STRING.equals(text)) {
@@ -1414,7 +1417,7 @@ public class Token {
 	}
 
 	final ColorType getMainColorType() {
-		boolean isDdl = parentCommand.isDdl();
+		boolean isDdlOrDcl = parentCommand.isDdlOrDcl();
 		
 		switch (type) {
 			case COMMENT:
@@ -1425,21 +1428,21 @@ public class Token {
 				return isStringLiteral() ? ColorType.STRING_LITERAL : ColorType.NUMBER;
 
 			case ASSIGNMENT_OP:
-				if (isDdl) {
+				if (isDdlOrDcl) {
 					return ColorType.DDL_KEYWORD;
 				} else {
 					return ColorType.USUAL_OPERATOR;
 				}
 
 			case OTHER_OP:
-				if (isDdl) {
+				if (isDdlOrDcl) {
 					return ColorType.DDL_KEYWORD;
 				} else {
 					return textEquals(")") && isAttached() ?  ColorType.TOKEN_OPERATOR : ColorType.USUAL_OPERATOR;
 				}
 
 			case COMPARISON_OP:
-				if (isDdl) {
+				if (isDdlOrDcl) {
 					return ColorType.DDL_KEYWORD;
 				} else if (!StringUtil.isNullOrEmpty(text) && Character.isLetter(text.charAt(0))) { // GE, GT, EQ, NE etc.
 					return ColorType.KEYWORD;
@@ -1448,14 +1451,14 @@ public class Token {
 				}
 
 			case KEYWORD:
-				if (isDdl) {
+				if (isDdlOrDcl) {
 					return ColorType.DDL_KEYWORD;
 				} else {
 					return isDeclarationKeyword() ? ColorType.DECLARATION_KEYWORD : ColorType.KEYWORD;
 				}
 
 			case IDENTIFIER:
-				if (isDdl) {
+				if (isDdlOrDcl) {
 					if (isChildOf("cast") && getNextCodeSibling() == null) {
 						return ColorType.DDL_IDENTIFIER_DATA_ELEMENT;
 					} else {
@@ -1493,13 +1496,13 @@ public class Token {
 
 	final TextBit[] toTextBits(int startIndex, boolean isInOOContext) {
 		boolean isAbap = parentCommand.isAbap();
-		boolean isDdl = parentCommand.isDdl();
+		boolean isDdlOrDcl = parentCommand.isDdlOrDcl();
 		boolean isSimpleCase = false;
 		
 		// in most cases, the whole Token is of one ColorType
 		
 		ColorType colType;
-		if (isDdl && parentCommand.isDdlAnnotation() && type != TokenType.COMMENT) { 
+		if (isDdlOrDcl && parentCommand.isDdlAnnotation() && type != TokenType.COMMENT) { 
 			// in CDS DDL annotations, everything gets the same color
 			colType = ColorType.DDL_ANNOTATION;
 			isSimpleCase = true;
@@ -1515,7 +1518,7 @@ public class Token {
 			} else if (isAbap && type == TokenType.OTHER_OP && !textEndsWithAny("(", ")")) { // "ULINE AT /(20)."
 				isSimpleCase = true;
 			}
-		} else if (isDdl) {
+		} else if (isDdlOrDcl) {
 			if (type == TokenType.LITERAL) {
 				isSimpleCase = true;
 			} else if (type == TokenType.IDENTIFIER && textStartsWith(DDL.SESSION_PREFIX + DDL.DOT_SIGN_STRING)) {
@@ -1556,11 +1559,11 @@ public class Token {
 		ArrayList<TextBit> result = new ArrayList<TextBit>();
 		int writtenPos = 0;
 		boolean lastWasIdentifier = false;
-		ColorType opColorType = isDdl ? ColorType.DDL_KEYWORD : ColorType.TOKEN_OPERATOR;
+		ColorType opColorType = isDdlOrDcl ? ColorType.DDL_KEYWORD : ColorType.TOKEN_OPERATOR;
 		for (int i = 0; i < text.length(); ++i) {
 			char c = text.charAt(i);
 			boolean isIdentifier;
-			if (isDdl) {
+			if (isDdlOrDcl) {
 				isIdentifier = (type == TokenType.KEYWORD) ? DDL.isCharAllowedForAnyKeyword(c, (i == 0)) 
 						 												 : DDL.isCharAllowedForIdentifier(text, i, (i == 0));
 			} else {
@@ -1575,7 +1578,7 @@ public class Token {
 				// if the text bit is not part of the keyword or the identifier, it is considered a token operator (e.g. "->", "=>", "(" etc.)
 				ColorType bitType = lastWasIdentifier ? colType : opColorType;
 				// in some cases, a Token of type OTHER_OP contains a number, e.g. "ULINE AT /10(20)." and "ULINE AT 10(**)." 
-				if (isDdl && AbapCult.stringEquals(text.substring(writtenPos, i), "$projection", true)) 
+				if (isDdlOrDcl && AbapCult.stringEquals(text.substring(writtenPos, i), "$projection", true)) 
 					bitType = ColorType.DDL_KEYWORD;
 				if (isAbap && ABAP.isInteger(text.substring(writtenPos, i)))
 					bitType = ColorType.NUMBER;
@@ -1874,7 +1877,7 @@ public class Token {
 		check(!opensLevel || nextSibling != null && nextSibling.closesLevel);
 		check(closesLevel || prevSibling == null || !prevSibling.opensLevel);
 		check(!closesLevel || prevSibling != null && prevSibling.opensLevel);
-		if (testCommentPositions && !parentCommand.isDdl()) {
+		if (testCommentPositions && !parentCommand.isDdlOrDcl()) {
 			// there can be no further Token behind a comment (except in the next line)
 			check(prev == null || !prev.isComment() || lineBreaks > 0); 
 		}
@@ -2669,7 +2672,7 @@ public class Token {
 	 * @return
 	 */
 	public Token getLastTokenOfLogicalExpression() {
-      if (parentCommand.isDdl()) {
+      if (parentCommand.isDdlOrDcl()) {
       	return getLastTokenOfDdlLogicalExpression();
       }
 
@@ -2880,7 +2883,7 @@ public class Token {
    			} else if (end.isAnyKeyword("INNER", "LEFT", "RIGHT", "JOIN", "CROSS", "EXACT", "MANY", "ONE", "TO", "ASSOCIATION", "COMPOSITION")) {
    				// next join or association 
    			} else if (end.isAnyKeyword("WITH")) {
-   				// ASSOCIATION [cardinality] TO target [AS _assoc] ON cds_cond [ WITH DEFAULT FILTER cds_cond ] 
+   				// ASSOCIATION [cardinality] TO target [AS assoc] ON cds_cond [WITH DEFAULT FILTER cds_cond] 
    			} else {
    				if (Program.showDevFeatures()) 
    					throw new IllegalArgumentException("Unexpected end '" + end.getText() + "' of DDL condition: " + parentCommand.toString());
@@ -3160,7 +3163,7 @@ public class Token {
 		return textEqualsAny(ABAP.abapSqlLiteralTypes) && parent != null && parent.textEquals("CAST(") && getPrevCodeSibling() != null && getPrevCodeSibling().isKeyword("AS");
 	}
 	
-	public boolean condenseUpTo(Token last, int maxLineLength, int indent, boolean keepQuotMarkCommentLines) {
+	public boolean condenseUpTo(Token last, int maxLineLength, int indent, boolean keepCommentLines) {
 		Token token = this;
 		if (token == last)
 			return false;
@@ -3176,7 +3179,8 @@ public class Token {
 				lastMovableToken = token;
 
 			// if needed, move Token(s) to the next line, otherwise move it directly behind the previous Token
-			if (token.isAsteriskCommentLine() || keepQuotMarkCommentLines && token.isQuotMarkCommentLine()) {
+			boolean isLineEndComment = parentCommand.isDdlOrDcl() ? token.isDdlLineEndComment() : token.isQuotMarkCommentLine(); 
+			if (token.isAsteriskCommentLine() || keepCommentLines && isLineEndComment) {
 				// do nothing
 
 			} else if (token.getPrev().isComment()) {
@@ -3417,11 +3421,125 @@ public class Token {
 	
 	public boolean isChildOfAny(String... parentTexts) {
 		Token token = parent;
-		if (token != null && parentCommand.isDdl()) { //  && token.textEqualsAny("(", "{", "[", "#(")
+		if (token != null && parentCommand.isDdlOrDcl()) { //  && token.textEqualsAny("(", "{", "[", "#(")
 			token = token.getPrevCodeToken();
 		}
 		if (token == null)
 			return false;
 		return token.textEqualsAny(parentTexts);
 	}
+
+	public boolean startsMultiLineDdlComment() {
+		return parentCommand.isDdlOrDcl() && isCommentLine() && textStartsWith(DDL.ASTERISK_COMMENT_START) && !endsMultiLineDdlComment();
+	}
+
+	public boolean endsMultiLineDdlComment() {
+		return parentCommand.isDdlOrDcl() && isCommentLine() && text.indexOf(DDL.ASTERISK_COMMENT_END) >= 0;
+	}
+
+	public boolean isCommentedOutDdlAnnotation() { 
+		if (parentCommand.isDdlOrDcl() && isCommentLine() && textStartsWithAny(DDL.LINE_END_COMMENT, DDL.LINE_END_MINUS_COMMENT)) {
+			String textAfterCommentSign = text.substring(DDL.LINE_END_COMMENT.length()).trim();
+			return textAfterCommentSign.startsWith(DDL.ANNOTATION_SIGN_STRING); 
+		} else {
+			return false;
+		}
+	}
+	
+	public ArrayList<Command> setWhitespaceInclAttachedComments(int newLineBreaks, int newSpacesLeft, boolean includeDdlAnnoComments) {
+		ArrayList<Command> changedCommands = new ArrayList<>();
+		
+		if (prev == null && lineBreaks == 1 && parentCommand.getPrev() != null && parentCommand.getPrev().isCommentLine()) {
+			// move to the first attached comment Command (possibly except for commented-out annotations)
+			Command comment = null;
+			Command testCommand = parentCommand;
+			while (testCommand.getFirstTokenLineBreaks() == 1) {
+				Command prev = testCommand.getPrev();
+				 if (prev == null || !prev.isCommentLine() || !includeDdlAnnoComments && prev.isCommentedOutDdlAnnotation())
+					 break;
+				 comment = prev;
+				 testCommand = prev;
+			}
+
+			// set the supplied spacesLeft to all attached Commands, but the supplied lineBreaks only to the first one
+			boolean isFirst = true;
+			if (comment != null) {
+				if (comment.getPrev() == null)
+					newLineBreaks = comment.getFirstTokenLineBreaks();
+				
+				do {
+					int addIndent = newSpacesLeft - comment.getFirstToken().spacesLeft;
+					if (comment.getFirstToken().setWhitespace((isFirst ? newLineBreaks : comment.getFirstTokenLineBreaks()), newSpacesLeft))
+						changedCommands.add(comment);
+
+					if (comment.startsMultiLineDdlComment()) {
+						// change indent of the remaining Commands that belong to this multi-line comment
+						while (!comment.endsMultiLineDdlComment()) {
+							comment = comment.getNext();
+							if (comment == null || !comment.isCommentLine()) // pro forma
+								break;
+							Token commentToken = comment.getFirstToken();
+							if (commentToken.setWhitespace(commentToken.lineBreaks, commentToken.spacesLeft + addIndent)) { 
+								changedCommands.add(comment);
+							}
+						} 
+					}
+					if (comment != null) // pro forma
+						comment = comment.getNext();
+					isFirst = false;
+				} while (comment != null && comment.isCommentLine());
+			}
+			if (setWhitespace((isFirst ? newLineBreaks : this.lineBreaks), newSpacesLeft)) {
+				changedCommands.add(parentCommand);
+			}
+
+		} else if (prev != null && lineBreaks == 1 && prev.isCommentLine()) {
+			// move to the first attached comment Token (possibly except for commented-out annotations)
+			Token commentToken = null;
+			Token testToken = this;
+			while (testToken.lineBreaks == 1) {
+				Token prev = testToken.prev;
+				 if (prev == null || !prev.isCommentLine() || !includeDdlAnnoComments && prev.isCommentedOutDdlAnnotation())
+					 break;
+				 commentToken = prev;
+				 testToken = prev;
+			}
+			
+			// set the supplied spacesLeft to all attached Tokens, but the supplied lineBreaks only to the first one
+			boolean isFirst = true;
+			boolean changed = false;
+			if (commentToken != null) {
+				do {
+					int addIndent = newSpacesLeft - commentToken.spacesLeft;
+					changed |= commentToken.setWhitespace((isFirst ? newLineBreaks : commentToken.lineBreaks), newSpacesLeft); 
+
+					if (commentToken.startsMultiLineDdlComment()) {
+						// change indent of the remaining Tokens that belong to this multi-line comment
+						while (!commentToken.endsMultiLineDdlComment()) {
+							commentToken = commentToken.getNext();
+							if (commentToken == null || !commentToken.isCommentLine()) // pro forma
+								break;
+							changed |= commentToken.setWhitespace(commentToken.lineBreaks, commentToken.spacesLeft + addIndent); 
+						} 
+					}
+					if (commentToken != null) // pro forma
+						commentToken = commentToken.getNext();
+					isFirst = false;
+				} while (commentToken != null && commentToken.isComment());
+			}
+			changed |= setWhitespace((isFirst ? newLineBreaks : this.lineBreaks), newSpacesLeft);
+			if (changed) {
+				changedCommands.add(parentCommand);
+			}
+
+		} else {
+			// no attached comments - only change this Token
+			if (setWhitespace(newLineBreaks, newSpacesLeft)) {
+				changedCommands.add(parentCommand);
+			}
+		}	
+		
+		return changedCommands;
+	}
+
 }

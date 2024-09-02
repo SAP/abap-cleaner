@@ -670,8 +670,8 @@ public abstract class RuleTestBase {
 				// check consistency of language information
 				if (dispLine.isAbapCommand()) {
 					assertEquals(Language.ABAP, dispLine.getLanguage());
-				} else if (dispLine.isDdlCommand()) {
-					assertEquals(Language.DDL, dispLine.getLanguage());
+				} else if (dispLine.isDdlOrDclCommand()) {
+					assertTrue(dispLine.getLanguage() == Language.DDL || dispLine.getLanguage() == Language.DCL);
 				}
 			}
 		}

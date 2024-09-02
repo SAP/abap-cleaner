@@ -10,6 +10,7 @@ import com.sap.adt.abapcleaner.programbase.UnexpectedSyntaxBeforeChanges;
 import com.sap.adt.abapcleaner.rules.alignment.*;
 import com.sap.adt.abapcleaner.rules.commands.*;
 import com.sap.adt.abapcleaner.rules.ddl.annotations.DdlAnnotationNestingRule;
+import com.sap.adt.abapcleaner.rules.ddl.position.DdlPositionSelectRule;
 import com.sap.adt.abapcleaner.rules.ddl.annotations.DdlAnnotationLayoutRule;
 import com.sap.adt.abapcleaner.rules.declarations.*;
 import com.sap.adt.abapcleaner.rules.emptylines.*;
@@ -22,11 +23,12 @@ import java.time.LocalDate;
 import java.util.*;
 
 public abstract class Rule {
-	public static final int RULE_COUNT = 77;
-	public static final int RULE_GROUP_COUNT = 8;
+	public static final int RULE_COUNT = 78;
+	public static final int RULE_GROUP_COUNT = 9;
 
 	protected static final String LINE_SEP = ABAP.LINE_SEPARATOR;
 	protected static Language[] abapOnly =  new Language[] { Language.ABAP };
+	protected static Language[] ddlOrDcl =  new Language[] { Language.DDL, Language.DCL };
 	protected static Language[] ddlOnly =  new Language[] { Language.DDL };
 
 	private static final String KEY_IS_ACTIVE = "isActive";
@@ -151,7 +153,10 @@ public abstract class Rule {
          
          // DDL annotations
          new DdlAnnotationLayoutRule(profile),
-         new DdlAnnotationNestingRule(profile)
+         new DdlAnnotationNestingRule(profile),
+
+         // DDL position
+         new DdlPositionSelectRule(profile)
       };
 
 		StringBuilder errors = new StringBuilder();

@@ -9,7 +9,8 @@ public enum RuleGroupID  {
    PRETTY_PRINTER,
    ALIGNMENT, 
    
-   DDL_ANNOTATIONS;
+   DDL_ANNOTATIONS,
+   DDL_POSITION;
 
    public static final int SIZE = java.lang.Integer.SIZE;
 

@@ -45,10 +45,7 @@ class Parser {
 				if (token == null) {
 					// finalize the last Command 
 					if (curCommand != null) {
-						curCommand.finishBuild(surroundingTextOffset + commandStart, surroundingTextOffset + text.length(), lastCommand);
-						if (lastCommand != null) {
-							lastCommand.addNext(curCommand);
-						}
+						finalizeCommand(surroundingTextOffset + commandStart, surroundingTextOffset + text.length());
 					}
 					break;
 				}
@@ -56,27 +53,45 @@ class Parser {
 				if (curCommand == null) {
 					// create first command with this Token
 					curCommand = Command.create(code, token, tokenizer.getCurLanguage());
+				
 				} else if (curCommand.canAdd(token, lastCommand)) {
 					// add Token to current command
 					lastToken.addNext(token);
+
+					// change language from .DDL to .DCL if "[DEFINE] ROLE" or "[DEFINE] ACCESSPOLICY" was found
+					if (curCommand.isDdl() && token.getParent() == null && token.textEqualsAny("ROLE", "ACCESSPOLICY")) {
+						Token prev = token.getPrevCodeSibling();
+						if (prev == null || prev.textEquals("DEFINE") && prev.getPrevCodeSibling() == null) {
+							// under the assumption of .DDL, the tokens might first have been inferred as .IDENTIFIERs
+							if (prev != null)
+								prev.type = TokenType.KEYWORD;
+							token.type = TokenType.KEYWORD;
+							// change the current and all previous Commands (which may contain annotations and comments) to .DCL
+							curCommand.setLanguage(Language.DCL);
+							Command command = lastCommand; 
+							while (command != null) {
+								command.setLanguage(Language.DCL);
+								command = command.getPrev();
+							}
+							tokenizer.setLanguage(Language.DCL);
+						}
+					}
+
 				} else {
-					// finalize Command
-					curCommand.finishBuild(surroundingTextOffset + commandStart, surroundingTextOffset + tokenStart, lastCommand);
-					if (lastCommand != null)
-						lastCommand.addNext(curCommand);
+					finalizeCommand(surroundingTextOffset + commandStart, surroundingTextOffset + tokenStart);
+
+					Language curLanguage = curCommand.getLanguage();
+					Language nextLanguage = curCommand.getLanguageOfNextCommand();
 
 					// determine whether a non-ABAP section was started, i.e. a section inside
 					// "EXEC SQL ... ENDEXEC" or "METHOD <identifier> BY DATABASE PROCEDURE|FUNCTION|GRAPH ... ENDMETHOD"
-					if (curCommand.getLanguage() == Language.ABAP) {
-						Language nextLanguage = curCommand.getLanguageOfNextCommand();
-						if (nextLanguage != Language.ABAP) {
-							// unless the non-ABAP section is empty (i.e. token is already ENDEXEC or ENDMETHOD), 
-							// create the current Token again, because we now know that it belongs to a non-ABAP language; 
-							// also, tell the Tokenizer which keyword will end the non-ABAP section
-							String endOfNonAbapSection = curCommand.firstCodeTokenIsKeyword("EXEC") ? "ENDEXEC" : "ENDMETHOD";
-							if (!token.textEquals(endOfNonAbapSection)) {
-								token = tokenizer.changeToNonAbapLanguage(token, nextLanguage, endOfNonAbapSection);
-							}
+					if (curLanguage == Language.ABAP && nextLanguage != Language.ABAP) {
+						// unless the non-ABAP section is empty (i.e. token is already ENDEXEC or ENDMETHOD), 
+						// create the current Token again, because we now know that it belongs to a non-ABAP language; 
+						// also, tell the Tokenizer which keyword will end the non-ABAP section
+						String endOfNonAbapSection = curCommand.firstCodeTokenIsKeyword("EXEC") ? "ENDEXEC" : "ENDMETHOD";
+						if (!token.textEquals(endOfNonAbapSection)) {
+							token = tokenizer.changeToNonAbapLanguage(token, nextLanguage, endOfNonAbapSection);
 						}
 					}
 
@@ -99,6 +114,22 @@ class Parser {
 			throw new ParseException(code, tokenizer.getLineNum(), ex);
 		} catch (RuntimeException ex) {
 			throw new ParseException(code, tokenizer.getLineNum(), ex.getMessage());
+		}
+	}
+	
+	private void finalizeCommand(int sourceTextStart, int sourceTextEnd) throws ParseException, UnexpectedSyntaxException {
+		curCommand.finishBuild(sourceTextStart, sourceTextEnd, lastCommand);
+		if (lastCommand != null) 
+			lastCommand.addNext(curCommand);
+		
+		if (curCommand.isDdlOrDcl()) {
+			try {
+				if (curCommand.splitOutTrailingCommentLines(curCommand, false)) {
+					curCommand = curCommand.getParentCode().lastCommand;
+				}
+			} catch (UnexpectedSyntaxAfterChanges e) {
+				throw new ParseException(curCommand.getParentCode(), curCommand.getSourceLineNumStart(), e.getMessage());
+			}
 		}
 	}
 }

@@ -108,7 +108,10 @@ public enum RuleID  {
    
    // DDL Annotations
    DDL_ANNO_LAYOUT,
-   DDL_ANNO_NESTING;
+   DDL_ANNO_NESTING,
+   
+   // DDL Positions
+   DDL_POSITION_SELECT;
 
 	public static final int SIZE = java.lang.Integer.SIZE;
 

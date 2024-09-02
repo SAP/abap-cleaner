@@ -421,4 +421,27 @@ public class DdlAnnotationLayoutTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testDefineRole() {
+		// ensure that Data Control Language annotations are processed, too 
+		
+		buildSrc("@EndUserText . label : 'Any text'");
+		buildSrc("@MappingRole  : true");
+		buildSrc("");
+		buildSrc("define role I_AnyView {");
+		buildSrc("  grant select on I_AnyView");
+		buildSrc("    where (Field1, Field2) = aspect pfcg_auth(auth_object, mapped_field1, mapped_field2, auth_field1 = 'value');");
+		buildSrc("}");
+
+		buildExp("@EndUserText.label: 'Any text'");
+		buildExp("@MappingRole: true");
+		buildExp("");
+		buildExp("define role I_AnyView {");
+		buildExp("  grant select on I_AnyView");
+		buildExp("    where (Field1, Field2) = aspect pfcg_auth(auth_object, mapped_field1, mapped_field2, auth_field1 = 'value');");
+		buildExp("}");
+
+		testRule();
+	}
 }

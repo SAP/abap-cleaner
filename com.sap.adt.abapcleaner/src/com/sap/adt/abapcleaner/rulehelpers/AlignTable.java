@@ -173,8 +173,8 @@ public class AlignTable {
 			}
 		}
 
-		boolean isDdl = (getFirstToken() != null && getFirstToken().getParentCommand().isDdl());
-		int minSpacesLeft = isDdl ? 0 : 1;
+		boolean isDdlOrDcl = (getFirstToken() != null && getFirstToken().getParentCommand().isDdlOrDcl());
+		int minSpacesLeft = isDdlOrDcl ? 0 : 1;
 		boolean isFirstLine = true;
 		for (AlignLine line : lines) {
 			int lineBreaks = isFirstLine ? firstLineBreaks : 1;
