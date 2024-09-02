@@ -11,8 +11,8 @@ public class DdlTest {
 	void testParameterNull() {
 		assertFalse(DDL.isNumeric(null, true));
 		assertFalse(DDL.isComparisonOperator(null));
-		assertFalse(DDL.isKeyword(null));
-		assertFalse(DDL.isBuiltInFunction(null));
+		assertFalse(DDL.isDdlKeyword(null));
+		assertFalse(DDL.isBuiltInDdlFunction(null));
 		assertFalse(DDL.isCharAllowedForIdentifier(null, 0, false));
 		assertFalse(DDL.isCharAllowedForIdentifier("abc", 3, false)); // pos too high
 	}
@@ -52,42 +52,42 @@ public class DdlTest {
 
 	@Test
 	void testIsKeyword() {
-		assertTrue(DDL.isKeyword("define"));
-		assertTrue(DDL.isKeyword("DEFINE"));
-		assertTrue(DDL.isKeyword("Define"));
-		assertTrue(DDL.isKeyword("DeFiNe"));
+		assertTrue(DDL.isDdlKeyword("define"));
+		assertTrue(DDL.isDdlKeyword("DEFINE"));
+		assertTrue(DDL.isDdlKeyword("Define"));
+		assertTrue(DDL.isDdlKeyword("DeFiNe"));
 		
-		assertTrue(DDL.isKeyword("association"));
-		assertTrue(DDL.isKeyword("projection"));
-		assertTrue(DDL.isKeyword("ABSTRACT"));
-		assertTrue(DDL.isKeyword("Returns"));
-		assertTrue(DDL.isKeyword("descending"));
-		assertTrue(DDL.isKeyword("INCLUDE"));
+		assertTrue(DDL.isDdlKeyword("association"));
+		assertTrue(DDL.isDdlKeyword("projection"));
+		assertTrue(DDL.isDdlKeyword("ABSTRACT"));
+		assertTrue(DDL.isDdlKeyword("Returns"));
+		assertTrue(DDL.isDdlKeyword("descending"));
+		assertTrue(DDL.isDdlKeyword("INCLUDE"));
 
-		assertFalse(DDL.isKeyword("MOVE-CORRESPONDING"));
-		assertFalse(DDL.isKeyword("report"));
-		assertFalse(DDL.isKeyword("Class"));
+		assertFalse(DDL.isDdlKeyword("MOVE-CORRESPONDING"));
+		assertFalse(DDL.isDdlKeyword("report"));
+		assertFalse(DDL.isDdlKeyword("Class"));
 	}
 
 	@Test
 	void testIsBuiltInFunction() {
-		assertTrue(DDL.isBuiltInFunction("coalesce"));
-		assertTrue(DDL.isBuiltInFunction("COALESCE"));
-		assertTrue(DDL.isBuiltInFunction("Coalesce"));
-		assertTrue(DDL.isBuiltInFunction("cOaLesCe"));
+		assertTrue(DDL.isBuiltInDdlFunction("coalesce"));
+		assertTrue(DDL.isBuiltInDdlFunction("COALESCE"));
+		assertTrue(DDL.isBuiltInDdlFunction("Coalesce"));
+		assertTrue(DDL.isBuiltInDdlFunction("cOaLesCe"));
 		
-		assertTrue(DDL.isBuiltInFunction("concat"));
-		assertTrue(DDL.isBuiltInFunction("curr_to_decfloat_amount"));
-		assertTrue(DDL.isBuiltInFunction("dats_days_between"));
-		assertTrue(DDL.isBuiltInFunction("DIVISION"));
-		assertTrue(DDL.isBuiltInFunction("Left"));
-		assertTrue(DDL.isBuiltInFunction("RiGhT"));
-		assertTrue(DDL.isBuiltInFunction("SUBSTRING"));
-		assertTrue(DDL.isBuiltInFunction("fiscal_calendar_shift"));
+		assertTrue(DDL.isBuiltInDdlFunction("concat"));
+		assertTrue(DDL.isBuiltInDdlFunction("curr_to_decfloat_amount"));
+		assertTrue(DDL.isBuiltInDdlFunction("dats_days_between"));
+		assertTrue(DDL.isBuiltInDdlFunction("DIVISION"));
+		assertTrue(DDL.isBuiltInDdlFunction("Left"));
+		assertTrue(DDL.isBuiltInDdlFunction("RiGhT"));
+		assertTrue(DDL.isBuiltInDdlFunction("SUBSTRING"));
+		assertTrue(DDL.isBuiltInDdlFunction("fiscal_calendar_shift"));
 
-		assertFalse(DDL.isBuiltInFunction("lines"));
-		assertFalse(DDL.isBuiltInFunction("XSDBOOL"));
-		assertFalse(DDL.isBuiltInFunction("Count_Any_Not_Of"));
+		assertFalse(DDL.isBuiltInDdlFunction("lines"));
+		assertFalse(DDL.isBuiltInDdlFunction("XSDBOOL"));
+		assertFalse(DDL.isBuiltInDdlFunction("Count_Any_Not_Of"));
 	}
 	
 	@Test
@@ -165,19 +165,19 @@ public class DdlTest {
 		assertFalse(DDL.isCharAllowedForIdentifier("@-", 1, false));
 	}
 	
-	private void assertKnownCollocation(String keywordSequence, String parentFunction) {
+	private void assertKnownCollocation(String keywordSequence, String parentFunction, Language language) {
 		ArrayList<String> keywords = new ArrayList<String>();
-		boolean assertTrue = false;
-		boolean assertFalse = false;
+		boolean expTrue = false;
+		boolean expFalse = false;
 		int mainIndex = -1;
 		int index = 0;
 		for (String keyword : StringUtil.split(keywordSequence, ' ', false)) {
 			if (keyword.startsWith("+")) {
-				assertTrue = true;
+				expTrue = true;
 				mainIndex = index;
 				keywords.add(keyword.substring(1));
 			} else if (keyword.startsWith("-")) {
-				assertFalse = true;
+				expFalse = true;
 				mainIndex = index;
 				keywords.add(keyword.substring(1));
 			} else {
@@ -185,31 +185,27 @@ public class DdlTest {
 			}
 			++index;
 		}
-		if (assertTrue == assertFalse) 
+		if (expTrue == expFalse) 
 			fail(); // the supplied keywordSequence must contain exactly one "+" OR exactly one "-"
 		
-		if (assertTrue) {
-			assertTrue(DDL.isKnownCollocation(keywords, mainIndex, parentFunction));
-		} else {
-			assertFalse(DDL.isKnownCollocation(keywords, mainIndex, parentFunction));
-		}
+		assertEquals(expTrue, DDL.isKnownCollocation(keywords, mainIndex, parentFunction, language));
 	}
 
 	@Test
 	void testIsKnownCollocation() {
 		// known collocations
-		assertKnownCollocation("as +select from", null);
-		assertKnownCollocation("root custom +entity", null);
-		assertKnownCollocation("as parent +child hierarchy", null);
-		assertKnownCollocation("+min (", null);
-		assertKnownCollocation("multiple +parents allowed", "hierarchy");
+		assertKnownCollocation("as +select from", null, Language.DDL);
+		assertKnownCollocation("root custom +entity", null, Language.DDL);
+		assertKnownCollocation("as parent +child hierarchy", null, Language.DDL);
+		assertKnownCollocation("+min (", null, Language.DDL);
+		assertKnownCollocation("multiple +parents allowed", "hierarchy", Language.DDL);
 
 		// unknown collocations
-		assertKnownCollocation("-multiple parents allowed", null); // parent function must be "hierarchy"
-		assertKnownCollocation("-multiple parents allowed", "other_function"); // parent function unknown
-		assertKnownCollocation("provider -contract unknown_keyword", null); // unknown third keyword
-		assertKnownCollocation("provider -contract", null); // third keyword missing
-		assertKnownCollocation("-root", null); // "root" never appears stand-alone
-		assertKnownCollocation("by -method", null); // "implemented" missing
+		assertKnownCollocation("-multiple parents allowed", null, Language.DDL); // parent function must be "hierarchy"
+		assertKnownCollocation("-multiple parents allowed", "other_function", Language.DDL); // parent function unknown
+		assertKnownCollocation("provider -contract unknown_keyword", null, Language.DDL); // unknown third keyword
+		assertKnownCollocation("provider -contract", null, Language.DDL); // third keyword missing
+		assertKnownCollocation("-root", null, Language.DDL); // "root" never appears stand-alone
+		assertKnownCollocation("by -method", null, Language.DDL); // "implemented" missing
 	}
 }

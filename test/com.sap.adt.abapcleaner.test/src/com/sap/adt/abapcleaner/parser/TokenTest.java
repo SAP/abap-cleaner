@@ -1263,9 +1263,9 @@ public class TokenTest {
 
 	@Test
 	void testGetLastTokenOfDdlLogicalExpression() {
-		assertLastTokenOfLogExpr("define view entity I_Any as select from dtab as d1 join dtab2 as d2 on d1.any = d2.any and d1.other = d2.other { Any }", "on", "{");
+		assertLastTokenOfLogExpr("define view entity I_Any as select from dtab as d1 join dtab2 as d2 on d1.any = d2.any and d1.other = d2.other { Any }", "on", null);
 		assertLastTokenOfLogExpr("define view entity I_Any as select from dtab as d1 association to dtab2 as d2 on d1.any = d2.any and d1.other = d2.other with default filter d2.third = 1 { Any }", "on", "with");
-		assertLastTokenOfLogExpr("define view entity I_Any as select from dtab as d1 association to dtab2 as d2 on d1.any = d2.any and d1.other = d2.other with default filter d2.third = 1 association to dtab3 as d3 on d1.any = d3.any { Any }", "filter", "association");
+		assertLastTokenOfLogExpr("define view entity I_Any as select from dtab as d1 association to dtab2 as d2 on d1.any = d2.any and d1.other = d2.other with default filter d2.third = 1 association to dtab3 as d3 on d1.any = d3.any { Any }", "filter", null);
 
 		assertLastTokenOfLogExpr("define view entity I_Any as select from dtab { Any, case when fld = 1 and other_fld is initial then 0 else 1 end as Other }", "when", "then");
 		assertLastTokenOfLogExpr("define view entity I_Any as select from dtab { Any, case when fld = case when other_fld = 'a' then 1 else 2 end then 0 else 1 end as Other }", "when", "then");
@@ -2042,5 +2042,50 @@ public class TokenTest {
 		assertEquals(TokenType.LITERAL, findToken("1").type);
 		assertEquals(TokenType.OTHER_OP, findToken("..").type);
 		assertEquals(TokenType.OTHER_OP, findToken("*").type);
+	}
+
+	@Test 
+	void testIsCommentedOutDdlAnnotation() {
+		Command command = buildCommand("@Anno1: 'value'" + SEP + "// @Anno2.subAnno: { subSubAnno: 'value ' }" + SEP + "// Anno3");
+
+		assertFalse(command.firstToken.isCommentedOutDdlAnnotation());
+		command = command.getNext();
+		assertTrue(command.firstToken.isCommentedOutDdlAnnotation());
+		command = command.getNext();
+		assertFalse(command.firstToken.isCommentedOutDdlAnnotation());
+	}
+
+	@Test 
+	void testMultiLineDdlComment() {
+		buildCommand("define view //comment" + SEP + "I_Any as select from dtab" + SEP + "/*comment1" + SEP + "comment2" + SEP + " comment3*/" + SEP + "{ Any }");
+
+		Token lineEndComment = findToken("//comment");
+		Token comment1 = findToken("/*comment1");
+		Token comment2 = findToken("comment2");
+		Token comment3 = findToken("comment3*/");
+
+		assertFalse(lineEndComment.startsMultiLineDdlComment());
+		assertTrue(comment1.startsMultiLineDdlComment());
+		assertFalse(comment2.startsMultiLineDdlComment());
+		assertFalse(comment3.startsMultiLineDdlComment());
+		
+		assertFalse(lineEndComment.endsMultiLineDdlComment());
+		assertFalse(comment1.endsMultiLineDdlComment());
+		assertFalse(comment2.endsMultiLineDdlComment());
+		assertTrue(comment3.endsMultiLineDdlComment());
+	}
+
+	@Test 
+	void testNoMultiLineDdlComment() {
+		buildCommand("REPORT any_report. \"comment1" + SEP + "*comment2");
+
+		Token lineEndComment = findToken("\"comment1");
+		Token asteriskComment = findToken("*comment2");
+
+		assertFalse(lineEndComment.startsMultiLineDdlComment());
+		assertFalse(asteriskComment.startsMultiLineDdlComment());
+		
+		assertFalse(lineEndComment.endsMultiLineDdlComment());
+		assertFalse(asteriskComment.endsMultiLineDdlComment());
 	}
 }

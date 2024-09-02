@@ -49,6 +49,9 @@ public class RuleGroup {
 			case DDL_ANNOTATIONS:
 				return "DDL Annotations";
 
+			case DDL_POSITION:
+				return "DDL Line Breaks and Indent";
+
 			default:
 				throw new IndexOutOfBoundsException("Unknown RuleGroup!");
 		}

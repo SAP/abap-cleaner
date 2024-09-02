@@ -26,7 +26,7 @@ public class Tokenizer {
 	private final static char[] abapTokenEndChars = new char[] { ' ', '\u00A0', '\r', '\n', ABAP.COMMA_SIGN, ABAP.DOT_SIGN, ABAP.QUOT_MARK, ABAP.QUOT_MARK2, ABAP.COMMENT_SIGN, ABAP.COLON_SIGN, '(', ')' };
 	private final static String abapTokenEndCharsToIncludeInToken = "("; 
 	private final static char[] ddlTokenEndChars = new char[] { ' ', '\u00A0', '\r', '\n', DDL.COMMENT_SIGN, DDL.COLON_SIGN, DDL.QUOT_MARK, DDL.COMMA_SIGN, DDL.SEMICOLON_SIGN, DDL.PARENS_OPEN, DDL.PARENS_CLOSE, DDL.BRACE_OPEN, DDL.BRACE_CLOSE, DDL.BRACKET_OPEN, DDL.BRACKET_CLOSE, '<', '>', '=', '+', '-', '*', '/' };
-	private final static String ddlComparisonOpChars = "<>=";
+	private final static String ddlComparisonOpChars = "<>!=";
 	private final static String ddlOtherOpChars = "+=*/";
 	private final static char[] nonAbapTokenEndChars = new char[] { '\r', '\n', ABAP.QUOT_MARK, ABAP.COMMENT_SIGN };
 	
@@ -87,11 +87,12 @@ public class Tokenizer {
 		}
 		
 		// distinguish between (CDS) DDL and ABAP code
-		if (StringUtil.containsAnyAt(text, pos, DDL.ANNOTATION_SIGN_STRING, DDL.LINE_END_COMMENT, DDL.LINE_END_MINUS_COMMENT, DDL.ASTERISK_COMMENT_START) 
+		// cp. Command.getDdlOrDclEntityNameToken()
+		if (StringUtil.containsAnyAt(text, pos, DDL.ANNOTATION_SIGN_STRING, DDL.LINE_END_COMMENT, DDL.LINE_END_MINUS_COMMENT, DDL.ASTERISK_COMMENT_START)
 			|| StringUtil.containsAtIgnoringCase(text, pos, "[define]", "[root]", "abstract", "entity")
 			|| StringUtil.containsAtIgnoringCase(text, pos, "[define]", "[root]", "custom", "entity")
 			|| StringUtil.containsAtIgnoringCase(text, pos, "[define]", "[root]", "view", "[entity]")
-			|| StringUtil.containsAtIgnoringCase(text, pos, "[define]", "table")
+			|| StringUtil.containsAtIgnoringCase(text, pos, "[define]", "table", "function")
 			|| StringUtil.containsAtIgnoringCase(text, pos, "[define]", "hierarchy")
 			|| StringUtil.containsAtIgnoringCase(text, pos, "define", "transient", "view")
 
@@ -104,7 +105,12 @@ public class Tokenizer {
 			|| StringUtil.containsAtIgnoringCase(text, pos, "define", "structure")
 			|| StringUtil.containsAtIgnoringCase(text, pos, "define", "table")) {
 
-			return Language.DDL;
+			return Language.DDL; // may be corrected to .DCL later if Parser.parse() finds "[DEFINE] ROLE" or "[DEFINE] ACCESSPOLICY" after initial annotations or comments
+
+		} else if (StringUtil.containsAtIgnoringCase(text, pos, "[define]", "role")
+				  || StringUtil.containsAtIgnoringCase(text, pos, "[define]", "accesspolicy")) {
+			
+			return Language.DCL;
 
 		} else {
 			return Language.ABAP;
@@ -153,7 +159,7 @@ public class Tokenizer {
 		if (readPos == text.length()) {
 			tokenText = "";
 
-		} else if (curLanguage == Language.DDL) {
+		} else if (curLanguage == Language.DDL || curLanguage == Language.DCL) {
 			if (isInMultiLineComment || curChar == DDL.COMMENT_SIGN && StringUtil.containsAt(text, readPos, DDL.ASTERISK_COMMENT_START)) {
 				// asterisk comment /*...*/: read up to */ or the next line break
 				tokenText = readAsteriskComment();
@@ -223,8 +229,9 @@ public class Tokenizer {
 			// non-ABAP tokenization: the Token constructor will regard everything except comments as TokenType.NON_ABAP, 
 			// and these Commands will always remain unchanged (see Command.isInCleanupRange()).
 			tokenText = readNonAbap();
-			if (AbapCult.stringEquals(tokenText, abapKeywordEndingNonAbapSection, true))
+			if (AbapCult.stringEquals(tokenText, abapKeywordEndingNonAbapSection, true)) {
 				curLanguage = Language.ABAP;
+			}
 		}
 		
 		if (tokenText != null) {
@@ -253,6 +260,10 @@ public class Tokenizer {
 		this.abapKeywordEndingNonAbapSection = abapKeywordEndingNonAbapSection.toUpperCase();
 		
 		return Token.create(token.lineBreaks, token.spacesLeft, token.text, token.sourceLineNum, curLanguage);
+	}
+	
+	void setLanguage(Language newLanguage) {
+		this.curLanguage = newLanguage;
 	}
 	
 	private String readLiteralUntil(char delimiterChar, boolean includeTextSymbolID) throws UnexpectedSyntaxException {

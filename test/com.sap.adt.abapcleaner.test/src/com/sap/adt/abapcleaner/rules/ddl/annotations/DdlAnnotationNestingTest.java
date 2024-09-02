@@ -558,4 +558,49 @@ public class DdlAnnotationNestingTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testCommentAboveScope() {
+		// ensure that rearranged annotations are not moved before the comment above the annotation scope
+		
+		buildSrc("// entity comment");
+		buildSrc("@ObjectModel.modelingPattern: #ANALYTICAL_QUERY");
+		buildSrc("@ObjectModel.delegatedAction: [ { enabled: true } ]");
+		buildSrc("");
+		buildSrc("define view entity C_AnyEntity");
+		buildSrc("  as select from I_OtherEntity");
+		buildSrc("");
+		buildSrc("{");
+		buildSrc("      // element comment 1");
+		buildSrc("      @Search.defaultSearchElement:true");
+		buildSrc("      @Consumption.filter.mandatory: false");
+		buildSrc("  key AnyKeyField,");
+		buildSrc("");
+		buildSrc("      // element comment 2");
+		buildSrc("      @ObjectModel.text.element: [ 'SemanticObjectName' ]");
+		buildSrc("      @Consumption.semanticObject: 'AnySemanticObject'");
+		buildSrc("      AnyNonKeyField");
+		buildSrc("}");
+
+		buildExp("// entity comment");
+		buildExp("@ObjectModel.delegatedAction: [ { enabled: true } ]");
+		buildExp("@ObjectModel.modelingPattern: #ANALYTICAL_QUERY");
+		buildExp("");
+		buildExp("define view entity C_AnyEntity");
+		buildExp("  as select from I_OtherEntity");
+		buildExp("");
+		buildExp("{");
+		buildExp("      // element comment 1");
+		buildExp("      @Consumption.filter.mandatory: false");
+		buildExp("      @Search.defaultSearchElement: true");
+		buildExp("  key AnyKeyField,");
+		buildExp("");
+		buildExp("      // element comment 2");
+		buildExp("      @Consumption.semanticObject: 'AnySemanticObject'");
+		buildExp("      @ObjectModel.text.element: [ 'SemanticObjectName' ]");
+		buildExp("      AnyNonKeyField");
+		buildExp("}");
+
+		testRule();
+	}
 }

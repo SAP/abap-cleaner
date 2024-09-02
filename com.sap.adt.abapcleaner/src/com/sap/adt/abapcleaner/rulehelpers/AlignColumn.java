@@ -111,15 +111,19 @@ public class AlignColumn {
 	}
 
 	public final boolean joinIntoPreviousColumns(boolean condenseSpaceBetweenCells) throws UnexpectedSyntaxException {
-		return joinIntoPreviousColumns(condenseSpaceBetweenCells, false);
+		return joinIntoPreviousColumns(condenseSpaceBetweenCells, 1, false);
 	}
 	
+	public final boolean joinIntoPreviousColumns(boolean condenseSpaceBetweenCells, boolean removeLineBreaksBetweenCells) throws UnexpectedSyntaxException {
+		return joinIntoPreviousColumns(condenseSpaceBetweenCells, 1, removeLineBreaksBetweenCells);
+	}
+
 	/**
 	 * Appends all Tokens and Terms in this column to those of the respective previous occupied column
 	 * (which means that no separate horizontal space will be reserved for them); 
 	 * returns true if whitespace was changed
 	 */
-	public final boolean joinIntoPreviousColumns(boolean condenseSpaceBetweenCells, boolean removeLineBreaksBetweenCells) throws UnexpectedSyntaxException {
+	public final boolean joinIntoPreviousColumns(boolean condenseSpaceBetweenCells, int condensedSpacesLeft, boolean removeLineBreaksBetweenCells) throws UnexpectedSyntaxException {
 		if (index == 0)
 			throw new IllegalStateException("This method cannot be called on the first column!");
 
@@ -139,7 +143,7 @@ public class AlignColumn {
 					if (condenseSpaceBetweenCells && (removeLineBreaksBetweenCells || !firstInCell.isFirstTokenInLine())) {
 						Token prevToken = firstInCell.getPrev();
 						if (prevToken == null || !prevToken.isComment()) {
-							if (cell.setWhitespace(0, 1, true, false, null)) {
+							if (cell.setWhitespace(0, condensedSpacesLeft, true, false, null)) {
 								changed = true;
 							}
 						} else {

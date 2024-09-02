@@ -1,13 +1,14 @@
 package com.sap.adt.abapcleaner.rulehelpers;
 
 import com.sap.adt.abapcleaner.base.DDL;
+import com.sap.adt.abapcleaner.base.Language;
 import com.sap.adt.abapcleaner.parser.Command;
 import com.sap.adt.abapcleaner.parser.Token;
 import com.sap.adt.abapcleaner.programbase.ParseException;
 import com.sap.adt.abapcleaner.programbase.UnexpectedSyntaxException;
 
 public abstract class DdlAnnotationWriter {
-	abstract protected void addToken(int lineBreaks, int spacesLeft, String text) throws UnexpectedSyntaxException;
+	abstract protected void addToken(int lineBreaks, int spacesLeft, String text, Language language) throws UnexpectedSyntaxException;
 	abstract protected void addToLastTokenText(String text);
 	protected void endAnnotation(Command originalCommand) { }
 	protected void finishCommandBuild() throws ParseException { }
@@ -88,7 +89,7 @@ public abstract class DdlAnnotationWriter {
 			addToLastTokenText(text);
 			writtenIndexInLine += text.length();
 		} else {
-			addToken(nextLineBreaks, nextSpacesLeft + addSpacesLeft, text);
+			addToken(nextLineBreaks, nextSpacesLeft + addSpacesLeft, text, originalCommand.getLanguage());
 			isInCommand = true;
 			if (nextLineBreaks > 0) 
 				writtenIndexInLine = 0;

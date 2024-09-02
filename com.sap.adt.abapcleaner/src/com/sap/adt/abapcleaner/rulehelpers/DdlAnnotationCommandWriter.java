@@ -25,10 +25,10 @@ public class DdlAnnotationCommandWriter extends DdlAnnotationWriter {
 	}
 	
 	@Override
-	protected void addToken(int lineBreaks, int spacesLeft, String text) throws UnexpectedSyntaxException {
-		Token token = Token.create(lineBreaks, spacesLeft, text, originalValueToken.sourceLineNum, Language.DDL);
+	protected void addToken(int lineBreaks, int spacesLeft, String text, Language language) throws UnexpectedSyntaxException {
+		Token token = Token.create(lineBreaks, spacesLeft, text, originalValueToken.sourceLineNum, language);
 		if (curCommand == null) {
-			curCommand = Command.create(token, originalCommand, Language.DDL);
+			curCommand = Command.create(token, originalCommand, language);
 			curOriginalCommands = new HashSet<>();
 		} else {
 			curCommand.getLastToken().addNext(token);

@@ -85,7 +85,7 @@ public class Command {
 	private int sourceLineNumStart; 
 	/** the 1-based original end line number of this Command, as found in the source code from which this Command was parsed */
 	private int sourceLineNumLast; 
-	private final Language language;
+	private Language language; // may only be modified from .DDL to .DCL while the Command is built 
 	public final Language getLanguage() { return language; }
 	private ChangeControl changeControl;
 
@@ -263,6 +263,10 @@ public class Command {
 	public final boolean isAbap() { return language == Language.ABAP; }
 	
 	public final boolean isDdl() { return language == Language.DDL; }
+	
+	public final boolean isDcl() { return language == Language.DCL; }
+	
+	public final boolean isDdlOrDcl() { return language == Language.DDL || language == Language.DCL; }
 	
 	public final boolean isSqlScript() { return language == Language.SQLSCRIPT; }
 	
@@ -778,12 +782,14 @@ public class Command {
 
 		if (!skipIntegrityTest) {
 			this.testReferentialIntegrity(false);
+			newCommand.testReferentialIntegrity(false);
+			if (newCommand.next != null) {
+				newCommand.next.testReferentialIntegrity(false);
+			}
+			if (parent != null) {
+				parent.testReferentialIntegrity(false);
+			}
 		}
-		newCommand.testReferentialIntegrity(false);
-		if (newCommand.next != null)
-			newCommand.next.testReferentialIntegrity(false);
-		if (parent != null)
-			parent.testReferentialIntegrity(false);
 	}
 
 	/**
@@ -920,7 +926,7 @@ public class Command {
 		if (newToken == null)
 			throw new NullPointerException("newToken");
 
-		if (language == Language.DDL) {
+		if (isDdlOrDcl()) {
 			return canAddToDdl(newToken, prevCommand);
 		}
 		
@@ -972,12 +978,12 @@ public class Command {
 			if (newToken.textEqualsAny(DDL.listElementSeparators))
 				return true;
 			
-			Token lastNonComment = getLastNonCommentToken();
+			Token lastNonCommentToken = getLastNonCommentToken();
 			Token colon = findDdlAnnotationColon();
 			if (colon == null) {
-				if (lastNonComment.textEquals(DDL.ANNOTATION_SIGN_STRING)) {
+				if (lastNonCommentToken.textEquals(DDL.ANNOTATION_SIGN_STRING)) {
 					return true;
-				} else if (lastNonComment.textEndsWith(DDL.DOT_SIGN_STRING)) {
+				} else if (lastNonCommentToken.textEndsWith(DDL.DOT_SIGN_STRING)) {
 					return true;
 				} else if (newToken.textStartsWith(DDL.DOT_SIGN_STRING)) {
 					return true;
@@ -999,7 +1005,7 @@ public class Command {
 			return true;
 		
 		// determine whether we are on top level of the Command hierarchy
-		Token lastNonCommentToken = getLastNonCommentToken();
+		Token lastCodeToken = getLastNonCommentToken();
 		Command prevCommandParent = (prevCommand == null) ? null : prevCommand.getParent();
 		boolean isAtTopLevel = (prevCommand == null 
 				|| prevCommandParent == null && !prevCommand.getOpensLevel() 
@@ -1023,29 +1029,35 @@ public class Command {
 		}
 		
 		// start a new Command for the parameter list
-		if (isAtTopLevel && lastNonCommentToken.isKeyword("PARAMETERS")) {
-			Token lastPrev = lastNonCommentToken.getPrevCodeToken();
+		if (isAtTopLevel && lastCodeToken.isKeyword("PARAMETERS")) {
+			Token lastPrev = lastCodeToken.getPrevCodeToken();
 			if (lastPrev != null && lastPrev.isKeyword("WITH")) {
 				return false;
 			}
 		}
+		
 		// start a new Command for the select list
-		if (isAtTopLevel && lastNonCommentToken.textEquals(DDL.BRACE_OPEN_STRING)) {
+		if (isAtTopLevel && !newToken.isComment() && newToken.textEquals(DDL.BRACE_OPEN_STRING)) {
 			return false;
-		} else if (isAtTopLevel && lastNonCommentToken.textEqualsAny("SELECT", "DISTINCT") && !newToken.isComment() && !newToken.isAnyKeyword("DISTINCT", "FROM")) {
+		} else if (isAtTopLevel && lastCodeToken.textEquals(DDL.BRACE_OPEN_STRING)) {
+			// the "{" that starts the select list is a distinct Command 
+			return false;
+		} else if (isAtTopLevel && lastCodeToken.textEqualsAny("SELECT", "DISTINCT") && !newToken.isComment() && !newToken.isAnyKeyword("DISTINCT", "FROM")) {
 			// first form of DDIC-based views with no braces: 
 			// [DEFINE] [ROOT] VIEW ddic_based_view [name_list] [parameter_list] AS SELECT [DISTINCT] element1, element2, ... FROM data_source ...
 			return false;
 		}
+		
 		// within in the select or parameter list, start a new Command after each comma (or semicolon, e.g. for "define table" and "define structure")
 		// or if the new Token starts with "@<"
 		if (isInSelectListWithBraces || isInSelectListWithoutBraces || isInParameterList) {
-			if (lastNonCommentToken.textEqualsAny(DDL.listElementSeparators) && lastNonCommentToken.getParent() == null) {
+			if (lastCodeToken.textEqualsAny(DDL.listElementSeparators) && lastCodeToken.getParent() == null) {
 				return false;
 			} else if (newToken.textStartsWith(DDL.ANNOTATION_AFTER_LIST_ELEMENT_PREFIX)) {
 				return false;
 			}
 		}
+		
 		// finish the select list or parameter list
 		if (isInSelectListWithBraces && !newToken.isComment() && newToken.textEquals(DDL.BRACE_CLOSE_STRING)) {
 			return false;
@@ -1059,6 +1071,36 @@ public class Command {
 			return false;
 		}
 		
+		// start a new Command for a JOIN or an ASSOCIATION
+		if (isAtTopLevel && newToken.isKeyword()) {
+			Token firstCodeToken = getFirstCodeToken();
+			// a join could either start with INNER, LEFT, RIGHT, CROSS, or directly with the keyword JOIN, or with a cardinality (after implicit INNER):
+			// { [INNER] [cardinality] JOIN | LEFT OUTER [cardinality] JOIN | RIGHT OUTER JOIN | CROSS JOIN } data_source [ON cds_cond]
+			// cardinality -> 
+			//   EXACT ONE TO EXACT ONE | EXACT ONE TO MANY | EXACT ONE TO ONE | MANY TO EXACT ONE | MANY TO MANY | MANY TO ONE |
+			//   ONE TO EXACT ONE | ONE TO MANY | ONE TO ONE | TO ONE | TO EXACT ONE | TO MANY
+			if (firstCodeToken.isAnyKeyword("REDEFINE", "ASSOCIATION")) {
+				// skip this section, particularly to avoid that the keyword "TO" in "ASSOCIATION ... TO target" starts a new Command
+			} else if (newToken.isKeyword("TO") && lastCodeToken.isAnyKeyword("REDIRECTED", "REFERENCE")) {
+				// skip this section to avoid starting a new Command within "REDIRECTED TO" (in projection views) or "REFERENCE TO" (in structures)
+			} else if (newToken.isAnyKeyword("INNER", "LEFT", "RIGHT", "CROSS")) {
+				return false;
+			} else if (newToken.isAnyKeyword("JOIN") && (lastCodeToken == null || !lastCodeToken.isAnyKeyword("INNER", "OUTER", "CROSS", "ONE", "MANY"))) {
+				return false;
+			} else if (newToken.isAnyKeyword("EXACT", "MANY", "ONE", "TO") && (lastCodeToken == null || !lastCodeToken.isAnyKeyword("INNER", "OUTER", "EXACT", "MANY", "ONE", "TO"))) {
+				return false;
+			}
+			// an association either starts with "ASSOCIATION" or "REDEFINE ASSOCIATION" (in projection views):
+			// - ASSOCIATION [cardinality] [TO] target [AS _assoc] ON cds_cond [WITH DEFAULT FILTER cds_cond]
+			// - REDEFINE ASSOCIATION [source.]_ProjAssoc [filter] [AS _RedefinedName] redirection
+			if (newToken.isKeyword("REDEFINE")) {
+				return false;
+			} else if (newToken.isKeyword("ASSOCIATION") && (lastCodeToken == null || !lastCodeToken.isKeyword("REDEFINE"))) {
+				return false;
+			}
+		}
+		
+		// in all other cases, add the new Token to the current Command
 		return true;
 	}
 
@@ -1074,8 +1116,8 @@ public class Command {
 		sourceLineNumLast = lastToken.sourceLineNum;
 		changeControl = parentCode.getChangeControl(sourceTextStart, sourceTextEnd);
 
-		if (language == Language.DDL) {
-			finishBuildDdl(prevCommand);
+		if (isDdlOrDcl()) {
+			finishBuildDdlOrDcl(prevCommand);
 			return;
 		}
 		
@@ -1233,7 +1275,7 @@ public class Command {
 		}
 	}
 
-	private void finishBuildDdl(Command prevCommand) {
+	private void finishBuildDdlOrDcl(Command prevCommand) {
 		Token firstNonComment = getFirstCodeToken();
 		Token lastNonComment = getLastNonCommentToken();
 		
@@ -1327,8 +1369,8 @@ public class Command {
 					Token parentPrev = token.getParent().getPrevCodeSibling();
 					parentKeyword = (parentPrev == null) ? null : parentPrev.getText();
 				}
-				// if the keyword sequence around token is not a known DDL keyword collocation, token must be an identifier
-				if (!DDL.isKnownCollocation(keywordSequence, indexInList, parentKeyword)) {
+				// if the keyword sequence around token is not a known DDL or DCL keyword collocation, token must be an identifier
+				if (!DDL.isKnownCollocation(keywordSequence, indexInList, parentKeyword, language)) {
 					token.type = TokenType.IDENTIFIER;
 				}
 			}
@@ -1620,20 +1662,20 @@ public class Command {
 		return splitOut;
 	}
 
-	public final boolean splitOutTrailingCommentLines(Command originalCommand) throws UnexpectedSyntaxAfterChanges {
+	public final boolean splitOutTrailingCommentLines(Command originalCommand, boolean adjustIndent) throws UnexpectedSyntaxAfterChanges {
 		boolean splitOut = false;
 
 		while (lastToken.isCommentLine() && tokenCount > 1) {
 			Token commentLine = lastToken;
 			commentLine.removeFromCommand(false, true); // skip the integrity test, as it will be performed below
-			Command newCommand = Command.create(commentLine, originalCommand);
+			Command newCommand = Command.create(commentLine, originalCommand, language);
 			try {
 				newCommand.finishBuild(getSourceTextStart(), getSourceTextEnd());
 			} catch (ParseException e) {
 				throw new UnexpectedSyntaxAfterChanges(null, commentLine, "parse error splitting out trailing comment line");
 			}
 			insertNext(newCommand, true); // skip the integrity test for this Command, as there may be more comment lines 
-			if (!newCommand.isAsteriskCommentLine())
+			if (adjustIndent && !newCommand.isAsteriskCommentLine())
 				newCommand.firstToken.spacesLeft = newCommand.getIndent();
 			splitOut = true;
 		}
@@ -1841,7 +1883,7 @@ public class Command {
 		boolean changed = false;
 		Token token = (startToken != null) ? startToken : firstToken;
 		while (token != endToken) {
-			if (token.isFirstTokenInLine() && !token.isAsteriskCommentLine()) {
+			if (token.isFirstTokenInLine() && (isDdlOrDcl() || !token.isAsteriskCommentLine())) {
 				if (token.spacesLeft >= minSpacesLeft) {
 					token.spacesLeft = Math.max(token.spacesLeft + addSpaceCount, 0);
 					changed = true;
@@ -1981,7 +2023,7 @@ public class Command {
 		Token token = firstToken;
 		while (token != null) {
 			check(token.getParentCommand() == this);
-			token.testReferentialIntegrity(testCommentPositions && !isDdl());
+			token.testReferentialIntegrity(testCommentPositions && !isDdlOrDcl());
 			token = token.getNext();
 		}
 	}
@@ -2332,7 +2374,7 @@ public class Command {
 	}
 
 	public final Token getLastNonCommentToken() {
-		// DDL can have multiple comment Tokens at the end (esp. while the Command is built)
+		// DDL can have multiple comment Tokens at the end while the Command is being built
 		Token token = lastToken;
 		while (token != null && token.isComment())
 			token = token.getPrev();
@@ -3531,7 +3573,7 @@ public class Command {
 		// this may happen if the first/last line of the Command was deleted or commented out, and the adjacent line(s) already were comment lines
 		if (splitOutLeadingCommentLines(originalCommand))
 			this.originalCommand = originalCommand;
-		if (splitOutTrailingCommentLines(originalCommand))
+		if (splitOutTrailingCommentLines(originalCommand, true))
 			this.originalCommand = originalCommand;
 
 		testReferentialIntegrity(true, true);
@@ -3570,7 +3612,7 @@ public class Command {
 	}
 
 	public boolean isDdlAnnotation() { 
-		if (!isDdl()) 
+		if (!isDdlOrDcl()) 
 			return false;
 		Token firstCode = getFirstCodeToken();
 		return firstCode != null && firstCode.textStartsWith(DDL.ANNOTATION_SIGN_STRING); 
@@ -3675,14 +3717,58 @@ public class Command {
 	}
 
 	public boolean isCommentedOutDdlAnnotation() { 
-		if (isDdl() && isCommentLine() && firstToken.textStartsWithAny(DDL.LINE_END_COMMENT, DDL.LINE_END_MINUS_COMMENT)) {
-			String text = firstToken.text.substring(DDL.LINE_END_COMMENT.length()).trim();
-			return text.startsWith(DDL.ANNOTATION_SIGN_STRING); 
-		} else {
-			return false;
-		}
+		return isDdlOrDcl() && isCommentLine() && firstToken.isCommentedOutDdlAnnotation();
+	}
+	
+	public boolean startsMultiLineDdlComment() {
+		return isDdlOrDcl() && isCommentLine() && firstToken.textStartsWith(DDL.ASTERISK_COMMENT_START) && !endsMultiLineDdlComment();
 	}
 
+	public boolean endsMultiLineDdlComment() {
+		return isDdlOrDcl() && isCommentLine() && firstToken.getText().indexOf(DDL.ASTERISK_COMMENT_END) >= 0;
+	}
+
+	public Token getDdlOrDclEntityNameToken() {
+		if (!isDdlOrDcl() || parent != null)
+			return null;
+		Token start = getFirstCodeToken();
+		if (start == null || !start.isKeyword())
+			return null;
+		
+		Token identifier = null;
+		if (identifier == null) 
+			start.getLastTokenOnSiblings(true, TokenSearch.makeOptional("DEFINE"), TokenSearch.makeOptional("ROOT"), "ASTRACT|CUSTOM", "ENTITY", TokenSearch.ANY_IDENTIFIER);
+		if (identifier == null) 
+			identifier = start.getLastTokenOnSiblings(true, TokenSearch.makeOptional("DEFINE"), TokenSearch.makeOptional("ROOT"), "VIEW", TokenSearch.makeOptional("ENTITY"), TokenSearch.ANY_IDENTIFIER);
+		if (identifier == null) 
+			identifier = start.getLastTokenOnSiblings(true, TokenSearch.makeOptional("DEFINE"), "TABLE", "FUNCTION", TokenSearch.ANY_IDENTIFIER);
+		if (identifier == null) 
+			identifier = start.getLastTokenOnSiblings(true, TokenSearch.makeOptional("DEFINE"), "HIERARCHY", TokenSearch.ANY_IDENTIFIER);
+		if (identifier == null) 
+			identifier = start.getLastTokenOnSiblings(true, "DEFINE", "TRANSIENT", "VIEW", TokenSearch.ANY_IDENTIFIER);
+		if (identifier == null) 
+			identifier = start.getLastTokenOnSiblings(true, "DEFINE", "TRANSIENT", "VIEW", TokenSearch.ANY_IDENTIFIER);
+
+		// extension
+		if (identifier == null) 
+			identifier = start.getLastTokenOnSiblings(true, "EXTEND", "ABSTRACT|CUSTOM", "VIEW", TokenSearch.ANY_IDENTIFIER);
+		if (identifier == null) 
+			identifier = start.getLastTokenOnSiblings(true, "EXTEND", "VIEW", TokenSearch.makeOptional("ENTITY"), TokenSearch.ANY_IDENTIFIER);
+
+		// ABAP Dictionary Objects in ADT
+		if (identifier == null) 
+			identifier = start.getLastTokenOnSiblings(true, "DEFINE", "STRUCTURE|TABLE", TokenSearch.ANY_IDENTIFIER);
+
+		// Data Control Language (DCL)
+		if (identifier == null) 
+			identifier = start.getLastTokenOnSiblings(true, TokenSearch.makeOptional("DEFINE"), "ROLE|ACCESSPOLICY", TokenSearch.ANY_IDENTIFIER);
+
+		return identifier;
+	}
+	
+	void setLanguage(Language newLanguage) {
+		this.language = newLanguage;
+	}
 	/** Returns true if the Command matches a hard-coded pattern or condition.
 	 * This method can be used during development to search for examples in all sample code files. */
 	public final boolean matchesPattern() {

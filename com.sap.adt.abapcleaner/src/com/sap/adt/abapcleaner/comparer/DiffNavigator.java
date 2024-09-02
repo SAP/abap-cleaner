@@ -139,7 +139,7 @@ public class DiffNavigator {
 		int sourceLineOfSelStart = startCommand.getSourceLineNumStart();
 		int sourceLineOfSelLast = lastCommand.getSourceLineNumLast();
 
-		if (code.isDdl()) {
+		if (code.isDdlOrDcl()) {
 			return reprocessAll(profile, releaseRestriction, sourceName, sourceLineOfSelStart, sourceLineOfSelLast);
 		}
 

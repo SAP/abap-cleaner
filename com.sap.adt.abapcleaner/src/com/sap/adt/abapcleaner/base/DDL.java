@@ -98,10 +98,22 @@ public final class DDL {
    		"root view", "root view entity", "select distinct from", "select from", "sum (", "table function", "then", "to", "to exact one", "to many", "to one", "union", "union all", "union all select", "union select", "view", "view entity", 
    		"virtual", "when", "where", "with", "with default filter", "with federated data", "with foreign key", "with parameters", "with suffix", "with value help" });
 
-   private final static HashSet<String> builtInFunctions = initializeHashSet(new String[] { 
+   /* all known DCL keywords; each keyword is mapped to all known DCL keyword collocations in which it can appear 
+    * (including single-keyword collocations, if the keyword may appear stand-alone) */
+   private final static HashMap<String, ArrayList<Collocation>> dclKeywords = initializeKeywords(new String[] { 
+   		"accesspolicy", "all", "and", "as projection on", "as select from", "aspect", "between", "bypass when", "combination mode and", "combination mode or", "conditions on any", "constraint id", "default false", "default true", 
+   		"define accesspolicy", "define aspect", "define pfcg_mapping", "define role", "element", "else", "entity", "escape", "exists", "fallback association", "false", "field", "filter by", "for grant select on", "grant select on", "if", 
+   		"if all conditions void then false", "if all conditions void then true", "if all conditions void then void", "in scenario", "including parameters", "inherit", "inheriting conditions from", "is initial", "is initial or null", 
+   		"is not initial", "is not null", "is null", "like", "not", "not between", "not like", "or", "parameters with", "pfcg_filter", "pfcg_filter object", "pfcg_mapping", "prefix with", "redefinition", "replacing", "role", "root with", 
+   		"super", "switchable", "then", "true", "value", "void", "where", "with", "with false", "with filter elements", "with optional elements", "with true", "with user element", "with void" });
+
+   private final static HashSet<String> builtInDdlFunctions = initializeHashSet(new String[] { 
    		"abap_system_timezone", "abap_user_timezone", "abs", "bintohex", "ceil", "coalesce", "concat", "concat_with_space", "currency_conversion", "curr_to_decfloat_amount", "datn_add_days", "datn_add_months", "datn_days_between", "dats_add_days", "dats_add_months", "dats_days_between", "dats_from_datn", "dats_is_valid", "dats_tims_to_tstmp", "dats_to_datn", "div", "division", "floor", "fltp_to_dec", "get_numeric_value", "hextobin", "instr", "left", "length", "lower", "lpad", "ltrim", "mod", "replace", "replace_regexpr", "replace_regexpr", "right", "round", "rpad", "rtrim", "substring", "tims_from_timn", "tims_is_valid", "tims_to_timn", "tstmpl_from_utcl", "tstmpl_to_utcl", "tstmp_add_seconds", "tstmp_current_utctimestamp", "tstmp_is_valid", "tstmp_seconds_between", "tstmp_to_dats", "tstmp_to_dst", "tstmp_to_tims", "unit_conversion", "upper", "utcl_add_seconds", "utcl_current", "utcl_seconds_between",
    		// SAP-delivered analytical scalar functions
    		"calendar_operation", "calendar_shift", "column_total", "current_total", "deviation_ratio", "exponential", "fiscal_calendar_operation", "fiscal_calendar_shift", "get_cell_reference_value", "grand_total", "hry_node_sign_value", "ln", "log", "power", "ratio_of", "row_total", "sqrt" }); 
+
+   private final static HashSet<String> builtInDclFunctions = initializeHashSet(new String[] {
+   		"context_node_exists", "optional_element_exists", "sacf_check_in_use", "switch_runtime_state", "toggle_runtime_state" }); 
 
    public final static String[] typedLiterals = new String[] { "abap.char", "abap.clnt", "abap.cuky", "abap.curr", "abap.d16n", "abap.d34n", "abap.datn", "abap.dats", "abap.dec", "abap.decfloat16", "abap.decfloat34", "abap.fltp", "abap.int1", "abap.int2", "abap.int4", "abap.int8", "abap.lang", "abap.numc", "abap.quan", "abap.raw", "abap.rawstring", "abap.rstr", "abap.sstring", "abap.string", "abap.timn", "abap.tims", "abap.unit", "abap.utcl", "abap.utclong" };
 
@@ -410,7 +422,7 @@ public final class DDL {
 		}
 	}
 
-	public static boolean isKeyword(String text) {
+	public static boolean isDdlKeyword(String text) {
 		if (StringUtil.isNullOrEmpty(text)) {
 			return false;
 		} else {
@@ -418,11 +430,27 @@ public final class DDL {
 		}
 	}
 
-	public static boolean isBuiltInFunction(String text) {
+	public static boolean isDclKeyword(String text) {
 		if (StringUtil.isNullOrEmpty(text)) {
 			return false;
 		} else {
-			return builtInFunctions.contains(getDdlKeywordKey(text));
+			return dclKeywords.containsKey(getDdlKeywordKey(text));
+		}
+	}
+
+	public static boolean isBuiltInDdlFunction(String text) {
+		if (StringUtil.isNullOrEmpty(text)) {
+			return false;
+		} else {
+			return builtInDdlFunctions.contains(getDdlKeywordKey(text));
+		}
+	}
+
+	public static boolean isBuiltInDclFunction(String text) {
+		if (StringUtil.isNullOrEmpty(text)) {
+			return false;
+		} else {
+			return builtInDclFunctions.contains(getDdlKeywordKey(text));
 		}
 	}
 
@@ -471,11 +499,11 @@ public final class DDL {
 	 * e.g. parentFunction = "HIERARCHY" for the collocation "CHILD TO PARENT ASSOCIATION" inside of "PARENT CHILD HIERARCHY( ... )"
 	 * @return
 	 */
-	public static boolean isKnownCollocation(ArrayList<String> keywordSequence, int mainIndex, String parentFunction) {
+	public static boolean isKnownCollocation(ArrayList<String> keywordSequence, int mainIndex, String parentFunction, Language language) {
 		String[] actSequence = new String[keywordSequence.size()];
 		
 		String mainKeyword = getDdlKeywordKey(keywordSequence.get(mainIndex));
-		ArrayList<Collocation> collocations = ddlKeywords.get(mainKeyword);
+		ArrayList<Collocation> collocations = (language == Language.DDL) ? ddlKeywords.get(mainKeyword) : dclKeywords.get(mainKeyword);
 		
 		// preprocess the keyword sequence and the parent with getDdlKeywordKey() 
 		int index = 0;

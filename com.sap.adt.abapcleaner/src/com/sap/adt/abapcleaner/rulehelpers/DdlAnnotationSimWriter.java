@@ -1,5 +1,6 @@
 package com.sap.adt.abapcleaner.rulehelpers;
 
+import com.sap.adt.abapcleaner.base.Language;
 import com.sap.adt.abapcleaner.programbase.UnexpectedSyntaxException;
 
 /** simulates writing of DDL annotations for the purpose of retrieving layout data, 
@@ -11,7 +12,7 @@ public class DdlAnnotationSimWriter extends DdlAnnotationWriter {
 	}
 
 	@Override
-	protected void addToken(int lineBreaks, int spacesLeft, String text) throws UnexpectedSyntaxException {
+	protected void addToken(int lineBreaks, int spacesLeft, String text, Language language) throws UnexpectedSyntaxException {
 		// do nothing
 	}
 

@@ -1767,15 +1767,16 @@ public class CommandTest {
 		assertIsNoDdlListElement(commands[3]); 		// --comment
 		assertIsDdlParametersElement(commands[4]); 	// P_2 : other_type
 
-		assertIsNoDdlListElement(commands[5]);		// as select from dtab {
+		assertIsNoDdlListElement(commands[5]);		// as select from dtab
+		assertIsNoDdlListElement(commands[6]);		// {
 		
-		assertIsNoDdlListElement(commands[6]); 		// @OtherAnno
-		assertIsDdlSelectElement(commands[7]);  		// AnyField
-		assertIsNoDdlListElement(commands[8]); 		// @<ThirdAnno: 'value',
-		assertIsNoDdlListElement(commands[9]); 		// //comment
-		assertIsDdlSelectElement(commands[10]);  		// OtherField
+		assertIsNoDdlListElement(commands[7]); 		// @OtherAnno
+		assertIsDdlSelectElement(commands[8]);  		// AnyField
+		assertIsNoDdlListElement(commands[9]); 		// @<ThirdAnno: 'value',
+		assertIsNoDdlListElement(commands[10]); 		// //comment
+		assertIsDdlSelectElement(commands[11]);  		// OtherField
 		
-		assertIsNoDdlListElement(commands[11]);	// }
+		assertIsNoDdlListElement(commands[12]);	// }
 
 		buildCommand("REPORT any_report.");
 		
@@ -1786,6 +1787,7 @@ public class CommandTest {
 	void testGetLanguage() {
 		// this mainly tests Tokenizer.previewLanguage()
 
+		// Data DefinitionLanguage
 		assertEquals(Language.DDL, buildCommand("@Anno.SubAnno").getLanguage());
 		assertEquals(Language.DDL, buildCommand("/* comment */").getLanguage());
 		assertEquals(Language.DDL, buildCommand("// comment").getLanguage());
@@ -1794,7 +1796,8 @@ public class CommandTest {
 		assertEquals(Language.DDL, buildCommand("define abstract entity Any").getLanguage());
 		assertEquals(Language.DDL, buildCommand("root custom entity Any").getLanguage());
 		assertEquals(Language.DDL, buildCommand("define root view Any").getLanguage());
-		assertEquals(Language.DDL, buildCommand("table Any").getLanguage());
+		assertEquals(Language.DDL, buildCommand("define table function Any").getLanguage());
+		assertEquals(Language.DDL, buildCommand("table function Other").getLanguage());
 		assertEquals(Language.DDL, buildCommand("define hierarchy Any").getLanguage());
 		assertEquals(Language.DDL, buildCommand("define transient view Any").getLanguage());
 
@@ -1804,6 +1807,10 @@ public class CommandTest {
 
 		assertEquals(Language.DDL, buildCommand("define table Any").getLanguage());
 		assertEquals(Language.DDL, buildCommand("define structure Any").getLanguage());
+
+		// Data Control Language
+		assertEquals(Language.DCL, buildCommand("define role Any").getLanguage());
+		assertEquals(Language.DCL, buildCommand("define accesspolicy Any").getLanguage());
 
 		assertEquals(Language.ABAP, buildCommand("\" comment").getLanguage());
 		assertEquals(Language.ABAP, buildCommand("* comment").getLanguage());

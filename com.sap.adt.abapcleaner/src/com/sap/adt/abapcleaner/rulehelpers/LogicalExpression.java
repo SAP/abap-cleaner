@@ -24,7 +24,7 @@ public class LogicalExpression {
 	// similarly, "= abap_true" is easier to understand than "= abap_false" etc.
 	private final static int COMPLEXITY_OF_EQ = 0;       // =, EQ
 	private final static int COMPLEXITY_OF_LT_GT = 1;    // <, <=, >=, >, LT, LE, GE, GT
-	private final static int COMPLEXITY_OF_NE = 2;       // <>, NE
+	private final static int COMPLEXITY_OF_NE = 2;       // <>, NE, != in DDL
 	private final static int COMPLEXITY_OF_EQ_TRUE = 0;  // = abap_true
 	private final static int COMPLEXITY_OF_EQ_FALSE = 2; // = abap_false
 	
@@ -455,6 +455,9 @@ public class LogicalExpression {
 				currentComplexity += COMPLEXITY_OF_EQ;
 				negatedComplexity += COMPLEXITY_OF_NE;
 			} else if (compOp.isAnyComparisonOperator("<>", "NE", "CN", "NA", "NS", "NP", "BYTE-CN", "BYTE-NA", "BYTE-NS")) { // CN = contains not only, NA = contains not any, NS = contains no string, NP = no pattern
+				currentComplexity += COMPLEXITY_OF_NE;
+				negatedComplexity += COMPLEXITY_OF_EQ;
+			} else if (compOp.getParentCommand().isDdlOrDcl() && compOp.isAnyComparisonOperator("!=")) { 
 				currentComplexity += COMPLEXITY_OF_NE;
 				negatedComplexity += COMPLEXITY_OF_EQ;
 			} else { // compOp.isAnyComparisonOperator("<", "<=", ">=", ">", "LT", "LE", "GE", "GT")

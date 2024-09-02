@@ -17,7 +17,7 @@ public abstract class RuleForDdlAnnotationScopes extends Rule {
 	public RuleGroupID getGroupID() { return RuleGroupID.DDL_ANNOTATIONS; }
 
 	@Override
-	public Language[] getSupportedLanguages() { return ddlOnly; }
+	public Language[] getSupportedLanguages() { return ddlOrDcl; }
 	
 	protected RuleForDdlAnnotationScopes(Profile profile) {
 		super(profile);
@@ -30,7 +30,7 @@ public abstract class RuleForDdlAnnotationScopes extends Rule {
 
 		boolean skipSection = false;
 		while (command != null) {
-			if (!command.isDdl() || command.isCommentLine()) {
+			if (!command.isDdlOrDcl() || command.isCommentLine()) {
 				// skip Command
 			
 			} else if (!command.isDdlAnnotationBeforeListElement()) { 

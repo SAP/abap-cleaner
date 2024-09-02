@@ -98,8 +98,9 @@ public class Code {
 			if (indentOfFirstCommand < 0 && !command.isCommentLine() && !command.isEmpty()) {
 				indentOfFirstCommand = command.firstToken.spacesLeft;
 				// ensure that a method is indented at least 2 chars (esp. when reprocessing a selection)
-				if (command.isMethodStart()) 
+				if (command.isMethodStart()) {
 					indentOfFirstCommand  = Math.max(indentOfFirstCommand,  2);
+				}
 			}
 
 			++commandCount;
@@ -120,8 +121,9 @@ public class Code {
 
 			command = command.getNext();
 		}
-		if (indentOfFirstCommand < 0)
+		if (indentOfFirstCommand < 0) {
 			indentOfFirstCommand = Math.max(indentOfFirstComment, 0);
+		}
 	}
 
 	@Override
@@ -130,7 +132,7 @@ public class Code {
 	}
 	
 	public String toString(String lineSeparator) {
-		boolean isDdl = isDdl();
+		boolean isDdlOrDcl = isDdlOrDcl();
 		
 		StringBuilder result = new StringBuilder();
 		Command command = firstCommand;
@@ -141,7 +143,7 @@ public class Code {
 			String commandText = command.toString(useLineSeparator); 
 			result.append(commandText);
 
-			if (isDdl && command.isCommentLine()) {
+			if (isDdlOrDcl && command.isCommentLine()) {
 				if (!isInBaseInfoComment && command.firstToken.textEquals(DDL.BASE_INFO_COMMENT_START)) { 
 					// this special /* ... */ comment, which spans multiple Commands, always uses \n as the line separator
 					isInBaseInfoComment = true;
@@ -554,7 +556,7 @@ public class Code {
 		if (cleanupRange == null || !cleanupRange.expandRange) 
 			return;
 
-		if (mode == CleanupRangeExpandMode.FULL_DOCUMENT || isDdl()) {
+		if (mode == CleanupRangeExpandMode.FULL_DOCUMENT || isDdlOrDcl()) {
 			cleanupRange = null;
 			return;
 		}
@@ -724,7 +726,7 @@ public class Code {
 		return command;
 	}
 	
-	public boolean isDdl() {
+	public boolean isDdlOrDcl() {
 		return firstCommand != null && firstCommand.isDdl();
 	}
 }

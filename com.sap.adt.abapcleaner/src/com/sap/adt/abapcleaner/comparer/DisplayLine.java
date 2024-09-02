@@ -36,8 +36,8 @@ public class DisplayLine {
 
 	public final boolean isAbapCommand() { return parentCommand != null && parentCommand.isAbap(); }
 	
-	public final boolean isDdlCommand() { return parentCommand != null && parentCommand.isDdl(); }
-	
+	public final boolean isDdlOrDclCommand() { return parentCommand != null && parentCommand.isDdlOrDcl(); }
+
 	public final Language getLanguage() { return (parentCommand != null ? parentCommand.getLanguage() : Language.ABAP); }
 	
 	@Override

@@ -579,7 +579,7 @@ public class CodeDisplay extends Composite {
 			LineStatus lineStatus = diffLine.status;
 			boolean highlightChange = (lineStatus == LineStatus.CHANGED) && navigator.isLineHighlighted(diffLine);
 			Color lineBackColor = getLineBackground(lineStatus, isLeft, isSelected, highlightChange, navigator.showAddedAndDeletedLines());
-			if (line != null && ((!line.isAbapCommand() && !line.isDdlCommand()) || !line.isCommandInCleanupRange()))
+			if (line != null && ((!line.isAbapCommand() && !line.isDdlOrDclCommand()) || !line.isCommandInCleanupRange()))
 				lineBackColor = colors.lineOutsideCleanupRange;
 			
 			if (lineBackColor != null && (navigator.showAnyChanges() || lineBackColor == colors.lineSkip || lineBackColor == colors.selLineSkip || lineBackColor == colors.lineOutsideCleanupRange)) {
