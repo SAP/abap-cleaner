@@ -236,8 +236,9 @@ class MarkdownBuilderTest {
 		mb.startNewParagraph();
 		mb.appendText("p");
 
-		mb.startNewCodeBlock("METHODS any_method.\r\nENDMETHOD.", "ABAP");
+		mb.startNewCodeBlock("METHODS any_method.\r\nENDMETHOD.", Language.ABAP);
+		mb.startNewCodeBlock("define view AnyView", Language.DDL);
 
-		expect("p", "", "```ABAP", "METHODS any_method.", "ENDMETHOD.", "```");
+		expect("p", "", "```ABAP", "METHODS any_method.", "ENDMETHOD.", "```", "", "```ASDDLS", "define view AnyView", "```");
 	}
 }

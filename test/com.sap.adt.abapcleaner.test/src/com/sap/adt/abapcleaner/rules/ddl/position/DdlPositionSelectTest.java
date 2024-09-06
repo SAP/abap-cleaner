@@ -98,6 +98,9 @@ public class DdlPositionSelectTest extends RuleTestBase {
 		buildSrc("P_AnyParam   : AnyType,");
 		buildSrc("     @Anno.subAnno: 'value'");
 		buildSrc("  P_OtherParam : OtherType,");
+		buildSrc("          /* multi-");
+		buildSrc("           * line");
+		buildSrc("           * comment */");
 		buildSrc("    P_ThirdParam : ThirdType as select from I_AnyEntity as AnyAlias");
 		buildSrc("");
 		buildSrc("{");
@@ -110,6 +113,9 @@ public class DdlPositionSelectTest extends RuleTestBase {
 		buildExp("    P_AnyParam   : AnyType,");
 		buildExp("    @Anno.subAnno: 'value'");
 		buildExp("    P_OtherParam : OtherType,");
+		buildExp("    /* multi-");
+		buildExp("     * line");
+		buildExp("     * comment */");
 		buildExp("    P_ThirdParam : ThirdType");
 		buildExp("");
 		buildExp("  as select from I_AnyEntity as AnyAlias");
@@ -131,6 +137,7 @@ public class DdlPositionSelectTest extends RuleTestBase {
 		buildSrc("P_AnyParam   : AnyType,");
 		buildSrc("     @Anno.subAnno: 'value'");
 		buildSrc("  P_OtherParam : OtherType,");
+		buildSrc("    /* comment in correct position */");
 		buildSrc("    P_ThirdParam : ThirdType as select from I_AnyEntity as AnyAlias");
 		buildSrc("");
 		buildSrc("{");
@@ -143,6 +150,7 @@ public class DdlPositionSelectTest extends RuleTestBase {
 		buildExp("P_AnyParam   : AnyType,");
 		buildExp("     @Anno.subAnno: 'value'");
 		buildExp("  P_OtherParam : OtherType,");
+		buildExp("    /* comment in correct position */");
 		buildExp("    P_ThirdParam : ThirdType");
 		buildExp("");
 		buildExp("  as select from I_AnyEntity as AnyAlias");

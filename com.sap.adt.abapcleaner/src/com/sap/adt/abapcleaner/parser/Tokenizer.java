@@ -100,6 +100,8 @@ public class Tokenizer {
 			|| StringUtil.containsAtIgnoringCase(text, pos, "extend", "abstract", "entity")
 			|| StringUtil.containsAtIgnoringCase(text, pos, "extend", "custom", "entity")
 			|| StringUtil.containsAtIgnoringCase(text, pos, "extend", "view", "[entity]")
+			|| StringUtil.containsAtIgnoringCase(text, pos, "annotate", "view")
+			|| StringUtil.containsAtIgnoringCase(text, pos, "annotate", "entity")
 
 			// ABAP Dictionary Objects in ADT
 			|| StringUtil.containsAtIgnoringCase(text, pos, "define", "structure")

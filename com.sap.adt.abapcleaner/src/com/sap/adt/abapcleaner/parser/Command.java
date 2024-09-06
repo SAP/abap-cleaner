@@ -1071,7 +1071,7 @@ public class Command {
 			return false;
 		}
 		
-		// start a new Command for a JOIN or an ASSOCIATION
+		// start a new Command for a JOIN or an ASSOCIATION / COMPOSITION
 		if (isAtTopLevel && newToken.isKeyword()) {
 			Token firstCodeToken = getFirstCodeToken();
 			// a join could either start with INNER, LEFT, RIGHT, CROSS, or directly with the keyword JOIN, or with a cardinality (after implicit INNER):
@@ -1093,9 +1093,14 @@ public class Command {
 			// an association either starts with "ASSOCIATION" or "REDEFINE ASSOCIATION" (in projection views):
 			// - ASSOCIATION [cardinality] [TO] target [AS _assoc] ON cds_cond [WITH DEFAULT FILTER cds_cond]
 			// - REDEFINE ASSOCIATION [source.]_ProjAssoc [filter] [AS _RedefinedName] redirection
+			// for COMPOSITION, two cases must be excluded:
+			// - "REDIRECTED TO COMPOSITION CHILD" 
+			// - "EXTEND CUSTOM ENTITY ... _compos : COMPOSITION [cardinality] OF target"
 			if (newToken.isKeyword("REDEFINE")) {
 				return false;
 			} else if (newToken.isKeyword("ASSOCIATION") && (lastCodeToken == null || !lastCodeToken.isKeyword("REDEFINE"))) {
+				return false;
+			} else if (newToken.isKeyword("COMPOSITION") && (lastCodeToken == null || !lastCodeToken.isKeyword("TO") && !lastCodeToken.textEquals(DDL.COLON_SIGN_STRING))) { 
 				return false;
 			}
 		}
@@ -3754,6 +3759,8 @@ public class Command {
 			identifier = start.getLastTokenOnSiblings(true, "EXTEND", "ABSTRACT|CUSTOM", "VIEW", TokenSearch.ANY_IDENTIFIER);
 		if (identifier == null) 
 			identifier = start.getLastTokenOnSiblings(true, "EXTEND", "VIEW", TokenSearch.makeOptional("ENTITY"), TokenSearch.ANY_IDENTIFIER);
+		if (identifier == null) 
+			identifier = start.getLastTokenOnSiblings(true, "ANNOTATE", "VIEW|ENTITY", TokenSearch.ANY_IDENTIFIER);
 
 		// ABAP Dictionary Objects in ADT
 		if (identifier == null) 

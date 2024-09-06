@@ -3446,7 +3446,7 @@ public class Token {
 		}
 	}
 	
-	public ArrayList<Command> setWhitespaceInclAttachedComments(int newLineBreaks, int newSpacesLeft, boolean includeDdlAnnoComments) {
+	public ArrayList<Command> setWhitespaceInclAttachedComments(int newLineBreaksMin, int newLineBreaksMax, int newSpacesLeft, boolean includeDdlAnnoComments) {
 		ArrayList<Command> changedCommands = new ArrayList<>();
 		
 		if (prev == null && lineBreaks == 1 && parentCommand.getPrev() != null && parentCommand.getPrev().isCommentLine()) {
@@ -3464,12 +3464,15 @@ public class Token {
 			// set the supplied spacesLeft to all attached Commands, but the supplied lineBreaks only to the first one
 			boolean isFirst = true;
 			if (comment != null) {
-				if (comment.getPrev() == null)
-					newLineBreaks = comment.getFirstTokenLineBreaks();
+				if (comment.getPrev() == null) {
+					newLineBreaksMin = comment.getFirstTokenLineBreaks();
+					newLineBreaksMax = newLineBreaksMin;
+				}
 				
 				do {
 					int addIndent = newSpacesLeft - comment.getFirstToken().spacesLeft;
-					if (comment.getFirstToken().setWhitespace((isFirst ? newLineBreaks : comment.getFirstTokenLineBreaks()), newSpacesLeft))
+					int newLineBreaks = determineLineBreaks(isFirst, comment.getFirstTokenLineBreaks(), newLineBreaksMin, newLineBreaksMax);
+					if (comment.getFirstToken().setWhitespace(newLineBreaks, newSpacesLeft))
 						changedCommands.add(comment);
 
 					if (comment.startsMultiLineDdlComment()) {
@@ -3489,7 +3492,8 @@ public class Token {
 					isFirst = false;
 				} while (comment != null && comment.isCommentLine());
 			}
-			if (setWhitespace((isFirst ? newLineBreaks : this.lineBreaks), newSpacesLeft)) {
+			int newLineBreaks = determineLineBreaks(isFirst, this.lineBreaks, newLineBreaksMin, newLineBreaksMax);
+			if (setWhitespace(newLineBreaks, newSpacesLeft)) {
 				changedCommands.add(parentCommand);
 			}
 
@@ -3511,7 +3515,8 @@ public class Token {
 			if (commentToken != null) {
 				do {
 					int addIndent = newSpacesLeft - commentToken.spacesLeft;
-					changed |= commentToken.setWhitespace((isFirst ? newLineBreaks : commentToken.lineBreaks), newSpacesLeft); 
+					int newLineBreaks = determineLineBreaks(isFirst, commentToken.lineBreaks, newLineBreaksMin, newLineBreaksMax);
+					changed |= commentToken.setWhitespace(newLineBreaks, newSpacesLeft); 
 
 					if (commentToken.startsMultiLineDdlComment()) {
 						// change indent of the remaining Tokens that belong to this multi-line comment
@@ -3527,19 +3532,41 @@ public class Token {
 					isFirst = false;
 				} while (commentToken != null && commentToken.isComment());
 			}
-			changed |= setWhitespace((isFirst ? newLineBreaks : this.lineBreaks), newSpacesLeft);
+			int newLineBreaks = determineLineBreaks(isFirst, this.lineBreaks, newLineBreaksMin, newLineBreaksMax);
+			changed |= setWhitespace(newLineBreaks, newSpacesLeft);
 			if (changed) {
 				changedCommands.add(parentCommand);
 			}
 
 		} else {
 			// no attached comments - only change this Token
+			int newLineBreaks = determineLineBreaks(true, this.lineBreaks, newLineBreaksMin, newLineBreaksMax);
 			if (setWhitespace(newLineBreaks, newSpacesLeft)) {
 				changedCommands.add(parentCommand);
 			}
 		}	
 		
 		return changedCommands;
+	}
+
+	private int determineLineBreaks(boolean change, int curLineBreaks, int newLineBreaksMin, int newLineBreaksMax) {
+		return change ? Math.max(Math.min(curLineBreaks, newLineBreaksMax), newLineBreaksMin) : curLineBreaks;
+	}
+	
+	public boolean startsDdlJoin() {
+		if (!parentCommand.isDdlOrDcl())
+			return false;
+
+		return isAnyKeyword("INNER", "LEFT", "RIGHT", "CROSS", "JOIN")
+			 || matchesOnSiblings(true, "EXACT", "ONE", "TO") 
+			 || matchesOnSiblings(true, "MANY|ONE", "TO")
+			 || matchesOnSiblings(true, "TO", "ONE|EXACT|MANY");
+	}
+
+	public boolean startsDdlAssociation() {
+		if (!parentCommand.isDdlOrDcl())
+			return false;
+		return isAnyKeyword("ASSOCIATION", "COMPOSITION") || matchesOnSiblings(true, "REDEFINE", "ASSOCIATION");
 	}
 
 }

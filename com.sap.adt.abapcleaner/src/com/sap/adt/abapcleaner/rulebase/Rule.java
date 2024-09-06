@@ -1,4 +1,4 @@
-package com.sap.adt.abapcleaner.rulebase;
+package com.sap.adt.abapcleaner.rulebase; 
 
 import com.sap.adt.abapcleaner.base.*;
 import com.sap.adt.abapcleaner.parser.*;
@@ -10,6 +10,7 @@ import com.sap.adt.abapcleaner.programbase.UnexpectedSyntaxBeforeChanges;
 import com.sap.adt.abapcleaner.rules.alignment.*;
 import com.sap.adt.abapcleaner.rules.commands.*;
 import com.sap.adt.abapcleaner.rules.ddl.annotations.DdlAnnotationNestingRule;
+import com.sap.adt.abapcleaner.rules.ddl.position.DdlPositionJoinRule;
 import com.sap.adt.abapcleaner.rules.ddl.position.DdlPositionSelectRule;
 import com.sap.adt.abapcleaner.rules.ddl.annotations.DdlAnnotationLayoutRule;
 import com.sap.adt.abapcleaner.rules.declarations.*;
@@ -23,7 +24,7 @@ import java.time.LocalDate;
 import java.util.*;
 
 public abstract class Rule {
-	public static final int RULE_COUNT = 78;
+	public static final int RULE_COUNT = 79;
 	public static final int RULE_GROUP_COUNT = 9;
 
 	protected static final String LINE_SEP = ABAP.LINE_SEPARATOR;
@@ -156,7 +157,8 @@ public abstract class Rule {
          new DdlAnnotationNestingRule(profile),
 
          // DDL position
-         new DdlPositionSelectRule(profile)
+         new DdlPositionSelectRule(profile),
+         new DdlPositionJoinRule(profile)
       };
 
 		StringBuilder errors = new StringBuilder();
@@ -508,15 +510,16 @@ public abstract class Rule {
 		// example code
       String exampleCode = getExample();
       if (!StringUtil.isNullOrEmpty(exampleCode)) {
-			mb.startNewHeading("Examples", 2);
-			mb.startNewCodeBlock(exampleCode, MarkdownBuilder.ABAP_LANGUAGE_NAME);
+      	Language firstSupportedLanguage = getSupportedLanguages()[0];
+      	mb.startNewHeading("Examples", 2);
+			mb.startNewCodeBlock(exampleCode, firstSupportedLanguage);
 
 			Job job = Job.createForRuleExample(getDisplayName(), exampleCode, this);
 	      Task result = job.run();
 	      if (result.getSuccess()) {
 				mb.startNewParagraph();
 				mb.appendText("Resulting code:");
-				mb.startNewCodeBlock(result.getResultingCode().toString(), MarkdownBuilder.ABAP_LANGUAGE_NAME);
+				mb.startNewCodeBlock(result.getResultingCode().toString(), firstSupportedLanguage);
 	      }
       }
 
