@@ -18,7 +18,7 @@ import com.sap.adt.abapcleaner.rulebase.RuleReference;
 import com.sap.adt.abapcleaner.rulebase.RuleSource;
 import com.sap.adt.abapcleaner.rulehelpers.RuleForDdlPosition;
 
-public class DdlPositionSelectRule extends RuleForDdlPosition{
+public class DdlPositionSelectRule extends RuleForDdlPosition {
 	private final static RuleReference[] references = new RuleReference[] { new RuleReference(RuleSource.ABAP_CLEANER) };
 
 	@Override
@@ -74,7 +74,6 @@ public class DdlPositionSelectRule extends RuleForDdlPosition{
 				+ LINE_SEP + "}";
 	}
 	
-	private final int MAX_INDENT = 10;
 	private final String[] lineBreakSelection = new String[] { "Always", "Keep as is", "Never" };
 
 	final ConfigEnumValue<DdlLineBreak> configBreakBeforeEntityName = new ConfigEnumValue<DdlLineBreak>(this, "BreakBeforeEntityName", "Break before entity name:", lineBreakSelection, DdlLineBreak.values(), DdlLineBreak.NEVER);

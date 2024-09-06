@@ -16,6 +16,9 @@ import com.sap.adt.abapcleaner.rulebase.RuleGroupID;
 import com.sap.adt.abapcleaner.rules.ddl.position.DdlLineBreak;
 
 public abstract class RuleForDdlPosition extends Rule {
+	protected final int MAX_INDENT = 80;
+
+	protected void prepare(Code code) { }
 	protected abstract boolean executeOn(Code code, Command command) throws UnexpectedSyntaxBeforeChanges, UnexpectedSyntaxAfterChanges, IntegrityBrokenException;
 
 	@Override
@@ -30,6 +33,9 @@ public abstract class RuleForDdlPosition extends Rule {
 
 	@Override
 	protected void executeOn(Code code, int releaseRestriction) throws UnexpectedSyntaxBeforeChanges, UnexpectedSyntaxAfterChanges {
+		// DdlPositionJoinRule needs to determine in advance whether the view contains multi-line ON conditions
+		prepare(code);
+		
 		Command command = code.firstCommand;
 
 		while (command != null) {
@@ -46,25 +52,27 @@ public abstract class RuleForDdlPosition extends Rule {
 	}
 	
 	protected boolean breakBefore(Token token, DdlLineBreak lineBreak, boolean emptyLineIfBreaking, int indent) {
-		if (lineBreak == DdlLineBreak.KEEP_AS_IS)
-			return false;
-
 		if (lineBreak == DdlLineBreak.ALWAYS) {
-			// move the supplied Token (or the attached non-annotation comments above it) to the next line
-			int lineBreaks = emptyLineIfBreaking ? 2 : 1;
-			lineBreaks = Math.max(token.lineBreaks, lineBreaks);
-			setWhitespaceInclAttachedComments(token, lineBreaks, indent, false);
-			return false; // .addRuleUse() was already called above
-		}
-		
-		if (lineBreak == DdlLineBreak.NEVER) {
+			// continue below
+			
+		} else if (lineBreak == DdlLineBreak.KEEP_AS_IS) {
+			if (token.lineBreaks == 0) {
+				return false;
+			} // otherwise continue below to apply the indent
+			
+		} else if (lineBreak == DdlLineBreak.NEVER) {
 			Token prev = token.getPrev();
-			if (prev != null && !prev.isComment()) { 
+			if (prev == null) { // pro forma
+				return false;
+			} else if (!prev.isComment()) {
 				return token.setWhitespace();
-			}
+			} // otherwise continue below
 		}
 
-		return false;
+		// adjust the indent of the supplied Token (or the attached non-annotation comments above it) 
+		int lineBreaksMin = emptyLineIfBreaking ? 2 : 1;
+		setWhitespaceInclAttachedComments(token, lineBreaksMin, 2, indent, false);
+		return false; // .addRuleUse() was already called above for all involved commands
 	}
 	
 	protected boolean condense(Token start, Token last) {
@@ -102,8 +110,8 @@ public abstract class RuleForDdlPosition extends Rule {
 		return changeCommand;
 	}
 
-	protected void setWhitespaceInclAttachedComments(Token token, int lineBreaks, int indent, boolean includeDdlAnnoComments) {
-		ArrayList<Command> changedCommands = token.setWhitespaceInclAttachedComments(lineBreaks, indent, includeDdlAnnoComments);
+	protected void setWhitespaceInclAttachedComments(Token token, int lineBreaksMin, int lineBreaksMax, int indent, boolean includeDdlAnnoComments) {
+		ArrayList<Command> changedCommands = token.setWhitespaceInclAttachedComments(lineBreaksMin, lineBreaksMax, indent, includeDdlAnnoComments);
 		if (changedCommands != null) {
 			for (Command changedCommand : changedCommands) {
 				changedCommand.getParentCode().addRuleUse(this, changedCommand);

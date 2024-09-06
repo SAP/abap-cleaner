@@ -85,18 +85,19 @@ public final class DDL {
    /* all known DDL keywords; each keyword is mapped to all known DDL keyword collocations in which it can appear 
     * (including single-keyword collocations, if the keyword may appear stand-alone) */
    private final static HashMap<String, ArrayList<Collocation>> ddlKeywords = initializeKeywords(new String[] { 
-   		"abstract entity", "all", "and", "as", "as parent child hierarchy", "as projection on", "as select", "as select distinct", "association", "association to parent", "avg (", "between", "boxed", "case", "cast (", "composition", "count (",   
-   		"cross join", "custom entity", "define abstract entity", "define custom entity", "define external entity", "define root abstract entity", "define root custom entity", "define root view", "define root view entity", "define structure",  
-   		"define table", "define table function", "define transient view entity", "define view", "define view entity", "distinct", "else", "end", "exact one to exact one", "exact one to many", "exact one to one", "except select", "extend",   
-   		"extend custom entity", "extend view", "extend view entity", "external entity", "external name", "from", "group by", "having", "hierarchy", "hierarchy:ascending", "hierarchy:cache force", "hierarchy:cache off", "hierarchy:cache on",    
+   		"abstract entity", "all", "and", "annotate entity", "annotate view", "as", "as parent child hierarchy", "as projection on", "as select", "as select distinct", "association", "association to parent", "avg (", "between", "boxed", "case", "cast (",    
+   		"composition", "count (", "cross join", "custom entity", "define abstract entity", "define custom entity", "define external entity", "define root abstract entity", "define root custom entity", "define root view", "define root view entity",   
+   		"define structure", "define table", "define table function", "define transient view entity", "define view", "define view entity", "distinct", "else", "end", "exact one to exact one", "exact one to many", "exact one to one", "except select",    
+   		"extend", "extend custom entity", "extend view", "extend view entity", "external entity", "external name", "from", "group by", "having", "hierarchy", "hierarchy:ascending", "hierarchy:cache force", "hierarchy:cache off", "hierarchy:cache on",    
    		"hierarchy:child to parent association", "hierarchy:cycles breakup", "hierarchy:cycles error", "hierarchy:depth", "hierarchy:descending", "hierarchy:directory", "hierarchy:filter by", "hierarchy:generate spantree", "hierarchy:load bulk",   
    		"hierarchy:load incremental", "hierarchy:load", "hierarchy:multiple parents allowed", "hierarchy:multiple parents leaves", "hierarchy:multiple parents leaves only", "hierarchy:multiple parents not allowed", "hierarchy:nodetype",   
    		"hierarchy:orphans error", "hierarchy:orphans ignore", "hierarchy:orphans root", "hierarchy:period from", "hierarchy:siblings order by", "hierarchy:source", "hierarchy:start where", "hierarchy:to", "hierarchy:valid from",   
    		"hierarchy:with parameters", "implemented by method", "include", "inner", "intersect select", "is initial", "is null", "join", "key", "left outer", "like", "localized", "many to exact one", "many to many", "many to one", "max (", "min (",   
-   		"not", "not null", "null", "on", "one to exact one", "one to many", "one to one", "or", "preserving type", "provided at runtime", "provider contract analytical_query", "provider contract transactional_interface",   
+   		"not", "not null", "null", "of", "of exact one to exact one", "of exact one to many", "of exact one to one", "of many to exact one", "of many to many", "of many to one", "of one to exact one", "of one to many", "of one to one", "of to exact one", 
+   		"of to many", "of to one", "on", "one to exact one", "one to many", "one to one", "or", "preserving type", "provided at runtime", "provider contract analytical_query", "provider contract transactional_interface",   
    		"provider contract transactional_query", "redefine association", "redirected to", "redirected to composition child", "redirected to parent", "reference to", "returns", "right outer join", "root abstract entity", "root custom entity",     
    		"root view", "root view entity", "select distinct from", "select from", "sum (", "table function", "then", "to", "to exact one", "to many", "to one", "union", "union all", "union all select", "union select", "view", "view entity", 
-   		"virtual", "when", "where", "with", "with default filter", "with federated data", "with foreign key", "with parameters", "with suffix", "with value help" });
+   		"virtual", "when", "where", "with", "with default filter", "with federated data", "with foreign key", "with parameters", "with suffix", "with value help", "with variant" });
 
    /* all known DCL keywords; each keyword is mapped to all known DCL keyword collocations in which it can appear 
     * (including single-keyword collocations, if the keyword may appear stand-alone) */

@@ -1,7 +1,11 @@
 package com.sap.adt.abapcleaner.base;
 
 public class MarkdownBuilder {
+	// cp. list of languages known to GitHub: https://github.com/github-linguist/linguist/blob/master/lib/linguist/languages.yml
 	public static final String ABAP_LANGUAGE_NAME = "ABAP";
+	public static final String DDL_LANGUAGE_NAME = "ASDDLS";
+	public static final String SQL_LANGUAGE_NAME = "SQL";
+
 	public static final String MARKDOWN_EXTENSION = ".md";
 
 	private static final char HEADER_CHAR = '#';
@@ -88,9 +92,23 @@ public class MarkdownBuilder {
 	/**
 	 * starts a new code block and fills it with the supplied code
 	 * @param code - the code to show in the code block
-	 * @param languageName - see <a href="https://github.com/github/linguist/blob/master/lib/linguist/languages.yml">list of languages known to GitHub</a> 
+	 * @param language - programming language used for syntax highlighting
 	 */
-	public MarkdownBuilder startNewCodeBlock(String code, String languageName) {
+	public MarkdownBuilder startNewCodeBlock(String code, Language language) {
+   	String languageName;
+   	if (language == Language.ABAP) {
+   		languageName = ABAP_LANGUAGE_NAME;
+   		
+   	} else if (language == Language.DDL || language == Language.DCL) {
+   		languageName = DDL_LANGUAGE_NAME;
+   	
+   	} else if (language == Language.SQL) {
+   		languageName = SQL_LANGUAGE_NAME;
+   	
+   	} else {
+   		languageName = ""; // auto-detect
+   	}
+   	
 		finishPreviousParagraph(false);
 		sb.append(TOGGLE_CODE_BLOCK).append(languageName).append(LINE_SEPARATOR);
 		sb.append(code); // escapeText(code) is not necessary here (but wouldn't harm, either) 

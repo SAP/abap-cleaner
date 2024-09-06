@@ -2088,4 +2088,46 @@ public class TokenTest {
 		assertFalse(lineEndComment.endsMultiLineDdlComment());
 		assertFalse(asteriskComment.endsMultiLineDdlComment());
 	}
+
+	private void assertStartsDdlJoin(boolean startsJoin, boolean startsAssociation, String code2a) {
+		String code1 = "define view entity C_AnyEntity as select from I_AnyEntity as AnyAlias";
+		String code2b = " I_OtherEntity as OtherAlias";
+		String code3 = "{ key AnyAlias.IdField }";
+		Command defineCommand = buildCommand(code1 + SEP + code2a + code2b + SEP + code3);
+		Token defineToken = defineCommand.getFirstCodeToken();
+		Token joinOrAssociationToken = defineCommand.getNext().getFirstCodeToken();
+		
+		assertFalse(defineToken.startsDdlJoin());
+		assertFalse(defineToken.startsDdlAssociation());
+		
+		assertEquals(startsJoin, joinOrAssociationToken.startsDdlJoin());
+		assertEquals(startsAssociation, joinOrAssociationToken.startsDdlAssociation());
+	}
+
+	@Test
+	void testStartsDdlJoin() {
+		assertFalse(buildCommand("REPORT any_report.", 0).startsDdlJoin());
+	
+		assertStartsDdlJoin(true, false, "left outer join");
+		assertStartsDdlJoin(true, false, "cross join");
+		assertStartsDdlJoin(true, false, "exact one to many join");
+		assertStartsDdlJoin(true, false, "many to one join");
+		assertStartsDdlJoin(true, false, "to exact one join");
+	}
+
+	@Test
+	void testStartsDdlAsociation() {
+		assertFalse(buildCommand("REPORT any_report.", 0).startsDdlAssociation());
+	
+		assertStartsDdlJoin(false, true, "association [0..1] to");
+		assertStartsDdlJoin(false, true, "association of many to one to");
+		assertStartsDdlJoin(false, true, "composition of");
+		assertStartsDdlJoin(false, true, "redefine association");
+	}
+	
+	@Test
+	void testStartsDdlAssociation() {
+		assertFalse(buildCommand("REPORT any_report.", 0).startsDdlAssociation());
+		
+	}
 }

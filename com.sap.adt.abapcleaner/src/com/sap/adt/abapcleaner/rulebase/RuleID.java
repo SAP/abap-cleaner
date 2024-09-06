@@ -111,7 +111,8 @@ public enum RuleID  {
    DDL_ANNO_NESTING,
    
    // DDL Positions
-   DDL_POSITION_SELECT;
+   DDL_POSITION_SELECT,
+   DDL_POSITION_JOIN;
 
 	public static final int SIZE = java.lang.Integer.SIZE;
 
