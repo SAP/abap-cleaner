@@ -114,7 +114,8 @@ public enum RuleID  {
    DDL_POSITION_SELECT,
    DDL_POSITION_JOIN,
    DDL_POSITION_ASSOCIATION,
-   DDL_POSITION_BRACES;
+   DDL_POSITION_BRACES,
+   DDL_POSITION_CLAUSES;
 
 	public static final int SIZE = java.lang.Integer.SIZE;
 
