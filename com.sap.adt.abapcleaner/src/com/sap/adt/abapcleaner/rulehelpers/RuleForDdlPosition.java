@@ -91,6 +91,8 @@ public abstract class RuleForDdlPosition extends Rule {
 
 		// adjust the indent of the supplied Token (or the attached non-annotation comments above it) 
 		int lineBreaksMin = emptyLineIfBreaking ? 2 : 1;
+		if (token.getPrev() == null && token.getParentCommand().isFirstCommandInCode()) // e.g. for DEFINE
+			lineBreaksMin = 0;
 		int lineBreaksMax = 2;
 		setWhitespaceInclAttachedComments(token, lineBreaksMin, lineBreaksMax, indent, false);
 		return false; // .addRuleUse() was already called above for all involved commands

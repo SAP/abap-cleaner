@@ -40,12 +40,8 @@ public class DdlPositionSelectRule extends RuleForDdlPosition {
 	@Override
 	public String getExample() {
 		return "" 
-				+ LINE_SEP + "define view entity C_AnyEntity with"
-				+ LINE_SEP + "parameters"
-				+ LINE_SEP + "// comment"
-				+ LINE_SEP + "P_AnyParam   : AnyType,"
-				+ LINE_SEP + "  P_OtherParam : OtherType,"
-				+ LINE_SEP + "    P_ThirdParam : ThirdType as select from I_AnyEntity as AnyAlias"
+				+ LINE_SEP + "define view entity C_AnyEntity as select"
+				+ LINE_SEP + "from I_AnyEntity as AnyAlias"
 				+ LINE_SEP + ""
 				+ LINE_SEP + "    left outer to one join I_OtherEntity as OtherAlias"
 				+ LINE_SEP + "      on AnyAlias.IdField = OtherAlias.IdField"
@@ -75,13 +71,6 @@ public class DdlPositionSelectRule extends RuleForDdlPosition {
 				+ LINE_SEP + "}";
 	}
 	
-	final ConfigEnumValue<DdlLineBreak> configBreakBeforeEntityName = new ConfigEnumValue<DdlLineBreak>(this, "BreakBeforeEntityName", "Break before entity name:", lineBreakSelection, DdlLineBreak.values(), DdlLineBreak.NEVER);
-	final ConfigIntValue configEntityNameIndent = new ConfigIntValue(this, "EntityNameIndent", "Indent if breaking:", "", 0, 2, MAX_INDENT);
-	
-	final ConfigEnumValue<DdlLineBreak> configBreakBeforeWithParams = new ConfigEnumValue<DdlLineBreak>(this, "BreakBeforeWithParams", "Break before WITH PARAMETERS:", lineBreakSelection, DdlLineBreak.values(), DdlLineBreak.ALWAYS);
-	final ConfigIntValue configWithParamsIndent = new ConfigIntValue(this, "WithParamsIndent", "Indent if breaking:", "", 0, 2, MAX_INDENT);
-	final ConfigIntValue configParamsIndent = new ConfigIntValue(this, "ParamsIndent", "Indent of parameters:", "", 0, 4, MAX_INDENT);
-	
 	final ConfigEnumValue<DdlLineBreak> configBreakBeforeAsSelectFrom = new ConfigEnumValue<DdlLineBreak>(this, "BreakBeforeAsSelectFrom", "Break before AS SELECT FROM:", lineBreakSelection, DdlLineBreak.values(), DdlLineBreak.ALWAYS);
 	final ConfigIntValue configAsSelectFromIndent = new ConfigIntValue(this, "AsSelectFromIndent", "Indent if breaking:", "", 0, 2, MAX_INDENT);
 	
@@ -94,14 +83,7 @@ public class DdlPositionSelectRule extends RuleForDdlPosition {
 	final ConfigEnumValue<DdlLineBreak> configBreakBeforeDataSource = new ConfigEnumValue<DdlLineBreak>(this, "BreakBeforeDataSource", "Break before data source:", lineBreakSelection, DdlLineBreak.values(), DdlLineBreak.NEVER);
 	final ConfigIntValue configDataSourceIndent = new ConfigIntValue(this, "DataSourceIndent", "Indent if breaking:", "", 0, 4, MAX_INDENT);
 
-	private final ConfigValue[] configValues = new ConfigValue[] { 
-			configBreakBeforeEntityName, configEntityNameIndent,
-			configBreakBeforeWithParams, configWithParamsIndent, configParamsIndent,
-			configBreakBeforeAsSelectFrom, configAsSelectFromIndent,
-			configBreakBeforeSelectFrom, configSelectFromIndent,
-			configBreakBeforeAsProjectionOn, configAsProjectionOnIndent,
-			configBreakBeforeDataSource, configDataSourceIndent
-	};
+	private final ConfigValue[] configValues = new ConfigValue[] { configBreakBeforeAsSelectFrom, configAsSelectFromIndent, configBreakBeforeSelectFrom, configSelectFromIndent, configBreakBeforeAsProjectionOn, configAsProjectionOnIndent, configBreakBeforeDataSource, configDataSourceIndent };
 	
 	@Override
 	public ConfigValue[] getConfigValues() { return configValues; }
@@ -117,45 +99,13 @@ public class DdlPositionSelectRule extends RuleForDdlPosition {
 	protected boolean executeOn(Code code, Command command) throws UnexpectedSyntaxBeforeChanges, UnexpectedSyntaxAfterChanges, IntegrityBrokenException {
 		boolean changed = false;
 
-		DdlLineBreak breakBeforeEntityName = DdlLineBreak.forValue(configBreakBeforeEntityName.getValue());
-		DdlLineBreak breakBeforeWithParams = DdlLineBreak.forValue(configBreakBeforeWithParams.getValue());
 		DdlLineBreak breakBeforeAsSelectFrom = DdlLineBreak.forValue(configBreakBeforeAsSelectFrom.getValue());
 		DdlLineBreak breakBeforeSelectFrom = DdlLineBreak.forValue(configBreakBeforeSelectFrom.getValue());
 		DdlLineBreak breakBeforeAsProjectionOn = DdlLineBreak.forValue(configBreakBeforeAsProjectionOn.getValue());
 		
-		// condense definition keywords and (un)break before entity name
-		if (breakBeforeEntityName != DdlLineBreak.KEEP_AS_IS) {
-			Token entityName = command.getDdlOrDclEntityNameToken();
-			if (entityName != null) {
-				changed |= condense(command.getFirstCodeToken(), entityName.getPrevCodeToken());
-				changed |= breakBefore(entityName, breakBeforeEntityName, false, configEntityNameIndent.getValue());
-			}
-		}
-		
 		Token token = command.getFirstCodeToken();
 		
 		while (token != null) {
-			// (un)break before "WITH PARAMETERS"
-			Token parametersToken = token.getLastTokenOnSiblings(true, "WITH", "PARAMETERS");
-			if (breakBeforeWithParams != DdlLineBreak.KEEP_AS_IS && parametersToken != null) {
-				changed |= breakBefore(token, breakBeforeWithParams, false, configWithParamsIndent.getValue());
-				changed |= condense(token, parametersToken);
-				
-				// set indent of parameters, their annotations and comments
-				Command paramCommand = command.getFirstChild();
-				int paramIndent = configParamsIndent.getValue();
-				while (paramCommand != null) {
-					// do not move comments at the end of the parameter list, as they probably belong to the following Command
-					if (paramCommand.isCommentLine() && paramCommand.getNextNonCommentSibling() == null)
-						break;
-					paramCommand = setNewIndent(paramCommand, paramIndent);
-					if (paramCommand == null) // pro forma
-						break;
-					paramCommand = paramCommand.getNextSibling();
-				}
-				break; // nothing else to be expected in this Command
-			} 
-			
 			// (un)break before "AS SELECT [DISTINCT] FROM"
 			Token fromToken = token.getLastTokenOnSiblings(true, "AS", "SELECT", TokenSearch.makeOptional("DISTINCT"), "FROM");
 			if (breakBeforeAsSelectFrom != DdlLineBreak.KEEP_AS_IS && fromToken != null ) {

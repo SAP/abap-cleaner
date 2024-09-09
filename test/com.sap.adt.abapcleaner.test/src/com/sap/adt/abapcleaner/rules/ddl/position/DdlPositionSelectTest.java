@@ -17,13 +17,6 @@ public class DdlPositionSelectTest extends RuleTestBase {
 	@BeforeEach
 	void setUp() {
 		// setup default test configuration (may be modified in the individual test methods)
-	   rule.configBreakBeforeEntityName.setEnumValue(DdlLineBreak.NEVER);
-	   rule.configEntityNameIndent.setValue(2);
-		
-	   rule.configBreakBeforeWithParams.setEnumValue(DdlLineBreak.ALWAYS);
-	   rule.configWithParamsIndent.setValue(2);
-	   rule.configParamsIndent.setValue(4);
-		
 	   rule.configBreakBeforeAsSelectFrom.setEnumValue(DdlLineBreak.ALWAYS);
 	   rule.configAsSelectFromIndent.setValue(2);
 		
@@ -35,164 +28,6 @@ public class DdlPositionSelectTest extends RuleTestBase {
 		
 	   rule.configBreakBeforeDataSource.setEnumValue(DdlLineBreak.NEVER);
 	   rule.configDataSourceIndent.setValue(4);
-	}
-
-	@Test
-	void testNeverBreakBeforeEntityName() {
-		buildSrc("define");
-		buildSrc("view");
-		buildSrc("entity C_AnyEntity");
-		buildSrc("{");
-		buildSrc("  key AnyAlias.AnyKeyField");
-		buildSrc("}");
-
-		buildExp("define view entity C_AnyEntity");
-		buildExp("{");
-		buildExp("  key AnyAlias.AnyKeyField");
-		buildExp("}");
-
-		testRule();
-	}
-
-	@Test
-	void testAlwaysBreakBeforeEntityName() {
-		rule.configBreakBeforeEntityName.setEnumValue(DdlLineBreak.ALWAYS);
-
-		buildSrc("define");
-		buildSrc("view");
-		buildSrc("entity C_AnyEntity");
-		buildSrc("{");
-		buildSrc("  key AnyAlias.AnyKeyField");
-		buildSrc("}");
-
-		buildExp("define view entity");
-		buildExp("  C_AnyEntity");
-		buildExp("{");
-		buildExp("  key AnyAlias.AnyKeyField");
-		buildExp("}");
-
-		testRule();
-	}
-
-	@Test
-	void testKeepEntityName() {
-		rule.configBreakBeforeEntityName.setEnumValue(DdlLineBreak.KEEP_AS_IS);
-
-		buildSrc("define");
-		buildSrc("view");
-		buildSrc("entity C_AnyEntity");
-		buildSrc("{");
-		buildSrc("  key AnyAlias.AnyKeyField");
-		buildSrc("}");
-
-		copyExpFromSrc();
-
-		testRule();
-	}
-
-	@Test
-	void testAlwaysBreakBeforeWithParameters() {
-		buildSrc("define view entity C_AnyEntity with");
-		buildSrc("parameters");
-		buildSrc("// comment");
-		buildSrc("P_AnyParam   : AnyType,");
-		buildSrc("     @Anno.subAnno: 'value'");
-		buildSrc("  P_OtherParam : OtherType,");
-		buildSrc("          /* multi-");
-		buildSrc("           * line");
-		buildSrc("           * comment */");
-		buildSrc("    P_ThirdParam : ThirdType as select from I_AnyEntity as AnyAlias");
-		buildSrc("");
-		buildSrc("{");
-		buildSrc("  key AnyAlias.AnyKeyField");
-		buildSrc("}");
-
-		buildExp("define view entity C_AnyEntity");
-		buildExp("  with parameters");
-		buildExp("    // comment");
-		buildExp("    P_AnyParam   : AnyType,");
-		buildExp("    @Anno.subAnno: 'value'");
-		buildExp("    P_OtherParam : OtherType,");
-		buildExp("    /* multi-");
-		buildExp("     * line");
-		buildExp("     * comment */");
-		buildExp("    P_ThirdParam : ThirdType");
-		buildExp("");
-		buildExp("  as select from I_AnyEntity as AnyAlias");
-		buildExp("");
-		buildExp("{");
-		buildExp("  key AnyAlias.AnyKeyField");
-		buildExp("}");
-
-		testRule();
-	}
-
-	@Test
-	void testKeepWithParameters() {
-		rule.configBreakBeforeWithParams.setEnumValue(DdlLineBreak.KEEP_AS_IS);
-
-		buildSrc("define view entity C_AnyEntity with");
-		buildSrc("parameters");
-		buildSrc("// comment");
-		buildSrc("P_AnyParam   : AnyType,");
-		buildSrc("     @Anno.subAnno: 'value'");
-		buildSrc("  P_OtherParam : OtherType,");
-		buildSrc("    /* comment in correct position */");
-		buildSrc("    P_ThirdParam : ThirdType as select from I_AnyEntity as AnyAlias");
-		buildSrc("");
-		buildSrc("{");
-		buildSrc("  key AnyAlias.AnyKeyField");
-		buildSrc("}");
-
-		buildExp("define view entity C_AnyEntity with");
-		buildExp("parameters");
-		buildExp("// comment");
-		buildExp("P_AnyParam   : AnyType,");
-		buildExp("     @Anno.subAnno: 'value'");
-		buildExp("  P_OtherParam : OtherType,");
-		buildExp("    /* comment in correct position */");
-		buildExp("    P_ThirdParam : ThirdType");
-		buildExp("");
-		buildExp("  as select from I_AnyEntity as AnyAlias");
-		buildExp("");
-		buildExp("{");
-		buildExp("  key AnyAlias.AnyKeyField");
-		buildExp("}");
-
-		testRule();
-	}
-
-	@Test
-	void testNeverBreakBeforeWithParameters() {
-		rule.configBreakBeforeWithParams.setEnumValue(DdlLineBreak.NEVER);
-		rule.configParamsIndent.setValue(10);
-
-		buildSrc("define view entity C_AnyEntity with");
-		buildSrc("parameters");
-		buildSrc("// comment");
-		buildSrc("P_AnyParam   : AnyType,");
-		buildSrc("     @Anno.subAnno: 'value'");
-		buildSrc("  P_OtherParam : OtherType,");
-		buildSrc("    P_ThirdParam : ThirdType as select from I_AnyEntity as AnyAlias");
-		buildSrc("");
-		buildSrc("{");
-		buildSrc("  key AnyAlias.AnyKeyField");
-		buildSrc("}");
-
-		buildExp("define view entity C_AnyEntity with parameters");
-		buildExp("          // comment");
-		buildExp("          P_AnyParam   : AnyType,");
-		buildExp("          @Anno.subAnno: 'value'");
-		buildExp("          P_OtherParam : OtherType,");
-		buildExp("          P_ThirdParam : ThirdType");
-		buildExp("");
-		buildExp("  as select from I_AnyEntity as AnyAlias");
-		buildExp("");
-		buildExp("{");
-		buildExp("  key AnyAlias.AnyKeyField");
-		buildExp("}");
-
-		testRule();
 	}
 
 	@Test
@@ -510,7 +345,9 @@ public class DdlPositionSelectTest extends RuleTestBase {
 	void testAlwaysBreakBeforeAsProjectionOn() {
 		buildSrc("@AccessControl.authorizationCheck: #NOT_ALLOWED");
 		buildSrc("define transient view entity AnyView");
-		buildSrc("  provider contract analytical_query with parameters p_Any : abap.cuky as projection on OtherView");
+		buildSrc("  provider contract analytical_query");
+		buildSrc("  with parameters");
+		buildSrc("    p_Any : abap.cuky as projection on OtherView");
 		buildSrc("{");
 		buildSrc("    @AnalyticsDetails.query.axis: #FREE");
 		buildSrc("    AnyField");
@@ -575,18 +412,8 @@ public class DdlPositionSelectTest extends RuleTestBase {
 
 	@Test
 	void testMoveAttachedComments() {
-		// ensure that the attached comments are moved along with "WITH PARAMETERS" or "AS SELECT FROM"
-		// and that the extra line above "AS SELECT FROM" is inserted before the first attached comment
+		// ensure that the attached comments are moved along with "AS SELECT FROM"
 		buildSrc("define view entity C_AnyEntity");
-		buildSrc("// single-line comment");
-		buildSrc("/* multi-line");
-		buildSrc("   comment */");
-		buildSrc("with");
-		buildSrc("parameters");
-		buildSrc("// comment");
-		buildSrc("P_AnyParam   : AnyType,");
-		buildSrc("  P_OtherParam : OtherType,");
-		buildSrc("    P_ThirdParam : ThirdType");
 		buildSrc("      /* multi-");
 		buildSrc("         line");
 		buildSrc("         comment */");
@@ -599,15 +426,6 @@ public class DdlPositionSelectTest extends RuleTestBase {
 		buildSrc("}");
 
 		buildExp("define view entity C_AnyEntity");
-		buildExp("  // single-line comment");
-		buildExp("  /* multi-line");
-		buildExp("     comment */");
-		buildExp("  with parameters");
-		buildExp("    // comment");
-		buildExp("    P_AnyParam   : AnyType,");
-		buildExp("    P_OtherParam : OtherType,");
-		buildExp("    P_ThirdParam : ThirdType");
-		buildExp("");
 		buildExp("  /* multi-");
 		buildExp("     line");
 		buildExp("     comment */");
@@ -624,16 +442,8 @@ public class DdlPositionSelectTest extends RuleTestBase {
 
 	@Test
 	void testDoNotMoveDetachedComments() {
-		// ensure that the detached comments are not moved along with "WITH PARAMETERS" or "AS SELECT FROM"
+		// ensure that the detached comments are not moved along with "AS SELECT FROM"
 		buildSrc("define view entity C_AnyEntity");
-		buildSrc("// detached comment");
-		buildSrc("");
-		buildSrc("with");
-		buildSrc("parameters");
-		buildSrc("// comment");
-		buildSrc("P_AnyParam   : AnyType,");
-		buildSrc("  P_OtherParam : OtherType,");
-		buildSrc("    P_ThirdParam : ThirdType");
 		buildSrc("      /* detached multi-line");
 		buildSrc("         comment */");
 		buildSrc("");
@@ -646,13 +456,6 @@ public class DdlPositionSelectTest extends RuleTestBase {
 		buildSrc("}");
 
 		buildExp("define view entity C_AnyEntity");
-		buildExp("// detached comment");
-		buildExp("");
-		buildExp("  with parameters");
-		buildExp("    // comment");
-		buildExp("    P_AnyParam   : AnyType,");
-		buildExp("    P_OtherParam : OtherType,");
-		buildExp("    P_ThirdParam : ThirdType");
 		buildExp("      /* detached multi-line");
 		buildExp("         comment */");
 		buildExp("");
@@ -669,16 +472,8 @@ public class DdlPositionSelectTest extends RuleTestBase {
 
 	@Test
 	void testDoNotMoveCommentedOutAnnotations() {
-		// ensure that the commented-out annotations are not moved along with "WITH PARAMETERS" or "AS SELECT FROM"
+		// ensure that the commented-out annotations are not moved along with "AS SELECT FROM"
 		buildSrc("define view entity C_AnyEntity");
-		buildSrc("// @Anno.subAnno");
-		buildSrc("      // single-line comment");
-		buildSrc("with");
-		buildSrc("parameters");
-		buildSrc("// comment");
-		buildSrc("P_AnyParam   : AnyType,");
-		buildSrc("  P_OtherParam : OtherType,");
-		buildSrc("    P_ThirdParam : ThirdType");
 		buildSrc("// @Anno.subAnno");
 		buildSrc("      // single-line comment");
 		buildSrc("      as select from I_AnyEntity as AnyAlias");
@@ -690,14 +485,6 @@ public class DdlPositionSelectTest extends RuleTestBase {
 
 		buildExp("define view entity C_AnyEntity");
 		buildExp("// @Anno.subAnno");
-		buildExp("  // single-line comment");
-		buildExp("  with parameters");
-		buildExp("    // comment");
-		buildExp("    P_AnyParam   : AnyType,");
-		buildExp("    P_OtherParam : OtherType,");
-		buildExp("    P_ThirdParam : ThirdType");
-		buildExp("// @Anno.subAnno");
-		buildExp("");
 		buildExp("  // single-line comment");
 		buildExp("  as select from I_AnyEntity as AnyAlias");
 		buildExp("");
@@ -715,14 +502,6 @@ public class DdlPositionSelectTest extends RuleTestBase {
 		buildSrc("define view entity C_AnyEntity");
 		buildSrc("      // single-line comment");
 		buildSrc("// @Anno.subAnno");
-		buildSrc("with");
-		buildSrc("parameters");
-		buildSrc("// comment");
-		buildSrc("P_AnyParam   : AnyType,");
-		buildSrc("  P_OtherParam : OtherType,");
-		buildSrc("    P_ThirdParam : ThirdType");
-		buildSrc("      // single-line comment");
-		buildSrc("// @Anno.subAnno");
 		buildSrc("      as select from I_AnyEntity as AnyAlias");
 		buildSrc("");
 		buildSrc("{");
@@ -733,14 +512,6 @@ public class DdlPositionSelectTest extends RuleTestBase {
 		buildExp("define view entity C_AnyEntity");
 		buildExp("      // single-line comment");
 		buildExp("// @Anno.subAnno");
-		buildExp("  with parameters");
-		buildExp("    // comment");
-		buildExp("    P_AnyParam   : AnyType,");
-		buildExp("    P_OtherParam : OtherType,");
-		buildExp("    P_ThirdParam : ThirdType");
-		buildExp("      // single-line comment");
-		buildExp("// @Anno.subAnno");
-		buildExp("");
 		buildExp("  as select from I_AnyEntity as AnyAlias");
 		buildExp("");
 		buildExp("{");
