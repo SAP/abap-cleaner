@@ -1271,8 +1271,8 @@ public class TokenTest {
 		assertLastTokenOfLogExpr("define view entity I_Any as select from dtab { Any, case when fld = case when other_fld = 'a' then 1 else 2 end then 0 else 1 end as Other }", "when", "then");
 
 		assertLastTokenOfLogExpr("define view entity I_Any as select from dtab { Any } where fld = 1 and other_fld is initial", "where", null);
-		assertLastTokenOfLogExpr("define view entity I_Any as select from dtab { Any } where fld = 1 and other_fld not between 2 and 3 union all select from dtab2 { Any }", "where", "union");
-		assertLastTokenOfLogExpr("define view entity I_Any as select from dtab { Any } where fld = 1 group by Any", "where", "group");
+		assertLastTokenOfLogExpr("define view entity I_Any as select from dtab { Any } where fld = 1 and other_fld not between 2 and 3 union all select from dtab2 { Any }", "where", null);
+		assertLastTokenOfLogExpr("define view entity I_Any as select from dtab { Any } where fld = 1 group by Any", "where", null);
 
 		assertLastTokenOfLogExpr("define custom entity I_Any { _assoc : association[1:1] to I_Other on _assoc.fld = I_Any.fld; }", "on", ";");
 

@@ -1105,6 +1105,16 @@ public class Command {
 			}
 		}
 		
+		// start a new Command for a WHERE / GROUP BY / HAVING clause, as well as for EXCEPT / INTERSECT / UNION [ALL]
+		// (all these keywords never appear in a different context)
+		if (isAtTopLevel && newToken.isKeyword()) {
+			if (newToken.isAnyKeyword("WHERE", "GROUP", "HAVING")) {
+				return false;
+			} else if (newToken.isAnyKeyword("EXCEPT", "INTERSECT", "UNION")) {
+				return false;
+			}
+		}
+		
 		// in all other cases, add the new Token to the current Command
 		return true;
 	}

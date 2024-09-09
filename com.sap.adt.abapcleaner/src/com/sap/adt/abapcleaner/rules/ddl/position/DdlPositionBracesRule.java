@@ -60,8 +60,6 @@ public class DdlPositionBracesRule extends RuleForDdlPosition {
 				+ LINE_SEP + "      ThirdAlias.AnyNonKeyField }";
 	}
 	
-	private final String[] lineBreakSelection = new String[] { "Always", "Keep as is", "Never" };
-
 	final ConfigEnumValue<DdlLineBreak> configBreakBeforeOpeningBrace = new ConfigEnumValue<DdlLineBreak>(this, "BreakBeforeOpeningBrace", "Break before opening brace { of select list:", lineBreakSelection, DdlLineBreak.values(), DdlLineBreak.ALWAYS);
 	final ConfigIntValue configOpeningBraceIndent = new ConfigIntValue(this, "OpeningBraceIndent", "Indent if breaking:", "", 0, 0, MAX_INDENT);
 	

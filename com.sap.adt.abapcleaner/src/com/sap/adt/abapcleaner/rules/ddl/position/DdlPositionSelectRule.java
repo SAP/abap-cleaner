@@ -19,13 +19,14 @@ import com.sap.adt.abapcleaner.rulebase.RuleSource;
 import com.sap.adt.abapcleaner.rulehelpers.RuleForDdlPosition;
 
 public class DdlPositionSelectRule extends RuleForDdlPosition {
+	final static String defaultDescription = "Break before AS SELECT etc.";
 	private final static RuleReference[] references = new RuleReference[] { new RuleReference(RuleSource.ABAP_CLEANER) };
-
+	
 	@Override
 	public RuleID getID() { return RuleID.DDL_POSITION_SELECT; }
 
 	@Override
-	public String getDisplayName() { return "Break before AS SELECT etc."; }
+	public String getDisplayName() { return defaultDescription; }
 
 	@Override
 	public String getDescription() { return "Standardizes line breaks and indentation before entity name, WITH PARAMETERS, [AS] SELECT, AS PROJECTION ON and data source."; }
@@ -74,8 +75,6 @@ public class DdlPositionSelectRule extends RuleForDdlPosition {
 				+ LINE_SEP + "}";
 	}
 	
-	private final String[] lineBreakSelection = new String[] { "Always", "Keep as is", "Never" };
-
 	final ConfigEnumValue<DdlLineBreak> configBreakBeforeEntityName = new ConfigEnumValue<DdlLineBreak>(this, "BreakBeforeEntityName", "Break before entity name:", lineBreakSelection, DdlLineBreak.values(), DdlLineBreak.NEVER);
 	final ConfigIntValue configEntityNameIndent = new ConfigIntValue(this, "EntityNameIndent", "Indent if breaking:", "", 0, 2, MAX_INDENT);
 	
