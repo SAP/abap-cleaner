@@ -14,9 +14,12 @@ import com.sap.adt.abapcleaner.rulebase.Profile;
 import com.sap.adt.abapcleaner.rulebase.Rule;
 import com.sap.adt.abapcleaner.rulebase.RuleGroupID;
 import com.sap.adt.abapcleaner.rules.ddl.position.DdlLineBreak;
+import com.sap.adt.abapcleaner.rules.ddl.position.DdlLineBreakWithoutNever;
 
 public abstract class RuleForDdlPosition extends Rule {
 	protected final int MAX_INDENT = 80;
+	protected final String[] lineBreakSelection = new String[] { "Always", "Keep as is", "Never" };
+	protected final String[] lineBreakSelectionWithoutNever = new String[] { "Always", "Keep as is" };
 
 	protected void prepare(Code code) { }
 	protected abstract boolean executeOn(Code code, Command command) throws UnexpectedSyntaxBeforeChanges, UnexpectedSyntaxAfterChanges, IntegrityBrokenException;
@@ -51,6 +54,17 @@ public abstract class RuleForDdlPosition extends Rule {
 		}
 	}
 	
+	protected DdlLineBreak getLineBreak(DdlLineBreakWithoutNever keywordsLineBreak) {
+		switch (keywordsLineBreak) {
+			case ALWAYS:
+				return DdlLineBreak.ALWAYS;
+			case KEEP_AS_IS:
+				return DdlLineBreak.KEEP_AS_IS;
+			default: // pro forma
+				return DdlLineBreak.ALWAYS;
+		}
+	}
+
 	protected boolean breakBefore(Token token, DdlLineBreak lineBreak, boolean emptyLineIfBreaking, int indent) {
 		if (lineBreak == DdlLineBreak.ALWAYS) {
 			// continue below
@@ -62,6 +76,12 @@ public abstract class RuleForDdlPosition extends Rule {
 			
 		} else if (lineBreak == DdlLineBreak.NEVER) {
 			Token prev = token.getPrev();
+			if (prev == null) { // e.g. before the opening or closing brace of the select list, which is a distinct Command
+				Command prevCommand = token.getParentCommand().getPrev();
+				if (prevCommand != null) { // pro forma
+					prev = prevCommand.getLastToken(); 
+				}
+			}
 			if (prev == null) { // pro forma
 				return false;
 			} else if (!prev.isComment()) {

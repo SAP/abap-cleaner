@@ -14,8 +14,6 @@ import com.sap.adt.abapcleaner.rulehelpers.RuleForDdlPosition;
 public abstract class RuleForDdlPositionJoinOrAssociation extends RuleForDdlPosition {
 	protected abstract boolean executeOn(Code code, Command command, Token firstCode);
 
-	protected final String[] lineBreakSelection = new String[] { "Always", "Keep as is", "Never" };
-	protected final String[] lineBreakSelectionWithoutNever = new String[] { "Always", "Keep as is" };
 	protected final String[] conditionLineBreakSelection = new String[] { "Always", "If view contains multi-line condition", "Keep as is", "Never" };
 
 	private boolean viewContainsMultiLineJoinCond;
@@ -73,17 +71,6 @@ public abstract class RuleForDdlPositionJoinOrAssociation extends RuleForDdlPosi
 				return DdlLineBreak.KEEP_AS_IS;
 			case NEVER:
 				return DdlLineBreak.NEVER;
-			default: // pro forma
-				return DdlLineBreak.ALWAYS;
-		}
-	}
-
-	protected DdlLineBreak getLineBreak(DdlLineBreakWithoutNever keywordsLineBreak) {
-		switch (keywordsLineBreak) {
-			case ALWAYS:
-				return DdlLineBreak.ALWAYS;
-			case KEEP_AS_IS:
-				return DdlLineBreak.KEEP_AS_IS;
 			default: // pro forma
 				return DdlLineBreak.ALWAYS;
 		}
