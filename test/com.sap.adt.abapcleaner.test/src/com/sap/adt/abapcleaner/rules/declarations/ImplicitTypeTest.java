@@ -368,4 +368,25 @@ public class ImplicitTypeTest extends RuleTestBase {
 		deactivateSyntaxCheckAfterParse();
 		testRule();
 	}
+
+	@Test
+	void testConstantLengthInParenthesis() {
+		buildSrc("  CONSTANTS lc_length TYPE i VALUE 10.");
+		buildSrc("");
+		buildSrc("  CONSTANTS lc_other(lc_length) VALUE 'abcde'.");
+		buildSrc("");
+		buildSrc("  DATA lv_text(lc_length).");
+		buildSrc("  DATA lv_text2(lc_length) TYPE c.");
+
+		buildExp("  CONSTANTS lc_length TYPE i VALUE 10.");
+		buildExp("");
+		buildExp("  CONSTANTS lc_other TYPE c LENGTH lc_length VALUE 'abcde'.");
+		buildExp("");
+		buildExp("  DATA lv_text TYPE c LENGTH lc_length.");
+		buildExp("  DATA lv_text2 TYPE c LENGTH lc_length.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }
