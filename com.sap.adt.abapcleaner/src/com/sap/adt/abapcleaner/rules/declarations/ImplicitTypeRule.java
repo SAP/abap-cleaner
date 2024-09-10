@@ -5,11 +5,13 @@ import java.time.LocalDate;
 import com.sap.adt.abapcleaner.base.ABAP;
 import com.sap.adt.abapcleaner.parser.Code;
 import com.sap.adt.abapcleaner.parser.Command;
+import com.sap.adt.abapcleaner.parser.Term;
 import com.sap.adt.abapcleaner.parser.Token;
 import com.sap.adt.abapcleaner.parser.TokenSearch;
 import com.sap.adt.abapcleaner.parser.TokenType;
 import com.sap.adt.abapcleaner.programbase.IntegrityBrokenException;
 import com.sap.adt.abapcleaner.programbase.UnexpectedSyntaxAfterChanges;
+import com.sap.adt.abapcleaner.programbase.UnexpectedSyntaxException;
 import com.sap.adt.abapcleaner.rulebase.ConfigBoolValue;
 import com.sap.adt.abapcleaner.rulebase.ConfigValue;
 import com.sap.adt.abapcleaner.rulebase.Profile;
@@ -83,6 +85,8 @@ public class ImplicitTypeRule extends RuleForCommands {
 			+ LINE_SEP 
  			+ LINE_SEP + "CLASS cl_implicit_type IMPLEMENTATION." 
 			+ LINE_SEP + "  METHOD make_implicit_type_explicit."
+			+ LINE_SEP + "    CONSTANTS lc_text_length TYPE i VALUE 10."
+			+ LINE_SEP
 			+ LINE_SEP + "    STATICS:"
 			+ LINE_SEP + "      st_g TYPE p VALUE '123456789012345-',"
 			+ LINE_SEP + "      st_h(5) TYPE p VALUE '123456789-',"
@@ -100,6 +104,10 @@ public class ImplicitTypeRule extends RuleForCommands {
 			+ LINE_SEP + "    DATA lv_h(5) TYPE p."
 			+ LINE_SEP + "    DATA lv_i TYPE p LENGTH 3."
 			+ LINE_SEP + "    DATA lv_j TYPE p DECIMALS 4."
+			+ LINE_SEP
+			+ LINE_SEP + "    \" the length may also be specified with a constant:"
+			+ LINE_SEP + "    DATA lv_k(lc_text_length)."
+			+ LINE_SEP + "    DATA lv_l(lc_text_length) TYPE c."
 			+ LINE_SEP + "  ENDMETHOD."
 			+ LINE_SEP + "ENDCLASS." ;
    }
@@ -176,10 +184,11 @@ public class ImplicitTypeRule extends RuleForCommands {
 		return false;
 	}
 	
-	private Token executeOn(Code code, Command command, Token identifier, int baseIndent) throws IntegrityBrokenException {
+	private Token executeOn(Code code, Command command, Token identifier, int baseIndent) throws IntegrityBrokenException, UnexpectedSyntaxAfterChanges {
 		boolean hasType = false;
-		boolean hasLengthInParens = identifier.textEndsWith(")");
-		boolean hasLength = hasLengthInParens;
+		boolean hasNumericLengthInParens = identifier.textEndsWith(")");
+		boolean hasConstantLengthInParens = identifier.textEndsWith("(") && identifier.hasChildren() && identifier.getNext().isAttached();
+		boolean hasLength = hasNumericLengthInParens || hasConstantLengthInParens;
 		boolean hasDecimals = false; // for packed numbers
 		boolean skip = false;
 		
@@ -238,7 +247,8 @@ public class ImplicitTypeRule extends RuleForCommands {
 		// see Hints on https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/index.htm?file=abapdata_simple.htm
 		String lengthFromParens = null;
 		boolean moveLengthFromParens = false;
-		if (hasLengthInParens && configReplaceParenthesisWithLength.getValue()) {
+		if (hasNumericLengthInParens && configReplaceParenthesisWithLength.getValue()) {
+			// e.g. 'DATA lv_text(5).', where 'lv_text(5)' is parsed into one single Token
 			String identifierText = identifier.getText();
 			int parensPos = identifierText.indexOf('(');
 			if (parensPos > 0) {
@@ -246,13 +256,31 @@ public class ImplicitTypeRule extends RuleForCommands {
 				if (ABAP.isInteger(lengthFromParens)) {
 					moveLengthFromParens = true;
 					identifier.setText(identifierText.substring(0, parensPos), false);
-					// if the next Token follows after more than 1 space, keep its vertical position by adding spaces  
-					Token next = identifier.getNext();
-					if (next.lineBreaks == 0 && next.spacesLeft > 1)
-						next.spacesLeft += 2 + lengthFromParens.length();
 					changed = true;
 				}
 			}
+			
+		} else if (hasConstantLengthInParens && configReplaceParenthesisWithLength.getValue()) {
+			// e.g. 'DATA lv_text(lc_length) TYPE c.', where the identifier for the length (which must be a constant) is parsed into a distinct Token
+			lengthFromParens = identifier.getNext().getText();
+			moveLengthFromParens = true;
+			
+			// create a new Token for the identifier without length (the old Token opens a level, as it ends with an opening parenthesis)
+			String newText = identifier.getText().substring(0, identifier.getTextLength() - 1);
+			Token newIdentifier = Token.createForAbap(identifier.lineBreaks, identifier.spacesLeft, newText, identifier.type, identifier.sourceLineNum);
+			identifier.insertLeftSibling(newIdentifier);
+			
+			// remove the old identifier and length, e.g. 'lv_text(lc_length)'
+			Term oldIdentifierWithLength;
+			try {
+				oldIdentifierWithLength = Term.createForTokenRange(identifier, identifier.getNextCodeSibling());
+			} catch (UnexpectedSyntaxException e) {
+				throw new UnexpectedSyntaxAfterChanges(this, e);		
+			}
+			oldIdentifierWithLength.removeFromCommand(false);
+			identifier = newIdentifier; 
+
+			changed = true;
 		}
 
 		// add TYPE 
