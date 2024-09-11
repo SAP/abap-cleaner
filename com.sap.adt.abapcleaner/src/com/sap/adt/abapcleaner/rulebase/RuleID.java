@@ -110,13 +110,16 @@ public enum RuleID  {
    DDL_ANNO_LAYOUT,
    DDL_ANNO_NESTING,
    
-   // DDL Positions
+   // DDL line breaks and indent
    DDL_POSITION_DEFINE,
    DDL_POSITION_SELECT,
    DDL_POSITION_JOIN,
    DDL_POSITION_ASSOCIATION,
    DDL_POSITION_BRACES,
-   DDL_POSITION_CLAUSES;
+   DDL_POSITION_CLAUSES,
+   
+   // DDL spaces and spelling
+   DDL_SPACES_AROUND_SIGNS;
 
 	public static final int SIZE = java.lang.Integer.SIZE;
 
