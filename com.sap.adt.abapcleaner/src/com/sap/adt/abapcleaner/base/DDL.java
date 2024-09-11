@@ -61,6 +61,8 @@ public final class DDL {
    public static final int MAX_LINE_LENGTH = 999; // however, activation even works for lines with 4000+ chars
 
    public final static String[] listElementSeparators = new String[] { COMMA_SIGN_STRING, SEMICOLON_SIGN_STRING };
+   public final static String[] arithmeticOperators = new String[] { "+", "-", "*", "/" };
+   public final static String[] aggregationFunctions = new String[] { "max", "min", "avg", "sum", "count" };
 
    private static class Collocation {
    	private final String parentFunction; // may be null

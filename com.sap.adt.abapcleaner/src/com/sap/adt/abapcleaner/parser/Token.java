@@ -3569,4 +3569,20 @@ public class Token {
 		return isAnyKeyword("ASSOCIATION", "COMPOSITION") || matchesOnSiblings(true, "REDEFINE", "ASSOCIATION");
 	}
 
+	/** return true if the Token is a colon ":" that belongs to a parameter name like ":P_Any" (only possible in DDIC-based views) */
+	public boolean isDdlParameterColon() {
+		if (textEquals(DDL.COLON_SIGN_STRING) && next != null && next.isAttached() && next.isIdentifier()) {
+			// in cases like 'select from I_Any(P_Any::P_Other)', only the second colon belongs to a parameter  
+			String prevChar = (prev == null) ? " " : StringUtil.getLastCharAsString(prev.text);
+			if (!DDL.isCharAllowedForIdentifier(prevChar, 0, false))
+				return true;
+
+			// if the colon is detached from the previous Token, it probably starts a parameter name; since this cannot be 
+			// safely determined without the syntax of the context, we rather assume it does, so it is not detached  
+			return !isAttached();
+
+		} else {
+			return false;
+		}
+	}
 }

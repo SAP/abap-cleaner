@@ -52,6 +52,9 @@ public class RuleGroup {
 			case DDL_POSITION:
 				return "DDL Line Breaks and Indent";
 
+			case DDL_SPACES:
+				return "DDL Spaces and Spelling";
+
 			default:
 				throw new IndexOutOfBoundsException("Unknown RuleGroup!");
 		}

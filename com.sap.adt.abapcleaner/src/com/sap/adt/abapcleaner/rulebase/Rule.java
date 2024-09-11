@@ -9,6 +9,7 @@ import com.sap.adt.abapcleaner.programbase.UnexpectedSyntaxAfterChanges;
 import com.sap.adt.abapcleaner.programbase.UnexpectedSyntaxBeforeChanges;
 import com.sap.adt.abapcleaner.rules.alignment.*;
 import com.sap.adt.abapcleaner.rules.commands.*;
+import com.sap.adt.abapcleaner.rules.ddl.annotations.DdlAnnotationLayoutRule;
 import com.sap.adt.abapcleaner.rules.ddl.annotations.DdlAnnotationNestingRule;
 import com.sap.adt.abapcleaner.rules.ddl.position.DdlPositionAssociationRule;
 import com.sap.adt.abapcleaner.rules.ddl.position.DdlPositionBracesRule;
@@ -16,7 +17,7 @@ import com.sap.adt.abapcleaner.rules.ddl.position.DdlPositionClausesRule;
 import com.sap.adt.abapcleaner.rules.ddl.position.DdlPositionDefineRule;
 import com.sap.adt.abapcleaner.rules.ddl.position.DdlPositionJoinRule;
 import com.sap.adt.abapcleaner.rules.ddl.position.DdlPositionSelectRule;
-import com.sap.adt.abapcleaner.rules.ddl.annotations.DdlAnnotationLayoutRule;
+import com.sap.adt.abapcleaner.rules.ddl.spaces.DdlSpacesAroundSignsRule;
 import com.sap.adt.abapcleaner.rules.declarations.*;
 import com.sap.adt.abapcleaner.rules.emptylines.*;
 import com.sap.adt.abapcleaner.rules.prettyprinter.*;
@@ -28,8 +29,8 @@ import java.time.LocalDate;
 import java.util.*;
 
 public abstract class Rule {
-	public static final int RULE_COUNT = 83;
-	public static final int RULE_GROUP_COUNT = 9;
+	public static final int RULE_COUNT = 84;
+	public static final int RULE_GROUP_COUNT = 10;
 
 	protected static final String LINE_SEP = ABAP.LINE_SEPARATOR;
 	protected static Language[] abapOnly =  new Language[] { Language.ABAP };
@@ -160,13 +161,16 @@ public abstract class Rule {
          new DdlAnnotationLayoutRule(profile),
          new DdlAnnotationNestingRule(profile),
 
-         // DDL position
+         // DDL line breaks and indent
          new DdlPositionDefineRule(profile),
          new DdlPositionSelectRule(profile),
          new DdlPositionJoinRule(profile),
          new DdlPositionAssociationRule(profile),
          new DdlPositionBracesRule(profile), 
-         new DdlPositionClausesRule(profile)
+         new DdlPositionClausesRule(profile),
+
+         // DDL spaces and spelling
+         new DdlSpacesAroundSignsRule(profile)
       };
 
 		StringBuilder errors = new StringBuilder();
