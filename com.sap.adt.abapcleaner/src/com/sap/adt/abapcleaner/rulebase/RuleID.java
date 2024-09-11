@@ -119,7 +119,8 @@ public enum RuleID  {
    DDL_POSITION_CLAUSES,
    
    // DDL spaces and spelling
-   DDL_SPACES_AROUND_SIGNS;
+   DDL_SPACES_AROUND_SIGNS,
+   DDL_SPACES_AROUND_BRACKETS;
 
 	public static final int SIZE = java.lang.Integer.SIZE;
 

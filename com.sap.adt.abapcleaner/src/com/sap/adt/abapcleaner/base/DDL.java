@@ -492,6 +492,29 @@ public final class DDL {
 		}
 	}
 	
+	public static boolean isAllowedFunctionName(String text) {
+		boolean isFirst = true;
+		for (char c : text.toCharArray()) {
+			if (!isCharAllowedForFunction(c, isFirst))
+				return false;
+			isFirst = false;
+		}
+		return true;
+	}
+
+	public static boolean isCharAllowedForFunction(char c, boolean isFirstChar) {
+		if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_') {
+			return true;
+		
+		} else if (!isFirstChar && (c >= '0' && c <= '9')) {
+			// hypothetical, because built-in functions do not use digits
+			return true;
+		
+		} else {
+			return false;
+		}
+	}
+	
 	/**
 	 * returns true if the main keyword at keywordSequence.get(mainIndex) is actually a keyword;  
 	 * for this, the keyword sequence surrounding the main keyword is checked against all known DDL keyword collocations 
