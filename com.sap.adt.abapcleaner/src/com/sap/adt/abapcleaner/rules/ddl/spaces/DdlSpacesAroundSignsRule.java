@@ -61,13 +61,11 @@ public class DdlSpacesAroundSignsRule extends RuleForDdlCommands {
 				+ LINE_SEP + "  key AnyKeyField   ,    //any comment"
 				+ LINE_SEP + "  key OtherKeyField ,-- other comment"
 				+ LINE_SEP + ""
-				+ LINE_SEP + "      //calculate AnyValueField"
+				+ LINE_SEP + "      //arithmetic expressions"
 				+ LINE_SEP + "      AnyValue*2 +OtherValue* 4- ThirdValue as AnyValueField,"
-				+ LINE_SEP + ""
-				+ LINE_SEP + "      --calculate OtherValueField"
 				+ LINE_SEP + "      3*(-2*AnyValue- 4*OtherValue) as OtherValueField,"
 				+ LINE_SEP + ""
-				+ LINE_SEP + "      // calculate fields with built-in functions"
+				+ LINE_SEP + "      -- built-in functions"
 				+ LINE_SEP + "      concat(AnyText,concat('_' ,OtherText)) as AnyTextField,"
 				+ LINE_SEP + "      division(AnyArg *10,OtherArg,2) as ThirdValue,"
 				+ LINE_SEP + "      round(AnyValue/ 100, 5) as RoundedValue,"
@@ -167,8 +165,12 @@ public class DdlSpacesAroundSignsRule extends RuleForDdlCommands {
 		
 		// space before colon
 		if (spaceBeforeColon != ChangeType.KEEP_AS_IS && token.textEquals(":")) {
-			int spaces = (spaceBeforeColon == ChangeType.ALWAYS) ? Math.max(token.spacesLeft, 1) : 0;
-			changed |= token.setSpacesLeftAdjustingIndent(spaces, false);
+			if (token.getParent() != null && token.getParent().textEndsWith(DDL.BRACKET_OPEN_STRING)) {
+				// ignore colons in path expressions such as "_Any[*:...]", because a space between "*:", "1:" etc. would be a syntax error
+			} else {
+				int spaces = (spaceBeforeColon == ChangeType.ALWAYS) ? Math.max(token.spacesLeft, 1) : 0;
+				changed |= token.setSpacesLeftAdjustingIndent(spaces, false);
+			}
 		}
 		
 		// space before comma 
@@ -189,6 +191,8 @@ public class DdlSpacesAroundSignsRule extends RuleForDdlCommands {
 				// ignore "association [1..*]", "composition [0..*]" etc., because a space between .. and * is a syntax error
 			} else if (token.textEquals("*") && prevToken != null && prevToken.textEndsWith(".")) { // '!= null' pro forma
 				// ignore "$extension.*"
+			} else if (token.textEquals("*") && token.getParent() != null && token.getParent().textEndsWith(DDL.BRACKET_OPEN_STRING)) { 
+				// ignore path expression "_Any[*:...]"
 			} else if (token.textEquals("*") && prevToken != null && prevToken.textEndsWith("(") && nextToken.textStartsWith(")")) { // '!= null' pro forma
 				// ignore "count(*)"
 			} else {
@@ -217,6 +221,8 @@ public class DdlSpacesAroundSignsRule extends RuleForDdlCommands {
 		if (changeType != ChangeType.KEEP_AS_IS) {
 			if (prevToken.textEquals("*") && token.textEquals(DDL.BRACKET_CLOSE_STRING)) {
 				// ignore association cardinality as in "[1..*]", even though "[1..* ]" would be syntactically okay
+			} else if (prevToken.textEquals("*") && token.textEquals(DDL.COLON_SIGN_STRING)) {
+				// ignore cardinality in path expression "_Any[*: ...]", because a space in "*:" would be a syntax error
 			} else if (prevToken.textEquals("*") && token.textEquals(DDL.PARENS_CLOSE_STRING)) {
 				// ignore star in parenthesis as in "(*)"
 			} else if (prevToken.isDdlParameterColon()) {

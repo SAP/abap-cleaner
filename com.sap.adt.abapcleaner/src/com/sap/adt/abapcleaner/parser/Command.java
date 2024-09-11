@@ -3801,6 +3801,15 @@ public class Command {
 		//   return changesSyField(ABAP.SyField.SUBRC) && SyFieldAnalyzer.getSyFieldReadersFor(ABAP.SyField.SUBRC, this).size() >= 2;
 		//   - getCommandsRelatedToPatternMatch() can then return SyFieldAnalyzer.getSyFieldReadersFor(ABAP.SyField.SUBRC, this);
 
+		if (!parentCode.isDdlOrDcl() || isDdlAnnotation())
+			return false;
+		Token token = firstToken;
+		while (token != null) {
+			if (!token.isComment() && !token.textEqualsAny("{", "}") && StringUtil.containsAny(token.text, new String[] { "{", "}", "[", "]" })) {
+				return true;
+			}
+			token = token.getNext();
+		}
       return false;
 	}
 	

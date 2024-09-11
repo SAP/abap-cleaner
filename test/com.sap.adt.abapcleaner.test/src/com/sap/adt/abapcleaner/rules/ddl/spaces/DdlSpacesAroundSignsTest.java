@@ -773,6 +773,28 @@ public class DdlSpacesAroundSignsTest extends RuleTestBase {
 	}
 
 	@Test
+	void testNoSpaceBeforeColonInPathExpr() {
+		// ensure that no space is added between "*:" or "1:" in path expressions
+		rule.configSpaceBeforeColon.setEnumValue(ChangeType.ALWAYS);
+
+		buildSrc("define view C_AnyView");
+		buildSrc("  as select from I_AnyView as AnyAlias");
+		buildSrc("");
+		buildSrc("  association [1..*] to I_OtherView as _OtherAlias");
+		buildSrc("    on AnyAlias.AnyKeyField = _OtherAlias.AnyKeyField");
+		buildSrc("");
+		buildSrc("{");
+		buildSrc("  key AnyAlias.AnyKeyField,");
+		buildSrc("      _OtherAlias[1: AnyField = 10].OtherField as OtherField,");
+		buildSrc("      _OtherAlias[*: AnyField > 10].ThirdField as ThirdField");
+		buildSrc("}");
+
+		copyExpFromSrc();
+
+		testRule();
+	}
+
+	@Test
 	void testSpecialCasesOfAsterisk() {
 		// ensure that no spaces are put around "*" in association cardinality and in "count(*)"
 		buildSrc("define view C_AnyView");
@@ -786,7 +808,8 @@ public class DdlSpacesAroundSignsTest extends RuleTestBase {
 		buildSrc("{");
 		buildSrc("  key AnyAlias.AnyKeyField,");
 		buildSrc("      count(*) as AnyCount,");
-		buildSrc("      count( * ) as OtherCount");
+		buildSrc("      count( * ) as OtherCount,");
+		buildSrc("      _OtherAlias[*: AnyField = 1].OtherField as OtherField");
 		buildSrc("}");
 		buildSrc("group by AnyAlias.AnyKeyField");
 
