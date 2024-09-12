@@ -7,6 +7,7 @@ import java.util.HashMap;
 
 import com.sap.adt.abapcleaner.base.ABAP;
 import com.sap.adt.abapcleaner.base.Cult;
+import com.sap.adt.abapcleaner.base.Language;
 import com.sap.adt.abapcleaner.base.StringUtil;
 import com.sap.adt.abapcleaner.parser.Code;
 import com.sap.adt.abapcleaner.parser.Command;
@@ -275,7 +276,7 @@ public class TypoRule extends Rule {
 			} else  {
 				// process normal comment
 				processToken = configProcessComments.getValue();
-				CommentIdentification identification = identifier.identifyComment(text, true);
+				CommentIdentification identification = identifier.identifyComment(text, true, Language.ABAP);
 				if (!identification.isEnglish()) {
 					processToken = false;
 				}

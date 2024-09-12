@@ -269,4 +269,11 @@ public class DdlAnnotation {
 		}
 		return sb.toString();
 	}
+	
+	public boolean lastElementContains(String textAtStart, String textAfterStart) {
+		if (elements.length < 1)
+			return false;
+		String lastElementName = elements[elements.length - 1].name;
+		return lastElementName.startsWith(textAtStart) || lastElementName.indexOf(textAfterStart) > 0;
+	}
 }

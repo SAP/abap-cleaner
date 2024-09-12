@@ -313,6 +313,43 @@ public final class StringUtil {
 		return -1;
 	}
 	
+	public static int indexOfAny(String string, char[] anyOf, int startIndex, char escapeChar) {
+		if (string == null)
+			return -1;
+		
+		// if the escapeChar is part of the anyOf array, it only escapes itself, as in 'literal with '' character' 
+		// or `string with `` character`; in all other cases, the escapeChar escapes any following char, 
+		// as in |template \\ with \r\n special \0 chars|
+		boolean onlyEscapeIfDouble = false;
+		for (char match : anyOf) {
+			if (escapeChar == match) {
+				onlyEscapeIfDouble = true;
+				break;
+			}
+		}
+		
+		int index = startIndex;
+		while (index < string.length()) {
+			char c = string.charAt(index);
+			if (c == escapeChar && index + 1 < string.length()) {
+				if (onlyEscapeIfDouble && string.charAt(index + 1) == escapeChar) {
+					index += 2;
+					continue;
+				} else if (!onlyEscapeIfDouble) {
+					index += 2;
+					continue;
+				} // otherwise, continue below
+			}
+			for (char match : anyOf) {
+				if (c == match) {
+					return index;
+				}
+			}
+			++index;
+		}
+		return -1;
+	}
+	
 	public static int indexOfAny(String string, char[] anyOf, int startIndex, String[] skipTexts) {
 		if (string == null)
 			return -1;

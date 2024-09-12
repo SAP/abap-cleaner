@@ -429,7 +429,7 @@ public abstract class RuleForDeclarations extends Rule {
 			return;
 
 		// determine whether the comment line looks like ABAP code
-		CommentIdentification identification = commentIdentifier.identifyComment(command.getFirstToken().getText(), false);
+		CommentIdentification identification = commentIdentifier.identifyComment(command.getFirstToken().getText(), false, Language.ABAP);
 		if (identification.isTextual() || identification.words == null || identification.words.length == 0)
 			return;
 

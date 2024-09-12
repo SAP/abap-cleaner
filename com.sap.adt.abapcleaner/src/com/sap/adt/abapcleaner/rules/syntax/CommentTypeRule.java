@@ -131,10 +131,10 @@ public class CommentTypeRule extends Rule {
 			while (command != null && command.isAsteriskCommentLine() && !command.getChangeControl().isRuleBlocked(getID())) {
 				Command nextCommand = command.getNext();
 				String nextComment = (nextCommand != null && nextCommand.isAsteriskCommentLine()) ? nextCommand.getFirstToken().getText() : null;
-				CommentIdentification commentIdentification = identifier.identifyComment(curComment, false, lastComment, nextComment, false);
+				CommentIdentification commentIdentification = identifier.identifyComment(curComment, false, lastComment, nextComment, false, Language.ABAP);
 				if (commentIdentification.indent >= 0)
 					minIndent = Math.min(minIndent, commentIdentification.indent);
-				if (commentIdentification.isAbapCode())
+				if (commentIdentification.isCode())
 					++codeLineCount;
 				else
 					++textLineCount;

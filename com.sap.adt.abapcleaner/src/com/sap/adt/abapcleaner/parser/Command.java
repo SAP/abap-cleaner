@@ -2184,7 +2184,8 @@ public class Command {
 		while ((firstInLine.closesLevel() || firstInLine.isCommentLine()) && firstInLine.getPrev() != null) {
 			firstInLine = firstInLine.getPrev().getFirstTokenInLine();
 		}
-		String insertText = ABAP.COMMENT_SIGN_STRING + " " + commentText.trim();
+		boolean isDdlOrDcl = (language == Language.DDL || language == Language.DCL);
+		String insertText = (isDdlOrDcl ? DDL.LINE_END_COMMENT : ABAP.COMMENT_SIGN_STRING) + " " + commentText.trim();
 		Token newComment = Token.create(firstInLine.lineBreaks, firstInLine.spacesLeft, insertText, firstInLine.sourceLineNum, language);
 
 		// if this Command follows another Command on the same line, put both the comment and this Command to an own line
@@ -2219,7 +2220,7 @@ public class Command {
 			if (isAsteriskCommentLine()) {
 				newComment.spacesLeft = getIndent();
 			} else if (getClosesLevel()) {
-				newComment.spacesLeft += ABAP.INDENT_STEP;
+				newComment.spacesLeft += (isDdlOrDcl ? DDL.INDENT_STEP : ABAP.INDENT_STEP);
 			}
 
 			// insert a new Command with the new comment Token before the current Command 
@@ -3750,6 +3751,7 @@ public class Command {
 		if (start == null || !start.isKeyword())
 			return null;
 		
+		// cp. Language.preview()
 		Token identifier = null;
 		if (identifier == null) 
 			start.getLastTokenOnSiblings(true, TokenSearch.makeOptional("DEFINE"), TokenSearch.makeOptional("ROOT"), "ASTRACT|CUSTOM", "ENTITY", TokenSearch.ANY_IDENTIFIER);

@@ -12,6 +12,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import com.sap.adt.abapcleaner.base.ABAP;
+import com.sap.adt.abapcleaner.base.Language;
 import com.sap.adt.abapcleaner.base.StringUtil;
 
 class CommentIdentifierTest {
@@ -35,54 +36,55 @@ class CommentIdentifierTest {
 	}
 	
 	void testSrcIsAbap() {
-		testSrc(true, false);
+		testSrc(true, false, Language.ABAP);
 	}
 	
 	void testSrcIsText() {
-		testSrc(false, false);
+		testSrc(false, false, Language.ABAP);
 	}
 	
 	void testSrcContextIsAbap() {
-		testSrc(true, true);
+		testSrc(true, true, Language.ABAP);
 	}
 	
 	void testSrcContextIsText() {
-		testSrc(false, true);
+		testSrc(false, true, Language.ABAP);
 	}
 	
-	private void testSrc(boolean expAbapCode, boolean testWithContextOnly) {
+	private void testSrc(boolean expAbapCode, boolean testWithContextOnly, Language codeLanguage) {
 		for (int line = 0; line < lines.size(); ++line) {
 			if (!testWithContextOnly) {
 				// test without the context of the previous and next line
-				test(lines.get(line), null, null, expAbapCode);
+				test(lines.get(line), null, null, expAbapCode, codeLanguage);
 			}
 
 			// test with the context of the previous and next line
 			String prevLine = (line == 0) ? null : lines.get(line - 1);
 			String nextLine = (line + 1 == lines.size()) ? null : lines.get(line + 1);
-			if (prevLine != null || nextLine != null)
-				test(lines.get(line), prevLine, nextLine, expAbapCode);
+			if (prevLine != null || nextLine != null) {
+				test(lines.get(line), prevLine, nextLine, expAbapCode, codeLanguage);
+			}
 		}
 	}
 	
 	void testLineIsAbap(String lineText) {
-		test(lineText, null, null, true);
+		test(lineText, null, null, true, Language.ABAP);
 	}
 
 	void testLineIsText(String lineText) {
-		test(lineText, null, null, false);
+		test(lineText, null, null, false, Language.ABAP);
 	}
 
-	private void test(String lineText, String prevLine, String nextLine, boolean expAbapCode) {
-		CommentIdentification result = commentIdentifier.identifyComment(lineText, false, prevLine, nextLine, false);
+	private void test(String lineText, String prevLine, String nextLine, boolean expCode, Language codeLanguage) {
+		CommentIdentification result = commentIdentifier.identifyComment(lineText, false, prevLine, nextLine, false, codeLanguage);
 		
 		assertTrue(result.canDecide());
-		int abapProbability = result.getAbapProbabilityPercent();
-		assertTrue(0 <= abapProbability  && abapProbability <= 100);
-		assertEquals(result.isAbapCode(), expAbapCode);
-		assertEquals(result.isTextual(), !expAbapCode);
+		int codeProbability = result.getCodeProbabilityPercent();
+		assertTrue(0 <= codeProbability && codeProbability <= 100);
+		assertEquals(result.isCode(), expCode);
+		assertEquals(result.isTextual(), !expCode);
 		
-		result = commentIdentifier.identifyComment(lineText, false, prevLine, nextLine, true);
+		result = commentIdentifier.identifyComment(lineText, false, prevLine, nextLine, true, codeLanguage);
 		String reasons = result.getReasonsWithSep(System.lineSeparator());
 		assertTrue(reasons.length() > 0);
 	}
@@ -240,7 +242,7 @@ class CommentIdentifierTest {
 		StringBuilder output = new StringBuilder();
 		commentIdentifier.identifyComments(codeText, output, mode);
 		int actLineCount = StringUtil.instrCount(output.toString(), '\n');
-		assertEquals(headerLineCount + expLineCount, actLineCount);
+		assertEquals(expLineCount, actLineCount - headerLineCount);
 		
 		// ensure that a scope description is available
 		assertTrue(CommentIdentifier.getScopeDescription(mode).length() > 0);
@@ -259,9 +261,9 @@ class CommentIdentifierTest {
 			+ LINE_SEP + "* second asterisk comment";
 
 		// the second line which just consist of the comment sign " is skipped, therefore expect just 1 quotation mark comment
-		testIdentifyWithOutput(code, CommentIdentifierMode.QUOT_MARK_COMMENTS_ONLY, 1);
-		testIdentifyWithOutput(code, CommentIdentifierMode.ABAP_CODE_ONLY, 3);
-		testIdentifyWithOutput(code, CommentIdentifierMode.ASTERISK_COMMENTS, 2);
+		testIdentifyWithOutput(code, CommentIdentifierMode.NON_LINE_START_COMMENTS, 1);
+		testIdentifyWithOutput(code, CommentIdentifierMode.CODE_ONLY, 3);
+		testIdentifyWithOutput(code, CommentIdentifierMode.LINE_START_COMMENTS, 2);
 		testIdentifyWithOutput(code, CommentIdentifierMode.ALL_COMMENT_LINES, 3);
 	}
 	
@@ -312,7 +314,7 @@ class CommentIdentifierTest {
 		for (int pass = 0; pass < 2; ++pass) {
 			// add the samples to the comment identifier and get word frequencies
 			commentIdentifier = new CommentIdentifier();
-			commentIdentifier.addCommentSamples(lines, CommentIdentifierMode.QUOT_MARK_COMMENTS_ONLY);
+			commentIdentifier.addCommentSamples(lines, CommentIdentifierMode.NON_LINE_START_COMMENTS, Language.ABAP);
 
 			freqOfWords = new HashMap<>();
 			freqTable = commentIdentifier.getWordFrequencies(oldTable, freqOfWords);
@@ -519,5 +521,74 @@ class CommentIdentifierTest {
 		assertEquals("initialization", freqTypos.get("initialisation"));
 		assertEquals("neighbor", freqTypos.get("neighbour"));
 		assertEquals("optimize", freqTypos.get("optimise"));
-}
+	}
+
+	void testDdlLineIsDdl(String lineText) {
+		test(lineText, null, null, true, Language.DDL);
+	}
+
+	void testDdlLineIsText(String lineText) {
+		test(lineText, null, null, false, Language.DDL);
+	}
+
+	@Test
+	void testDdlAnnotation() {
+		testDdlLineIsDdl("@Annotation: 'value'");
+		testDdlLineIsDdl("@Annotation.subAnno: 'value'");
+		testDdlLineIsDdl("@Annotation: { subAnno: 'value', otherSubAnno: 'value' }");
+		testDdlLineIsDdl("@Annotation.array: [ 'value', 'otherValue' }");
+	}
+
+	@Test
+	void testDdlCode() {
+		testDdlLineIsDdl("//define view entity I_Any");
+		testDdlLineIsDdl("//  as select from any_table as Any");
+		testDdlLineIsDdl("//    left outer to one join I_Other as Other");
+		testDdlLineIsDdl("//      on $projection.KeyField = Other.KeyField");
+		testDdlLineIsDdl("//  association [0..*] to I_Other as _Third");
+		testDdlLineIsDdl("//    on $projection.KeyField = _Third.KeyField");
+		testDdlLineIsDdl("//{");
+		testDdlLineIsDdl("//  key Any.AnyField,");
+		testDdlLineIsDdl("//      Any.OtherField,");
+		testDdlLineIsDdl("//      Any.ThirdField as ThirdField,");
+		testDdlLineIsDdl("//      Other.FourthField,");
+		testDdlLineIsDdl("//      _Third.FifthField,");
+		testDdlLineIsDdl("//      concat('a', 'b') as ConcatField,");
+		testDdlLineIsDdl("//      _Third.SixthField as SixthField");
+		testDdlLineIsDdl("//}");
+	}
+
+	@Test
+	void testDdlText() {
+		testDdlLineIsText("/*****/");
+		testDdlLineIsText("/*******************************************/");
+		// text with typos
+		testDdlLineIsText("// to optimise perfomance, only expose small selction of");
+		testDdlLineIsText("// fields neccessary for the applicaton; futher detials");
+		testDdlLineIsText("//could be made avaialable separatly via extention");
+		// German text
+		testDdlLineIsText("// Umlaute äöüß können auch erkannt werden");
+	}
+
+	@Test
+	void testIdentifyDdlWithOutput() {
+		String LINE_SEP = System.lineSeparator();
+		String code = "// line-start comment"
+			+ LINE_SEP + "  //"
+			+ LINE_SEP + "  // non-line-start comment A"
+			+ LINE_SEP + "  /* non-line-start comment B */"
+			+ LINE_SEP + "  @Annotation.subAnno: 'value'"
+			+ LINE_SEP + "  define view entity I_Any as select from dtab {"
+			+ LINE_SEP + "  key AnyField"
+			+ LINE_SEP
+			+ LINE_SEP + "-- non-line-start comment C" // only "//" at line-start counts, because this is how multi-line code is commented out
+			+ LINE_SEP + "}";
+
+		// the second line, which just consist of the comment sign //, is skipped
+		testIdentifyWithOutput(code, CommentIdentifierMode.NON_LINE_START_COMMENTS, 3);
+		testIdentifyWithOutput(code, CommentIdentifierMode.CODE_ONLY, 4);
+		testIdentifyWithOutput(code, CommentIdentifierMode.LINE_START_COMMENTS, 1);
+		testIdentifyWithOutput(code, CommentIdentifierMode.ALL_COMMENT_LINES, 4);
+	}
+	
 }
