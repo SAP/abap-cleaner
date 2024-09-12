@@ -37,6 +37,8 @@ public class CamelCaseNames {
 	private static final String LINE_SEP = System.lineSeparator();
 	private static final String TAB = "\t";
 
+	private static String[] entityPrefixLetters = null; // for view names only
+
 	private static HashSet<String> uiPrefixes = null; // for field names only
 	private static HashSet<String> entityPrefixes = null; // for view names only
 	private static HashSet<String> industryPrefixes = null;
@@ -53,7 +55,7 @@ public class CamelCaseNames {
 	private static CamelCaseNames viewNames;
 
 	private static int getHash(String text) { return text.toUpperCase().hashCode(); }
-
+	
 	private static class NameInfo {
 		public final String name;
 		public int count;
@@ -102,7 +104,9 @@ public class CamelCaseNames {
 	private static void initializeHashSets() {
 		uiPrefixes = initializeHashSet( new String[] { "UICT" } ); // all added 
 
-		entityPrefixes = initializeHashSet( new String[] { "A", "C", "D", "E", "F", "I", "N", "P", "R" } ); // for "X", see below
+		entityPrefixLetters = new String[] { "A", "C", "D", "E", "F", "I", "N", "P", "R" }; // must be upper case for entityPrefixExists()
+		
+		entityPrefixes = initializeHashSet(entityPrefixLetters); // for "X", see below
 
 		industryPrefixes = initializeHashSet( new String[] { 
 				"CWM", "DFS", "DSD", "EWA", "ILO", "ILS", "INS", "ISU", "ODS", "OIL", "PPS", "PRA", "PSE", "PSM", "RFM", "SOM", "UTI" } );
@@ -838,5 +842,19 @@ public class CamelCaseNames {
 		} else {
 			return CASE_BITS_NOT_FOUND;
 		}
+	}
+
+	public static String[] getEntityPrefixLetters() { 
+		// lazy initialization
+		if (entityPrefixes == null) 
+			initializeHashSets();
+		return entityPrefixLetters; 
+	}
+	
+	public static boolean entityPrefixExists(String entityPrefixLetter) { 
+		// lazy initialization
+		if (entityPrefixes == null) 
+			initializeHashSets();
+		return entityPrefixes.contains(entityPrefixLetter.toUpperCase()); 
 	}
 }

@@ -131,7 +131,7 @@ public final class DDL {
    public final static String[] levelClosersAfterParameterList = new String[] { "as", "returns", DDL.BRACE_OPEN_STRING };
 
    /** annotations of type ElementRef or KeyElementRef (only ObjectModel.representativeKey) */
-   public final static String[] elementRefAnnotations = new String[] { 
+   private final static HashSet<String> elementRefAnnotations = initializeHashSet(new String[] {
    		"AccessControl.personalData.blockingIndicator[]",
    		"Aggregation.referenceElement[]",
    		"Analytics.dataExtraction.alternativeKey[]",
@@ -312,10 +312,10 @@ public final class DDL {
    		"UI.statusInfo[].semanticObjectBinding[].localElement",
    		"UI.statusInfo[].targetElement",
    		"UI.statusInfo[].url",
-   		"UI.statusInfo[].value" };
+   		"UI.statusInfo[].value" });
 
    /** annotations of type ParameterRef */
-   public final static String[] parameterRefAnnotations = new String[] {
+   private final static HashSet<String> parameterRefAnnotations = initializeHashSet(new String[] {
    		"Consumption.dynamicLabel.binding[].parameter",
    		"Consumption.valueHelpDefinition[].additionalBinding[].localParameter",
    		"Semantics.interval[].lowerBoundaryParameter",
@@ -325,10 +325,10 @@ public final class DDL {
    		"UI.identification[].semanticObjectBinding[].localParameter",
    		"UI.lineItem[].semanticObjectBinding[].localParameter",
    		"UI.selectionVariant[].parameters[].name",
-   		"UI.statusInfo[].semanticObjectBinding[].localParameter" };
+   		"UI.statusInfo[].semanticObjectBinding[].localParameter" });
 
    /** annotations of type AssociationRef */
-   public final static String[] associationRefAnnotations = new String[] {
+   private final static HashSet<String> associationRefAnnotations = initializeHashSet(new String[] {
    		"AccessControl.privilegedAssociations[]",
    		"Analytics.document.defaultAssociationToStorage",
    		"AnalyticsDetails.query.hierarchyAssociation",
@@ -340,10 +340,10 @@ public final class DDL {
    		"ObjectModel.hierarchy.association",
    		"ObjectModel.text.association",
    		"ObjectModel.text.reference.association",
-   		"ObjectModel.unitConversionRate.association" };
+   		"ObjectModel.unitConversionRate.association" });
 
    /** annotations of type EntityRef */
-   public final static String[] entityRefAnnotations = new String[] {
+   private final static HashSet<String> entityRefAnnotations = initializeHashSet(new String[] {
    		"Analytics.document.storageForEntity[]",
    		"Consumption.derivation.lookupEntity",
    		"Consumption.valueHelpDefinition[].entity.name",
@@ -352,7 +352,7 @@ public final class DDL {
    		"ObjectModel.action[].result.dataType",
    		"ObjectModel.leadingEntity.name",
    		"OData.hierarchy.recursiveHierarchy[].entity.name",
-   		"VDM.auxiliaryEntity.for.entity" };
+   		"VDM.auxiliaryEntity.for.entity" });
 
    private static String getDdlKeywordKey(String ddlKeyword) {
 		return AbapCult.toLower(ddlKeyword);
@@ -625,5 +625,21 @@ public final class DDL {
 			}
 		}
 		return sb.toString();
+	}
+	
+	public static boolean isKnownElementRefAnnotation(String annotationPath) {
+		return elementRefAnnotations.contains(getDdlKeywordKey(annotationPath));
+	}
+	
+	public static boolean isKnownParameterRefAnnotation(String annotationPath) {
+		return parameterRefAnnotations.contains(getDdlKeywordKey(annotationPath));
+	}
+	
+	public static boolean isKnownAssociationRefAnnotation(String annotationPath) {
+		return associationRefAnnotations.contains(getDdlKeywordKey(annotationPath));
+	}
+
+	public static boolean isKnownEntityRefAnnotation(String annotationPath) {
+		return entityRefAnnotations.contains(getDdlKeywordKey(annotationPath));
 	}
 }
