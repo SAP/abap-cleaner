@@ -854,29 +854,29 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 
 		new MenuItem(menuExtras, SWT.SEPARATOR);
 
-		MenuItem mmuExtrasKeywordFreqAbapFolder = new MenuItem(menuExtras, SWT.NONE);
-		mmuExtrasKeywordFreqAbapFolder.addSelectionListener(new SelectionAdapter() {
+		MenuItem mmuExtrasKeywordFreqCodeFolder = new MenuItem(menuExtras, SWT.NONE);
+		mmuExtrasKeywordFreqCodeFolder.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
 				testDirectory(new AbapKeywordFreqBatchJob());
 			}
 		});
-		mmuExtrasKeywordFreqAbapFolder.setText("Get ABAP Keyword Frequencies for Folder...");
+		mmuExtrasKeywordFreqCodeFolder.setText("Get Code Keyword Frequencies for Folder...");
 
-		MenuItem mmuExtrasSepFreqAbapFolder = new MenuItem(menuExtras, SWT.NONE);
-		mmuExtrasSepFreqAbapFolder.addSelectionListener(new SelectionAdapter() {
+		MenuItem mmuExtrasSepFreqCodeFolder = new MenuItem(menuExtras, SWT.NONE);
+		mmuExtrasSepFreqCodeFolder.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				getSepFreqForFolder(CommentIdentifierMode.ABAP_CODE_ONLY);
+				getSepFreqForFolder(CommentIdentifierMode.CODE_ONLY);
 			}
 		});
-		mmuExtrasSepFreqAbapFolder.setText("Get ABAP Separator Frequencies for Folder...");
+		mmuExtrasSepFreqCodeFolder.setText("Get Code Separator Frequencies for Folder...");
 
 		MenuItem mmuExtrasSepFreqEnglishFolder = new MenuItem(menuExtras, SWT.NONE);
 		mmuExtrasSepFreqEnglishFolder.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				getSepFreqForFolder(CommentIdentifierMode.QUOT_MARK_COMMENTS_ONLY);
+				getSepFreqForFolder(CommentIdentifierMode.NON_LINE_START_COMMENTS);
 			}
 		});
 		mmuExtrasSepFreqEnglishFolder.setText("Get English Text Separator Frequencies for Folder...");
@@ -896,28 +896,37 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		mmuExtrasTestCommentIdentifier.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				identifyComments(CommentIdentifierMode.ABAP_CODE_ONLY);
+				identifyComments(CommentIdentifierMode.CODE_ONLY);
 			}
 		});
-		mmuExtrasTestCommentIdentifier.setText("Test &Comment Identifier with ABAP Lines");
+		mmuExtrasTestCommentIdentifier.setText("Test &Comment Identifier with Code Lines");
 
-		MenuItem mmuExtrasTestCommentLines = new MenuItem(menuExtras, SWT.NONE);
-		mmuExtrasTestCommentLines.addSelectionListener(new SelectionAdapter() {
+		MenuItem mmuExtrasTestLineStartCommentLines = new MenuItem(menuExtras, SWT.NONE);
+		mmuExtrasTestLineStartCommentLines.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				identifyComments(CommentIdentifierMode.QUOT_MARK_COMMENTS_ONLY);
+				identifyComments(CommentIdentifierMode.LINE_START_COMMENTS);
 			}
 		});
-		mmuExtrasTestCommentLines.setText("Test Comment Identifier with \\\" Comment Lines");
+		mmuExtrasTestLineStartCommentLines.setText("Test Comment Identifier with Line-Start Comment Lines");
 
-		MenuItem mmuExtrasTestAsteriskCommentLines = new MenuItem(menuExtras, SWT.NONE);
-		mmuExtrasTestAsteriskCommentLines.addSelectionListener(new SelectionAdapter() {
+		MenuItem mmuExtrasTestNonLineStartCommentLines = new MenuItem(menuExtras, SWT.NONE);
+		mmuExtrasTestNonLineStartCommentLines.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				identifyComments(CommentIdentifierMode.ASTERISK_COMMENTS);
+				identifyComments(CommentIdentifierMode.NON_LINE_START_COMMENTS);
 			}
 		});
-		mmuExtrasTestAsteriskCommentLines.setText("Test Comment Identifier with * Comment Lines");
+		mmuExtrasTestNonLineStartCommentLines.setText("Test Comment Identifier with Non-Line-Start Comment Lines");
+
+		MenuItem mmuExtrasTestAllCommentLines = new MenuItem(menuExtras, SWT.NONE);
+		mmuExtrasTestAllCommentLines.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				identifyComments(CommentIdentifierMode.ALL_COMMENT_LINES);
+			}
+		});
+		mmuExtrasTestAllCommentLines.setText("Test Comment Identifier with All Comment Lines");
 
 		new MenuItem(menuExtras, SWT.SEPARATOR);
 
@@ -1828,8 +1837,9 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 			@Override
 			public void run() {
 				Persistency persistency = Persistency.get();
-				for (String path : paths)
+				for (String path : paths) {
 					commentIdentifier.identifyComments(persistency.readAllTextFromFile(path), null, mode);
+				}
 			}
 		});
 
@@ -1853,8 +1863,9 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 				Persistency persistency = Persistency.get();
 				for (String path : paths) {
 					String text = persistency.readAllTextFromFile(path);
+					Language codeLanguage = Language.preview(text);
 					String[] lines = StringUtil.split(text, new char[] { '\r', '\n' }, true);
-					commentIdentifier.addCommentSamples(lines, mode);
+					commentIdentifier.addCommentSamples(lines, mode, codeLanguage);
 				}
 			}
 		});

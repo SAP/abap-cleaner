@@ -322,13 +322,7 @@ public class DdlCamelCaseNameRule extends Rule {
 
 			// determine the annotation path and whether contains the word "element" at the end
 			String path = annotation.getPath();
-			boolean referencesRemoteElement = false;
-			int lastDotPos = path.lastIndexOf(".");
-			if (lastDotPos > 0) {
-				// e.g. "@Consumption.valueHelpDefinition[].entity.element", "Consumption.derivation.resultElement"
-				String lastAnnotationElement = path.substring(lastDotPos + 1);
-				referencesRemoteElement = lastAnnotationElement.startsWith("element") || lastAnnotationElement.indexOf("Element") > 0;
-			}
+			boolean referencesRemoteElement = annotation.lastElementContains("element", "Element");
 
 			// determine the CamelCase view name / field name / association name
 			String newValue = null;

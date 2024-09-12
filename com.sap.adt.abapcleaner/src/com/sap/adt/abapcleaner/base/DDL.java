@@ -8,6 +8,7 @@ public final class DDL {
    public static final int INDENT_STEP = 2;
 
    public static final char COMMENT_SIGN = '/'; // the sign with which both // and /* start
+   public static final String COMMENT_SIGN_STRING = "/"; 
 
    public static final String ASTERISK_COMMENT_START = "/*";
    public static final String ASTERISK_COMMENT_END = "*/";
@@ -17,6 +18,7 @@ public final class DDL {
 
    public static final char QUOT_MARK = '\'';
    public static final String QUOT_MARK_STRING = "\'";
+   public static final char QUOT_ESCAPE_CHAR = '\\';
 
    public static final char DOT_SIGN = '.';
    public static final String DOT_SIGN_STRING = ".";
@@ -49,6 +51,9 @@ public final class DDL {
    public static final String BRACE_OPEN_STRING = "{";
    public static final char BRACE_CLOSE = '}';
    public static final String BRACE_CLOSE_STRING = "}";
+
+   public static final char UNDERSCORE = '_';
+   public static final String UNDERSCORE_STRING = "_";
 
    public final static String SESSION_PREFIX = "$session"; // "$session.bs_instance_id", "$session.bs_zone_id", "$session.client", "$session.system_date", "$session.system_language", "$session.user", "$session.user_date", "$session.user_timezone"
    public final static String PARAMETER_PREFIX = "$parameter";
@@ -641,5 +646,9 @@ public final class DDL {
 
 	public static boolean isKnownEntityRefAnnotation(String annotationPath) {
 		return entityRefAnnotations.contains(getDdlKeywordKey(annotationPath));
+	}
+	
+	public static boolean textStartsCommentAt(String text, int readPos) {
+		return StringUtil.containsAnyAt(text, readPos, LINE_END_COMMENT, LINE_END_MINUS_COMMENT, ASTERISK_COMMENT_START);
 	}
 }
