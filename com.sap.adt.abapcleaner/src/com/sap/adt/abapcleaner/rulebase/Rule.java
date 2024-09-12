@@ -17,6 +17,7 @@ import com.sap.adt.abapcleaner.rules.ddl.position.DdlPositionClausesRule;
 import com.sap.adt.abapcleaner.rules.ddl.position.DdlPositionDefineRule;
 import com.sap.adt.abapcleaner.rules.ddl.position.DdlPositionJoinRule;
 import com.sap.adt.abapcleaner.rules.ddl.position.DdlPositionSelectRule;
+import com.sap.adt.abapcleaner.rules.ddl.spaces.DdlCamelCaseNameRule;
 import com.sap.adt.abapcleaner.rules.ddl.spaces.DdlSpacesAroundBracketsRule;
 import com.sap.adt.abapcleaner.rules.ddl.spaces.DdlSpacesAroundSignsRule;
 import com.sap.adt.abapcleaner.rules.declarations.*;
@@ -30,7 +31,7 @@ import java.time.LocalDate;
 import java.util.*;
 
 public abstract class Rule {
-	public static final int RULE_COUNT = 85;
+	public static final int RULE_COUNT = 86;
 	public static final int RULE_GROUP_COUNT = 10;
 
 	protected static final String LINE_SEP = ABAP.LINE_SEPARATOR;
@@ -172,7 +173,8 @@ public abstract class Rule {
 
          // DDL spaces and spelling
          new DdlSpacesAroundSignsRule(profile),
-         new DdlSpacesAroundBracketsRule(profile)
+         new DdlSpacesAroundBracketsRule(profile),
+         new DdlCamelCaseNameRule(profile)
       };
 
 		StringBuilder errors = new StringBuilder();

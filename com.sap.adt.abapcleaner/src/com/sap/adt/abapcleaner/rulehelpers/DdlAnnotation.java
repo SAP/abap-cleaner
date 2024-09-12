@@ -251,4 +251,22 @@ public class DdlAnnotation {
 	public boolean isNestedWith(DdlAnnotation other, int nestAfterLevel) {
 		return startsNestingAfterLevel(nestAfterLevel) && elements[nestAfterLevel].nestingRange == other.elements[nestAfterLevel].nestingRange;
 	}
+	
+	/** returns a path like "Hierarchy.parentChild[].recurse.child[]" that can be compared with DDL.elementRefAnnotations etc. */
+	public String getPath() {
+		StringBuilder sb = new StringBuilder();
+		for (DdlAnnotationElement element : elements) {
+			if (element.isAnonymousArrayObject())
+				continue;
+
+			if (sb.length() > 0)
+				sb.append(".");
+			sb.append(element.name);
+			
+			if (element.startsArray) {
+				sb.append("[]");
+			}
+		}
+		return sb.toString();
+	}
 }
