@@ -3,8 +3,13 @@ package com.sap.adt.abapcleaner.rulebase;
 import java.util.*;
 
 public class RuleGroup {
-	private static String formatName(String name) {
-		return "---------- " + name.toUpperCase(Locale.ROOT) + " ----------";
+	private static String formatName(String name, RuleGroupID iD) {
+		if (iD == RuleGroupID.DDL_ANNOTATIONS) {
+			// use this more prominent separator for the first DDL rule group
+			return "====== " + name.toUpperCase(Locale.ROOT) + " ==============";
+		} else {
+			return "---------- " + name.toUpperCase(Locale.ROOT) + " ----------";
+		}
 	}
 
 	public final RuleGroupID iD;
@@ -20,7 +25,7 @@ public class RuleGroup {
 
 	@Override
 	public String toString() {
-		return formatName(getName());
+		return formatName(getName(), iD);
 	}
 
 	public String getName() {
@@ -54,6 +59,9 @@ public class RuleGroup {
 
 			case DDL_SPACES:
 				return "DDL Spaces and Spelling";
+
+			case DDL_ALIGNMENT:
+				return "DDL Alignment";
 
 			default:
 				throw new IndexOutOfBoundsException("Unknown RuleGroup!");

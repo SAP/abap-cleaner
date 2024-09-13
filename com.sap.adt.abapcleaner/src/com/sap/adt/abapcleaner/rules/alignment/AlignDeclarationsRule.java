@@ -761,7 +761,8 @@ public class AlignDeclarationsRule extends AlignDeclarationSectionRuleBase {
 			}
 
 			if (join) {
-				testColumn.joinIntoPreviousColumns(condenseSpaceBetweenCells);
+				Command[] changedCommands = testColumn.joinIntoPreviousColumns(condenseSpaceBetweenCells);
+				table.getParentCode().addRuleUses(this, changedCommands);
 			}
 		}
 
@@ -769,7 +770,8 @@ public class AlignDeclarationsRule extends AlignDeclarationSectionRuleBase {
 		// (in case of unalignAll or keepAsIs, this column will already be joined into previous columns by now)
 		AlignColumn lengthColumn = table.getColumn(Columns.LENGTH.getValue()); 
 		if (!lengthColumn.isEmpty() && lengthColumn.isPreviousColumnFixedWidth()) {
-			lengthColumn.joinIntoPreviousColumns(condenseSpaceBetweenCells);
+			Command[] changedCommands = lengthColumn.joinIntoPreviousColumns(condenseSpaceBetweenCells);
+			table.getParentCode().addRuleUses(this, changedCommands);
 		}
 	}
 

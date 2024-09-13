@@ -476,7 +476,8 @@ public class AlignMethodsDeclarationRule extends AlignDeclarationSectionRuleBase
 			if (!defOrOptColumn.isEmpty()) {
 				double fillRatioToJustifyOwnColumn = configFillPercentageToJustifyOwnColumn.getValue() / 100.0;
 				if (defOrOptColumn.getCellCount() <= 1 || defOrOptColumn.getCellCount() < (int) (table.getLineCount() * fillRatioToJustifyOwnColumn)) {
-					defOrOptColumn.joinIntoPreviousColumns(true);
+					Command[] changedCommands = defOrOptColumn.joinIntoPreviousColumns(true);
+					code.addRuleUses(this, changedCommands);
 				}
 			}
 		} catch (UnexpectedSyntaxException ex) {
@@ -486,8 +487,9 @@ public class AlignMethodsDeclarationRule extends AlignDeclarationSectionRuleBase
 		if (isTableOfOneLinersOrTabular) {
 			// methods without parameters should not contribute to the column width of method names  
 			for (AlignLine line : table.getLines()) {
-				if (line.getLastCellIndex() == Columns.METHOD_NAME.getValue()) 
+				if (line.getLastCellIndex() == Columns.METHOD_NAME.getValue()) {
 					line.getCell(Columns.METHOD_NAME.getValue()).setOverrideTextWidth(1);
+				}
 			}
 		}
 		

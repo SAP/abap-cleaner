@@ -3,6 +3,7 @@ package com.sap.adt.abapcleaner.rulehelpers;
 import com.sap.adt.abapcleaner.programbase.*;
 import com.sap.adt.abapcleaner.parser.*;
 import java.lang.IllegalStateException;
+import java.util.ArrayList;
 
 public class AlignColumn {
 	private final AlignTable parentTable;
@@ -110,11 +111,11 @@ public class AlignColumn {
 		return isEmpty() ? 0 : Math.max(minimumWidth, maxMultiLineWidth) + 1;
 	}
 
-	public final boolean joinIntoPreviousColumns(boolean condenseSpaceBetweenCells) throws UnexpectedSyntaxException {
+	public final Command[] joinIntoPreviousColumns(boolean condenseSpaceBetweenCells) throws UnexpectedSyntaxException {
 		return joinIntoPreviousColumns(condenseSpaceBetweenCells, 1, false);
 	}
 	
-	public final boolean joinIntoPreviousColumns(boolean condenseSpaceBetweenCells, boolean removeLineBreaksBetweenCells) throws UnexpectedSyntaxException {
+	public final Command[] joinIntoPreviousColumns(boolean condenseSpaceBetweenCells, boolean removeLineBreaksBetweenCells) throws UnexpectedSyntaxException {
 		return joinIntoPreviousColumns(condenseSpaceBetweenCells, 1, removeLineBreaksBetweenCells);
 	}
 
@@ -123,11 +124,13 @@ public class AlignColumn {
 	 * (which means that no separate horizontal space will be reserved for them); 
 	 * returns true if whitespace was changed
 	 */
-	public final boolean joinIntoPreviousColumns(boolean condenseSpaceBetweenCells, int condensedSpacesLeft, boolean removeLineBreaksBetweenCells) throws UnexpectedSyntaxException {
+	public final Command[] joinIntoPreviousColumns(boolean condenseSpaceBetweenCells, int condensedSpacesLeft, boolean removeLineBreaksBetweenCells) throws UnexpectedSyntaxException {
 		if (index == 0)
 			throw new IllegalStateException("This method cannot be called on the first column!");
 
-		boolean changed = false;
+		ArrayList<Command> changedCommands = new ArrayList<Command>();
+		Command lastChangedCommand = null;
+
 		for (AlignLine line : parentTable.getLines()) {
 			AlignCell cell = line.getCell(this);
 			if (cell == null)
@@ -141,6 +144,7 @@ public class AlignColumn {
 				if (destCell != null) {
 					Token firstInCell = cell.getFirstToken();
 					if (condenseSpaceBetweenCells && (removeLineBreaksBetweenCells || !firstInCell.isFirstTokenInLine())) {
+						boolean changed = false;
 						Token prevToken = firstInCell.getPrev();
 						if (prevToken == null || !prevToken.isComment()) {
 							if (cell.setWhitespace(0, condensedSpacesLeft, true, false, null)) {
@@ -150,6 +154,13 @@ public class AlignColumn {
 							Token prevCode = firstInCell.getPrevCodeToken();
 							if (cell.setWhitespace(1, prevCode.getEndIndexInLine() + 1, true, false, null)) {
 								changed = true;
+							}
+						}
+						if (changed) {
+							Command command = firstInCell.getParentCommand();
+							if (command != lastChangedCommand) {
+								changedCommands.add(command);
+								lastChangedCommand = command;
 							}
 						}
 					}
@@ -168,7 +179,7 @@ public class AlignColumn {
 			}
 		}
 		clearStats();
-		return changed;
+		return changedCommands.toArray(new Command[0]);
 	}
 	
 	public void setForceLineBreakAfter(boolean overrideWidthWith1) {

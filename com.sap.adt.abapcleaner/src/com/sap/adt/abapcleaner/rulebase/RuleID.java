@@ -122,7 +122,10 @@ public enum RuleID  {
    DDL_SPACES_AROUND_SIGNS,
    DDL_SPACES_AROUND_BRACKETS,
    DDL_CAMEL_CASE_NAME,
-   DDL_TYPO;
+   DDL_TYPO,
+   
+   // DDL alignment
+   DDL_ALIGN_ENTITY_PARAMETERS;
 
 	public static final int SIZE = java.lang.Integer.SIZE;
 

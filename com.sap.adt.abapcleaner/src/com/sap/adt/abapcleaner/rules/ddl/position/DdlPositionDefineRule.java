@@ -19,13 +19,15 @@ import com.sap.adt.abapcleaner.rulebase.RuleSource;
 import com.sap.adt.abapcleaner.rulehelpers.RuleForDdlPosition;
 
 public class DdlPositionDefineRule extends RuleForDdlPosition {
+	public static final String displayName = "Break before DEFINE etc.";
+	
 	private final static RuleReference[] references = new RuleReference[] { new RuleReference(RuleSource.ABAP_CLEANER) };
 	
 	@Override
 	public RuleID getID() { return RuleID.DDL_POSITION_DEFINE; }
 
 	@Override
-	public String getDisplayName() { return "Break before DEFINE etc."; }
+	public String getDisplayName() { return displayName; }
 
 	@Override
 	public String getDescription() { return "Standardizes line breaks and indentation before DEFINE / EXTEND etc. keywords, entity name and WITH PARAMETERS."; }
@@ -68,13 +70,15 @@ public class DdlPositionDefineRule extends RuleForDdlPosition {
 	
 	final ConfigEnumValue<DdlLineBreak> configBreakBeforeWithParams = new ConfigEnumValue<DdlLineBreak>(this, "BreakBeforeWithParams", "Break before WITH PARAMETERS:", lineBreakSelection, DdlLineBreak.values(), DdlLineBreak.ALWAYS);
 	final ConfigIntValue configWithParamsIndent = new ConfigIntValue(this, "WithParamsIndent", "Indent if breaking:", "", 0, 2, MAX_INDENT);
-	final ConfigIntValue configParamsIndent = new ConfigIntValue(this, "ParamsIndent", "Indent of parameters:", "", 0, 4, MAX_INDENT);
+	public final ConfigIntValue configParamsIndent = new ConfigIntValue(this, "ParamsIndent", "Indent of parameters:", "", 0, 4, MAX_INDENT);
 
 	private final ConfigValue[] configValues = new ConfigValue[] { configBreakBeforeDefine, configDefineIndent, configBreakBeforeEntityName, configEntityNameIndent, configBreakBeforeWithParams, configWithParamsIndent, configParamsIndent };
 	
 	@Override
 	public ConfigValue[] getConfigValues() { return configValues; }
 
+	public int getParamsIndent() { return configParamsIndent.getValue(); }
+	
 	public DdlPositionDefineRule(Profile profile) {
 		super(profile);
 		initializeConfiguration();
