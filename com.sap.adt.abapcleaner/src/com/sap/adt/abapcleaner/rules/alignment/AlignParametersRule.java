@@ -481,9 +481,8 @@ public class AlignParametersRule extends RuleForCommands {
 			Columns[] columnsToJoinIntoPrevious = new Columns[] { Columns.LET_ASSIGNMENT_OP, Columns.LET_EXPRESSION, Columns.ASSIGNMENT_OP, Columns.EXPRESSION };
 			try {
 				for (Columns columnToJoin : columnsToJoinIntoPrevious) {
-					if (table.getColumn(columnToJoin.getValue()).joinIntoPreviousColumns(true)) {
-						changed = true;
-					}
+					Command[] changedCommands = table.getColumn(columnToJoin.getValue()).joinIntoPreviousColumns(true); 
+					changed |= (changedCommands != null) && (changedCommands.length > 0);
 				}
 			} catch (UnexpectedSyntaxException ex) {
 				if (changed)

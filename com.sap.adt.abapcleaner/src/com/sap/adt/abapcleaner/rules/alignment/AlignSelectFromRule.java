@@ -426,16 +426,19 @@ public class AlignSelectFromRule extends RuleForCommands {
 			AlignColumn onColumn = alignTable.getColumn(Columns.ON.getValue());
 
 			if (continueAfterJoin) {
-				tableNameColumn.joinIntoPreviousColumns(true, true);
+				Command[] changedCommands = tableNameColumn.joinIntoPreviousColumns(true, true);
+				code.addRuleUses(this, changedCommands);
 			} // otherwise, the JOIN column was NOT filled above, therefore nothing else to do 
 			
 			// merge columns that shall NOT be aligned
 			if (!configAlignAsAcrossJoins.getValue() || asColumn.getCellCount() < 2) {
-				asColumn.joinIntoPreviousColumns(true, true);
+				Command[] changedCommands = asColumn.joinIntoPreviousColumns(true, true);
+				code.addRuleUses(this, changedCommands);
 			}
 			if (SelectFromOnPosition.forValue(configSelectOnPosition.getValue()) == SelectFromOnPosition.CONTINUE) {
 				if (!configAlignOnAcrossJoins.getValue()) {
-					onColumn.joinIntoPreviousColumns(true, true);
+					Command[] changedCommands = onColumn.joinIntoPreviousColumns(true, true);
+					code.addRuleUses(this, changedCommands);
 				}
 			} else {
 				asColumn.setForceLineBreakAfter(false);

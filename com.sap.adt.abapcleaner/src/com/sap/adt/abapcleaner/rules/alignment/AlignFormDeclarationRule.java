@@ -199,7 +199,8 @@ public class AlignFormDeclarationRule extends RuleForCommands {
 		}
 		if (!configAlignTypes.getValue()) {
 			try {
-				table.getColumn(Columns.TYPE_OR_LIKE.getValue()).joinIntoPreviousColumns(true);
+				Command[] changedCommands = table.getColumn(Columns.TYPE_OR_LIKE.getValue()).joinIntoPreviousColumns(true);
+				code.addRuleUses(this, changedCommands);
 			} catch (UnexpectedSyntaxException e) {
 				throw new UnexpectedSyntaxAfterChanges(this, e);
 			}

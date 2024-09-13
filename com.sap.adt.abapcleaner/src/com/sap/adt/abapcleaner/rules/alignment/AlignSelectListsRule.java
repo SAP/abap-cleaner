@@ -321,9 +321,11 @@ public class AlignSelectListsRule extends RuleForCommands {
 			} else { // clauseType == clauseType.ORDER_BY
 				alignAdditions = configAlignAdditionsInOrderByList.getValue();
 			}
-			if (!alignAdditions)
-				table.getColumn(Columns.ADDITIONS.getValue()).joinIntoPreviousColumns(true, true);
-
+			if (!alignAdditions) {
+				Command[] changedCommands = table.getColumn(Columns.ADDITIONS.getValue()).joinIntoPreviousColumns(true, true);
+				code.addRuleUses(this, changedCommands);
+			}
+			
 			int firstLineBreaks = 0;
 			Command[] changedCommands = table.align(basicIndent, firstLineBreaks, true);
 			code.addRuleUses(this, changedCommands);

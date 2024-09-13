@@ -28,6 +28,8 @@ public class AlignTable {
 
 	public final int getFirstTokenColumnIndex() { return isEmpty() ? -1 : lines.get(0).getFirstTokenColumnIndex(); }
 
+	public final Code getParentCode() { return isEmpty() ? null : getFirstToken().getParentCommand().getParentCode(); }
+	
 	public final AlignColumn getColumn(int index) {
 		return (index >= 0 && index < columns.length) ? columns[index] : null;
 	}

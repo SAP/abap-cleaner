@@ -19,6 +19,8 @@ import com.sap.adt.abapcleaner.rulehelpers.ChangeType;
 import com.sap.adt.abapcleaner.rules.ddl.annotations.DdlAnnotationLayoutRule;
 
 public class DdlSpacesAroundSignsRule extends RuleForDdlCommands {
+	public static final String displayName = "Standardize spaces around colon, comma etc.";
+	
 	@Override
 	public RuleID getID() { return RuleID.DDL_SPACES_AROUND_SIGNS; }
 
@@ -26,7 +28,7 @@ public class DdlSpacesAroundSignsRule extends RuleForDdlCommands {
 	public RuleGroupID getGroupID() { return RuleGroupID.DDL_SPACES; }
 
 	@Override
-	public String getDisplayName() { return "Standardize spaces around colon, comma etc."; }
+	public String getDisplayName() { return displayName; }
 
 	@Override
 	public String getDescription() { return "Standardizes spaces around comment signs, colons, commas and arithmetic operators."; }
@@ -81,8 +83,8 @@ public class DdlSpacesAroundSignsRule extends RuleForDdlCommands {
 	final ConfigEnumValue<ChangeType> configSpaceBeforeCommentSign = new ConfigEnumValue<ChangeType>(this, "SpaceBeforeCommentSign", "Space before comment sign:", changeTypeSelection, ChangeType.values(), ChangeType.ALWAYS);
 	final ConfigEnumValue<ChangeType> configSpaceAfterCommentSign = new ConfigEnumValue<ChangeType>(this, "SpaceAfterCommentSign", "Space after comment sign:", changeTypeSelection, ChangeType.values(), ChangeType.ALWAYS);
 
-	final ConfigEnumValue<ChangeType> configSpaceBeforeColon = new ConfigEnumValue<ChangeType>(this, "SpaceBeforeColon", "Space before colon:", changeTypeSelection, ChangeType.values(), ChangeType.KEEP_AS_IS);
-	final ConfigEnumValue<ChangeType> configSpaceAfterColon = new ConfigEnumValue<ChangeType>(this, "SpaceAfterColon", "Space after colon:", changeTypeSelection, ChangeType.values(), ChangeType.ALWAYS);
+	public final ConfigEnumValue<ChangeType> configSpaceBeforeColon = new ConfigEnumValue<ChangeType>(this, "SpaceBeforeColon", "Space before colon:", changeTypeSelection, ChangeType.values(), ChangeType.KEEP_AS_IS);
+	public final ConfigEnumValue<ChangeType> configSpaceAfterColon = new ConfigEnumValue<ChangeType>(this, "SpaceAfterColon", "Space after colon:", changeTypeSelection, ChangeType.values(), ChangeType.ALWAYS);
 
 	final ConfigEnumValue<ChangeType> configSpaceBeforeComma = new ConfigEnumValue<ChangeType>(this, "SpaceBeforeComma", "Space before comma:", changeTypeSelection, ChangeType.values(), ChangeType.NEVER);
 	final ConfigEnumValue<ChangeType> configSpaceAfterComma = new ConfigEnumValue<ChangeType>(this, "SpaceAfterComma", "Space after comma:", changeTypeSelection, ChangeType.values(), ChangeType.ALWAYS);
@@ -95,6 +97,9 @@ public class DdlSpacesAroundSignsRule extends RuleForDdlCommands {
 	@Override
 	public ConfigValue[] getConfigValues() { return configValues; }
 
+	public ChangeType getSpaceBeforeColon() { return ChangeType.forValue(configSpaceBeforeColon.getValue()); }
+	public ChangeType getSpaceAfterColon() { return ChangeType.forValue(configSpaceAfterColon.getValue()); }
+	
 	public DdlSpacesAroundSignsRule(Profile profile) {
 		super(profile);
 		initializeConfiguration();
