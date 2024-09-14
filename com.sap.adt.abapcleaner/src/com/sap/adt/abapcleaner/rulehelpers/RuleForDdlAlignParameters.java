@@ -3,6 +3,7 @@ package com.sap.adt.abapcleaner.rulehelpers;
 import java.util.ArrayList;
 
 import com.sap.adt.abapcleaner.base.DDL;
+import com.sap.adt.abapcleaner.base.StringUtil;
 import com.sap.adt.abapcleaner.parser.Code;
 import com.sap.adt.abapcleaner.parser.Command;
 import com.sap.adt.abapcleaner.parser.Term;
@@ -174,29 +175,41 @@ public abstract class RuleForDdlAlignParameters extends RuleForDdlCommands {
 		changed |= moveClosingParenthesis(closingParenthesis, fallbackIndent);
 		
 		// join columns as configured
-		boolean assignOpsAreColons = assignmentOpText.equals(DDL.COLON_SIGN_STRING);
-		joinColumns(code, table, alignAssignmentOps, alignActualParams, assignOpsAreColons);
+		joinColumns(code, table, alignAssignmentOps, alignActualParams, assignmentOpText);
 
 		// align the table
 		changed |= (table.align(indent, firstLineBreaks, true) != null);
 		
 		// align comments between parameters
+		AlignColumn parameterColumn = table.getColumn(Columns.PARAMETER.getValue());
+		AlignColumn assignmentOpColumn = table.getColumn(Columns.ASSIGNMENT_OP.getValue());
+		AlignColumn expressionColumn = table.getColumn(Columns.EXPRESSION.getValue());
+		int parameterIndent = parameterColumn.getEffectiveIndent();
+		int assignmentOpIndent = assignmentOpColumn.getEffectiveIndent();
+		int expressionIndent = expressionColumn.getEffectiveIndent();
+
+		boolean mayAlignCommentedOutParameters = parameterIndent > 0
+															&& (!alignAssignmentOps || assignmentOpIndent > 0)
+															&& (!alignActualParams  || expressionIndent > 0);
+
 		for (Token otherLineStart : otherLineStarts) {
-			changed |= otherLineStart.setWhitespace(otherLineStart.lineBreaks, indent);
+			if (mayAlignCommentedOutParameters && otherLineStart.isCommentLine() && otherLineStart.spacesLeft == 0 && otherLineStart.textStartsWith(DDL.LINE_END_COMMENT)) {
+				changed |= alignCommentedOutParameter(otherLineStart, assignmentOpText, alignAssignmentOps, alignActualParams, parameterIndent, assignmentOpIndent, expressionIndent);
+			} else {
+				changed |= otherLineStart.setWhitespace(otherLineStart.lineBreaks, indent);
+			}
 		}
 		return changed;
 	}
 
 	private void buildAlignTable(AlignTable table, Token parentToken, Token end, String assignmentOpText, ArrayList<Token> otherLineStarts) throws UnexpectedSyntaxException {
 		Token token = parentToken.getFirstChild(); // parentToken is the opening parenthesis 
-		if (token == null)
-			return;
 		
 		// find assignments within the siblings inside the parentheses or brackets
 		while (token != null && token != end && token.getNext() != null) {
 			Token next = token.getNext();
-			if (token.isIdentifier() && next != null && next.textEquals(assignmentOpText)
-					&& next.getNext() != null && !next.getNext().isComment()) {
+			if (token.isIdentifier() && next.textEquals(assignmentOpText)
+					&& next.getNext() != null && !next.getNext().isComment()) { // "!= null" pro forma
 
 				// identify the parts of the assignment "parameter = term"
 				Token parameter = token;
@@ -222,18 +235,11 @@ public abstract class RuleForDdlAlignParameters extends RuleForDdlCommands {
 			}
 		}
 	}
-	
-	protected void joinColumns(Code code, AlignTable table, boolean alignAssignmentOps, boolean alignExpressions, boolean assignOpsAreColons) throws UnexpectedSyntaxAfterChanges {
-		if (!alignAssignmentOps) {
-			// do not create a dedicated column for the assignment operators ":" or "=>"
-			
-			// determine number of spaces before the assignment operator
-			int spacesBeforeAssignOp = 1;
-			if (assignOpsAreColons) {
-				spacesBeforeAssignOp = (getSpaceBeforeColon() == ChangeType.ALWAYS) ? 1 : 0;
-			}
 
-			// join assignment operators into the parameter column
+	protected void joinColumns(Code code, AlignTable table, boolean alignAssignmentOps, boolean alignExpressions, String assignmentOp) throws UnexpectedSyntaxAfterChanges {
+		if (!alignAssignmentOps) {
+			// join assignment operators ":" or "=>" into the parameter column
+			int spacesBeforeAssignOp = getSpaceBeforeAssignmentOp(assignmentOp);
 			try {
 				Command[] changedCommands = table.getColumn(Columns.ASSIGNMENT_OP.getValue()).joinIntoPreviousColumns(true, spacesBeforeAssignOp, true);
 				code.addRuleUses(this, changedCommands);
@@ -243,15 +249,8 @@ public abstract class RuleForDdlAlignParameters extends RuleForDdlCommands {
 		}
 
 		if (!alignExpressions) {
-			// do not create a dedicated column for the actual parameters / type identifiers
-
-			// determine number of spaces after the assignment operator
-			int spacesAfterAssignOp = 1;
-			if (assignOpsAreColons) {
-				spacesAfterAssignOp = (getSpaceAfterColon() == ChangeType.NEVER) ? 0 : 1;
-			}
-
 			// join actual parameters / type identifier into the previous column
+			int spacesAfterAssignOp = getSpaceAfterAssignmentOp(assignmentOp);
 			try {
 				Command[] changedCommands = table.getColumn(Columns.EXPRESSION.getValue()).joinIntoPreviousColumns(true, spacesAfterAssignOp, true);
 				code.addRuleUses(this, changedCommands);
@@ -259,5 +258,72 @@ public abstract class RuleForDdlAlignParameters extends RuleForDdlCommands {
 				throw new UnexpectedSyntaxAfterChanges(this, e); 
 			}
 		}
+	}
+
+	private int getSpaceBeforeAssignmentOp(String assignmentOp) {
+		if (assignmentOp.equals(DDL.COLON_SIGN_STRING)) {
+			return (getSpaceBeforeColon() == ChangeType.ALWAYS) ? 1 : 0;
+		} else {
+			return 1;
+		}
+	}
+
+	private int getSpaceAfterAssignmentOp(String assignmentOp) {
+		if (assignmentOp.equals(DDL.COLON_SIGN_STRING)) {
+			return (getSpaceAfterColon() == ChangeType.NEVER) ? 0 : 1;
+		} else {
+			return 1;
+		}
+	}
+
+	private boolean alignCommentedOutParameter(Token comment, String assignmentOpText, boolean alignAssignmentOps, boolean alignActualParams, int parameterIndent, int assignmentOpIndent, int expressionIndent) {
+		// check whether a comment line has the format "///   parameter  :  ..." or "// parameter => ..." (depending on assignmentOpText), 
+		// allowing any number of spaces and additional comment signs
+		String commentText = comment.getText();
+		if (commentText.indexOf(assignmentOpText) < 0)
+			return false;
+		int assignmentOpPos = commentText.indexOf(assignmentOpText);
+		int assignmentOpEnd = assignmentOpPos + assignmentOpText.length(); 
+		String[] commentSignAndParamName = StringUtil.split(commentText.substring(0, assignmentOpPos), ' ', true);
+		if (commentSignAndParamName.length != 2 || !DDL.isAllowedParameterName(commentSignAndParamName[1]))
+			return false;
+
+		// align the commented-out assignment
+		// - comment sign
+		StringBuilder sb = new StringBuilder();
+		sb.append(commentSignAndParamName[0]); 
+		// the remaining text will be additionally shifted to the right by the number of comment signs (including additional ones) 
+		int sbLengthAtStart = sb.length();
+		
+		// - parameter name
+		String parameterName = commentSignAndParamName[1];
+		sb.append(StringUtil.repeatChar(' ', parameterIndent));
+		sb.append(parameterName);
+		
+		// - assignment operator
+		int spacesBeforeAssignOp;
+		if (alignAssignmentOps) {
+			int lineLengthWritten = sb.length() - sbLengthAtStart;
+			spacesBeforeAssignOp = assignmentOpIndent - lineLengthWritten;
+		} else {
+			spacesBeforeAssignOp = getSpaceBeforeAssignmentOp(assignmentOpText);
+		}
+		sb.append(StringUtil.repeatChar(' ', Math.max(spacesBeforeAssignOp, 0)));
+		sb.append(assignmentOpText);
+
+		// - expression
+		if (assignmentOpEnd < commentText.length()) {
+			int spacesBeforeExpr;
+			if (alignActualParams) {
+				int lineLengthWritten = sb.length() - sbLengthAtStart;
+				spacesBeforeExpr = alignAssignmentOps ? 1 : expressionIndent - lineLengthWritten;
+			} else { 
+				spacesBeforeExpr = getSpaceAfterAssignmentOp(assignmentOpText);
+			}
+			sb.append(StringUtil.repeatChar(' ', Math.max(spacesBeforeExpr, 0)));
+			sb.append(commentText.substring(assignmentOpEnd).stripLeading());
+		}
+		
+		return comment.setText(sb.toString(), false);
 	}
 }

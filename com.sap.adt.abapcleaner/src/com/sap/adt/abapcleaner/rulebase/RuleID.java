@@ -126,7 +126,8 @@ public enum RuleID  {
    
    // DDL alignment
    DDL_ALIGN_ENTITY_PARAMETERS,
-   DDL_ALIGN_SOURCE_PARAMETERS;
+   DDL_ALIGN_SOURCE_PARAMETERS,
+   DDL_ALIGN_FUNCTION_PARAMETERS;
 
 	public static final int SIZE = java.lang.Integer.SIZE;
 

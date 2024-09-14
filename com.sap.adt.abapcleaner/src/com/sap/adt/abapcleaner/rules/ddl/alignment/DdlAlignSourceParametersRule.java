@@ -2,6 +2,7 @@ package com.sap.adt.abapcleaner.rules.ddl.alignment;
 
 import java.time.LocalDate;
 
+import com.sap.adt.abapcleaner.base.DDL;
 import com.sap.adt.abapcleaner.parser.Code;
 import com.sap.adt.abapcleaner.parser.Command;
 import com.sap.adt.abapcleaner.parser.Token;
@@ -59,8 +60,9 @@ public class DdlAlignSourceParametersRule extends RuleForDdlAlignParameters {
 				+ LINE_SEP + ""
 				+ LINE_SEP + "    inner join I_ThirdEntity"
 				+ LINE_SEP + "          (P_AnyParam  :  $parameters.P_AnyParam,"
-				+ LINE_SEP + "          P_OtherParam : $parameters.P_OtherParam,"
-				+ LINE_SEP + "          P_ThirdParameter:$parameters.P_ThirdParameter)"
+				+ LINE_SEP + "//        P_OtherParam : $parameters.P_OtherParam,"
+				+ LINE_SEP + "//        P_ThirdParam:$parameters.P_ThirdParameter,"
+				+ LINE_SEP + "          P_FourthParameter: $parameters.P_FourthParam)"
 				+ LINE_SEP + "          as ThirdAlias"
 				+ LINE_SEP + "      on OtherAlias.AnyKeyField = ThirdAlias.AnyKeyField"
 				+ LINE_SEP + "{"
@@ -80,15 +82,14 @@ public class DdlAlignSourceParametersRule extends RuleForDdlAlignParameters {
 				+ LINE_SEP + "}";
 	}
 	
-	final ConfigEnumValue<DdlSourceParamPos> configSourceParameterPos = new ConfigEnumValue<DdlSourceParamPos>(this, "SourceParameterPos", "Position of parameters",
+	final ConfigEnumValue<DdlSourceParamPos> configParameterPos = new ConfigEnumValue<DdlSourceParamPos>(this, "ParameterPos", "Position of parameters",
 			new String[] { "continue after (", "below line start + 2", "below line start + 4", "below view name + 2", "below view name + 4", "below first parameter as is" }, DdlSourceParamPos.values(), DdlSourceParamPos.CONTINUE);
-	final ConfigBoolValue configAlignColons = new ConfigBoolValue(this, "AlignColons", "Align colons in own column", true);
+	final ConfigBoolValue configAlignAssignmentOps = new ConfigBoolValue(this, "AlignAssignmentOps", "Align colons in own column", true);
 	final ConfigBoolValue configAlignActualParams = new ConfigBoolValue(this, "AlignActualParams", "Align actual parameters in own column", true);
 	final ConfigEnumValue<DdlNextAfterParensPos> configAsAliasPos = new ConfigEnumValue<DdlNextAfterParensPos>(this, "AsAliasPos", "Position of AS <alias>",
 			new String[] { "continue after )", "below line start", "below line start + 2", "below view name", "below view name + 2", "keep as is" }, DdlNextAfterParensPos.values(), DdlNextAfterParensPos.CONTINUE);
 
-	//
-	private final ConfigValue[] configValues = new ConfigValue[] { configSourceParameterPos, configAlignColons, configAlignActualParams, configAsAliasPos };
+	private final ConfigValue[] configValues = new ConfigValue[] { configParameterPos, configAlignAssignmentOps, configAlignActualParams, configAsAliasPos };
 	
 	@Override
 	public ConfigValue[] getConfigValues() { return configValues; }
@@ -104,11 +105,12 @@ public class DdlAlignSourceParametersRule extends RuleForDdlAlignParameters {
 	protected boolean executeOn(Code code, Command command, int releaseRestriction) throws UnexpectedSyntaxBeforeChanges, UnexpectedSyntaxAfterChanges {
 		boolean changed = false;
 		
+		// nothing to do inside parameter lists or element lists
 		if (command.getParent() != null)
 			return false;
 		
-		DdlSourceParamPos sourceParamPos = DdlSourceParamPos.forValue(configSourceParameterPos.getValue());
-		boolean alignColons = configAlignColons.getValue();
+		DdlSourceParamPos sourceParamPos = DdlSourceParamPos.forValue(configParameterPos.getValue());
+		boolean alignAssignmentOps = configAlignAssignmentOps.getValue();
 		boolean alignActualParams = configAlignActualParams.getValue();
 		DdlNextAfterParensPos asAliasPos = DdlNextAfterParensPos.forValue(configAsAliasPos.getValue());
 		
@@ -120,7 +122,7 @@ public class DdlAlignSourceParametersRule extends RuleForDdlAlignParameters {
 				break;
 
 			changed |= moveOpeningParenthesis(token);
-			changed |= alignParameters(code, token, ":", sourceParamPos, alignColons, alignActualParams);
+			changed |= alignParameters(code, token, DDL.COLON_SIGN_STRING, sourceParamPos, alignAssignmentOps, alignActualParams);
 			changed |= moveTokenAfterClosingParens(token, asAliasPos);
 			
 			token = token.getNextSibling();

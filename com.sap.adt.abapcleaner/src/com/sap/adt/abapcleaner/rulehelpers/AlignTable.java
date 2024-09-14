@@ -160,6 +160,11 @@ public class AlignTable {
 		ArrayList<Command> changedCommands = new ArrayList<Command>();
 		Command lastChangedCommand = null;
 
+		// reset the effective indent of all columns
+		for (AlignColumn column : columns) {
+			column.setEffectiveIndent(0);
+		}
+		
 		// determine whether the table starts with the very first Token in the Code, 
 		// as this Token may not have line breaks above it and must get the basicIndent as spacesLeft 
 		boolean startsWithFirstTokenInCode = false;
@@ -168,10 +173,10 @@ public class AlignTable {
 				if (column.isEmpty())
 					continue;
 				AlignCell cell = lines.get(0).getCell(column);
-				if (cell == null) 
-					continue;
-				startsWithFirstTokenInCode = cell.getFirstToken().isFirstTokenInCode();
-				break;
+				if (cell != null) { 
+					startsWithFirstTokenInCode = cell.getFirstToken().isFirstTokenInCode();
+					break;
+				}
 			}
 		}
 
