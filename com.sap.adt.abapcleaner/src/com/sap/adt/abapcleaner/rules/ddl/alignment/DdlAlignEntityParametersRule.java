@@ -135,7 +135,7 @@ public class DdlAlignEntityParametersRule extends RuleForDdlAlignParameters {
 		if (table.isEmpty()) 
 			return false;
 
-		joinColumns(code, table, configAlignColons.getValue(), configAlignTypes.getValue(), true);
+		joinColumns(code, table, configAlignColons.getValue(), configAlignTypes.getValue(), DDL.COLON_SIGN_STRING);
 		
 		// align the table
 		int paramsIndent = getParamsIndent();

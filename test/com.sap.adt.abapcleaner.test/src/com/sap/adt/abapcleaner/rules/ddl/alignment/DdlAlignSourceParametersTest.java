@@ -25,8 +25,8 @@ public class DdlAlignSourceParametersTest extends RuleTestBase {
 	@BeforeEach
 	void setUp() {
 		// setup default test configuration (may be modified in the individual test methods)
-		rule.configSourceParameterPos.setEnumValue(DdlSourceParamPos.CONTINUE);
-		rule.configAlignColons.setValue(true);
+		rule.configParameterPos.setEnumValue(DdlSourceParamPos.CONTINUE);
+		rule.configAlignAssignmentOps.setValue(true);
 		rule.configAlignActualParams.setValue(true);
 		rule.configAsAliasPos.setEnumValue(DdlNextAfterParensPos.CONTINUE);
 
@@ -35,7 +35,6 @@ public class DdlAlignSourceParametersTest extends RuleTestBase {
 		spacesAroundSignsRule.configSpaceAfterColon.setEnumValue(ChangeType.ALWAYS);
 		spacesAroundBracketsRule.configSpacesInsideFuncParens.setEnumValue(ChangeType.NEVER);
 	}
-
 
 	@Test
 	void testParamsContinueAfterOpeningParens() {
@@ -117,7 +116,7 @@ public class DdlAlignSourceParametersTest extends RuleTestBase {
 
 	@Test
 	void testParamsBelowLineStartPlus2() {
-		rule.configSourceParameterPos.setEnumValue(DdlSourceParamPos.LINE_START_PLUS_2);
+		rule.configParameterPos.setEnumValue(DdlSourceParamPos.LINE_START_PLUS_2);
 
 		buildSrc("define view entity I_AnyEntity");
 		buildSrc("  as select from I_OtherEntity");
@@ -153,7 +152,7 @@ public class DdlAlignSourceParametersTest extends RuleTestBase {
 
 	@Test
 	void testParamsBelowLineStartPlus4() {
-		rule.configSourceParameterPos.setEnumValue(DdlSourceParamPos.LINE_START_PLUS_4);
+		rule.configParameterPos.setEnumValue(DdlSourceParamPos.LINE_START_PLUS_4);
 
 		buildSrc("define view entity I_AnyEntity");
 		buildSrc("  as select from I_OtherEntity");
@@ -189,7 +188,7 @@ public class DdlAlignSourceParametersTest extends RuleTestBase {
 
 	@Test
 	void testParamsBelowSourceNamePlus2() {
-		rule.configSourceParameterPos.setEnumValue(DdlSourceParamPos.SOURCE_NAME_PLUS_2);
+		rule.configParameterPos.setEnumValue(DdlSourceParamPos.SOURCE_NAME_PLUS_2);
 
 		buildSrc("define view entity I_AnyEntity");
 		buildSrc("  as select from I_OtherEntity");
@@ -225,7 +224,7 @@ public class DdlAlignSourceParametersTest extends RuleTestBase {
 
 	@Test
 	void testParamsBelowSourceNamePlus4() {
-		rule.configSourceParameterPos.setEnumValue(DdlSourceParamPos.SOURCE_NAME_PLUS_4);
+		rule.configParameterPos.setEnumValue(DdlSourceParamPos.SOURCE_NAME_PLUS_4);
 
 		buildSrc("define view entity I_AnyEntity");
 		buildSrc("  as select from I_OtherEntity");
@@ -261,7 +260,7 @@ public class DdlAlignSourceParametersTest extends RuleTestBase {
 
 	@Test
 	void testParamsBelowFirstParamAsIs() {
-		rule.configSourceParameterPos.setEnumValue(DdlSourceParamPos.KEEP_AS_IS);
+		rule.configParameterPos.setEnumValue(DdlSourceParamPos.KEEP_AS_IS);
 
 		buildSrc("define view entity I_AnyEntity");
 		buildSrc("  as select from I_OtherEntity");
@@ -297,7 +296,7 @@ public class DdlAlignSourceParametersTest extends RuleTestBase {
 
 	@Test
 	void testDoNotAlignColons() {
-		rule.configAlignColons.setValue(false);
+		rule.configAlignAssignmentOps.setValue(false);
 
 		buildSrc("define view entity I_AnyEntity");
 		buildSrc("  as select from I_OtherEntity");
@@ -332,7 +331,7 @@ public class DdlAlignSourceParametersTest extends RuleTestBase {
 
 	@Test
 	void testDoNotAlignActualParameters() {
-		rule.configAlignColons.setValue(false);
+		rule.configAlignAssignmentOps.setValue(false);
 		rule.configAlignActualParams.setValue(false);
 
 		buildSrc("define view entity I_AnyEntity");
@@ -368,7 +367,7 @@ public class DdlAlignSourceParametersTest extends RuleTestBase {
 
 	@Test
 	void testDoNotAlignPutSpaceBeforeColon() {
-		rule.configAlignColons.setValue(false);
+		rule.configAlignAssignmentOps.setValue(false);
 		rule.configAlignActualParams.setValue(false);
 		spacesAroundSignsRule.configSpaceBeforeColon.setEnumValue(ChangeType.ALWAYS);
 
@@ -405,7 +404,7 @@ public class DdlAlignSourceParametersTest extends RuleTestBase {
 
 	@Test
 	void testDoNotAlignNoSpaceAroundColon() {
-		rule.configAlignColons.setValue(false);
+		rule.configAlignAssignmentOps.setValue(false);
 		rule.configAlignActualParams.setValue(false);
 		spacesAroundSignsRule.configSpaceBeforeColon.setEnumValue(ChangeType.NEVER);
 		spacesAroundSignsRule.configSpaceAfterColon.setEnumValue(ChangeType.NEVER);
@@ -443,7 +442,7 @@ public class DdlAlignSourceParametersTest extends RuleTestBase {
 
 	@Test
 	void testSpacesInsideParentheses() {
-		rule.configAlignColons.setValue(false);
+		rule.configAlignAssignmentOps.setValue(false);
 		rule.configAlignActualParams.setValue(false);
 		spacesAroundBracketsRule.configSpacesInsideFuncParens.setEnumValue(ChangeType.ALWAYS);
 
@@ -480,7 +479,7 @@ public class DdlAlignSourceParametersTest extends RuleTestBase {
 
 	@Test
 	void testAsAliasBelowLineStart() {
-		rule.configSourceParameterPos.setEnumValue(DdlSourceParamPos.LINE_START_PLUS_2);
+		rule.configParameterPos.setEnumValue(DdlSourceParamPos.LINE_START_PLUS_2);
 		rule.configAsAliasPos.setEnumValue(DdlNextAfterParensPos.LINE_START);
 
 		buildSrc("define view entity I_AnyEntity");
@@ -518,7 +517,7 @@ public class DdlAlignSourceParametersTest extends RuleTestBase {
 
 	@Test
 	void testAsAliasBelowLineStartPlus2() {
-		rule.configSourceParameterPos.setEnumValue(DdlSourceParamPos.LINE_START_PLUS_4);
+		rule.configParameterPos.setEnumValue(DdlSourceParamPos.LINE_START_PLUS_4);
 		rule.configAsAliasPos.setEnumValue(DdlNextAfterParensPos.LINE_START_PLUS_2);
 
 		buildSrc("define view entity I_AnyEntity");
@@ -592,7 +591,7 @@ public class DdlAlignSourceParametersTest extends RuleTestBase {
 
 	@Test
 	void testAsAliasBelowViewNamePlus2() {
-		rule.configSourceParameterPos.setEnumValue(DdlSourceParamPos.LINE_START_PLUS_2);
+		rule.configParameterPos.setEnumValue(DdlSourceParamPos.LINE_START_PLUS_2);
 		rule.configAsAliasPos.setEnumValue(DdlNextAfterParensPos.SOURCE_NAME_PLUS_2);
 
 		buildSrc("define view entity I_AnyEntity");
@@ -630,7 +629,7 @@ public class DdlAlignSourceParametersTest extends RuleTestBase {
 
 	@Test
 	void testKeepAsAliasAsIs() {
-		rule.configSourceParameterPos.setEnumValue(DdlSourceParamPos.LINE_START_PLUS_2);
+		rule.configParameterPos.setEnumValue(DdlSourceParamPos.LINE_START_PLUS_2);
 		rule.configAsAliasPos.setEnumValue(DdlNextAfterParensPos.KEEP_AS_IS);
 
 		buildSrc("define view entity I_AnyEntity");
@@ -744,7 +743,7 @@ public class DdlAlignSourceParametersTest extends RuleTestBase {
 
 	@Test
 	void testCommentsAboveParenthesesParamsBelowSourcePlus2() {
-		rule.configSourceParameterPos.setEnumValue(DdlSourceParamPos.SOURCE_NAME_PLUS_2);
+		rule.configParameterPos.setEnumValue(DdlSourceParamPos.SOURCE_NAME_PLUS_2);
 
 		buildSrc("define view entity I_AnyEntity");
 		buildSrc("  as select from I_OtherEntity");
@@ -905,4 +904,41 @@ public class DdlAlignSourceParametersTest extends RuleTestBase {
 		testRule();
 	}
 
+	@Test
+	void testSpaceAfterColonDoNotAlign() {
+		rule.configAlignAssignmentOps.setValue(false);
+		rule.configAlignActualParams.setValue(false);
+		spacesAroundSignsRule.configSpaceBeforeColon.setEnumValue(ChangeType.ALWAYS);
+		spacesAroundSignsRule.configSpaceAfterColon.setEnumValue(ChangeType.NEVER);
+		
+		buildSrc("define view entity I_AnyEntity");
+		buildSrc("  as select from I_OtherEntity as OtherAlias");
+		buildSrc("");
+		buildSrc("    inner join I_ThirdEntity");
+		buildSrc("          (P_AnyParam  :  $parameters.P_AnyParam,");
+		buildSrc("//        P_OtherParam : $parameters.P_OtherParam,");
+		buildSrc("//        P_ThirdParam:$parameters.P_ThirdParameter,");
+		buildSrc("          P_FourthParameter: $parameters.P_FourthParam)");
+		buildSrc("          as ThirdAlias");
+		buildSrc("      on OtherAlias.AnyKeyField = ThirdAlias.AnyKeyField");
+		buildSrc("{");
+		buildSrc("  key OtherAlias.AnyKeyField,");
+		buildSrc("      ThirdAlias.AnyNonKeyField");
+		buildSrc("}");
+
+		buildExp("define view entity I_AnyEntity");
+		buildExp("  as select from I_OtherEntity as OtherAlias");
+		buildExp("");
+		buildExp("    inner join I_ThirdEntity(P_AnyParam :$parameters.P_AnyParam,");
+		buildExp("//                             P_OtherParam :$parameters.P_OtherParam,");
+		buildExp("//                             P_ThirdParam :$parameters.P_ThirdParameter,");
+		buildExp("                             P_FourthParameter :$parameters.P_FourthParam) as ThirdAlias");
+		buildExp("      on OtherAlias.AnyKeyField = ThirdAlias.AnyKeyField");
+		buildExp("{");
+		buildExp("  key OtherAlias.AnyKeyField,");
+		buildExp("      ThirdAlias.AnyNonKeyField");
+		buildExp("}");
+
+		testRule();
+	}
 }

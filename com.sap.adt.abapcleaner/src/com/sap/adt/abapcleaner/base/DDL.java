@@ -55,6 +55,8 @@ public final class DDL {
    public static final char UNDERSCORE = '_';
    public static final String UNDERSCORE_STRING = "_";
 
+   public static final String FUNCTION_PARAM_ASSIGNMENT_OP = "=>";
+
    public final static String SESSION_PREFIX = "$session"; // "$session.bs_instance_id", "$session.bs_zone_id", "$session.client", "$session.system_date", "$session.system_language", "$session.user", "$session.user_date", "$session.user_timezone"
    public final static String PARAMETER_PREFIX = "$parameter";
    public final static String TYPED_LITERAL_PREFIX = "abap."; // e.g. abap.int4'...', abap.numc'...', abap.quan'...'
@@ -497,6 +499,17 @@ public final class DDL {
 		}
 	}
 	
+	public static boolean isAllowedParameterName(String text) {
+		boolean isFirst = true;
+		for (char c : text.toCharArray()) {
+			// reusing isCharAllowedForFunction()
+			if (!isCharAllowedForFunction(c, isFirst))
+				return false;
+			isFirst = false;
+		}
+		return true;
+	}
+
 	public static boolean isAllowedFunctionName(String text) {
 		boolean isFirst = true;
 		for (char c : text.toCharArray()) {
