@@ -188,10 +188,15 @@ public class AlignTable {
 			// (this also applies for isFirstLine == true)
 			Token firstTokenInLine = line.getFirstToken();
 			Token prevToken = (firstTokenInLine == null) ? null : firstTokenInLine.getPrev();
-			if (firstTokenInLine != null // &&  !isFirstLine && firstTokenInLine.lineBreaks == 0 
-					&& prevToken != null && prevToken.textEquals("(") && prevToken.getEndIndexInLine() + 1 == basicIndent) {
-				lineBreaks = 0;
-				spacesLeft = minSpacesLeft;
+			if (firstTokenInLine != null && prevToken != null && prevToken.textEquals("(")) { // && !isFirstLine && firstTokenInLine.lineBreaks == 0
+				int prevTokenEndIndex = prevToken.getEndIndexInLine(); 
+				if (prevTokenEndIndex + 1 == basicIndent) { // even if minSpacesLeft == 0
+					lineBreaks = 0;
+					spacesLeft = 1;
+				} else if (prevTokenEndIndex == basicIndent && minSpacesLeft == 0) {
+					lineBreaks = 0;
+					spacesLeft = 0;
+				}
 			}
 			
 			int columnIndent = basicIndent;

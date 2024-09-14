@@ -1,13 +1,8 @@
 package com.sap.adt.abapcleaner.rules.ddl.alignment;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import com.sap.adt.abapcleaner.programbase.ParseException;
-import com.sap.adt.abapcleaner.programbase.UnexpectedSyntaxAfterChanges;
-import com.sap.adt.abapcleaner.programbase.UnexpectedSyntaxBeforeChanges;
 import com.sap.adt.abapcleaner.rulebase.RuleID;
 import com.sap.adt.abapcleaner.rulebase.RuleTestBase;
 import com.sap.adt.abapcleaner.rulehelpers.ChangeType;
@@ -21,6 +16,7 @@ public class DdlAlignEntityParametersTest extends RuleTestBase {
 	
 	DdlAlignEntityParametersTest() {
 		super(RuleID.DDL_ALIGN_ENTITY_PARAMETERS);
+		
 		rule = (DdlAlignEntityParametersRule)getRule();
 		positionDefineRule = (DdlPositionDefineRule)profile.getRule(RuleID.DDL_POSITION_DEFINE);
 		spacesAroundSignsRule = (DdlSpacesAroundSignsRule)profile.getRule(RuleID.DDL_SPACES_AROUND_SIGNS);
@@ -32,7 +28,7 @@ public class DdlAlignEntityParametersTest extends RuleTestBase {
 		rule.configAlignColons.setValue(true);
 		rule.configAlignTypes.setValue(true);
 
-		// setup configuration of other rules that is reused here
+		// setup configuration of other rules that is reused by the rule under test
 		positionDefineRule.configParamsIndent.setValue(4);
 		spacesAroundSignsRule.configSpaceBeforeColon.setEnumValue(ChangeType.KEEP_AS_IS);
 		spacesAroundSignsRule.configSpaceAfterColon.setEnumValue(ChangeType.ALWAYS);
@@ -285,32 +281,4 @@ public class DdlAlignEntityParametersTest extends RuleTestBase {
 
 		testRule();
 	}
-
-	@Test
-	void testMissingColon() {
-		buildSrc("define view entity C_AnyEntity");
-		buildSrc("  with parameters");
-		buildSrc("    P_AnyParam: any_parameter_type,");
-		buildSrc("    P_OtherParam            other_type,");
-		buildSrc("    P_ThirdParameter   : third_type,");
-		buildSrc("    P_FourthParam:fourth_type");
-		buildSrc("");
-		buildSrc("  as select from I_AnyEntity as AnyAlias");
-		buildSrc("{");
-		buildSrc("  key AnyAlias.AnyKeyField");
-		buildSrc("}");
-
-		copyExpFromSrc();
-		
-		boolean raisedErrorBeforeChanges = false;
-		try {
-			testRuleExpectingExc();
-		} catch (UnexpectedSyntaxBeforeChanges e) {
-			raisedErrorBeforeChanges = true;
-		} catch (UnexpectedSyntaxAfterChanges | ParseException e) {
-			raisedErrorBeforeChanges = false;
-		}
-		assertTrue(raisedErrorBeforeChanges);
-	}
-
 }

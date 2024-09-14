@@ -19,6 +19,7 @@ import com.sap.adt.abapcleaner.rulehelpers.ChangeType;
 import com.sap.adt.abapcleaner.rules.ddl.annotations.DdlAnnotationLayoutRule;
 
 public class DdlSpacesAroundBracketsRule extends RuleForDdlCommands {
+	public static final String displayName = "Standardize spaces around brackets";
 	@Override
 	public RuleID getID() { return RuleID.DDL_SPACES_AROUND_BRACKETS; }
 
@@ -26,7 +27,7 @@ public class DdlSpacesAroundBracketsRule extends RuleForDdlCommands {
 	public RuleGroupID getGroupID() { return RuleGroupID.DDL_SPACES; }
 
 	@Override
-	public String getDisplayName() { return "Standardize spaces around brackets"; }
+	public String getDisplayName() { return displayName; }
 
 	@Override
 	public String getDescription() { return "Standardizes spaces around brackets [...] and parentheses (...)."; }
@@ -81,7 +82,7 @@ public class DdlSpacesAroundBracketsRule extends RuleForDdlCommands {
 	final ConfigEnumValue<ChangeType> configSpacesInsidePathBrackets = new ConfigEnumValue<ChangeType>(this, "SpacesInsidePathBrackets", "Spaces inside brackets for path expressions:", changeTypeSelection, ChangeType.values(), ChangeType.NEVER);
 
 	final ConfigEnumValue<ChangeType> configSpacesBeforeFuncParens = new ConfigEnumValue<ChangeType>(this, "SpacesBeforeFuncParens", "Spaces before parentheses for functions:", changeTypeSelection, ChangeType.values(), ChangeType.NEVER);
-	final ConfigEnumValue<ChangeType> configSpacesInsideFuncParens = new ConfigEnumValue<ChangeType>(this, "SpacesInsideFuncParens", "Spaces inside parentheses for functions:", changeTypeSelection, ChangeType.values(), ChangeType.NEVER);
+	public final ConfigEnumValue<ChangeType> configSpacesInsideFuncParens = new ConfigEnumValue<ChangeType>(this, "SpacesInsideFuncParens", "Spaces inside parentheses for functions:", changeTypeSelection, ChangeType.values(), ChangeType.NEVER);
 
 	final ConfigEnumValue<ChangeType> configSpacesBeforeTypeParens = new ConfigEnumValue<ChangeType>(this, "SpacesBeforeTypeParens", "Spaces before parentheses for ABAP types:", changeTypeSelection, ChangeType.values(), ChangeType.NEVER);
 	final ConfigEnumValue<ChangeType> configSpacesInsideTypeParens = new ConfigEnumValue<ChangeType>(this, "SpacesInsideTypeParens", "Spaces inside parentheses for ABAP types:", changeTypeSelection, ChangeType.values(), ChangeType.NEVER);
@@ -94,6 +95,8 @@ public class DdlSpacesAroundBracketsRule extends RuleForDdlCommands {
 	@Override
 	public ConfigValue[] getConfigValues() { return configValues; }
 
+	public ChangeType getSpacesInsideFuncParens() { return ChangeType.forValue(configSpacesInsideFuncParens.getValue()); }
+	
 	public DdlSpacesAroundBracketsRule(Profile profile) {
 		super(profile);
 		initializeConfiguration();

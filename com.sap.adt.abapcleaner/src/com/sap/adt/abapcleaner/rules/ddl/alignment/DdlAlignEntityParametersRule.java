@@ -14,7 +14,6 @@ import com.sap.adt.abapcleaner.programbase.UnexpectedSyntaxException;
 import com.sap.adt.abapcleaner.rulebase.ConfigBoolValue;
 import com.sap.adt.abapcleaner.rulebase.ConfigValue;
 import com.sap.adt.abapcleaner.rulebase.Profile;
-import com.sap.adt.abapcleaner.rulebase.Rule;
 import com.sap.adt.abapcleaner.rulebase.RuleGroupID;
 import com.sap.adt.abapcleaner.rulebase.RuleID;
 import com.sap.adt.abapcleaner.rulebase.RuleReference;
@@ -23,11 +22,11 @@ import com.sap.adt.abapcleaner.rulehelpers.AlignCellTerm;
 import com.sap.adt.abapcleaner.rulehelpers.AlignCellToken;
 import com.sap.adt.abapcleaner.rulehelpers.AlignLine;
 import com.sap.adt.abapcleaner.rulehelpers.AlignTable;
-import com.sap.adt.abapcleaner.rulehelpers.ChangeType;
+import com.sap.adt.abapcleaner.rulehelpers.RuleForDdlAlignParameters;
 import com.sap.adt.abapcleaner.rules.ddl.position.DdlPositionDefineRule;
 import com.sap.adt.abapcleaner.rules.ddl.spaces.DdlSpacesAroundSignsRule;
 
-public class DdlAlignEntityParametersRule extends Rule {
+public class DdlAlignEntityParametersRule extends RuleForDdlAlignParameters {
 	private static final RuleReference[] references = new RuleReference[] { new RuleReference(RuleSource.ABAP_CLEANER) };
 
 	private enum Columns {
@@ -107,18 +106,22 @@ public class DdlAlignEntityParametersRule extends Rule {
 	}
 
 	// -------------------------------------------------------------------------
-	
+
 	@Override
-	public void executeOn(Code code, int releaseRestriction) throws UnexpectedSyntaxBeforeChanges, UnexpectedSyntaxAfterChanges {
+	protected boolean executeOn(Code code, Command command, int releaseRestriction) throws UnexpectedSyntaxBeforeChanges, UnexpectedSyntaxAfterChanges {
+		// this rule only runs when it is called for the first Command, iterating itself over the remaining Commands
+		if (command != code.firstCommand)
+			return false;
+		
 		AlignTable table = new AlignTable(MAX_COLUMN_COUNT);
 
-		Command command = code.firstCommand;
+		command = code.firstCommand;
 		while (command != null) {
 			if (command.isDdlParametersElement()) {
 				// if one of the parameter Commands is blocked for alignment, cancel alignment entirely,
 				// because every Command would be needed to reliably determine column widths
 				if (isCommandBlocked(command)) 
-					return;
+					return false;
 
 				try {
 					addToTable(command, table);
@@ -130,38 +133,17 @@ public class DdlAlignEntityParametersRule extends Rule {
 		}
 		
 		if (table.isEmpty()) 
-			return;
+			return false;
 
-		if (!configAlignColons.getValue()) {
-			// do not create a dedicated column for colons
-			ChangeType spaceBeforeColon = ((DdlSpacesAroundSignsRule)parentProfile.getRule(RuleID.DDL_SPACES_AROUND_SIGNS)).getSpaceBeforeColon();
-			final int spacesBeforeColon = (spaceBeforeColon == ChangeType.ALWAYS) ? 1 : 0;
-			try {
-				Command[] changedCommands = table.getColumn(Columns.ASSIGNMENT_OP.getValue()).joinIntoPreviousColumns(true, spacesBeforeColon, false);
-				code.addRuleUses(this, changedCommands);
-			} catch (UnexpectedSyntaxException e) {
-				throw new UnexpectedSyntaxAfterChanges(this, e); 
-			}
-		}
-
-		if (!configAlignTypes.getValue()) {
-			// do not create a dedicated column for types
-			ChangeType spaceAfterColon = ((DdlSpacesAroundSignsRule)parentProfile.getRule(RuleID.DDL_SPACES_AROUND_SIGNS)).getSpaceAfterColon();
-			final int spacesAfterColon = (spaceAfterColon == ChangeType.NEVER) ? 0 : 1;
-			try {
-				Command[] changedCommands = table.getColumn(Columns.EXPRESSION.getValue()).joinIntoPreviousColumns(true, spacesAfterColon, false);
-				code.addRuleUses(this, changedCommands);
-			} catch (UnexpectedSyntaxException e) {
-				throw new UnexpectedSyntaxAfterChanges(this, e); 
-			}
-		}
+		joinColumns(code, table, configAlignColons.getValue(), configAlignTypes.getValue(), true);
 		
 		// align the table
-		int paramsIndent = ((DdlPositionDefineRule)parentProfile.getRule(RuleID.DDL_POSITION_DEFINE)).getParamsIndent(); 
+		int paramsIndent = getParamsIndent();
 		Command[] changedCommands = table.align(paramsIndent, 1, true);
 		for (Command changedCommand : changedCommands) {
 			code.addRuleUse(this, changedCommand);
 		}
+		return false;
 	}
 	
 	private void addToTable(Command command, AlignTable table) throws UnexpectedSyntaxException {
