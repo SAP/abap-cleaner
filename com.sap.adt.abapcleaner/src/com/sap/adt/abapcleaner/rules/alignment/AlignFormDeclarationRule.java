@@ -208,7 +208,7 @@ public class AlignFormDeclarationRule extends RuleForCommands {
 		
 		int basicIndent = command.getFirstToken().spacesLeft;
 		int firstLineBreaks = command.getFirstToken().lineBreaks;
-		Command[] changedCommands = table.align(basicIndent, firstLineBreaks, false, true);
+		Command[] changedCommands = table.align(basicIndent, firstLineBreaks, false, true, false);
 		for (Command changedCommand : changedCommands) {
 			code.addRuleUse(this, changedCommand);
 		}

@@ -140,7 +140,7 @@ public class AlignTable {
 	}
 	
 	public final Command[] align(int basicIndent, int firstLineBreaks, boolean keepMultiline) {
-		return align(basicIndent, firstLineBreaks, keepMultiline, true);
+		return align(basicIndent, firstLineBreaks, keepMultiline, true, false);
 	}
 
 	/**
@@ -151,9 +151,10 @@ public class AlignTable {
 	 * @param keepMultiline   true = a Term may cover multiple lines; false = put all terms on the same line, replacing line breaks with a space between Tokens 
 	 * 							  (only possible if no Term contains line-end comments)
 	 * @param condenseInnerSpaces true = also condense spaces inside Terms with 1 space only
+	 * @param forceFirstLineBreaks true = force a line break at table start, even if the table continues after opening "("
 	 * @return
 	 */
-	public final Command[] align(int basicIndent, int firstLineBreaks, boolean keepMultiline, boolean condenseInnerSpaces) {
+	public final Command[] align(int basicIndent, int firstLineBreaks, boolean keepMultiline, boolean condenseInnerSpaces, boolean forceFirstLineBreaks) {
 		if (!canAlignToMonoLine)
 			keepMultiline = true;
 
@@ -193,12 +194,15 @@ public class AlignTable {
 			// (this also applies for isFirstLine == true)
 			Token firstTokenInLine = line.getFirstToken();
 			Token prevToken = (firstTokenInLine == null) ? null : firstTokenInLine.getPrev();
-			if (firstTokenInLine != null && prevToken != null && prevToken.textEquals("(")) { // && !isFirstLine && firstTokenInLine.lineBreaks == 0
+			if (forceFirstLineBreaks && isFirstLine && firstLineBreaks > 0) {
+				// in the name list of DDIC-based CDS Views, a line break after "(" is intentional
+			} else if (firstTokenInLine != null && prevToken != null) { // && !isFirstLine && firstTokenInLine.lineBreaks == 0
 				int prevTokenEndIndex = prevToken.getEndIndexInLine(); 
 				if (prevTokenEndIndex + 1 == basicIndent) { // even if minSpacesLeft == 0
 					lineBreaks = 0;
 					spacesLeft = 1;
-				} else if (prevTokenEndIndex == basicIndent && minSpacesLeft == 0) {
+				} else if (prevTokenEndIndex == basicIndent && minSpacesLeft == 0 && prevToken.textEquals("(")) {
+					// DDL might be configured to attach parentheses to their content
 					lineBreaks = 0;
 					spacesLeft = 0;
 				}

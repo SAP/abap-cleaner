@@ -379,7 +379,7 @@ public class AlignDeclarationsRule extends AlignDeclarationSectionRuleBase {
 				}
 			}
 			
-			Command[] changedCommands = table.align(basicIndent, firstLineBreaks, false, configCondenseInnerSpaces.getValue());
+			Command[] changedCommands = table.align(basicIndent, firstLineBreaks, false, configCondenseInnerSpaces.getValue(), false);
 			code.addRuleUses(this, changedCommands);
 			
 			firstLineBreaks = 1;

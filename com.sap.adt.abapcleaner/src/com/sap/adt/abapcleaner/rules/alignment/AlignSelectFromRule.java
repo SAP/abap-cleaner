@@ -446,7 +446,7 @@ public class AlignSelectFromRule extends RuleForCommands {
 			}
 
 			Token firstToken = alignTable.getFirstToken();
-			Command[] changedCommands = alignTable.align(firstToken.getStartIndexInLine(), firstToken.lineBreaks, true, false);
+			Command[] changedCommands = alignTable.align(firstToken.getStartIndexInLine(), firstToken.lineBreaks, true, false, false);
 			for (Command changedCommand : changedCommands) {
 				code.addRuleUse(this, changedCommand);
 			}
