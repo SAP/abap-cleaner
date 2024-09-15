@@ -38,6 +38,11 @@ public class DdlPositionDefineRule extends RuleForDdlPosition {
 	@Override
 	public RuleReference[] getReferences() { return references; }
 
+	public RuleID[] getDependentRules() { 
+		// the following rule reuses some of this rule's settings; it is therefore not strictly necessary, but more intuitive to put it further down the rule list
+		return new RuleID[] { RuleID.DDL_ALIGN_ENTITY_PARAMETERS }; 
+	}
+
 	@Override
 	public String getExample() {
 		return "" 

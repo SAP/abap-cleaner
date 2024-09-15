@@ -37,6 +37,11 @@ public class DdlSpacesAroundBracketsRule extends RuleForDdlCommands {
 	@Override
 	public LocalDate getDateCreated() { return LocalDate.of(2024, 9, 11); }
 
+	public RuleID[] getDependentRules() { 
+		// the following rules reuse some of this rule's settings; it is therefore not strictly necessary, but more intuitive to put them further down the rule list
+		return new RuleID[] { RuleID.DDL_ALIGN_LOGICAL_EXPRESSIONS, RuleID.DDL_ALIGN_SOURCE_PARAMETERS, RuleID.DDL_ALIGN_FUNCTION_PARAMETERS, RuleID.DDL_ALIGN_FUNCTION_PARAMETERS }; 
+	}
+
 	@Override
 	public String getExample() {
 		return "" 
@@ -87,7 +92,7 @@ public class DdlSpacesAroundBracketsRule extends RuleForDdlCommands {
 	final ConfigEnumValue<ChangeType> configSpacesBeforeTypeParens = new ConfigEnumValue<ChangeType>(this, "SpacesBeforeTypeParens", "Spaces before parentheses for ABAP types:", changeTypeSelection, ChangeType.values(), ChangeType.NEVER);
 	final ConfigEnumValue<ChangeType> configSpacesInsideTypeParens = new ConfigEnumValue<ChangeType>(this, "SpacesInsideTypeParens", "Spaces inside parentheses for ABAP types:", changeTypeSelection, ChangeType.values(), ChangeType.NEVER);
 
-	final ConfigEnumValue<ChangeType> configSpacesInsideArithParens = new ConfigEnumValue<ChangeType>(this, "SpacesInsideArithParens", "Spaces inside parentheses in arithmetics:", changeTypeSelection, ChangeType.values(), ChangeType.NEVER);
+	public final ConfigEnumValue<ChangeType> configSpacesInsideArithParens = new ConfigEnumValue<ChangeType>(this, "SpacesInsideArithParens", "Spaces inside parentheses in arithmetics:", changeTypeSelection, ChangeType.values(), ChangeType.NEVER);
 
 	private final ConfigValue[] configValues = new ConfigValue[] { configSpacesAroundCardBrackets, configSpacesInsideCardBrackets, configSpacesBeforePathBrackets, configSpacesInsidePathBrackets, 
 			configSpacesBeforeFuncParens, configSpacesInsideFuncParens, configSpacesBeforeTypeParens, configSpacesInsideTypeParens, configSpacesInsideArithParens };
@@ -96,6 +101,7 @@ public class DdlSpacesAroundBracketsRule extends RuleForDdlCommands {
 	public ConfigValue[] getConfigValues() { return configValues; }
 
 	public ChangeType getSpacesInsideFuncParens() { return ChangeType.forValue(configSpacesInsideFuncParens.getValue()); }
+	public ChangeType getSpacesInsideArithParens() { return ChangeType.forValue(configSpacesInsideArithParens.getValue()); }
 	
 	public DdlSpacesAroundBracketsRule(Profile profile) {
 		super(profile);

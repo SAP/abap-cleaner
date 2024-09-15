@@ -95,7 +95,7 @@ public final class DDL {
     * (including single-keyword collocations, if the keyword may appear stand-alone) */
    private final static HashMap<String, ArrayList<Collocation>> ddlKeywords = initializeKeywords(new String[] { 
    		"abstract entity", "all", "and", "annotate entity", "annotate view", "as", "as parent child hierarchy", "as projection on", "as select", "as select distinct", "association", "association to parent", "avg (", "between", "boxed", "case", "cast (",    
-   		"composition", "count (", "cross join", "custom entity", "define abstract entity", "define custom entity", "define external entity", "define root abstract entity", "define root custom entity", "define root view", "define root view entity",   
+   		"composition", "count (", "cross join", "custom entity", "define abstract entity", "define custom entity", "define external entity", "define hierarchy", "define root abstract entity", "define root custom entity", "define root view", "define root view entity",   
    		"define structure", "define table", "define table function", "define transient view entity", "define view", "define view entity", "distinct", "else", "end", "exact one to exact one", "exact one to many", "exact one to one", "except select",    
    		"extend", "extend custom entity", "extend view", "extend view entity", "external entity", "external name", "from", "group by", "having", "hierarchy", "hierarchy:ascending", "hierarchy:cache force", "hierarchy:cache off", "hierarchy:cache on",    
    		"hierarchy:child to parent association", "hierarchy:cycles breakup", "hierarchy:cycles error", "hierarchy:depth", "hierarchy:descending", "hierarchy:directory", "hierarchy:filter by", "hierarchy:generate spantree", "hierarchy:load bulk",   

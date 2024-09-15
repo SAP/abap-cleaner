@@ -47,6 +47,11 @@ public class DdlAnnotationLayoutRule extends RuleForDdlAnnotationScopes {
 	@Override
 	public RuleReference[] getReferences() { return references; }
 
+	public RuleID[] getDependentRules() {
+		// most settings of this rule are reused by the DdlAnnotationNestingRule via getLayout()
+		return new RuleID[] { RuleID.DDL_ANNO_NESTING }; 
+	}
+
 	@Override
 	public String getExample() {
 		return "" 

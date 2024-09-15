@@ -73,7 +73,7 @@ public class DdlPositionClausesRule extends RuleForDdlPosition {
 	}
 	
 	final ConfigEnumValue<DdlLineBreakWithoutNever> configBreakBeforeWhereEtc = new ConfigEnumValue<DdlLineBreakWithoutNever>(this, "BreakBeforeWhereEtc", "Break before WHERE / GROUP BY / HAVING:", lineBreakSelectionWithoutNever, DdlLineBreakWithoutNever.values(), DdlLineBreakWithoutNever.ALWAYS);
-	final ConfigIntValue configWhereEtcIndent = new ConfigIntValue(this, "WhereEtcIndent", "Indent if breaking:", "", 0, 2, MAX_INDENT);
+	final ConfigIntValue configWhereEtcIndent = new ConfigIntValue(this, "WhereEtcIndent", "Indent if breaking:", "", 0, 0, MAX_INDENT);
 	
 	final ConfigEnumValue<DdlLineBreakWithoutNever> configBreakBeforeUnionEtc = new ConfigEnumValue<DdlLineBreakWithoutNever>(this, "BreakBeforeUnionEtc", "Break before EXCEPT / INTERSECT / UNION:", lineBreakSelectionWithoutNever, DdlLineBreakWithoutNever.values(), DdlLineBreakWithoutNever.ALWAYS);
 	final ConfigIntValue configUnionEtcIndent = new ConfigIntValue(this, "UnionEtcIndent", "Indent if breaking:", "", 0, 0, MAX_INDENT);

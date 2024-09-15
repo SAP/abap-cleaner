@@ -124,7 +124,7 @@ class RuleTest {
 		for (Rule rule : rules) {
 			String name = rule.getDisplayName();
 			if (lastName != null)
-				assertTrue(lastName.compareToIgnoreCase(name) < 0);
+				assertTrue(lastName.compareToIgnoreCase(name) < 0); // otherwise, there may be a duplicate Rule name
 			lastName = name;
 		}
 

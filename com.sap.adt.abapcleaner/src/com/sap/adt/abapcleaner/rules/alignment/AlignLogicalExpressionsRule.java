@@ -163,7 +163,7 @@ public class AlignLogicalExpressionsRule extends RuleForLogicalExpressions {
 				return false;
 
 			TreeAlign treeAlign = TreeAlign.createFrom(logicalExpression);
-			return treeAlign.align(keyword, keywordAlignStyle, configRightAlignComparisonOps.getValue(), true, configOnlyAlignSameObjects.getValue(), configMaxInnerSpaces.getValue());
+			return treeAlign.align(keyword, keywordAlignStyle, configRightAlignComparisonOps.getValue(), true, configOnlyAlignSameObjects.getValue(), configMaxInnerSpaces.getValue(), false);
 		} catch (UnexpectedSyntaxException ex) {
 			(new UnexpectedSyntaxBeforeChanges(this, ex)).addToLog();
 		}
