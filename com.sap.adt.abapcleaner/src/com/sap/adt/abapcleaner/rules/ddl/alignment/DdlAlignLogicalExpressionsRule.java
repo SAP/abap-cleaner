@@ -90,8 +90,7 @@ public class DdlAlignLogicalExpressionsRule extends RuleForDdlCommands {
 				+ LINE_SEP + "  avg(OtherAlias.NumericField) >= 200 or"
 				+ LINE_SEP + "    AnyAlias.Category = 'B'"
 				+ LINE_SEP + "  and sum(OtherAlias.NumericField) >= 1000 and"
-				+ LINE_SEP + "sum(OtherAlias.NumericField) < 5000"
-				+ LINE_SEP + "";
+				+ LINE_SEP + "sum(OtherAlias.NumericField) < 5000";
 	}
 	
 	private static final String[] alignStyleSelectionLeftOnly = new String[] { "do not align", "left-align" }; // for IF (because this keyword is too short to be right-aligned with "AND" or "EQUIV")

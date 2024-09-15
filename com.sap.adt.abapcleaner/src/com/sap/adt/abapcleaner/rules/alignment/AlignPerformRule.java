@@ -202,7 +202,7 @@ public class AlignPerformRule extends RuleForCommands {
 		// align the table
 		int basicIndent = command.getFirstToken().spacesLeft;
 		int firstLineBreaks = command.getFirstToken().lineBreaks;
-		Command[] changedCommands = table.align(basicIndent, firstLineBreaks, false, true);
+		Command[] changedCommands = table.align(basicIndent, firstLineBreaks, false, true, false);
 		for (Command changedCommand : changedCommands) {
 			code.addRuleUse(this, changedCommand);
 		}

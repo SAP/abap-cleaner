@@ -10,6 +10,7 @@ import com.sap.adt.abapcleaner.programbase.UnexpectedSyntaxBeforeChanges;
 import com.sap.adt.abapcleaner.rules.alignment.*;
 import com.sap.adt.abapcleaner.rules.commands.*;
 import com.sap.adt.abapcleaner.rules.ddl.alignment.DdlAlignEntityParametersRule;
+import com.sap.adt.abapcleaner.rules.ddl.alignment.DdlAlignFieldListsRule;
 import com.sap.adt.abapcleaner.rules.ddl.alignment.DdlAlignFunctionParametersRule;
 import com.sap.adt.abapcleaner.rules.ddl.alignment.DdlAlignLogicalExpressionsRule;
 import com.sap.adt.abapcleaner.rules.ddl.alignment.DdlAlignSourceParametersRule;
@@ -36,7 +37,7 @@ import java.time.LocalDate;
 import java.util.*;
 
 public abstract class Rule {
-	public static final int RULE_COUNT = 91;
+	public static final int RULE_COUNT = 92;
 	public static final int RULE_GROUP_COUNT = 11;
 
 	protected static final String LINE_SEP = ABAP.LINE_SEPARATOR;
@@ -186,7 +187,8 @@ public abstract class Rule {
          new DdlAlignEntityParametersRule(profile),
          new DdlAlignSourceParametersRule(profile),
          new DdlAlignFunctionParametersRule(profile),
-         new DdlAlignLogicalExpressionsRule(profile)
+         new DdlAlignLogicalExpressionsRule(profile),
+         new DdlAlignFieldListsRule(profile)
       };
 
 		StringBuilder errors = new StringBuilder();
