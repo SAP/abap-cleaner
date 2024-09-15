@@ -38,6 +38,11 @@ public class DdlSpacesAroundSignsRule extends RuleForDdlCommands {
 	@Override
 	public LocalDate getDateCreated() { return LocalDate.of(2024, 9, 10); }
 
+	public RuleID[] getDependentRules() { 
+		// the following rules reuse some of this rule's settings; it is therefore not strictly necessary, but more intuitive to put them further down the rule list
+		return new RuleID[] { RuleID.DDL_ALIGN_ENTITY_PARAMETERS, RuleID.DDL_ALIGN_SOURCE_PARAMETERS }; 
+	}
+
 	@Override
 	public String getExample() {
 		return "" 

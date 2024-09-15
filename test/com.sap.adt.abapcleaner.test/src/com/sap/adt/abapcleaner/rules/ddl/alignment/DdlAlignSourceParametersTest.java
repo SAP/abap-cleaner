@@ -941,4 +941,54 @@ public class DdlAlignSourceParametersTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testAsAliasMissingAssociationNextLine() {
+		// ensure that ASSOCIATION ... TO ... is NOT moved behind the parameter assignments if "AS <alias>" is missing
+		
+		buildSrc("define view P_AnyView");
+		buildSrc("  with parameters");
+		buildSrc("    P_Any : any_type,");
+		buildSrc("");
+		buildSrc("  as select from P_OtherView(");
+		buildSrc("                   P_Any : :P_Any )");
+		buildSrc("                   as AnyAlias");
+		buildSrc("");
+		buildSrc("  association [0..1] to I_ThirdView as _Third on AnyAlias.AnyKeyField = _Third.AnyKeyField");
+		buildSrc("");
+		buildSrc("{");
+		buildSrc("  key AnyKeyField");
+		buildSrc("}");
+		buildSrc("");
+		buildSrc("union all");
+		buildSrc("  select from P_FourthView(");
+		buildSrc("                P_Any : :P_Any )");
+		buildSrc("");
+		buildSrc("  association [0..1] to I_FifthView as _Fifth on AnyAlias.AnyKeyField = _Fourth.AnyKeyField");
+		buildSrc("{");
+		buildSrc("  key AnyKeyField");
+		buildSrc("}");
+
+		buildExp("define view P_AnyView");
+		buildExp("  with parameters");
+		buildExp("    P_Any : any_type,");
+		buildExp("");
+		buildExp("  as select from P_OtherView(P_Any : :P_Any) as AnyAlias");
+		buildExp("");
+		buildExp("  association [0..1] to I_ThirdView as _Third on AnyAlias.AnyKeyField = _Third.AnyKeyField");
+		buildExp("");
+		buildExp("{");
+		buildExp("  key AnyKeyField");
+		buildExp("}");
+		buildExp("");
+		buildExp("union all");
+		buildExp("  select from P_FourthView(P_Any : :P_Any)");
+		buildExp("");
+		buildExp("  association [0..1] to I_FifthView as _Fifth on AnyAlias.AnyKeyField = _Fourth.AnyKeyField");
+		buildExp("{");
+		buildExp("  key AnyKeyField");
+		buildExp("}");
+
+		testRule();
+	}
 }

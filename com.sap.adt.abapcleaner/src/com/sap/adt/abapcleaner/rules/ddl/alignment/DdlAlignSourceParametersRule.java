@@ -17,6 +17,7 @@ import com.sap.adt.abapcleaner.rulebase.RuleGroupID;
 import com.sap.adt.abapcleaner.rulebase.RuleID;
 import com.sap.adt.abapcleaner.rulehelpers.RuleForDdlAlignParameters;
 import com.sap.adt.abapcleaner.rules.ddl.spaces.DdlSpacesAroundBracketsRule;
+import com.sap.adt.abapcleaner.rules.ddl.spaces.DdlSpacesAroundSignsRule;
 
 public class DdlAlignSourceParametersRule extends RuleForDdlAlignParameters {
 	@Override
@@ -31,7 +32,7 @@ public class DdlAlignSourceParametersRule extends RuleForDdlAlignParameters {
 	@Override
 	public String getDescription() { return "Aligns the parameters supplied to a data source."; }
 
-	public String getHintsAndRestrictions() { return "Spaces before parentheses are configured in '" + DdlSpacesAroundBracketsRule.displayName + "'."; }
+	public String getHintsAndRestrictions() { return "Space inside parentheses is configured in '" + DdlSpacesAroundBracketsRule.displayName + "'. Space around colons (if colons are not aligned) is configured in '" + DdlSpacesAroundSignsRule.displayName + "'."; }
 
 	@Override
 	public LocalDate getDateCreated() { return LocalDate.of(2024, 9, 13); }

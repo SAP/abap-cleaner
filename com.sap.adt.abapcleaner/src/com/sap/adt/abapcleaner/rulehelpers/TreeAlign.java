@@ -94,7 +94,7 @@ public class TreeAlign {
 	}
 
 	public final boolean align(Token keyword, AlignStyle keywordAlignStyle, boolean rightAlignComparisonOps, boolean keepMultiline, boolean onlyAlignSameObjects,
-			int maxInnerSpaces) {
+			int maxInnerSpaces, boolean attachParentheses) {
 		boolean changed = false;
 
 		// determine the leftmost indent in all content to align
@@ -166,16 +166,54 @@ public class TreeAlign {
 			}
 		}
 
+		boolean isAfterAttachedOpeningParens = false;
 		for (TreeAlignColumn column : allColumns) {
+			int columnWidth = keepMultiline ? column.getMaxMultiLineWidth() : column.getMaxMonoLineWidth();
+
 			// calculate the column indent (even if the column is empty, because this information will be used by the next column)
-			int columnWidth = keepMultiline ? column.getMaxMultiLineWidthWithSpaceLeft() : column.getMaxMonoLineWidthWithSpaceLeft();
-			int columnIndent = (column.prev == null) ? basicIndent : column.prev.indentForNextColumn;
-			column.indentForNextColumn = columnIndent + columnWidth;
+			int columnIndent;
+			if (column.prev == null) {
+				// start a fresh sequence of columns
+				isAfterAttachedOpeningParens = false;
+				columnIndent = basicIndent;
+			} else {
+				// continue a sequence
+				columnIndent = column.prev.indentForNextColumn; // might still be decreased below for attached ")"
+			}
+			
+			// calculate minimum spaces left - usually 1, but 0 in case of a preceding attached "(", or if this is an attached ")"
+			int minSpacesLeft = isAfterAttachedOpeningParens ? 0 : 1;
+			if (attachParentheses && column.getClosesBracket() && columnWidth == 1 && column.prev != null) {
+				--columnIndent;
+				minSpacesLeft = 0;
+			}
+
+			// determine for the next column(s):
+			// - the number of spaces right of this column, and 
+			// - whether this column is an attached "("
+			int spacesRight;
+			if (columnWidth == 0) {
+				// column is not 'materialized'
+				spacesRight = 0;
+				// keep isAfterAttachedOpeningParens unchanged
+				
+			} else if (attachParentheses && column.getOpensBracket() && columnWidth == 1) {
+				// for DDL or DCL, parentheses can be attached to the next column, depending on configuration
+				spacesRight = 0;
+				isAfterAttachedOpeningParens = true;
+			
+			} else {
+				spacesRight = 1;
+				isAfterAttachedOpeningParens = false;
+			}
+			
+			column.indentForNextColumn = columnIndent + columnWidth + spacesRight;
 
 			// propagate stopped alignment from the previous columns
 			for (AlignCell cell : column.getCells()) {
-				if (isAlignmentStoppedForLineOf(cell))
+				if (isAlignmentStoppedForLineOf(cell)) {
 					stopAligningLineOf(cell);
+				}
 			}
 
 			for (AlignCell cell : column.getCells()) {
@@ -183,25 +221,26 @@ public class TreeAlign {
 				int newIndent = columnIndent;
 				if (column.rightAlign) {
 					int cellWidth = keepMultiline ? cell.getMultiLineWidth() : cell.getMonoLineWidth();
-					newIndent += (columnWidth - 1 - cellWidth); // columnWidth includes 1 space separating it from the next column
+					newIndent += (columnWidth - cellWidth); 
 				}
 
 				Token firstToken = cell.getFirstToken();
 				int spacesLeft = firstToken.spacesLeft + (newIndent - currentIndent);
 				if (columnIndent > 0) {
-					spacesLeft = Math.max(spacesLeft, 1);
+					spacesLeft = Math.max(spacesLeft, minSpacesLeft);
 				}
 				if (firstToken.lineBreaks == 0) {
-					if (column.doNotAlign || (onlyAlignSameObjects && isAlignmentStoppedForLineOf(cell)))
-						spacesLeft = 1;
-					else if (spacesLeft > maxInnerSpaces && firstToken != keyword.getNext()) {
+					if (column.doNotAlign || (onlyAlignSameObjects && isAlignmentStoppedForLineOf(cell))) {
+						spacesLeft = minSpacesLeft;
+					} else if (spacesLeft > maxInnerSpaces && firstToken != keyword.getNext()) {
 						// stop aligning if maximum number of inner spaces would be exceeded (except at line start)
-						spacesLeft = 1;
+						spacesLeft = minSpacesLeft;
 						stopAligningLineOf(cell);
 					}
 				}
-				if (cell.setWhitespace(firstToken.lineBreaks, spacesLeft, keepMultiline, true, null))
+				if (cell.setWhitespace(firstToken.lineBreaks, spacesLeft, keepMultiline, true, null)) {
 					changed = true;
+				}
 			}
 		}
 

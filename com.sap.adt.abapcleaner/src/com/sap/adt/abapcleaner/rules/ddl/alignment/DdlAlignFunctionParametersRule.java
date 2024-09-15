@@ -31,7 +31,7 @@ public class DdlAlignFunctionParametersRule extends RuleForDdlAlignParameters {
 	@Override
 	public String getDescription() { return "Aligns the parameters of special built-in functions for currency and unit conversion, and of analytical scalar functions."; }
 
-	public String getHintsAndRestrictions() { return "Spaces before parentheses are configured in '" + DdlSpacesAroundBracketsRule.displayName + "'."; }
+	public String getHintsAndRestrictions() { return "Space inside parentheses is configured in '" + DdlSpacesAroundBracketsRule.displayName + "'."; }
 
 	@Override
 	public LocalDate getDateCreated() { return LocalDate.of(2024, 9, 14); }

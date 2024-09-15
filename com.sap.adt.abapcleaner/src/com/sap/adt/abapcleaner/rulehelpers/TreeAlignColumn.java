@@ -78,9 +78,9 @@ class TreeAlignColumn {
 
 	final boolean getClosesBracket() { return columnTypeClosesBracket(columnType); }
 
-	final int getMaxMonoLineWidthWithSpaceLeft() { return isEmpty() ? 0 : maxMonoLineWidth + 1; }
+	final int getMaxMonoLineWidth() { return isEmpty() ? 0 : maxMonoLineWidth; }
 
-	final int getMaxMultiLineWidthWithSpaceLeft() { return isEmpty() ? 0 : maxMultiLineWidth + 1; }
+	final int getMaxMultiLineWidth() { return isEmpty() ? 0 : maxMultiLineWidth; }
 
 	final int brackLevelForNextColumn(TreeAlignColumnType nextColumnType) {
 		return brackLevel + (getOpensBracket() ? 1 : 0) - (columnTypeClosesBracket(nextColumnType) ? 1 : 0);
