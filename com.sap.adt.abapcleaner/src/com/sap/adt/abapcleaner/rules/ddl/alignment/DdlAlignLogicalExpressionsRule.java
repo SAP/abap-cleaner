@@ -36,7 +36,8 @@ public class DdlAlignLogicalExpressionsRule extends RuleForDdlCommands {
 	@Override
 	public String getDescription() { return "Aligns logical expressions in ON / WHERE / HAVING conditions and path expressions."; }
 
-	public String getHintsAndRestrictions() { return "Spaces inside parentheses is configured in '" + DdlSpacesAroundBracketsRule.displayName + "'."; }
+	@Override
+	public String getHintsAndRestrictions() { return "Space inside parentheses is configured in '" + DdlSpacesAroundBracketsRule.displayName + "'."; }
 
 	@Override
 	public LocalDate getDateCreated() { return LocalDate.of(2024, 9, 14); }

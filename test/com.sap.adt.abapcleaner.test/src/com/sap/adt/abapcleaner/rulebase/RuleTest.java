@@ -316,6 +316,21 @@ class RuleTest {
 	}
 	
 	@Test
+	void testConfigValueNamesDoNotStartWithConfig() {
+		Rule[] rules = Profile.createDefault().getAllRules();
+		
+		for (Rule rule : rules) {
+			for (ConfigValue configValue : rule.getConfigValues()) {
+				if (configValue instanceof ConfigInfoValue)
+					continue;
+				String settingName = configValue.settingName;
+				
+				assertFalse(settingName.startsWith("config"), "setting name '" + rule.getClass().getSimpleName() + "." + settingName + "' starts with 'config...'");
+			}
+		}
+	}
+	
+	@Test
 	void testConfigValueNamesUnique() {
 		Rule[] rules = Profile.createDefault().getAllRules();
 		
