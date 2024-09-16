@@ -20,6 +20,10 @@ public class AlignColumn {
 	 * (or if that is null, to the basicIndent) **/
 	private int forceIndentOffset = -1;
 
+	/** The forced maximum indent (an approach INDEPENDENT from forceIndentBaseColumn + forceIndentOffset!)
+	 *  If a given cell in this column would exceed the forceMaxIndent, it will automatically be moved to the next line */
+	private int forceMaxIndent = -1;
+	
 	// variables that are updated on .addCell() and may be recalculated with .recalculate()
 	private boolean isValid;
 	private int maxMonoLineWidth;
@@ -45,6 +49,8 @@ public class AlignColumn {
 
 	public final int getEffectiveIndent() { return effectiveIndent; }
 
+	public final int getForceMaxIndent() { return forceMaxIndent; }
+	
 	public final AlignCell getCellFromLine(int lineIndex) {
 		return parentTable.getLine(lineIndex).getCell(index);
 	}
@@ -225,6 +231,10 @@ public class AlignColumn {
 		invalidate();
 	}
 	
+	public void setForceMaxIndent(int maxIndent) {
+		forceMaxIndent = maxIndent; 
+	}
+
 	public void setEffectiveIndent(int value) {
 		effectiveIndent = value;
 	}

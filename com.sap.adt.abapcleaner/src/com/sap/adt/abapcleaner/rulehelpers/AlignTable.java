@@ -210,11 +210,24 @@ public class AlignTable {
 			
 			int columnIndent = basicIndent;
 			for (AlignColumn column : columns) {
+				boolean forceMaxIndent = false;
 				if (column.getForceIndentOffset() >= 0) {
 					AlignColumn baseColumn = column.getForceIndentBaseColumn();
 					columnIndent = (baseColumn == null ? basicIndent : baseColumn.getEffectiveIndent()) + column.getForceIndentOffset();
 					spacesLeft = columnIndent;
+				
+				} else if (column.getForceMaxIndent() >= 0) { 
+					// If the width of the previous column exceeds the 'forced maximum indent' that was configured for the current column, 
+					// switch on 'forceMaxIndent' mode, which will automatically a) move cells to the next line or b) make them continue 
+					// on the current line, depending on whether they can (individually) fulfill the 'forced maximum indent'.
+					// This is used for DDL select list elements to have a maximum indent of the "as <alias>" column. 
+					// Note that a 'forced maximum indent' can NOT be combined with the getForceIndentOffset() concept.
+					if (columnIndent > column.getForceMaxIndent()) {
+						columnIndent = column.getForceMaxIndent();
+						forceMaxIndent = true;
+					}
 				}
+
 				column.setEffectiveIndent(columnIndent);
 				if (column.isEmpty()) {
 					if (column.getForceLineBreakAfter()) {
@@ -233,18 +246,33 @@ public class AlignTable {
 				} 
 			
 				Token prev = cell.getFirstToken().getPrev();
-				if (lineBreaks == 0) {
+				if (prev != null && forceMaxIndent) {
+					// if a 'forced maximum indent' was configured for the current column, existing lineBreaks are overridden, 
+					// depending on whether the cell must (individually) be moved to the next line to fulfill the forced maximum indent:
+					if (prev.getEndIndexInLine() >= columnIndent) {
+						// force the cell to the next line to fulfill the forced maximum indent
+						lineBreaks = 1;
+						spacesLeft = columnIndent;
+					} else {
+						// continue on the same line, because this cell can keep the forced maximum indent 
+						lineBreaks = 0;
+						spacesLeft = columnIndent - prev.getEndIndexInLine(); 
+					} 
+				} else if (lineBreaks == 0) {
 					if (prev != null && prev.isComment()) {
 						// prevent code from being appended to a comment
 						lineBreaks = 1;
 						spacesLeft = columnIndent;
+					
 					} else if (!cell.getFirstToken().isFirstTokenInCode()) {
 						// ensure there is always at least one space
 						spacesLeft = Math.max(spacesLeft, minSpacesLeft);
 					}
-				} else if (cell.getFirstToken().lineBreaks > lineBreaks) {
-					// if there should be a line break, then also keep multiple existing line breaks
-					lineBreaks = cell.getFirstToken().lineBreaks;
+				} else {
+					if (cell.getFirstToken().lineBreaks > lineBreaks) {
+						// if there should be a line break, then also keep multiple existing line breaks
+						lineBreaks = cell.getFirstToken().lineBreaks;
+					}
 				}
 				
 				// if line length would be exceeded, move the 'overlength line break Token' to the next line, aligning it 

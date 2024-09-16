@@ -2,7 +2,6 @@ package com.sap.adt.abapcleaner.rules.ddl.alignment;
 
 import java.time.LocalDate;
 
-import com.sap.adt.abapcleaner.base.ABAP;
 import com.sap.adt.abapcleaner.base.DDL;
 import com.sap.adt.abapcleaner.base.StringUtil;
 import com.sap.adt.abapcleaner.parser.Code;
@@ -85,7 +84,7 @@ public class DdlAlignFieldListsRule extends RuleForDdlCommands {
 	
    private final String[] layoutTexts = new String[] { "multi-line", "single line", "derive from majority", "keep as is" };
 
-   final ConfigIntValue configMaxLineLength = new ConfigIntValue(this, "MaxLineLength", "Maximum line length", "", 80, 120, ABAP.MAX_LINE_LENGTH);
+   final ConfigIntValue configMaxLineLength = new ConfigIntValue(this, "MaxLineLength", "Maximum line length", "", 80, 120, DDL.MAX_LINE_LENGTH);
 	final ConfigEnumValue<DdlNameListPos> configNameListPos = new ConfigEnumValue<DdlNameListPos>(this, "NameListPos", "Name list position:",
 			new String[] { "continue after view name", "below line start + 2", "below line start + 4", "below view name + 2", "below view name + 4", "keep as is" }, DdlNameListPos.values(), DdlNameListPos.LINE_START_PLUS_2);
    final ConfigEnumValue<SelectListLayout> configNameListLayout = new ConfigEnumValue<SelectListLayout>(this, "NameListLayout", "Name lists layout:", layoutTexts, SelectListLayout.values(), SelectListLayout.MULTI_LINE);
