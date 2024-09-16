@@ -14,13 +14,15 @@ import com.sap.adt.abapcleaner.rulebase.RuleReference;
 import com.sap.adt.abapcleaner.rulebase.RuleSource;
 
 public class DdlPositionJoinRule extends RuleForDdlPositionJoinOrAssociation {
+	public final static String displayName = "Break before JOINs";
+	
 	private final static RuleReference[] references = new RuleReference[] { new RuleReference(RuleSource.ABAP_CLEANER) };
 
 	@Override
 	public RuleID getID() { return RuleID.DDL_POSITION_JOIN; }
 
 	@Override
-	public String getDisplayName() { return "Break before JOINs"; }
+	public String getDisplayName() { return displayName; }
 
 	@Override
 	public String getDescription() { return "Standardizes line breaks and indentation of JOINs."; }

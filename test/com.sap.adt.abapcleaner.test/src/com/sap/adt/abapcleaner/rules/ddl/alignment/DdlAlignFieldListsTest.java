@@ -7,7 +7,7 @@ import com.sap.adt.abapcleaner.rulebase.RuleID;
 import com.sap.adt.abapcleaner.rulebase.RuleTestBase;
 import com.sap.adt.abapcleaner.rules.alignment.SelectListLayout;
 
-public class DdlAlignFieldListsTest  extends RuleTestBase {
+public class DdlAlignFieldListsTest extends RuleTestBase {
 	private DdlAlignFieldListsRule rule;
 	
 	DdlAlignFieldListsTest() {

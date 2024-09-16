@@ -19,14 +19,15 @@ import com.sap.adt.abapcleaner.rulebase.RuleSource;
 import com.sap.adt.abapcleaner.rulehelpers.RuleForDdlPosition;
 
 public class DdlPositionSelectRule extends RuleForDdlPosition {
-	final static String defaultDescription = "Break before AS SELECT etc.";
+	final static String defaultDisplayName = "Break before AS SELECT etc.";
+	
 	private final static RuleReference[] references = new RuleReference[] { new RuleReference(RuleSource.ABAP_CLEANER) };
 	
 	@Override
 	public RuleID getID() { return RuleID.DDL_POSITION_SELECT; }
 
 	@Override
-	public String getDisplayName() { return defaultDescription; }
+	public String getDisplayName() { return defaultDisplayName; }
 
 	@Override
 	public String getDescription() { return "Standardizes line breaks and indentation before entity name, WITH PARAMETERS, [AS] SELECT, AS PROJECTION ON and data source."; }

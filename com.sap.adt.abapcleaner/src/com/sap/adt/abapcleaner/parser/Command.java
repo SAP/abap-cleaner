@@ -291,6 +291,12 @@ public class Command {
 		return (token != null && token.isKeyword(text)); 
 	}
 	
+	public final boolean lastCodeTokenIsAnyKeyword(String... texts) {
+		// only for DDL
+		Token token = getLastCodeToken();
+		return (token != null && token.isAnyKeyword(texts)); 
+	}
+	
 	public final boolean isIntroductoryStatement() {
 		return firstToken.isAnyKeyword("CLASS-POOL", "FUNCTION-POOL", "INTERFACE-POOL", "PROGRAM", "REPORT", "TYPE-POOL");
 	}
@@ -1009,7 +1015,8 @@ public class Command {
 		Command prevCommandParent = (prevCommand == null) ? null : prevCommand.getParent();
 		boolean isAtTopLevel = (prevCommand == null 
 				|| prevCommandParent == null && !prevCommand.getOpensLevel() 
-				|| prevCommandParent != null && prevCommandParent.lastCodeTokenIsKeyword("PARAMETERS") && firstCodeTokenTextEqualsAny(DDL.levelClosersAfterParameterList)); 
+				|| prevCommandParent != null && prevCommandParent.lastCodeTokenIsKeyword("PARAMETERS") && firstCodeTokenTextEqualsAny(DDL.levelClosersAfterParameterList) 
+				|| prevCommandParent != null && prevCommandParent.lastCodeTokenIsAnyKeyword("SELECT", "DISTINCT") && firstCodeTokenTextEqualsAny("FROM")); 
 
 		// determine whether we are in a select list or parameter list
 		boolean isInSelectListWithBraces = false;
@@ -3788,6 +3795,17 @@ public class Command {
 	void setLanguage(Language newLanguage) {
 		this.language = newLanguage;
 	}
+	
+	public final boolean startsDdlJoin() {
+		Token firstCode = getFirstCodeToken();
+		return firstCode != null && firstCode.startsDdlJoin();
+	}
+		
+	public final boolean startsDdlAssociation() {
+		Token firstCode = getFirstCodeToken();
+		return firstCode != null && firstCode.startsDdlAssociation();
+	}
+		
 	/** Returns true if the Command matches a hard-coded pattern or condition.
 	 * This method can be used during development to search for examples in all sample code files. */
 	public final boolean matchesPattern() {
