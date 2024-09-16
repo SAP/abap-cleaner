@@ -115,7 +115,7 @@ public class DdlAlignDataSourcesRule extends RuleForDdlCommands {
 	final ConfigBoolValue configAlignAliases = new ConfigBoolValue(this, "AlignAliases", "Align aliases", true);
 	final ConfigBoolValue configAlignOnConditions = new ConfigBoolValue(this, "AlignOnConditions", "Align ON conditions that continue on the same line", true);
 	final ConfigBoolValue configAlignAssociationsWithJoins = new ConfigBoolValue(this, "AlignAssociationsWithJoins", "Align ASSOCIATIONs together with JOINs", false);
-	final ConfigBoolValue configConsiderAllParamAssignLines = new ConfigBoolValue(this, "ConsiderAllParamAssignLines", "Consider all lines of parameter assignments", false);
+	final ConfigBoolValue configConsiderAllParamAssignLines = new ConfigBoolValue(this, "ConsiderAllParamAssignLines", "Consider all lines of multi-line parameter assignments", false);
 
 	private final ConfigValue[] configValues = new ConfigValue[] { configAlignDataSources, configAlignAliases, configAlignOnConditions, configAlignAssociationsWithJoins, configConsiderAllParamAssignLines };
 

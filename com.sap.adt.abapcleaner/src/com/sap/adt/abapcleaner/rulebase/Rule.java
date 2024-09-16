@@ -14,6 +14,7 @@ import com.sap.adt.abapcleaner.rules.ddl.alignment.DdlAlignEntityParametersRule;
 import com.sap.adt.abapcleaner.rules.ddl.alignment.DdlAlignFieldListsRule;
 import com.sap.adt.abapcleaner.rules.ddl.alignment.DdlAlignFunctionParametersRule;
 import com.sap.adt.abapcleaner.rules.ddl.alignment.DdlAlignLogicalExpressionsRule;
+import com.sap.adt.abapcleaner.rules.ddl.alignment.DdlAlignSelectListRule;
 import com.sap.adt.abapcleaner.rules.ddl.alignment.DdlAlignSourceParametersRule;
 import com.sap.adt.abapcleaner.rules.ddl.annotations.DdlAnnotationLayoutRule;
 import com.sap.adt.abapcleaner.rules.ddl.annotations.DdlAnnotationNestingRule;
@@ -38,7 +39,7 @@ import java.time.LocalDate;
 import java.util.*;
 
 public abstract class Rule {
-	public static final int RULE_COUNT = 93;
+	public static final int RULE_COUNT = 94;
 	public static final int RULE_GROUP_COUNT = 11;
 
 	protected static final String LINE_SEP = ABAP.LINE_SEPARATOR;
@@ -190,7 +191,8 @@ public abstract class Rule {
          new DdlAlignFunctionParametersRule(profile),
          new DdlAlignLogicalExpressionsRule(profile),
          new DdlAlignFieldListsRule(profile),
-         new DdlAlignDataSourcesRule(profile)
+         new DdlAlignDataSourcesRule(profile),
+         new DdlAlignSelectListRule(profile)
       };
 
 		StringBuilder errors = new StringBuilder();

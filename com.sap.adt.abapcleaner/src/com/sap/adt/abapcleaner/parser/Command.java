@@ -3747,6 +3747,20 @@ public class Command {
 		return isDdlOrDcl() && isCommentLine() && firstToken.textStartsWith(DDL.ASTERISK_COMMENT_START) && !endsMultiLineDdlComment();
 	}
 
+	public Command getLastOfMultiLineDdlComment() {
+		if (!isCommentLine() || !firstToken.startsMultiLineDdlComment()) 
+			return null;
+
+		Command command = this;
+		do {
+			if (command.endsMultiLineDdlComment())
+				return command;
+			command = command.getNextSibling();
+		} while (command != null && command.isCommentLine());
+
+		return null;
+	}
+
 	public boolean endsMultiLineDdlComment() {
 		return isDdlOrDcl() && isCommentLine() && firstToken.getText().indexOf(DDL.ASTERISK_COMMENT_END) >= 0;
 	}
