@@ -134,7 +134,8 @@ public enum RuleID  {
    DDL_ALIGN_SELECT_LIST, 
    
    // DDL empty lines
-   DDL_EMPTY_LINES_BETWEEN;
+   DDL_EMPTY_LINES_BETWEEN,
+   DDL_EMPTY_LINES_WITHIN;
 
 	public static final int SIZE = java.lang.Integer.SIZE;
 

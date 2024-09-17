@@ -13,11 +13,11 @@ import com.sap.adt.abapcleaner.rulebase.ConfigEnumValue;
 import com.sap.adt.abapcleaner.rulebase.ConfigIntValue;
 import com.sap.adt.abapcleaner.rulebase.ConfigValue;
 import com.sap.adt.abapcleaner.rulebase.Profile;
+import com.sap.adt.abapcleaner.rulebase.RuleForDdlCommands;
 import com.sap.adt.abapcleaner.rulebase.RuleGroupID;
 import com.sap.adt.abapcleaner.rulebase.RuleID;
-import com.sap.adt.abapcleaner.rulehelpers.RuleForDdlEmptyLines;
 
-public class DdlEmptyLinesBetweenSectionsRule extends RuleForDdlEmptyLines {
+public class DdlEmptyLinesBetweenSectionsRule extends RuleForDdlCommands {
 	@Override
 	public RuleID getID() { return RuleID.DDL_EMPTY_LINES_BETWEEN; }
 
@@ -47,9 +47,9 @@ public class DdlEmptyLinesBetweenSectionsRule extends RuleForDdlEmptyLines {
 				+ LINE_SEP + "    left outer to one join I_ThirdEntity as ThirdAlias"
 				+ LINE_SEP + "      on  AnyAlias.IdField    = ThirdAlias.IdField"
 				+ LINE_SEP + "      and AnyAlias.SubIdField = ThirdAlias.SubIdField"
-				+ LINE_SEP + "    // comment on association"
-				+ LINE_SEP + "    association [0..*] to I_FourthEntity as _FourthAlias"
-				+ LINE_SEP + "      on AnyAlias.IdField = _FourthAlias.IdField"
+				+ LINE_SEP + "  // comment on association"
+				+ LINE_SEP + "  association [0..*] to I_FourthEntity as _FourthAlias"
+				+ LINE_SEP + "    on AnyAlias.IdField = _FourthAlias.IdField"
 				+ LINE_SEP + "{"
 				+ LINE_SEP + "  key AnyAlias.AnyKeyField,"
 				+ LINE_SEP + "  key AnyAlias.OtherKeyField,"
@@ -65,13 +65,13 @@ public class DdlEmptyLinesBetweenSectionsRule extends RuleForDdlEmptyLines {
 				+ LINE_SEP + "      on AnyAlias.IdField = OtherAlias.IdField"
 				+ LINE_SEP + ""
 				+ LINE_SEP + ""
-				+ LINE_SEP + "    // comment on association"
-				+ LINE_SEP + "    association [0..*] to I_ThirdEntity2 as _ThirdAlias"
-				+ LINE_SEP + "      on  AnyAlias.IdField    = _ThirdAlias.IdField"
-				+ LINE_SEP + "      and AnyAlias.SubIdField = _ThirdAlias.SubIdField"
+				+ LINE_SEP + "  // comment on association"
+				+ LINE_SEP + "  association [0..*] to I_ThirdEntity2 as _ThirdAlias"
+				+ LINE_SEP + "    on  AnyAlias.IdField    = _ThirdAlias.IdField"
+				+ LINE_SEP + "    and AnyAlias.SubIdField = _ThirdAlias.SubIdField"
 				+ LINE_SEP + ""
-				+ LINE_SEP + "    association [0..*] to I_FourthEntity2 as _FourthAlias"
-				+ LINE_SEP + "      on AnyAlias.IdField = _FourthAlias.IdField"
+				+ LINE_SEP + "  association [0..*] to I_FourthEntity2 as _FourthAlias"
+				+ LINE_SEP + "    on AnyAlias.IdField = _FourthAlias.IdField"
 				+ LINE_SEP + ""
 				+ LINE_SEP + ""
 				+ LINE_SEP + ""

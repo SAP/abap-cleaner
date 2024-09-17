@@ -3652,6 +3652,16 @@ public class Command {
 		return firstCode != null && firstCode.textStartsWith(DDL.ANNOTATION_AFTER_LIST_ELEMENT_PREFIX); 
 	}
 
+	public boolean startsDdlClause() {
+		Token firstCode = getFirstCodeToken();
+		return firstCode != null && firstCode.startsDdlClause(); 
+	}
+
+	public boolean startsDdlUnionEtc() {
+		Token firstCode = getFirstCodeToken();
+		return firstCode != null && firstCode.startsDdlUnionEtc(); 
+	}
+
 	public String getCondensedDdlAnnotationName(boolean considerCommentedOutAnnotations) { 
 		if (isDdlAnnotation()) {
 			StringBuilder sbAnnoName = new StringBuilder();
