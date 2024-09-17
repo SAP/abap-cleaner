@@ -131,7 +131,10 @@ public enum RuleID  {
    DDL_ALIGN_LOGICAL_EXPRESSIONS,
    DDL_ALIGN_FIELD_LISTS,
    DDL_ALIGN_DATA_SOURCES, 
-   DDL_ALIGN_SELECT_LIST;
+   DDL_ALIGN_SELECT_LIST, 
+   
+   // DDL empty lines
+   DDL_EMPTY_LINES_BETWEEN;
 
 	public static final int SIZE = java.lang.Integer.SIZE;
 

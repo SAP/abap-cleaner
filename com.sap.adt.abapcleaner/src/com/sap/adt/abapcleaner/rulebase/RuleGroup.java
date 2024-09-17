@@ -63,6 +63,9 @@ public class RuleGroup {
 			case DDL_ALIGNMENT:
 				return "DDL Alignment";
 
+			case DDL_EMPTY_LINES:
+				return "DDL Empty Lines";
+				
 			default:
 				throw new IndexOutOfBoundsException("Unknown RuleGroup!");
 		}

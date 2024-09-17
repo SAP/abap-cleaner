@@ -18,6 +18,7 @@ import com.sap.adt.abapcleaner.rules.ddl.alignment.DdlAlignSelectListRule;
 import com.sap.adt.abapcleaner.rules.ddl.alignment.DdlAlignSourceParametersRule;
 import com.sap.adt.abapcleaner.rules.ddl.annotations.DdlAnnotationLayoutRule;
 import com.sap.adt.abapcleaner.rules.ddl.annotations.DdlAnnotationNestingRule;
+import com.sap.adt.abapcleaner.rules.ddl.emptylines.DdlEmptyLinesBetweenSectionsRule;
 import com.sap.adt.abapcleaner.rules.ddl.position.DdlPositionAssociationRule;
 import com.sap.adt.abapcleaner.rules.ddl.position.DdlPositionBracesRule;
 import com.sap.adt.abapcleaner.rules.ddl.position.DdlPositionClausesRule;
@@ -39,8 +40,8 @@ import java.time.LocalDate;
 import java.util.*;
 
 public abstract class Rule {
-	public static final int RULE_COUNT = 94;
-	public static final int RULE_GROUP_COUNT = 11;
+	public static final int RULE_COUNT = 95;
+	public static final int RULE_GROUP_COUNT = 12;
 
 	protected static final String LINE_SEP = ABAP.LINE_SEPARATOR;
 	protected static Language[] abapOnly =  new Language[] { Language.ABAP };
@@ -192,7 +193,10 @@ public abstract class Rule {
          new DdlAlignLogicalExpressionsRule(profile),
          new DdlAlignFieldListsRule(profile),
          new DdlAlignDataSourcesRule(profile),
-         new DdlAlignSelectListRule(profile)
+         new DdlAlignSelectListRule(profile),
+         
+         // DDL empty lines
+         new DdlEmptyLinesBetweenSectionsRule(profile)
       };
 
 		StringBuilder errors = new StringBuilder();
