@@ -2801,7 +2801,7 @@ public class Token {
       		}
       		// check whether the end meets the expectations, otherwise ignore this logical expressions by returning null
       		if (end != null && !end.isPeriod()) {
-      			if (end.isAnyKeyword("UNION", "INTERSECT", "EXCEPT")) {
+      			if (end.startsDdlUnionEtc()) {
       				// end of SELECT
       			} else if (end.isAnyKeyword("FIELDS", "FOR", "WHERE", "GROUP", "HAVING", "ORDER", "INTO", "APPENDING")) {
       				// next SQL clause
@@ -3570,6 +3570,14 @@ public class Token {
 		if (!parentCommand.isDdlOrDcl())
 			return false;
 		return isAnyKeyword("ASSOCIATION", "COMPOSITION") || matchesOnSiblings(true, "REDEFINE", "ASSOCIATION");
+	}
+
+	public boolean startsDdlClause() {
+		return isAnyKeyword("WHERE", "HAVING") || matchesOnSiblings(true, "GROUP", "BY");
+	}
+
+	public boolean startsDdlUnionEtc() {
+		return isAnyKeyword("UNION", "INTERSECT", "EXCEPT");
 	}
 
 	/** return true if the Token is a colon ":" that belongs to a parameter name like ":P_Any" (only possible in DDIC-based views) */

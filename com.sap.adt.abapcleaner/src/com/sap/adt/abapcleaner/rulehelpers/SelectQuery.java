@@ -111,7 +111,7 @@ public class SelectQuery {
 		
 		while (token != null) {
 			SelectClause nextClause = SelectClause.NONE;
-			if (token.isAnyKeyword("UNION", "INTERSECT", "EXCEPT")) {
+			if (token.startsDdlUnionEtc()) {
 				if (!hasClause(SelectClause.UNION) && !hasClause(SelectClause.SELECT)) {
 					nextClause = SelectClause.UNION;
 				} else {

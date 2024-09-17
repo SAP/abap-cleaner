@@ -115,7 +115,7 @@ public class DdlPositionClausesRule extends RuleForDdlPosition {
 			
 			return executeOn(command, token, lastKeyword, clauseEnd, lineBreak, configWhereEtcIndent.getValue(), false);
 			
-		} else if (token.isAnyKeyword("EXCEPT", "INTERSECT", "UNION")) {
+		} else if (token.startsDdlUnionEtc()) {
 			Token lastKeyword = token.matchesOnSiblings(true, "UNION", "ALL") ? token.getNextCodeSibling() : token;
 			Token clauseEnd = token.getLastTokenOnSiblings(true, TokenSearch.ASTERISK, "SELECT");
 			DdlLineBreak lineBreak = getLineBreak(DdlLineBreakWithoutNever.forValue(configBreakBeforeUnionEtc.getValue()));
