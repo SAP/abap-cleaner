@@ -3765,6 +3765,10 @@ public class Command {
 		return isDdlOrDcl() && isCommentLine() && firstToken.getText().indexOf(DDL.ASTERISK_COMMENT_END) >= 0;
 	}
 
+	public boolean startsDdlOrDclDefinition() {
+		return (getDdlOrDclEntityNameToken() != null);
+	}
+
 	public Token getDdlOrDclEntityNameToken() {
 		if (!isDdlOrDcl() || parent != null)
 			return null;
@@ -3818,6 +3822,38 @@ public class Command {
 	public final boolean startsDdlAssociation() {
 		Token firstCode = getFirstCodeToken();
 		return firstCode != null && firstCode.startsDdlAssociation();
+	}
+
+	/** for a DDL select list element, returns the first of its preceding annotations (if any), or the element itself */
+	public final Command getStartOfPrecedingDdlAnnotations() {
+		Command command = this;
+		do {
+			Command prevNonComment = command.getPrevNonCommentSibling();
+			if (prevNonComment == null || !prevNonComment.isDdlAnnotation())
+				return command;
+			command = prevNonComment;
+		} while (true);
+	}
+	
+	public final boolean startsDdlEntityParameters() {
+		return getOpensLevel() && getLastCodeToken() != null && getLastCodeToken().isKeyword("PARAMETERS"); // "!= null" pro forma
+	}
+		
+	public final boolean startsDdlSelectList() {
+		return startsDdlSelectListWithBrace() || startsDdlSelectListBeforeFrom(); 
+	}
+		
+	public final boolean startsDdlSelectListWithBrace() {
+		return getOpensLevel() && getLastCodeToken() != null && getLastCodeToken().textEquals(DDL.BRACE_OPEN_STRING); // "!= null" pro forma
+	}
+		
+	/** returns true if this Command starts the select list of a DDIC-based CDS View with the syntax 'SELECT [DISTINCT] select_list FROM' */
+	public final boolean startsDdlSelectListBeforeFrom() {
+		return getOpensLevel() && getLastCodeToken() != null && getLastCodeToken().isAnyKeyword("SELECT", "DISTINCT"); // "!= null" pro forma
+	}
+		
+	public final boolean endsDdlSelectListWithBrace() {
+		return getClosesLevel() && getFirstCodeToken() != null && getFirstCodeToken().textEquals(DDL.BRACE_CLOSE_STRING); // "!= null" pro forma
 	}
 		
 	/** Returns true if the Command matches a hard-coded pattern or condition.

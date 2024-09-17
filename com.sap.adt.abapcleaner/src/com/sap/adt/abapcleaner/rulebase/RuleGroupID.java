@@ -12,7 +12,8 @@ public enum RuleGroupID  {
    DDL_ANNOTATIONS,
    DDL_POSITION,
    DDL_SPACES,
-   DDL_ALIGNMENT;
+   DDL_ALIGNMENT,
+   DDL_EMPTY_LINES;
 
    public static final int SIZE = java.lang.Integer.SIZE;
 
