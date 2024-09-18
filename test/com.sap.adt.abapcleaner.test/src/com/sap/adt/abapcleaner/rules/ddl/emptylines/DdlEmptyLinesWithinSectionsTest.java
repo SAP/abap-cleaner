@@ -1,8 +1,14 @@
 package com.sap.adt.abapcleaner.rules.ddl.emptylines;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.util.ArrayList;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import com.sap.adt.abapcleaner.rulebase.ConfigEnumValue;
 import com.sap.adt.abapcleaner.rulebase.RuleID;
 import com.sap.adt.abapcleaner.rulebase.RuleTestBase;
 
@@ -24,13 +30,47 @@ public class DdlEmptyLinesWithinSectionsTest extends RuleTestBase {
 		rule.configSurroundElementLineCountMin.setValue(2);
 		rule.configSurroundClauseLineCountMin.setValue(2);
 
-		rule.configCondenseParameters.setEnumValue(DdlCondenseMode.IF_ONLY_ONE_LINERS);
-		rule.configCondenseJoins.setEnumValue(DdlCondenseMode.IF_ONLY_ONE_LINERS);
-		rule.configCondenseAssociations.setEnumValue(DdlCondenseMode.IF_ONLY_ONE_LINERS);
-		rule.configCondenseElements.setEnumValue(DdlCondenseMode.IF_ONLY_ONE_LINERS);
+		rule.configDetachKeyFields.setValue(true);
+		rule.configDetachExposedAssociations.setValue(true);
+
+		rule.configCondenseParameters.setEnumValue(DdlCondenseMode.IF_ONLY_DETACHED_ONE_LINERS);
+		rule.configCondenseJoins.setEnumValue(DdlCondenseMode.IF_ONLY_DETACHED_ONE_LINERS);
+		rule.configCondenseAssociations.setEnumValue(DdlCondenseMode.IF_ONLY_DETACHED_ONE_LINERS);
+		rule.configCondenseElements.setEnumValue(DdlCondenseMode.IF_ONLY_DETACHED_ONE_LINERS);
 		rule.configCondenseClauses.setEnumValue(DdlCondenseMode.NEVER);
 	}
 
+	@Test
+	void testConfigValueEnabled() {
+		ArrayList<ConfigEnumValue<DdlCondenseMode>> configValues = new ArrayList<>();
+		configValues.add(rule.configCondenseParameters);
+		configValues.add(rule.configCondenseJoins);
+		configValues.add(rule.configCondenseAssociations);
+		configValues.add(rule.configCondenseElements);
+		configValues.add(rule.configCondenseClauses);
+
+		// expect the warning to be hidden if DdlCondenseMode.NEVER is selected everywhere
+		for (ConfigEnumValue<DdlCondenseMode> configValue : configValues) {
+			configValue.setEnumValue(DdlCondenseMode.NEVER);
+		}
+		assertTrue(rule.isConfigValueEnabled(rule.configSurroundParameterLineCountMin));
+		assertTrue(rule.isConfigValueEnabled(rule.configCondenseParameters));
+		assertFalse(rule.isConfigValueEnabled(rule.configCondenseWarning));
+
+		DdlCondenseMode[] riskModes = new DdlCondenseMode[] { DdlCondenseMode.ALWAYS, DdlCondenseMode.IF_ONLY_ONE_LINERS };
+		for (DdlCondenseMode riskMode : riskModes) { 
+			// set exactly one of the values to a "risk mode"
+			for (ConfigEnumValue<DdlCondenseMode> riskValue : configValues) {
+				for (ConfigEnumValue<DdlCondenseMode> configValue : configValues) {
+					DdlCondenseMode mode = (configValue == riskValue) ? riskMode : DdlCondenseMode.IF_ONLY_DETACHED_ONE_LINERS;
+					configValue.setEnumValue(mode);
+				}
+				// ensure that the warning is enabled
+				assertTrue(rule.isConfigValueEnabled(rule.configCondenseWarning));
+			}
+		}
+	}
+	
 	@Test
 	void testSurroundParametersWith2Lines() {
 		buildSrc("define view entity C_AnyEntity");
@@ -351,6 +391,7 @@ public class DdlEmptyLinesWithinSectionsTest extends RuleTestBase {
 		buildExp("{");
 		buildExp("  key AnyAlias.AnyKeyField,");
 		buildExp("  key AnyAlias.OtherKeyField,");
+		buildExp("");
 		buildExp("      @Annotation.subAnno: 'value'");
 		buildExp("      sum(OtherAlias.AnyNonKeyField),");
 		buildExp("");
@@ -705,6 +746,421 @@ public class DdlEmptyLinesWithinSectionsTest extends RuleTestBase {
 		buildExp("having sum(OtherAilas.AnyNonKeyField)     > 100");
 		buildExp("   and avg(OtherAlias.ThirdNonKeyField)   < 42");
 		buildExp("   and max(ThirdAlias.FourthNonKeyField) >= 'Z'");
+
+		testRule();
+	}
+
+	@Test
+	void testAttachedCommentKeptWithElement() {
+		// ensure that empty lines are inserted above the attached comments, not below them
+		
+		buildSrc("define view entity C_AnyEntity");
+		buildSrc("  as select from I_AnyEntity as AnyAlias");
+		buildSrc("");
+		buildSrc("{");
+		buildSrc("  key AnyAlias.AnyKeyField,");
+		buildSrc("  key AnyAlias.OtherKeyField,");
+		buildSrc("      // comment A");
+		buildSrc("      @Annotation.subAnno: 'value'");
+		buildSrc("      sum(OtherAlias.AnyNonKeyField),");
+		buildSrc("      /* comment B */");
+		buildSrc("      @Annotation.subAnno: 'value'");
+		buildSrc("      avg(OtherAlias.OtherNonKeyField)  as OtherNonKeyField");
+		buildSrc("      @<Annotation.otherSubAnno: 'this annotation refers to the previous element!',");
+		buildSrc("      max(OtherAlias.ThirdNonKeyField)  as ThirdNonKeyField,");
+		buildSrc("      min(ThirdAlias.FourthNonKeyField) as FourthNonKeyField,");
+		buildSrc("      max(ThirdAlias.FifthNonKeyField)  as FifthNonKeyField");
+		buildSrc("}");
+		buildSrc("where  AnyNonKeyField  > 10");
+		buildSrc("  and OtherNonKeyField = 'A'");
+		buildSrc("-- comment");
+		buildSrc("group by AnyAlias.AnyKeyField");
+		buildSrc("         AnyAlias.OtherKeyField");
+
+		buildExp("define view entity C_AnyEntity");
+		buildExp("  as select from I_AnyEntity as AnyAlias");
+		buildExp("");
+		buildExp("{");
+		buildExp("  key AnyAlias.AnyKeyField,");
+		buildExp("  key AnyAlias.OtherKeyField,");
+		buildExp("");
+		buildExp("      // comment A");
+		buildExp("      @Annotation.subAnno: 'value'");
+		buildExp("      sum(OtherAlias.AnyNonKeyField),");
+		buildExp("");
+		buildExp("      /* comment B */");
+		buildExp("      @Annotation.subAnno: 'value'");
+		buildExp("      avg(OtherAlias.OtherNonKeyField)  as OtherNonKeyField");
+		buildExp("      @<Annotation.otherSubAnno: 'this annotation refers to the previous element!',");
+		buildExp("");
+		buildExp("      max(OtherAlias.ThirdNonKeyField)  as ThirdNonKeyField,");
+		buildExp("      min(ThirdAlias.FourthNonKeyField) as FourthNonKeyField,");
+		buildExp("      max(ThirdAlias.FifthNonKeyField)  as FifthNonKeyField");
+		buildExp("}");
+		buildExp("where  AnyNonKeyField  > 10");
+		buildExp("  and OtherNonKeyField = 'A'");
+		buildExp("");
+		buildExp("-- comment");
+		buildExp("group by AnyAlias.AnyKeyField");
+		buildExp("         AnyAlias.OtherKeyField");
+
+		testRule();
+	}
+
+	@Test
+	void testPartlyAttachedOneLinersNotCondensed() {
+		rule.configCondenseAssociations.setEnumValue(DdlCondenseMode.IF_ONLY_DETACHED_ONE_LINERS);
+		rule.configCondenseElements.setEnumValue(DdlCondenseMode.IF_ONLY_DETACHED_ONE_LINERS);
+
+		buildSrc("define view entity C_AnyEntity");
+		buildSrc("  as select from I_AnyEntity as AnyAlias");
+		buildSrc("");
+		buildSrc("  association [0..*] to I_FourthEntity2 as _FourthAlias on AnyAlias.IdField  = _FourthAlias.IdField");
+		buildSrc("  association [0..1] to I_FifthEntity2  as _FifthAlias  on AnyAlias.IdField  = _FifthAlias.IdField");
+		buildSrc("");
+		buildSrc("  association [1..*] to I_SixthEntity2  as _SixthAlias  on  AnyAlias.IdField = _SixthAlias.IdField");
+		buildSrc("");
+		buildSrc("{");
+		buildSrc("  key AnyAlias.AnyKeyField,");
+		buildSrc("  key AnyAlias.OtherKeyField,");
+		buildSrc("");
+		buildSrc("      OtherAlias.AnyNonKeyField");
+		buildSrc("}");
+
+		copyExpFromSrc();
+
+		testRule();
+	}
+
+	@Test
+	void testPartlyAttachedOneLinersCondensed() {
+		rule.configCondenseAssociations.setEnumValue(DdlCondenseMode.IF_ONLY_ONE_LINERS);
+		rule.configCondenseElements.setEnumValue(DdlCondenseMode.IF_ONLY_ONE_LINERS);
+
+		buildSrc("define view entity C_AnyEntity");
+		buildSrc("  as select from I_AnyEntity as AnyAlias");
+		buildSrc("");
+		buildSrc("  association [0..*] to I_FourthEntity2 as _FourthAlias on AnyAlias.IdField  = _FourthAlias.IdField");
+		buildSrc("  association [0..1] to I_FifthEntity2  as _FifthAlias  on AnyAlias.IdField  = _FifthAlias.IdField");
+		buildSrc("");
+		buildSrc("  association [1..*] to I_SixthEntity2  as _SixthAlias  on  AnyAlias.IdField = _SixthAlias.IdField");
+		buildSrc("");
+		buildSrc("{");
+		buildSrc("  key AnyAlias.AnyKeyField,");
+		buildSrc("");
+		buildSrc("  key AnyAlias.OtherKeyField,");
+		buildSrc("      OtherAlias.AnyNonKeyField");
+		buildSrc("}");
+
+		buildExp("define view entity C_AnyEntity");
+		buildExp("  as select from I_AnyEntity as AnyAlias");
+		buildExp("");
+		buildExp("  association [0..*] to I_FourthEntity2 as _FourthAlias on AnyAlias.IdField  = _FourthAlias.IdField");
+		buildExp("  association [0..1] to I_FifthEntity2  as _FifthAlias  on AnyAlias.IdField  = _FifthAlias.IdField");
+		buildExp("  association [1..*] to I_SixthEntity2  as _SixthAlias  on  AnyAlias.IdField = _SixthAlias.IdField");
+		buildExp("");
+		buildExp("{");
+		buildExp("  key AnyAlias.AnyKeyField,");
+		buildExp("  key AnyAlias.OtherKeyField,");
+		buildExp("");
+		buildExp("      OtherAlias.AnyNonKeyField");
+		buildExp("}");
+
+		testRule();
+	}
+
+	@Test
+	void testDetachKeyFieldsAndAssociations() {
+		buildSrc("define view entity C_AnyEntity");
+		buildSrc("  as select from I_AnyEntity as AnyAlias");
+		buildSrc("");
+		buildSrc("  association [0..*] to I_FourthEntity2 as _FourthAlias on AnyAlias.IdField  = _FourthAlias.IdField");
+		buildSrc("  association [0..1] to I_FifthEntity2  as _FifthAlias  on AnyAlias.IdField  = _FifthAlias.IdField");
+		buildSrc("");
+		buildSrc("  association [1..*] to I_SixthEntity2  as _SixthAlias  on  AnyAlias.IdField = _SixthAlias.IdField");
+		buildSrc("");
+		buildSrc("{");
+		buildSrc("  key AnyAlias.AnyKeyField,");
+		buildSrc("");
+		buildSrc("  key AnyAlias.OtherKeyField,");
+		buildSrc("      sum(OtherAlias.AnyNonKeyField),");
+		buildSrc("");
+		buildSrc("      avg(OtherAlias.OtherNonKeyField)  as OtherNonKeyField,");
+		buildSrc("");
+		buildSrc("      min(ThirdAlias.FourthNonKeyField) as FourthNonKeyField,");
+		buildSrc("      _FourthAlias,");
+		buildSrc("");
+		buildSrc("      _FifthAlias,");
+		buildSrc("");
+		buildSrc("      _SixthAlias");
+		buildSrc("}");
+
+		buildExp("define view entity C_AnyEntity");
+		buildExp("  as select from I_AnyEntity as AnyAlias");
+		buildExp("");
+		buildExp("  association [0..*] to I_FourthEntity2 as _FourthAlias on AnyAlias.IdField  = _FourthAlias.IdField");
+		buildExp("  association [0..1] to I_FifthEntity2  as _FifthAlias  on AnyAlias.IdField  = _FifthAlias.IdField");
+		buildExp("");
+		buildExp("  association [1..*] to I_SixthEntity2  as _SixthAlias  on  AnyAlias.IdField = _SixthAlias.IdField");
+		buildExp("");
+		buildExp("{");
+		buildExp("  key AnyAlias.AnyKeyField,");
+		buildExp("  key AnyAlias.OtherKeyField,");
+		buildExp("");
+		buildExp("      sum(OtherAlias.AnyNonKeyField),");
+		buildExp("      avg(OtherAlias.OtherNonKeyField)  as OtherNonKeyField,");
+		buildExp("      min(ThirdAlias.FourthNonKeyField) as FourthNonKeyField,");
+		buildExp("");
+		buildExp("      _FourthAlias,");
+		buildExp("      _FifthAlias,");
+		buildExp("      _SixthAlias");
+		buildExp("}");
+
+		testRule();
+	}
+
+	@Test
+	void testDoNotDetachKeyFields() {
+		rule.configDetachKeyFields.setValue(false);
+
+		buildSrc("define view entity C_AnyEntity");
+		buildSrc("  as select from I_AnyEntity as AnyAlias");
+		buildSrc("");
+		buildSrc("  association [0..*] to I_FourthEntity2 as _FourthAlias on AnyAlias.IdField  = _FourthAlias.IdField");
+		buildSrc("  association [0..1] to I_FifthEntity2  as _FifthAlias  on AnyAlias.IdField  = _FifthAlias.IdField");
+		buildSrc("");
+		buildSrc("  association [1..*] to I_SixthEntity2  as _SixthAlias  on  AnyAlias.IdField = _SixthAlias.IdField");
+		buildSrc("");
+		buildSrc("{");
+		buildSrc("  key AnyAlias.AnyKeyField,");
+		buildSrc("");
+		buildSrc("  key AnyAlias.OtherKeyField,");
+		buildSrc("      sum(OtherAlias.AnyNonKeyField),");
+		buildSrc("");
+		buildSrc("      avg(OtherAlias.OtherNonKeyField)  as OtherNonKeyField,");
+		buildSrc("");
+		buildSrc("      min(ThirdAlias.FourthNonKeyField) as FourthNonKeyField,");
+		buildSrc("      _FourthAlias,");
+		buildSrc("");
+		buildSrc("      _FifthAlias,");
+		buildSrc("");
+		buildSrc("      _SixthAlias");
+		buildSrc("}");
+
+		buildExp("define view entity C_AnyEntity");
+		buildExp("  as select from I_AnyEntity as AnyAlias");
+		buildExp("");
+		buildExp("  association [0..*] to I_FourthEntity2 as _FourthAlias on AnyAlias.IdField  = _FourthAlias.IdField");
+		buildExp("  association [0..1] to I_FifthEntity2  as _FifthAlias  on AnyAlias.IdField  = _FifthAlias.IdField");
+		buildExp("");
+		buildExp("  association [1..*] to I_SixthEntity2  as _SixthAlias  on  AnyAlias.IdField = _SixthAlias.IdField");
+		buildExp("");
+		buildExp("{");
+		buildExp("  key AnyAlias.AnyKeyField,");
+		buildExp("");
+		buildExp("  key AnyAlias.OtherKeyField,");
+		buildExp("      sum(OtherAlias.AnyNonKeyField),");
+		buildExp("");
+		buildExp("      avg(OtherAlias.OtherNonKeyField)  as OtherNonKeyField,");
+		buildExp("");
+		buildExp("      min(ThirdAlias.FourthNonKeyField) as FourthNonKeyField,");
+		buildExp("");
+		buildExp("      _FourthAlias,");
+		buildExp("      _FifthAlias,");
+		buildExp("      _SixthAlias");
+		buildExp("}");
+
+		testRule();
+	}
+
+	@Test
+	void testDoNotDetachExposedAssociations() {
+		rule.configDetachExposedAssociations.setValue(false);
+
+		buildSrc("define view entity C_AnyEntity");
+		buildSrc("  as select from I_AnyEntity as AnyAlias");
+		buildSrc("");
+		buildSrc("  association [0..*] to I_FourthEntity2 as _FourthAlias on AnyAlias.IdField  = _FourthAlias.IdField");
+		buildSrc("  association [0..1] to I_FifthEntity2  as _FifthAlias  on AnyAlias.IdField  = _FifthAlias.IdField");
+		buildSrc("");
+		buildSrc("  association [1..*] to I_SixthEntity2  as _SixthAlias  on  AnyAlias.IdField = _SixthAlias.IdField");
+		buildSrc("");
+		buildSrc("{");
+		buildSrc("  key AnyAlias.AnyKeyField,");
+		buildSrc("");
+		buildSrc("  key AnyAlias.OtherKeyField,");
+		buildSrc("      sum(OtherAlias.AnyNonKeyField),");
+		buildSrc("");
+		buildSrc("      avg(OtherAlias.OtherNonKeyField)  as OtherNonKeyField,");
+		buildSrc("");
+		buildSrc("      min(ThirdAlias.FourthNonKeyField) as FourthNonKeyField,");
+		buildSrc("      _FourthAlias,");
+		buildSrc("");
+		buildSrc("      _FifthAlias,");
+		buildSrc("");
+		buildSrc("      _SixthAlias");
+		buildSrc("}");
+
+		buildExp("define view entity C_AnyEntity");
+		buildExp("  as select from I_AnyEntity as AnyAlias");
+		buildExp("");
+		buildExp("  association [0..*] to I_FourthEntity2 as _FourthAlias on AnyAlias.IdField  = _FourthAlias.IdField");
+		buildExp("  association [0..1] to I_FifthEntity2  as _FifthAlias  on AnyAlias.IdField  = _FifthAlias.IdField");
+		buildExp("");
+		buildExp("  association [1..*] to I_SixthEntity2  as _SixthAlias  on  AnyAlias.IdField = _SixthAlias.IdField");
+		buildExp("");
+		buildExp("{");
+		buildExp("  key AnyAlias.AnyKeyField,");
+		buildExp("  key AnyAlias.OtherKeyField,");
+		buildExp("");
+		buildExp("      sum(OtherAlias.AnyNonKeyField),");
+		buildExp("");
+		buildExp("      avg(OtherAlias.OtherNonKeyField)  as OtherNonKeyField,");
+		buildExp("");
+		buildExp("      min(ThirdAlias.FourthNonKeyField) as FourthNonKeyField,");
+		buildExp("      _FourthAlias,");
+		buildExp("");
+		buildExp("      _FifthAlias,");
+		buildExp("");
+		buildExp("      _SixthAlias");
+		buildExp("}");
+
+		testRule();
+	}
+
+	@Test
+	void testDoNotDetachKeyFieldsOrAssociations() {
+		rule.configDetachKeyFields.setValue(false);
+		rule.configDetachExposedAssociations.setValue(false);
+
+		buildSrc("define view entity C_AnyEntity");
+		buildSrc("  as select from I_AnyEntity as AnyAlias");
+		buildSrc("");
+		buildSrc("  association [0..*] to I_FourthEntity2 as _FourthAlias on AnyAlias.IdField  = _FourthAlias.IdField");
+		buildSrc("  association [0..1] to I_FifthEntity2  as _FifthAlias  on AnyAlias.IdField  = _FifthAlias.IdField");
+		buildSrc("");
+		buildSrc("  association [1..*] to I_SixthEntity2  as _SixthAlias  on  AnyAlias.IdField = _SixthAlias.IdField");
+		buildSrc("");
+		buildSrc("{");
+		buildSrc("  key AnyAlias.AnyKeyField,");
+		buildSrc("");
+		buildSrc("  key AnyAlias.OtherKeyField,");
+		buildSrc("      sum(OtherAlias.AnyNonKeyField),");
+		buildSrc("");
+		buildSrc("      avg(OtherAlias.OtherNonKeyField)  as OtherNonKeyField,");
+		buildSrc("");
+		buildSrc("      min(ThirdAlias.FourthNonKeyField) as FourthNonKeyField,");
+		buildSrc("      _FourthAlias,");
+		buildSrc("");
+		buildSrc("      _FifthAlias,");
+		buildSrc("");
+		buildSrc("      _SixthAlias");
+		buildSrc("}");
+
+		copyExpFromSrc();
+
+		testRule();
+	}
+
+	@Test
+	void testCondenseElementsIfOnlyOneLinersInDetachedGroups() {
+		rule.configCondenseElements.setEnumValue(DdlCondenseMode.IF_ONLY_ONE_LINERS);
+
+		buildSrc("define view entity C_AnyEntity");
+		buildSrc("  as select from I_AnyEntity as AnyAlias");
+		buildSrc("");
+		buildSrc("  association [0..*] to I_FourthEntity2 as _FourthAlias on AnyAlias.IdField  = _FourthAlias.IdField");
+		buildSrc("  association [0..1] to I_FifthEntity2  as _FifthAlias  on AnyAlias.IdField  = _FifthAlias.IdField");
+		buildSrc("");
+		buildSrc("  association [1..*] to I_SixthEntity2  as _SixthAlias  on  AnyAlias.IdField = _SixthAlias.IdField");
+		buildSrc("");
+		buildSrc("{");
+		buildSrc("  key AnyAlias.AnyKeyField,");
+		buildSrc("");
+		buildSrc("  key AnyAlias.OtherKeyField,");
+		buildSrc("      sum(OtherAlias.AnyNonKeyField),");
+		buildSrc("");
+		buildSrc("      avg(OtherAlias.OtherNonKeyField)  as OtherNonKeyField,");
+		buildSrc("      min(ThirdAlias.FourthNonKeyField) as FourthNonKeyField,");
+		buildSrc("      _FourthAlias,");
+		buildSrc("      _FifthAlias,");
+		buildSrc("");
+		buildSrc("      _SixthAlias");
+		buildSrc("}");
+
+		buildExp("define view entity C_AnyEntity");
+		buildExp("  as select from I_AnyEntity as AnyAlias");
+		buildExp("");
+		buildExp("  association [0..*] to I_FourthEntity2 as _FourthAlias on AnyAlias.IdField  = _FourthAlias.IdField");
+		buildExp("  association [0..1] to I_FifthEntity2  as _FifthAlias  on AnyAlias.IdField  = _FifthAlias.IdField");
+		buildExp("");
+		buildExp("  association [1..*] to I_SixthEntity2  as _SixthAlias  on  AnyAlias.IdField = _SixthAlias.IdField");
+		buildExp("");
+		buildExp("{");
+		buildExp("  key AnyAlias.AnyKeyField,");
+		buildExp("  key AnyAlias.OtherKeyField,");
+		buildExp("");
+		buildExp("      sum(OtherAlias.AnyNonKeyField),");
+		buildExp("      avg(OtherAlias.OtherNonKeyField)  as OtherNonKeyField,");
+		buildExp("      min(ThirdAlias.FourthNonKeyField) as FourthNonKeyField,");
+		buildExp("");
+		buildExp("      _FourthAlias,");
+		buildExp("      _FifthAlias,");
+		buildExp("      _SixthAlias");
+		buildExp("}");
+
+		testRule();
+	}
+
+	@Test
+	void testCondenseElementsIfAllAreOneLinersInDetachedGroups() {
+		// ensure that DdlCondenseMode.IF_ONLY_DETACHED_ONE_LINERS works for the three groups of select list elements 
+		// separately: a) key fields, b) non-key fields, c) exposed associations
+		
+		buildSrc("define view entity C_AnyEntity");
+		buildSrc("  as select from I_AnyEntity as AnyAlias");
+		buildSrc("");
+		buildSrc("  association [0..*] to I_FourthEntity2 as _FourthAlias on AnyAlias.IdField  = _FourthAlias.IdField");
+		buildSrc("  association [0..1] to I_FifthEntity2  as _FifthAlias  on AnyAlias.IdField  = _FifthAlias.IdField");
+		buildSrc("");
+		buildSrc("  association [1..*] to I_SixthEntity2  as _SixthAlias  on  AnyAlias.IdField = _SixthAlias.IdField");
+		buildSrc("");
+		buildSrc("{");
+		buildSrc("  key AnyAlias.AnyKeyField,");
+		buildSrc("");
+		buildSrc("  key AnyAlias.OtherKeyField,");
+		buildSrc("      sum(OtherAlias.AnyNonKeyField),");
+		buildSrc("");
+		buildSrc("      avg(OtherAlias.OtherNonKeyField)  as OtherNonKeyField,");
+		buildSrc("");
+		buildSrc("      min(ThirdAlias.FourthNonKeyField) as FourthNonKeyField,");
+		buildSrc("      _FourthAlias,");
+		buildSrc("");
+		buildSrc("      _FifthAlias,");
+		buildSrc("");
+		buildSrc("      _SixthAlias");
+		buildSrc("}");
+
+		buildExp("define view entity C_AnyEntity");
+		buildExp("  as select from I_AnyEntity as AnyAlias");
+		buildExp("");
+		buildExp("  association [0..*] to I_FourthEntity2 as _FourthAlias on AnyAlias.IdField  = _FourthAlias.IdField");
+		buildExp("  association [0..1] to I_FifthEntity2  as _FifthAlias  on AnyAlias.IdField  = _FifthAlias.IdField");
+		buildExp("");
+		buildExp("  association [1..*] to I_SixthEntity2  as _SixthAlias  on  AnyAlias.IdField = _SixthAlias.IdField");
+		buildExp("");
+		buildExp("{");
+		buildExp("  key AnyAlias.AnyKeyField,");
+		buildExp("  key AnyAlias.OtherKeyField,");
+		buildExp("");
+		buildExp("      sum(OtherAlias.AnyNonKeyField),");
+		buildExp("      avg(OtherAlias.OtherNonKeyField)  as OtherNonKeyField,");
+		buildExp("      min(ThirdAlias.FourthNonKeyField) as FourthNonKeyField,");
+		buildExp("");
+		buildExp("      _FourthAlias,");
+		buildExp("      _FifthAlias,");
+		buildExp("      _SixthAlias");
+		buildExp("}");
 
 		testRule();
 	}

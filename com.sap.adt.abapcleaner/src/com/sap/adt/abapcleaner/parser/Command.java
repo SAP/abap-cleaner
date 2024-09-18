@@ -969,6 +969,9 @@ public class Command {
 		// a comment at line end can always be added to previous code
 		if (newToken.isComment() && newToken.lineBreaks == 0)
 			return true;
+		// create a new Command for line breaks at document end
+		if (newToken.getTextLength() == 0 && newToken.lineBreaks > 0)
+			return false;
 		// a comment line cannot add more lines
 		if (firstToken.isComment() && firstToken == lastToken && newToken.lineBreaks > 0) 
 			return false;
@@ -1086,8 +1089,8 @@ public class Command {
 			// cardinality -> 
 			//   EXACT ONE TO EXACT ONE | EXACT ONE TO MANY | EXACT ONE TO ONE | MANY TO EXACT ONE | MANY TO MANY | MANY TO ONE |
 			//   ONE TO EXACT ONE | ONE TO MANY | ONE TO ONE | TO ONE | TO EXACT ONE | TO MANY
-			if (firstCodeToken.isAnyKeyword("REDEFINE", "ASSOCIATION")) {
-				// skip this section, particularly to avoid that the keyword "TO" in "ASSOCIATION ... TO target" starts a new Command
+			if (firstCodeToken.isAnyKeyword("REDEFINE", "ASSOCIATION", "COMPOSITION")) {
+				// skip this section, particularly to avoid that the keyword "TO" in "ASSOCIATION ... TO target" or "EXACT" in "COMPOSITION OF EXACT ONE ..." starts a new Command
 			} else if (newToken.isKeyword("TO") && lastCodeToken.isAnyKeyword("REDIRECTED", "REFERENCE")) {
 				// skip this section to avoid starting a new Command within "REDIRECTED TO" (in projection views) or "REFERENCE TO" (in structures)
 			} else if (newToken.isAnyKeyword("INNER", "LEFT", "RIGHT", "CROSS")) {
@@ -3711,19 +3714,20 @@ public class Command {
 	}
 
 	public boolean isDdlSelectElement() { 
-		return isDdlListElement(DDL.BRACE_OPEN_STRING, DDL.BRACE_CLOSE_STRING);
+		return isDdlListElement(new String[] { DDL.BRACE_OPEN_STRING, "SELECT", "DISTINCT" }, 
+										new String[] { DDL.BRACE_CLOSE_STRING, "FROM" });
 	}
 
 	public boolean isDdlParametersElement() {
-		return isDdlListElement("PARAMETERS", DDL.levelClosersAfterParameterList);
+		return isDdlListElement(new String[] { "PARAMETERS" }, DDL.levelClosersAfterParameterList);
 	}
 
-	private boolean isDdlListElement(String openingText, String... closingTexts) { 
+	private boolean isDdlListElement(String[] openingTexts, String[] closingTexts) { 
 		if (!isDdl()) 
 			return false;
 		
 		// the select list is inside of { ... }, and the "{" must be on top level
-		if (parent == null || parent.parent != null || !parent.getLastCodeToken().textEquals(openingText))
+		if (parent == null || parent.parent != null || !parent.getLastCodeToken().textEqualsAny(openingTexts))
 			return false;
 		
 		// exclude annotations and comment lines

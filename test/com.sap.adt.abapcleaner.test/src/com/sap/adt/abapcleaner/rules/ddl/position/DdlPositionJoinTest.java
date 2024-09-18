@@ -422,4 +422,31 @@ public class DdlPositionJoinTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testJoinWithParameters() {
+		// ensure that the ON condition is moved to the next line, since a join source gets parameters
+		
+		buildSrc("define view entity C_AnyEntity");
+		buildSrc("  as select from I_AnyEntity as AnyAlias");
+		buildSrc("");
+		buildSrc("    left outer to one join I_OtherEntity( P_AnyParameter = 'any value' ) as OtherAlias");
+		buildSrc("        on AnyAlias.IdField = OtherAlias.IdField");
+		buildSrc("");
+		buildSrc("{");
+		buildSrc("  key AnyAlias.IdField");
+		buildSrc("}");
+
+		buildExp("define view entity C_AnyEntity");
+		buildExp("  as select from I_AnyEntity as AnyAlias");
+		buildExp("");
+		buildExp("    left outer to one join I_OtherEntity( P_AnyParameter = 'any value' ) as OtherAlias");
+		buildExp("      on AnyAlias.IdField = OtherAlias.IdField");
+		buildExp("");
+		buildExp("{");
+		buildExp("  key AnyAlias.IdField");
+		buildExp("}");
+
+		testRule();
+	}
 }

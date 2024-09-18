@@ -58,7 +58,8 @@ public final class DDL {
    public static final String FUNCTION_PARAM_ASSIGNMENT_OP = "=>";
 
    public final static String SESSION_PREFIX = "$session"; // "$session.bs_instance_id", "$session.bs_zone_id", "$session.client", "$session.system_date", "$session.system_language", "$session.user", "$session.user_date", "$session.user_timezone"
-   public final static String PARAMETER_PREFIX = "$parameter";
+   public final static String PARAMETER_PREFIX = "$parameters";
+   public final static String PROJECTION_PREFIX = "$projection";
    public final static String TYPED_LITERAL_PREFIX = "abap."; // e.g. abap.int4'...', abap.numc'...', abap.quan'...'
 
    public final static String BASE_INFO_COMMENT_START = "/*+[internal] {";
@@ -138,7 +139,7 @@ public final class DDL {
    public final static String[] levelClosersAfterParameterList = new String[] { "as", "returns", DDL.BRACE_OPEN_STRING };
 
    /** annotations of type ElementRef or KeyElementRef (only ObjectModel.representativeKey) */
-   private final static HashSet<String> elementRefAnnotations = initializeHashSet(new String[] {
+   private final static HashSet<String> elementRefAnnotations = initializeRefHashSet(new String[] {
    		"AccessControl.personalData.blockingIndicator[]",
    		"Aggregation.referenceElement[]",
    		"Analytics.dataExtraction.alternativeKey[]",
@@ -322,7 +323,7 @@ public final class DDL {
    		"UI.statusInfo[].value" });
 
    /** annotations of type ParameterRef */
-   private final static HashSet<String> parameterRefAnnotations = initializeHashSet(new String[] {
+   private final static HashSet<String> parameterRefAnnotations = initializeRefHashSet(new String[] {
    		"Consumption.dynamicLabel.binding[].parameter",
    		"Consumption.valueHelpDefinition[].additionalBinding[].localParameter",
    		"Semantics.interval[].lowerBoundaryParameter",
@@ -335,7 +336,7 @@ public final class DDL {
    		"UI.statusInfo[].semanticObjectBinding[].localParameter" });
 
    /** annotations of type AssociationRef */
-   private final static HashSet<String> associationRefAnnotations = initializeHashSet(new String[] {
+   private final static HashSet<String> associationRefAnnotations = initializeRefHashSet(new String[] {
    		"AccessControl.privilegedAssociations[]",
    		"Analytics.document.defaultAssociationToStorage",
    		"AnalyticsDetails.query.hierarchyAssociation",
@@ -350,7 +351,7 @@ public final class DDL {
    		"ObjectModel.unitConversionRate.association" });
 
    /** annotations of type EntityRef */
-   private final static HashSet<String> entityRefAnnotations = initializeHashSet(new String[] {
+   private final static HashSet<String> entityRefAnnotations = initializeRefHashSet(new String[] {
    		"Analytics.document.storageForEntity[]",
    		"Consumption.derivation.lookupEntity",
    		"Consumption.valueHelpDefinition[].entity.name",
@@ -363,6 +364,10 @@ public final class DDL {
 
    private static String getDdlKeywordKey(String ddlKeyword) {
 		return AbapCult.toLower(ddlKeyword);
+	}
+
+   private static String getDdlRefKeywordKey(String ddlKeyword) {
+		return AbapCult.toLower(ddlKeyword.replace("[]", ""));
 	}
 
    private static HashMap<String, ArrayList<Collocation>> initializeKeywords(String[] collocations) {
@@ -403,6 +408,13 @@ public final class DDL {
 		HashSet<String> result = new HashSet<String>();
 		for (String keyword : keywords)
 			result.add(getDdlKeywordKey(keyword));
+		return result;
+	}
+
+	private static HashSet<String> initializeRefHashSet(String[] keywords) {
+		HashSet<String> result = new HashSet<String>();
+		for (String keyword : keywords)
+			result.add(getDdlRefKeywordKey(keyword));
 		return result;
 	}
 
@@ -476,6 +488,15 @@ public final class DDL {
 		} else {
 			return false;
 		}
+	}
+
+	public static boolean isIdentifier(String text) {
+		for (int pos = 0; pos < text.length(); ++pos) {
+			if (!isCharAllowedForIdentifier(text, pos, (pos == 0))) {
+				return false;
+			}
+		}
+		return true;
 	}
 
 	public static boolean isCharAllowedForIdentifier(String text, int pos, boolean isFirstChar) {
@@ -646,22 +667,43 @@ public final class DDL {
 	}
 	
 	public static boolean isKnownElementRefAnnotation(String annotationPath) {
-		return elementRefAnnotations.contains(getDdlKeywordKey(annotationPath));
+		return elementRefAnnotations.contains(getDdlRefKeywordKey(annotationPath));
 	}
 	
 	public static boolean isKnownParameterRefAnnotation(String annotationPath) {
-		return parameterRefAnnotations.contains(getDdlKeywordKey(annotationPath));
+		return parameterRefAnnotations.contains(getDdlRefKeywordKey(annotationPath));
 	}
 	
 	public static boolean isKnownAssociationRefAnnotation(String annotationPath) {
-		return associationRefAnnotations.contains(getDdlKeywordKey(annotationPath));
+		return associationRefAnnotations.contains(getDdlRefKeywordKey(annotationPath));
 	}
 
 	public static boolean isKnownEntityRefAnnotation(String annotationPath) {
-		return entityRefAnnotations.contains(getDdlKeywordKey(annotationPath));
+		return entityRefAnnotations.contains(getDdlRefKeywordKey(annotationPath));
 	}
 	
 	public static boolean textStartsCommentAt(String text, int readPos) {
 		return StringUtil.containsAnyAt(text, readPos, LINE_END_COMMENT, LINE_END_MINUS_COMMENT, ASTERISK_COMMENT_START);
 	}
+	
+	/** splits composed identifiers such as "_AnyAlias._OtherAlias.FieldName" into String, e.g.
+	 * { "_AnyAlias", ".", "_OtherAlias", ".", "FieldName" } */
+	public static ArrayList<String> splitIdentifier(String identifier) {
+		ArrayList<String> results = new ArrayList<String>();
+		if (StringUtil.isNullOrEmpty(identifier))
+			return results;
+
+		int start = 0;
+		while (start < identifier.length()) {
+			boolean isIdentifier = isCharAllowedForIdentifier(identifier, start, (start == 0)); 
+			int end = start + 1;
+			while (end < identifier.length() && (isIdentifier == isCharAllowedForIdentifier(identifier, end, (end == 0)))) { 
+				++end;
+			}
+			results.add(identifier.substring(start, end));
+			start = end;
+		}
+		return results;
+	}
+
 }

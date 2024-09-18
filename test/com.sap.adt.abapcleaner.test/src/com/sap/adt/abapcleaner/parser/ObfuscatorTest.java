@@ -6,40 +6,42 @@ import static org.junit.jupiter.api.Assertions.fail;
 import org.junit.jupiter.api.Test;
 
 import com.sap.adt.abapcleaner.base.ABAP;
+import com.sap.adt.abapcleaner.base.Language;
 import com.sap.adt.abapcleaner.programbase.ParseException;
 import com.sap.adt.abapcleaner.programbase.UnexpectedSyntaxAfterChanges;
 
 public class ObfuscatorTest {
 	private final String SEP = ABAP.LINE_SEPARATOR;
+	private final Language language = Language.ABAP;
 	
 	private Obfuscator obfuscator;
 	
 	private void prepareMethodScopeLongNames() {
-		obfuscator = new Obfuscator(true, false, false, false, false, false);
+		obfuscator = Obfuscator.createFor(language, false, false, false, false, false, false);
 	}
 	
 	private void prepareMethodScopeShortNames() {
-		obfuscator = new Obfuscator(true, true, false, false, false, false);
+		obfuscator = Obfuscator.createFor(language, false, true, false, false, false, false);
 	}
 	
 	private void prepareCommandScopeShortNames() {
-		obfuscator = new Obfuscator(false, true, false, false, false, false);
+		obfuscator = Obfuscator.createFor(language, true, true, false, false, false, false);
 	}
 	
 	private void prepareMethodScopeLongNamesSimplified() {
-		obfuscator = new Obfuscator(true, false, true, false, false, false);
+		obfuscator = Obfuscator.createFor(language, false, false, true, false, false, false);
 	}
 	
 	private void prepareMethodScopeShortNamesLiterals() {
-		obfuscator = new Obfuscator(true, true, false, false, false, true);
+		obfuscator = Obfuscator.createFor(language, false, true, false, false, false, true);
 	}
 	
 	private void prepareCommandScopeShortNamesLiterals() {
-		obfuscator = new Obfuscator(false, true, false, false, false, true);
+		obfuscator = Obfuscator.createFor(language, true, true, false, false, false, true);
 	}
 
 	private void prepareMethodScopeLongNamesRemoveComments() {
-		obfuscator = new Obfuscator(true, false, false, true, true, false);
+		obfuscator = Obfuscator.createFor(language, false, false, false, true, true, false);
 	}
 
 	private void test(String codeText, String expCodeText) {
@@ -50,27 +52,20 @@ public class ObfuscatorTest {
 			fail();
 			return;
 		}
-   	
+   	String actCodeText = code.toString();
+
    	// helper for creating tests:
    	/*
-   	Obfuscator refObfuscator = new Obfuscator(true, false, false, false, false, false);
-   	Code refCode;
-   	try {
-   		refCode = refObfuscator.obfuscate(codeText);
-		} catch (UnexpectedSyntaxAfterChanges | ParseException e) {
-			fail();
-			return;
-		}
-   	if (!refCode.toString().equals(code.toString())) {
+   	if (!actCodeText.equals(expCodeText)) {
    		// only report differences
-	   	System.out.print("\t\ttest(\"" + codeText + "\",");
+	   	System.out.print("\t\ttest(\"" + codeText.replaceAll("\r\n", "\" + SEP + \"") + "\",");
 	   	System.out.println();
-	   	System.out.print("\t\t\t\t\"" + code.toString() + "\");");
+	   	System.out.print("\t\t\t\t\"" + actCodeText.replaceAll("\r\n", "\" + SEP + \"") + "\");");
 	   	System.out.println();
    	}
    	*/
-   	
-   	assertEquals(expCodeText, code.toString());
+
+   	assertEquals(expCodeText, actCodeText);
 	}
 
 	@Test

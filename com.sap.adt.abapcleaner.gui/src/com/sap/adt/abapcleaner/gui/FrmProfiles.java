@@ -798,10 +798,10 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 		btnObfuscate.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				boolean methodScope = ((e.stateMask & SWT.SHIFT) == 0);
+				boolean commandScope = ((e.stateMask & SWT.SHIFT) != 0);
 				boolean simplify = ((e.stateMask & SWT.CONTROL) != 0);
-		   	Obfuscator obfuscator = new Obfuscator(methodScope, simplify, simplify, simplify, simplify, true);
-				obfuscateExampleCode(obfuscator );
+				Obfuscator obfuscator = Obfuscator.createFor(codeDisplay.getCodeLanguage(), commandScope, simplify, simplify, simplify, simplify, true);  
+				obfuscateExampleCode(obfuscator);
 			}
 		});
 		btnObfuscate.setText("&Obfusc.");
