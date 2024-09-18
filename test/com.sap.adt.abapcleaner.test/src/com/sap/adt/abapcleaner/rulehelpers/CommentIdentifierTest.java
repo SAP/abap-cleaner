@@ -572,7 +572,7 @@ class CommentIdentifierTest {
 
 	@Test
 	void testIdentifyDdlWithOutput() {
-		String LINE_SEP = System.lineSeparator();
+		String LINE_SEP = ABAP.LINE_SEPARATOR; // must NOT be System.lineSeparator(), since CommentIdentifier.identifyComments() uses ABAP.LINE_SEPARATOR 
 		String code = "// line-start comment"
 			+ LINE_SEP + "  //"
 			+ LINE_SEP + "  // non-line-start comment A"
