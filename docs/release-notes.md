@@ -6,11 +6,11 @@ as well as bugfixes of reported issues, i.e. anything that enhances or changes t
 For a complete list of changes (including documentation, tests, refactoring etc.), please refer to 
 the list of [commits](../../../commits/main).
 
-## 2024-09-18 (version 1.19.0)
+## 2024-09-18 (version 1.19.1)
 
 **Thanks a lot**, [**MDagni**](https://github.com/MDagni) for opening the issue that led to the bugfix!
 
-* **Enhanced** parser, object model and UI **for Data Definition Language (DDL)**
+* **Enhanced** parser, object model and UI **for Data Definition Language (DDL)** as used in **CDS Views**
 * Added new DDL rule '**Standardize annotation layout**'
 * Added new DDL rule '**Rearrange annotations**'
 * Added new DDL rule '**Break before DEFINE etc.**'
