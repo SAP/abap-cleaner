@@ -603,4 +603,30 @@ public class DdlAnnotationNestingTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testInsertBelowComment() {
+		// ensure that the annotation is not inserted before the comment
+		
+		buildSrc("define view entity C_AnyEntity");
+		buildSrc("  as select from I_OtherEntity");
+		buildSrc("");
+		buildSrc("{");
+		buildSrc("      // comment");
+		buildSrc("      @Consumption.filter.multipleSelections: false");
+		buildSrc("      @Consumption.filter.mandatory: false");
+		buildSrc("  key AnyKeyField");
+		buildSrc("}");
+
+		buildExp("define view entity C_AnyEntity");
+		buildExp("  as select from I_OtherEntity");
+		buildExp("");
+		buildExp("{");
+		buildExp("      // comment");
+		buildExp("      @Consumption.filter: { multipleSelections: false, mandatory: false }");
+		buildExp("  key AnyKeyField");
+		buildExp("}");
+
+		testRule();
+	}
 }

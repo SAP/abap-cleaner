@@ -145,7 +145,7 @@ public class DdlSpacesAroundBracketsRule extends RuleForDdlCommands {
 			if (token.textEquals(DDL.BRACKET_CLOSE_STRING))
 				prevCode = prevCode.getPrevCodeSibling();
 
-			boolean isAssociation = (prevCode != null && prevCode.isAnyKeyword("association", "composition"));
+			boolean isAssociation = (prevCode != null && prevCode.isAnyKeyword("ASSOCIATION", "COMPOSITION"));
 
 			if (token.textEquals(DDL.BRACKET_OPEN_STRING)) {
 				ChangeType changeBefore = isAssociation ? spacesAroundCardBrackets : spacesBeforePathBrackets;

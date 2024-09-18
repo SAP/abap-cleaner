@@ -548,4 +548,34 @@ public class DdlPositionAssociationTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testAssociationWithParameters() {
+		// ensure that the ON condition is moved to the next line, since a join source gets parameters
+
+		buildSrc("define view entity C_AnyEntity");
+		buildSrc("  as select from I_AnyEntity as AnyAlias");
+		buildSrc("");
+		buildSrc("  association [0..1] to I_FourthEntity(");
+		buildSrc("                          P_AnyParameter   = 'any value'");
+		buildSrc("                          P_OtherParameter = 'other value' ) as _Fourth on  $projection.IdField = _Fourth.IdField");
+		buildSrc("");
+		buildSrc("{");
+		buildSrc("  key AnyAlias.IdField");
+		buildSrc("}");
+
+		buildExp("define view entity C_AnyEntity");
+		buildExp("  as select from I_AnyEntity as AnyAlias");
+		buildExp("");
+		buildExp("  association [0..1] to I_FourthEntity(");
+		buildExp("                          P_AnyParameter   = 'any value'");
+		buildExp("                          P_OtherParameter = 'other value' ) as _Fourth");
+		buildExp("    on  $projection.IdField = _Fourth.IdField");
+		buildExp("");
+		buildExp("{");
+		buildExp("  key AnyAlias.IdField");
+		buildExp("}");
+
+		testRule();
+	}
 }

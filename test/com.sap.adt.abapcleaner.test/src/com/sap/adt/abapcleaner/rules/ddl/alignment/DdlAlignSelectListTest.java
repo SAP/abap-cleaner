@@ -1030,4 +1030,52 @@ public class DdlAlignSelectListTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testOnlyTextualMultiLineCommentMoved() {
+		// ensure that only the textual multi-line comment is being moved, while the multi-line comment that contains code is not
+		buildSrc("define view I_AnyView");
+		buildSrc("  as select from I_AnySource as AnyAlias");
+		buildSrc("");
+		buildSrc("{");
+		buildSrc("  key AnyAlias.AnyField as AnyFieldAlias,");
+		buildSrc(" key   AnyAlias.OtherField as OtherFieldAlias,");
+		buildSrc("");
+		buildSrc("   OtherAlias.ThirdField as ThirdFieldAlias,");
+		buildSrc("");
+		buildSrc("/* A textual comment like this one should not be at line start, but should be aligned with the elements.");
+		buildSrc("   Only commented-out code should have comment signs at line start, so Ctrl+> can easily uncomment it. */");
+		buildSrc(" cast(OtherAlias.ThirdField + OtherAlias.FourthFieldWithLongName + OtherAlias.FifthField as any_type) as CalculatedField,");
+		buildSrc("/* ");
+		buildSrc("  key OtherAlias.CommentedOutField as CommentedOutFieldAlias,");
+		buildSrc("      OtherAlias.OtherCommentedOutField as OtherCommentedOutFieldAlias,");
+		buildSrc("      OtherAlias.CommentedOutFieldWithoutAlias, */");
+		buildSrc("");
+		buildSrc("    // associations");
+		buildSrc(" _ThirdAlias");
+		buildSrc("}");
+
+		buildExp("define view I_AnyView");
+		buildExp("  as select from I_AnySource as AnyAlias");
+		buildExp("");
+		buildExp("{");
+		buildExp("  key AnyAlias.AnyField                                                                                    as AnyFieldAlias,");
+		buildExp("  key AnyAlias.OtherField                                                                                  as OtherFieldAlias,");
+		buildExp("");
+		buildExp("      OtherAlias.ThirdField                                                                                as ThirdFieldAlias,");
+		buildExp("");
+		buildExp("      /* A textual comment like this one should not be at line start, but should be aligned with the elements.");
+		buildExp("         Only commented-out code should have comment signs at line start, so Ctrl+> can easily uncomment it. */");
+		buildExp("      cast(OtherAlias.ThirdField + OtherAlias.FourthFieldWithLongName + OtherAlias.FifthField as any_type) as CalculatedField,");
+		buildExp("/* ");
+		buildExp("  key OtherAlias.CommentedOutField as CommentedOutFieldAlias,");
+		buildExp("      OtherAlias.OtherCommentedOutField as OtherCommentedOutFieldAlias,");
+		buildExp("      OtherAlias.CommentedOutFieldWithoutAlias, */");
+		buildExp("");
+		buildExp("      // associations");
+		buildExp("      _ThirdAlias");
+		buildExp("}");
+
+		testRule();
+	}
 }

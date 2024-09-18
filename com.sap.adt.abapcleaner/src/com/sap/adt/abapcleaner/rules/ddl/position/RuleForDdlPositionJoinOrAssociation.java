@@ -33,7 +33,7 @@ public abstract class RuleForDdlPositionJoinOrAssociation extends RuleForDdlPosi
 		joinCount = 0;
 		associationCount = 0;
 
-		// determine whether the view contains a multi-line JOIN / ASSOCIATION condition 
+		// determine whether the view contains a multi-line JOIN / ASSOCIATION condition, or if one of the data sources has parameters
 		viewContainsMultiLineJoinCond = false;
 		viewContainsMultiLineAssociationCond = false;
 		while (command != null) {
@@ -42,10 +42,12 @@ public abstract class RuleForDdlPositionJoinOrAssociation extends RuleForDdlPosi
 				boolean isJoin = firstCode.startsDdlJoin();
 				boolean isAssociation = firstCode.startsDdlAssociation();
 				if (isJoin || isAssociation) {
+					Token dataSourceToken = getJoinOrAssociationDataSource(command);
 					Token onToken = firstCode.getLastTokenOnSiblings(true, TokenSearch.ASTERISK, "ON");
-					if (onToken != null) {
+					if (dataSourceToken != null && onToken != null) {
+						boolean hasParameters = dataSourceToken.getNextCodeSibling().textEquals(DDL.PARENS_OPEN_STRING);
 						Token lastTokenOfLogExpr = onToken.getLastTokenOfDdlLogicalExpression();
-						if (command.containsLineBreaksBetween(onToken, lastTokenOfLogExpr, false)) {
+						if (hasParameters || command.containsLineBreaksBetween(onToken, lastTokenOfLogExpr, false)) {
 							if (isJoin) {
 								viewContainsMultiLineJoinCond = true;
 							}
@@ -95,21 +97,23 @@ public abstract class RuleForDdlPositionJoinOrAssociation extends RuleForDdlPosi
 		return executeOn(code, command, firstCode);
 	}		
 	
+	private Token getJoinOrAssociationDataSource(Command command) {
+		// find the data source by skipping all JOIN / ASSOCIATION keywords and (cardinality) brackets,
+		// e.g. "EXACT ONE TO EXACT ONE JOIN" or "ASSOCIATION [1..1] TO"
+		Token keywordEnd = command.getFirstCodeToken();
+		while (keywordEnd != null && (keywordEnd.isKeyword() || keywordEnd.textEqualsAny(DDL.BRACKET_OPEN_STRING, DDL.BRACKET_CLOSE_STRING))) {
+			keywordEnd = keywordEnd.getNextCodeSibling();
+		}
+		return keywordEnd;
+	}
+	
 	protected boolean executeOn(Code code, Command command, Token firstCode, boolean isJoin, boolean isFirst,
 			DdlLineBreak breakBeforeKeywords, int indentKeywords, DdlLineBreak breakBeforeDataSource, int indentDataSource,
 			DdlLineBreak breakBeforeCondition, int indentCondition, DdlLineBreak breakBeforeFilter, int indentFilter) {
 		
-		// find the data source by skipping all JOIN / ASSOCIATION keywords and (cardinality) brackets,
-		// e.g. "EXACT ONE TO EXACT ONE JOIN" or "ASSOCIATION [1..1] TO"
-		Token dataSourceToken = firstCode;
-		while (dataSourceToken.isKeyword() || dataSourceToken.textEqualsAny(DDL.BRACKET_OPEN_STRING, DDL.BRACKET_CLOSE_STRING)) {
-			dataSourceToken = dataSourceToken.getNextCodeSibling();
-			if (dataSourceToken == null) { // pro forma
-				return false;
-			}
-		}
+		Token dataSourceToken = getJoinOrAssociationDataSource(command);
 		Token lastKeyword = dataSourceToken.getPrevCodeSibling();
-
+		
 		// find the JOIN condition (optional) or the ASSOCIATION condition (mandatory)
 		Token onToken = dataSourceToken.getLastTokenOnSiblings(true, TokenSearch.ASTERISK, "ON");
 		int oldOnTokenStartIndex = (onToken == null) ? 0 : onToken.getStartIndexInLine();

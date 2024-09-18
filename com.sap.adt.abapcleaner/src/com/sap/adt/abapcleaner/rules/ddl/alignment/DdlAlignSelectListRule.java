@@ -8,6 +8,7 @@ import com.sap.adt.abapcleaner.base.Language;
 import com.sap.adt.abapcleaner.base.StringUtil;
 import com.sap.adt.abapcleaner.parser.Code;
 import com.sap.adt.abapcleaner.parser.Command;
+import com.sap.adt.abapcleaner.parser.Section;
 import com.sap.adt.abapcleaner.parser.Term;
 import com.sap.adt.abapcleaner.parser.Token;
 import com.sap.adt.abapcleaner.parser.TokenSearch;
@@ -163,14 +164,16 @@ public class DdlAlignSelectListRule extends RuleForDdlCommands {
 		// build and align table of SELECT and JOIN Commands
 		AlignTable table = new AlignTable(MAX_COLUMN_COUNT);
 		ArrayList<Command> lineStartComments = new ArrayList<>();
+		ArrayList<Section> textualMultiLineComments = new ArrayList<>(); 
 		CommentIdentifier commentIdentifier = new CommentIdentifier(); 
 		int indent = lastCode.getFirstTokenInLine().getStartIndexInLine() + DDL.INDENT_STEP; 
 		try {
 			command = command.getFirstChild();
 			while (command != null) {
 				if (command.startsMultiLineDdlComment()) {
-					// multi-line comments are completely skipped and not changed
-					command = command.getLastOfMultiLineDdlComment();
+					// textual multi-line comments will be recorded and aligned with the elements; 
+					// multi-line comments that contain code will be completely skipped and not changed
+					command = buildTextualMultiLineComments(command, textualMultiLineComments, commentIdentifier);
 					if (command == null) { // pro forma 
 						break;
 					}
@@ -180,7 +183,7 @@ public class DdlAlignSelectListRule extends RuleForDdlCommands {
 				}
 				command = command.getNextSibling(); // including comments and annotations
 			}
-			alignTable(code, table, indent, lineStartComments, commentIdentifier);
+			alignTable(code, table, indent, textualMultiLineComments, lineStartComments, commentIdentifier);
 		} catch (UnexpectedSyntaxException e) {
 			// exceptions are only thrown before the alignment is done, therefore no need to throw an UnexpectedSyntaxAfterChanges exception
 			return false;
@@ -190,6 +193,25 @@ public class DdlAlignSelectListRule extends RuleForDdlCommands {
 		return false;
 	}
 	
+	private Command buildTextualMultiLineComments(Command commentStart, ArrayList<Section> textualMultiLineComments, CommentIdentifier commentIdentifier) throws UnexpectedSyntaxException {
+		Command commentLast = commentStart.getLastOfMultiLineDdlComment();
+		
+		Command command = commentStart;
+		while (command != null) {
+			if (commentIdentifier.identifyComment(command.getFirstToken().getText(), false, Language.DDL).isCode()) {
+				// at least part of the multi-line comment appears to be code; it will therefore not be aligned
+				break;
+			} else if (command == commentLast) {
+				// the entire multi-line comment appears to be textual; it can therefore be aligned
+				textualMultiLineComments.add(Section.create(commentStart, commentLast));
+				break;
+			}
+			command = command.getNext();
+		}
+
+		return commentLast;
+	}
+
 	private void buildTable(AlignTable table, Command command, ArrayList<Command> lineStartComments, CommentIdentifier commentIdentifier) throws UnexpectedSyntaxException {
 		// comments at line start will be handled in alignTable() and do NOT create a line in the AlignTable
 		if (command.isCommentLine() && command.getFirstToken().spacesLeft == 0) {
@@ -251,7 +273,7 @@ public class DdlAlignSelectListRule extends RuleForDdlCommands {
 		} 
 	}
 	
-	private void alignTable(Code code, AlignTable table, int basicIndent, ArrayList<Command> lineStartComments, CommentIdentifier commentIdentifier) throws UnexpectedSyntaxException {
+	private void alignTable(Code code, AlignTable table, int basicIndent, ArrayList<Section> textualMultiLineComments, ArrayList<Command> lineStartComments, CommentIdentifier commentIdentifier) throws UnexpectedSyntaxException {
 		AlignColumn keywordColumn = table.getColumn(Columns.KEY_OR_VIRTUAL.getValue());
 		AlignColumn aliasColumn = table.getColumn(Columns.AS_ALIAS.getValue());
 
@@ -287,7 +309,19 @@ public class DdlAlignSelectListRule extends RuleForDdlCommands {
 		// align the table
 		Command[] changedCommands = table.align(basicIndent, 1, true);
 		code.addRuleUses(this, changedCommands);
-		
+
+		// align textual multi-line comments (while ignoring multi-line comments that contain code)
+		if (configAlignTextualComments.getValue()) {
+			int commentIndent = table.getColumn(columnWithElements.getValue()).getEffectiveIndent();
+			for (Section textualMultiLineComment : textualMultiLineComments) {
+				int addIndent = commentIndent - textualMultiLineComment.firstCommand.getFirstToken().getStartIndexInLine();
+				if (addIndent != 0) {
+					textualMultiLineComment.addIndent(addIndent);
+					code.addRuleUses(this, textualMultiLineComment);
+				}
+			}
+		}
+
 		// ----------------------------------------------------------------------
 		// align commented-out code, i.e.
 		// - commented-out code lines that contain entire elements: "[KEY|VIRTUAL] element [AS alias],"

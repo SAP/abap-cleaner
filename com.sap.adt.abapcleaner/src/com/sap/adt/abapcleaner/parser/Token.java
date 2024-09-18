@@ -3437,7 +3437,11 @@ public class Token {
 	}
 
 	public boolean endsMultiLineDdlComment() {
-		return parentCommand.isDdlOrDcl() && isCommentLine() && text.indexOf(DDL.ASTERISK_COMMENT_END) >= 0;
+		return parentCommand.isDdlOrDcl() && isCommentLine() && textEndsWith(DDL.ASTERISK_COMMENT_END);
+	}
+
+	public boolean isDdlInlineComment() {
+		return parentCommand.isDdlOrDcl() && textStartsWith(DDL.ASTERISK_COMMENT_START) && textEndsWith(DDL.ASTERISK_COMMENT_END);
 	}
 
 	public boolean isCommentedOutDdlAnnotation() { 
@@ -3595,5 +3599,85 @@ public class Token {
 		} else {
 			return false;
 		}
+	}
+	
+	public boolean isDdlEntityName() {
+		if (!parentCommand.isDdl() || parentCommand.isDdlAnnotation() || !isIdentifier())
+			return false;
+		return (this == parentCommand.getDdlOrDclEntityNameToken());	
+	}
+	
+	public boolean isDdlDataSourceName() {
+		if (!parentCommand.isDdl() || parentCommand.isDdlAnnotation() || !isIdentifier())
+			return false;
+		
+		Token prevCode = getPrevCodeSibling();
+		if (parentCommand.getParent() == null && prevCode != null && prevCode.isKeyword("FROM")) {
+			// primary data source of the view
+			return true;
+			
+		} else if (parentCommand.startsDdlJoin()) { 
+			// join target
+			return (prevCode != null && prevCode.isAnyKeyword("JOIN"));
+
+		} else if (parentCommand.startsDdlAssociation()) { 
+			// association target
+			if (prevCode != null && prevCode.isKeyword("AS")) {
+				return false;
+			} else {
+				Token nextCode = getNextCodeSibling();
+				return (nextCode != null && nextCode.isAnyKeyword("AS", "ON"));
+			}
+		}
+		return false;
+	}
+	
+	public boolean isDdlSourceAliasDefinition() {
+		if (!parentCommand.isDdl() || parentCommand.isDdlAnnotation() || !isIdentifier())
+			return false;
+		
+		Token prevCode = getPrevCodeSibling();
+		return (prevCode != null && prevCode.isKeyword("AS") && !parentCommand.isDdlSelectElement());
+	}
+
+	/** returns true if this Token represents the definition (but not usage) of an entity parameter,
+	 * or the formal parameter of a data source */
+	public boolean isDdlParameterName() {
+		if (!parentCommand.isDdl() || parentCommand.isDdlAnnotation() || !isIdentifier())
+			return false;
+		
+		Token prevCode = getPrevCodeSibling();
+		Token nextCode = getNextCodeSibling();
+		Token parentPrev = (parent == null) ? null : parent.getPrevCodeSibling();
+
+		if (parentCommand.isDdlParametersElement()) {
+			// name of an entity parameter
+			return (prevCode == null);
+			
+		} else if (parentPrev != null && parentPrev.isDdlDataSourceName()) {
+			// formal parameter name of a data source
+			return (nextCode != null && nextCode.textEquals(DDL.COLON_SIGN_STRING));
+		}
+		
+		return false;
+	}
+	
+	public boolean isDdlTypeName() {
+		if (!parentCommand.isDdl() || parentCommand.isDdlAnnotation() || !isIdentifier())
+			return false;
+
+		Token parentPrev = (parent == null) ? null : parent.getPrevCodeSibling();
+		Token prevCode = getPrevCodeSibling();
+
+		if (parentCommand.isDdlParametersElement()) {
+			// type of an entity parameter
+			return (prevCode != null) && prevCode.textEquals(DDL.COLON_SIGN_STRING);
+			
+		} else if (parentPrev != null && parentPrev.isKeyword("CAST") && prevCode != null && prevCode.isKeyword("AS") && getNextCodeSibling() == null) {
+			// target type of "cast( ... as <type>)"
+			return true;
+		}
+		
+		return false;
 	}
 }

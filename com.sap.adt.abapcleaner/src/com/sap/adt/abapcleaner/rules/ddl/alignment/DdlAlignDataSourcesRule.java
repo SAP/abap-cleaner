@@ -168,7 +168,7 @@ public class DdlAlignDataSourcesRule extends RuleForDdlCommands {
 		// build and align table of ASSOCIATION Commands (possibly adding them to the table of SELECT FROM and JOIN Commands)
 		try {
 			while (command != null && command.startsDdlAssociation()) {
-				Token toToken = command.getFirstCodeToken().getLastTokenOnSiblings(true, TokenSearch.ASTERISK, "TO");
+				Token toToken = command.getFirstCodeToken().getLastTokenOnSiblings(true, TokenSearch.ASTERISK, "TO", TokenSearch.makeOptional("PARENT"));
 				if (toToken != null) // pro forma
 					buildTable(table, command, toToken.getNextCodeSibling(), true);
 				command = command.getNextNonCommentCommand();

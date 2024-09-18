@@ -197,7 +197,7 @@ public class DdlSpacesAroundSignsRule extends RuleForDdlCommands {
 		}
 		Token nextToken = token.getNext();
 		if (spaceAroundArithmeticOps != ChangeType.KEEP_AS_IS && token.textEqualsAny(DDL.arithmeticOperators)) {
-			if (token.textEquals("*") && token.isChildOfAny("association", "composition")) {
+			if (token.textEquals("*") && token.isChildOfAny("ASSOCIATION", "COMPOSITION")) {
 				// ignore "association [1..*]", "composition [0..*]" etc., because a space between .. and * is a syntax error
 			} else if (token.textEquals("*") && prevToken != null && prevToken.textEndsWith(".")) { // '!= null' pro forma
 				// ignore "$extension.*"

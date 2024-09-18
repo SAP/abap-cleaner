@@ -730,4 +730,16 @@ public final class StringUtil {
 			number = repeatChar('0', digits - number.length()) + number;
 		return number;
 	}
+	
+	public static String capitalizeStart(String text) {
+		if (text == null || text.length() == 0)
+			return "";
+
+		for (int i = 0; i < text.length(); ++i) {
+			if (Character.isLetterOrDigit(text.charAt(i))) {
+				return text.substring(0, i) + text.substring(i, i + 1).toUpperCase() + text.substring(i + 1);
+			}
+		}
+		return text;
+	}
 }

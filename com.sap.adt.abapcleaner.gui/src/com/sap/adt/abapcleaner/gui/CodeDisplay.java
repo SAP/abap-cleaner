@@ -104,6 +104,8 @@ public class CodeDisplay extends Composite {
 	
 	public final String getCodeToString() { return navigator.getCodeToString(); }
 
+	public final Language getCodeLanguage() { return navigator.getCodeLanguage(); } 
+
 	public final int getTopLineIndex() { return vsbCode.getSelection(); }
 
 	public final int getCurLineIndex() { return navigator.getCurLine(); }

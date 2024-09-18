@@ -795,4 +795,39 @@ public class DdlAlignDataSourcesTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testAlignAssociationToParent() {
+		// ensure that PARENT is aligned with the keywords, not with the data sources 
+		
+		buildSrc("define view I_AnyView");
+		buildSrc("  as select from I_AnySource as AnyAlias");
+		buildSrc("");
+		buildSrc("  association to parent I_FifthSource as _FifthAlias");
+		buildSrc("     on _FifthAlias.AnyField = AnyAlias.AnyField");
+		buildSrc("");
+		buildSrc("  association to I_SixthSourceWithLongName as _SixthAlias");
+		buildSrc("     on  _SixthAlias.AnyField   = AnyAlias.AnyField");
+		buildSrc("     and _SixthAlias.OtherField = AnyAlias.OtherField");
+		buildSrc("");
+		buildSrc("{");
+		buildSrc("  key AnyAlias.AnyField");
+		buildSrc("}");
+
+		buildExp("define view I_AnyView");
+		buildExp("  as select from I_AnySource as AnyAlias");
+		buildExp("");
+		buildExp("  association to parent I_FifthSource             as _FifthAlias");
+		buildExp("     on _FifthAlias.AnyField = AnyAlias.AnyField");
+		buildExp("");
+		buildExp("  association to        I_SixthSourceWithLongName as _SixthAlias");
+		buildExp("     on  _SixthAlias.AnyField   = AnyAlias.AnyField");
+		buildExp("     and _SixthAlias.OtherField = AnyAlias.OtherField");
+		buildExp("");
+		buildExp("{");
+		buildExp("  key AnyAlias.AnyField");
+		buildExp("}");
+
+		testRule();
+	}
 }

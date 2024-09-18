@@ -64,6 +64,8 @@ public class DiffNavigator {
 
 	public final String getCodeToString() { return (code == null) ? null : code.toString(); }
 
+	public final Language getCodeLanguage() { return (code == null || code.firstCommand == null) ? Language.ABAP : code.firstCommand.getLanguage(); }
+
 	public final ChangeStats getChangeStats() { return (diffDoc == null) ? null : diffDoc.getChangeStats(); }
 
 	// -------------------------------------------------------------------------

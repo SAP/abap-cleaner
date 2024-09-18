@@ -6,8 +6,10 @@ import com.sap.adt.abapcleaner.parser.Code;
 import com.sap.adt.abapcleaner.parser.Command;
 import com.sap.adt.abapcleaner.parser.Token;
 import com.sap.adt.abapcleaner.parser.TokenSearch;
+import com.sap.adt.abapcleaner.programbase.IntegrityBrokenException;
 import com.sap.adt.abapcleaner.programbase.UnexpectedSyntaxAfterChanges;
 import com.sap.adt.abapcleaner.programbase.UnexpectedSyntaxBeforeChanges;
+import com.sap.adt.abapcleaner.programbase.UnexpectedSyntaxException;
 import com.sap.adt.abapcleaner.rulebase.ConfigBoolValue;
 import com.sap.adt.abapcleaner.rulebase.ConfigEnumValue;
 import com.sap.adt.abapcleaner.rulebase.ConfigIntValue;
@@ -104,7 +106,6 @@ public class DdlEmptyLinesBetweenSectionsRule extends RuleForDdlCommands {
 
 	final ConfigEnumValue<DdlEmptyLineType> configBeforeSelectListStart = new ConfigEnumValue<DdlEmptyLineType>(this, "BeforeSelectListStart", "Empty line before select list start '{':", emptyLineTypeSelection, DdlEmptyLineType.values(), DdlEmptyLineType.ALWAYS_AT_LEAST_ONE);
 	final ConfigEnumValue<DdlEmptyLineType> configAfterSelectListStart = new ConfigEnumValue<DdlEmptyLineType>(this, "AfterSelectListStart", "Empty line after select list start '{':", emptyLineTypeSelection, DdlEmptyLineType.values(), DdlEmptyLineType.NEVER);
-	final ConfigEnumValue<DdlEmptyLineType> configBetweenKeyAndNonKey = new ConfigEnumValue<DdlEmptyLineType>(this, "BetweenKeyAndNonKey", "Empty line between last KEY element and first non-key:", emptyLineTypeSelection, DdlEmptyLineType.values(), DdlEmptyLineType.ALWAYS_AT_LEAST_ONE);
 	final ConfigEnumValue<DdlEmptyLineType> configBeforeSelectListEnd = new ConfigEnumValue<DdlEmptyLineType>(this, "BeforeSelectListEnd", "Empty line before select list end '}':", emptyLineTypeSelection, DdlEmptyLineType.values(), DdlEmptyLineType.NEVER);
 	final ConfigEnumValue<DdlEmptyLineType> configAfterSelectListEnd = new ConfigEnumValue<DdlEmptyLineType>(this, "AfterSelectListEnd", "Empty line after select list end '}':", emptyLineTypeSelection, DdlEmptyLineType.values(), DdlEmptyLineType.ALWAYS_AT_LEAST_ONE);
 
@@ -112,7 +113,7 @@ public class DdlEmptyLinesBetweenSectionsRule extends RuleForDdlCommands {
    final ConfigIntValue configMaxConsecutiveEmptyLines = new ConfigIntValue(this, "MaxConsecutiveEmptyLines", "Maximum number of consecutive empty lines:", "", 1, 2, 99);
 
 	private final ConfigValue[] configValues = new ConfigValue[] { configBetweenEntityAnnosAndDefine, configBetweenParametersAndAsSelect, configBetweenSelectFromAndJoins, configBetweenJoinsAndAssociations,
-			configBeforeSelectListStart, configAfterSelectListStart, configBetweenKeyAndNonKey, configBeforeSelectListEnd, configAfterSelectListEnd,
+			configBeforeSelectListStart, configAfterSelectListStart, configBeforeSelectListEnd, configAfterSelectListEnd,
 			configRemoveAtDocumentEnd, configMaxConsecutiveEmptyLines };
 	
 	@Override
@@ -126,10 +127,15 @@ public class DdlEmptyLinesBetweenSectionsRule extends RuleForDdlCommands {
 	// -------------------------------------------------------------------------
 
 	@Override
-	protected boolean executeOn(Code code, Command command, int releaseRestriction) throws UnexpectedSyntaxBeforeChanges, UnexpectedSyntaxAfterChanges {
+	protected boolean executeOn(Code code, Command command, int releaseRestriction) throws UnexpectedSyntaxBeforeChanges, UnexpectedSyntaxAfterChanges, IntegrityBrokenException {
 		// remove empty lines at document end
 		if (command.representsEmptyLinesAtCodeEnd() && configRemoveAtDocumentEnd.getValue()) {
-			return command.getFirstToken().setLineBreaks(1);
+			try {
+				command.removeFromCode();
+			} catch (UnexpectedSyntaxException e) {
+				throw new UnexpectedSyntaxAfterChanges(this, e);
+			}
+			return true;
 		}
 		
 		boolean changed = false;
@@ -157,14 +163,6 @@ public class DdlEmptyLinesBetweenSectionsRule extends RuleForDdlCommands {
 				// empty line between annotations and DEFINE etc.
 				standardizeEmptyLineBefore(code, command, DdlEmptyLineType.forValue(configBetweenEntityAnnosAndDefine.getValue()));
 			}
-			// for DDIC-based views, "DEFINE VIEW ... AS SELECT [DISTINCT]" may also start the select list
-			if (command.startsDdlSelectListBeforeFrom()) {
-				// empty line between last KEY element and first non-key
-				Command firstNonKeyAfterKey = findFirstNonKeyElementAfterKey(command.getFirstChild());
-				if (firstNonKeyAfterKey != null) {
-					standardizeEmptyLineBefore(code, firstNonKeyAfterKey, DdlEmptyLineType.forValue(configBetweenKeyAndNonKey.getValue()));
-				}
-			}
 
 		}  else if (command.getClosesLevel() && (command.getPrevSibling().startsDdlEntityParameters() || command.getPrevSibling().startsDdlSelectListBeforeFrom())) {
 			// empty line between parameters and AS SELECT - or, for DDIC-based views, between select list and "FROM data source"
@@ -186,12 +184,6 @@ public class DdlEmptyLinesBetweenSectionsRule extends RuleForDdlCommands {
 			} 
 		
 		} else if (command.startsDdlSelectListWithBrace()) {
-			// empty line between last KEY element and first non-key
-			Command firstNonKeyAfterKey = findFirstNonKeyElementAfterKey(command.getFirstChild());
-			if (firstNonKeyAfterKey != null) {
-				standardizeEmptyLineBefore(code, firstNonKeyAfterKey, DdlEmptyLineType.forValue(configBetweenKeyAndNonKey.getValue()));
-			}
-
 			// empty line before select list start '{'
 			standardizeEmptyLineBefore(code, command, DdlEmptyLineType.forValue(configBeforeSelectListStart.getValue()));
 
@@ -211,26 +203,6 @@ public class DdlEmptyLinesBetweenSectionsRule extends RuleForDdlCommands {
 		}
 
 		return changed;
-	}
-
-	private Command findFirstNonKeyElementAfterKey(Command selectElem) {
-		boolean foundKey = false;
-		while (selectElem != null) {
-			if (selectElem.isCommentLine()) {
-				// continue below
-			} else if (selectElem.isDdlAnnotation()) {
-				// continue below
-			} else if (selectElem.firstCodeTokenIsKeyword("KEY")) {
-				// at least one KEY element was found
-				foundKey = true;
-			} else {
-				// if one or multiple KEY elements were found beforehand, return this (non-key) element
-				// (or the first of its preceding associations, if any); otherwise, stop searching and return null
-				return foundKey ? selectElem.getStartOfPrecedingDdlAnnotations() : null;
-			}
-			selectElem = selectElem.getNextNonCommentSibling();
-		}
-		return null;
 	}
 
 	private void standardizeEmptyLineBefore(Code code, Command command, DdlEmptyLineType putEmptyLineBefore) {

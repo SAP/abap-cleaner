@@ -573,6 +573,7 @@ public class DdlAnnotationScope {
 
 		// check the changed Commands against the existing ones and insert changes
 		Command insertBefore = firstCommand;
+		Command offsetCommand = firstCommand.getPrev(); // inserting must not happen before the offsetCommand 
 		Command endCommand = lastCommand.getNextNonCommentCommand(); // remember this now, before scope.lastCommand may get detached from the context
 		for (Command newCommand : newCommands) {
 			HashSet<Command> originalCommands = writer.getOriginalCommandsOf(newCommand);
@@ -590,7 +591,7 @@ public class DdlAnnotationScope {
 					insertBefore = deleteOldCommandAndReturnNext(code, insertBefore, rule);
 				}
 			}
-			Command insertBeforeComment = (insertBefore == firstCommand) ? insertBefore : insertBefore.getStartOfAttachedComments();
+			Command insertBeforeComment = (insertBefore.getPrev() == offsetCommand) ? insertBefore : insertBefore.getStartOfAttachedComments();
 			// if newCommand originates from the very first line in the code document, it could start with 0 line breaks
 			if (insertBeforeComment.getPrev() != null && newCommand.getFirstTokenLineBreaks() == 0)
 				newCommand.getFirstToken().setLineBreaks(1);

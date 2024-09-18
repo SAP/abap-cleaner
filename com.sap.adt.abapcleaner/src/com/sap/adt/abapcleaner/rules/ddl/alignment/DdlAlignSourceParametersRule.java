@@ -84,7 +84,7 @@ public class DdlAlignSourceParametersRule extends RuleForDdlAlignParameters {
 	}
 	
 	final ConfigEnumValue<DdlSourceParamPos> configParameterPos = new ConfigEnumValue<DdlSourceParamPos>(this, "ParameterPos", "Position of parameters",
-			new String[] { "continue after (", "below line start + 2", "below line start + 4", "below view name + 2", "below view name + 4", "below first parameter as is" }, DdlSourceParamPos.values(), DdlSourceParamPos.CONTINUE);
+			new String[] { "continue after (", "below line start + 2", "below line start + 4", "below view name + 2", "below view name + 4", "below first parameter as is" }, DdlSourceParamPos.values(), DdlSourceParamPos.SOURCE_NAME_PLUS_2);
 	final ConfigBoolValue configAlignAssignmentOps = new ConfigBoolValue(this, "AlignAssignmentOps", "Align colons in own column", true);
 	final ConfigBoolValue configAlignActualParams = new ConfigBoolValue(this, "AlignActualParams", "Align actual parameters in own column", true);
 	final ConfigEnumValue<DdlNextAfterParensPos> configAsAliasPos = new ConfigEnumValue<DdlNextAfterParensPos>(this, "AsAliasPos", "Position of AS <alias>",

@@ -25,7 +25,6 @@ public class DdlEmptyLinesBetweenSectionsTest extends RuleTestBase {
 
 		rule.configBeforeSelectListStart.setEnumValue(DdlEmptyLineType.ALWAYS_AT_LEAST_ONE);
 		rule.configAfterSelectListStart.setEnumValue(DdlEmptyLineType.NEVER);
-		rule.configBetweenKeyAndNonKey.setEnumValue(DdlEmptyLineType.ALWAYS_AT_LEAST_ONE);
 		rule.configBeforeSelectListEnd.setEnumValue(DdlEmptyLineType.NEVER);
 		rule.configAfterSelectListEnd.setEnumValue(DdlEmptyLineType.ALWAYS_AT_LEAST_ONE);
 
@@ -420,87 +419,6 @@ public class DdlEmptyLinesBetweenSectionsTest extends RuleTestBase {
 	}
 
 	@Test
-	void testExactlyOneLineBetweenKeyAndNonKey() {
-		rule.configBetweenKeyAndNonKey.setEnumValue(DdlEmptyLineType.ALWAYS_EXACTLY_ONE);
-
-		buildSrc("define view entity C_AnyEntity");
-		buildSrc("  as select from I_AnyEntity as AnyAlias");
-		buildSrc("");
-		buildSrc("{");
-		buildSrc("  key AnyAlias.AnyKeyField,");
-		buildSrc("  key AnyAlias.OtherKeyField,");
-		buildSrc("      /* comment */");
-		buildSrc("      @Annotation.subAnno: 'value'");
-		buildSrc("      // comment");
-		buildSrc("      OtherAlias.AnyNonKeyField,");
-		buildSrc("  key OtherAlias.ThirdKeyField,");
-		buildSrc("      OtherAlias.OtherNonKeyField");
-		buildSrc("}");
-		buildSrc("");
-		buildSrc("union all");
-		buildSrc("  select from I_AnyEntity2 as AnyAlias");
-		buildSrc("");
-		buildSrc("{");
-		buildSrc("  key AnyAlias.AnyKeyField,");
-		buildSrc("  key AnyAlias.OtherKeyField,");
-		buildSrc("");
-		buildSrc("");
-		buildSrc("      OtherAlias.AnyNonKeyField,");
-		buildSrc("  key OtherAlias.ThirdKeyField,");
-		buildSrc("      OtherAlias.OtherNonKeyField");
-		buildSrc("}");
-
-		buildExp("define view entity C_AnyEntity");
-		buildExp("  as select from I_AnyEntity as AnyAlias");
-		buildExp("");
-		buildExp("{");
-		buildExp("  key AnyAlias.AnyKeyField,");
-		buildExp("  key AnyAlias.OtherKeyField,");
-		buildExp("");
-		buildExp("      /* comment */");
-		buildExp("      @Annotation.subAnno: 'value'");
-		buildExp("      // comment");
-		buildExp("      OtherAlias.AnyNonKeyField,");
-		buildExp("  key OtherAlias.ThirdKeyField,");
-		buildExp("      OtherAlias.OtherNonKeyField");
-		buildExp("}");
-		buildExp("");
-		buildExp("union all");
-		buildExp("  select from I_AnyEntity2 as AnyAlias");
-		buildExp("");
-		buildExp("{");
-		buildExp("  key AnyAlias.AnyKeyField,");
-		buildExp("  key AnyAlias.OtherKeyField,");
-		buildExp("");
-		buildExp("      OtherAlias.AnyNonKeyField,");
-		buildExp("  key OtherAlias.ThirdKeyField,");
-		buildExp("      OtherAlias.OtherNonKeyField");
-		buildExp("}");
-
-		testRule();
-	}
-
-	@Test
-	void testAtLeastOneLineBetweenKeyAndNonKeyWithoutNonKey() {
-		buildSrc("define view entity C_AnyEntity");
-		buildSrc("  as select from I_AnyEntity as AnyAlias");
-		buildSrc("{");
-		buildSrc("  key AnyAlias.AnyKeyField,");
-		buildSrc("  key AnyAlias.OtherKeyField");
-		buildSrc("}");
-
-		buildExp("define view entity C_AnyEntity");
-		buildExp("  as select from I_AnyEntity as AnyAlias");
-		buildExp("");
-		buildExp("{");
-		buildExp("  key AnyAlias.AnyKeyField,");
-		buildExp("  key AnyAlias.OtherKeyField");
-		buildExp("}");
-
-		testRule();
-	}
-
-	@Test
 	void testAtLeastOneLineBeforeSelectListEnd() {
 		rule.configBeforeSelectListEnd.setEnumValue(DdlEmptyLineType.ALWAYS_AT_LEAST_ONE);
 
@@ -519,7 +437,6 @@ public class DdlEmptyLinesBetweenSectionsTest extends RuleTestBase {
 		buildExp("{");
 		buildExp("  key AnyAlias.AnyKeyField,");
 		buildExp("  key AnyAlias.OtherKeyField,");
-		buildExp("");
 		buildExp("      OtherAlias.AnyNonKeyField");
 		buildExp("");
 		buildExp("}");
@@ -544,7 +461,6 @@ public class DdlEmptyLinesBetweenSectionsTest extends RuleTestBase {
 		buildExp("{");
 		buildExp("  key AnyAlias.AnyKeyField,");
 		buildExp("  key AnyAlias.OtherKeyField,");
-		buildExp("");
 		buildExp("      OtherAlias.AnyNonKeyField");
 		buildExp("}");
 
@@ -579,7 +495,6 @@ public class DdlEmptyLinesBetweenSectionsTest extends RuleTestBase {
 		buildExp("{");
 		buildExp("  key AnyAlias.AnyKeyField,");
 		buildExp("  key AnyAlias.OtherKeyField,");
-		buildExp("");
 		buildExp("      OtherAlias.AnyNonKeyField");
 		buildExp("}");
 		buildExp("");
@@ -592,7 +507,6 @@ public class DdlEmptyLinesBetweenSectionsTest extends RuleTestBase {
 		buildExp("{");
 		buildExp("  key AnyAlias.AnyKeyField,");
 		buildExp("  key AnyAlias.OtherKeyField,");
-		buildExp("");
 		buildExp("      OtherAlias.AnyNonKeyField");
 		buildExp("} where AnyNonKeyField > 10");
 
@@ -659,7 +573,6 @@ public class DdlEmptyLinesBetweenSectionsTest extends RuleTestBase {
 		buildExp("{");
 		buildExp("  key AnyAlias.AnyKeyField,");
 		buildExp("  key AnyAlias.OtherKeyField,");
-		buildExp("");
 		buildExp("      @Annotation.subAnno:");
 		buildExp("");
 		buildExp("      'value'");
@@ -704,7 +617,6 @@ public class DdlEmptyLinesBetweenSectionsTest extends RuleTestBase {
 		buildExp(")");
 		buildExp("as select distinct");
 		buildExp("  key AnyAlias.AnyKeyField,");
-		buildExp("");
 		buildExp("      @EndUserText.label: 'any label'");
 		buildExp("      OtherAlias.OtherField,");
 		buildExp("      sum(_ThirdAlias.ThirdField)");
@@ -756,7 +668,6 @@ public class DdlEmptyLinesBetweenSectionsTest extends RuleTestBase {
 		buildExp("  // attached comment");
 		buildExp("  key AnyAlias.AnyKeyField,");
 		buildExp("  key AnyAlias.OtherKeyField,");
-		buildExp("");
 		buildExp("      @Annotation.subAnno: 'value'");
 		buildExp("      OtherAlias.AnyNonKeyField");
 		buildExp("}");

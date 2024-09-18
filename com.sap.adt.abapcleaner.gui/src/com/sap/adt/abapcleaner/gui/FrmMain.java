@@ -1017,6 +1017,36 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 
 		new MenuItem(menuExtras, SWT.SEPARATOR);
 
+		MenuItem mmuExtrasObfuscateCodeToClip = new MenuItem(menuExtras, SWT.NONE);
+		mmuExtrasObfuscateCodeToClip.setToolTipText("Obfuscates the code, but not the literals.");
+		mmuExtrasObfuscateCodeToClip.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				obfuscateToClip(false, false);
+			}
+		});
+		mmuExtrasObfuscateCodeToClip.setText("Obfuscate Code to Clipboard");
+
+		MenuItem mmuExtrasObfuscateCodeAndLiteralsToClip = new MenuItem(menuExtras, SWT.NONE);
+		mmuExtrasObfuscateCodeAndLiteralsToClip.setToolTipText("Obfuscates code and literals.");
+		mmuExtrasObfuscateCodeAndLiteralsToClip.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				obfuscateToClip(false, true);
+			}
+		});
+		mmuExtrasObfuscateCodeAndLiteralsToClip.setText("Obfuscate Code and Literals to Clipboard");
+
+		MenuItem mmuExtrasObfuscateCodeLiteralsCommentsToClip = new MenuItem(menuExtras, SWT.NONE);
+		mmuExtrasObfuscateCodeLiteralsCommentsToClip.setToolTipText("Obfuscates code and literals and removes comments.");
+		mmuExtrasObfuscateCodeLiteralsCommentsToClip.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				obfuscateToClip(true, true);
+			}
+		});
+		mmuExtrasObfuscateCodeLiteralsCommentsToClip.setText("Obfuscate Code and Literals and Remove Comments");
+
 		MenuItem mmuExtrasCommandStrucFrequencyToClip = new MenuItem(menuExtras, SWT.NONE);
 		mmuExtrasCommandStrucFrequencyToClip.setToolTipText(
 				"Fills the clipboard with a frequency list of structure-identical commands (after obfuscation).");
@@ -2738,8 +2768,21 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		return result;
 	}
 	
+	private void obfuscateToClip(boolean removeComments, boolean obfuscateLiterals) {
+   	Obfuscator obfuscator = Obfuscator.createFor(codeDisplay.getCodeLanguage(), false, false, true, removeComments, removeComments, obfuscateLiterals);
+   	Code code;
+   	try {
+   		code = obfuscator.obfuscate(resultCode.toString());
+		} catch (ParseException | UnexpectedSyntaxAfterChanges e) {
+			Message.show(e.getMessage(), shell);
+			return;
+		}
+   	SystemClipboard.setText(code.toString());
+   	Message.show("The code was obfuscated and the result copied to the clipboard.", "Obfuscate code", shell);
+	}
+	
 	private void commandStrucFrequencyToClip() {
-   	Obfuscator obfuscator = new Obfuscator(false, false, true, true, true, true);
+   	Obfuscator obfuscator = Obfuscator.createFor(codeDisplay.getCodeLanguage(), true, false, true, true, true, true);
    	Code code;
    	try {
    		code = obfuscator.obfuscate(resultCode.toString());
