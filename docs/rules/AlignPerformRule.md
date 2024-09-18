@@ -1,4 +1,4 @@
-[<-- previous rule](AlignFormDeclarationRule.md) | [overview](../rules.md) | next rule -->
+[<-- previous rule](AlignFormDeclarationRule.md) | [overview](../rules.md) | [next rule -->](DdlAnnotationLayoutRule.md)
 
 # Align PERFORM parameters
 
