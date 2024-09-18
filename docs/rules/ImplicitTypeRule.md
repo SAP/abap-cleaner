@@ -55,6 +55,8 @@ ENDCLASS.
 
 CLASS cl_implicit_type IMPLEMENTATION.
   METHOD make_implicit_type_explicit.
+    CONSTANTS lc_text_length TYPE i VALUE 10.
+
     STATICS:
       st_g TYPE p VALUE '123456789012345-',
       st_h(5) TYPE p VALUE '123456789-',
@@ -72,6 +74,10 @@ CLASS cl_implicit_type IMPLEMENTATION.
     DATA lv_h(5) TYPE p.
     DATA lv_i TYPE p LENGTH 3.
     DATA lv_j TYPE p DECIMALS 4.
+
+    " the length may also be specified with a constant:
+    DATA lv_k(lc_text_length).
+    DATA lv_l(lc_text_length) TYPE c.
   ENDMETHOD.
 ENDCLASS.
 ```
@@ -117,6 +123,8 @@ ENDCLASS.
 
 CLASS cl_implicit_type IMPLEMENTATION.
   METHOD make_implicit_type_explicit.
+    CONSTANTS lc_text_length TYPE i VALUE 10.
+
     STATICS:
       st_g TYPE p LENGTH 8 DECIMALS 0 VALUE '123456789012345-',
       st_h TYPE p LENGTH 5 DECIMALS 0 VALUE '123456789-',
@@ -134,6 +142,10 @@ CLASS cl_implicit_type IMPLEMENTATION.
     DATA lv_h TYPE p LENGTH 5 DECIMALS 0.
     DATA lv_i TYPE p LENGTH 3 DECIMALS 0.
     DATA lv_j TYPE p LENGTH 8 DECIMALS 4.
+
+    " the length may also be specified with a constant:
+    DATA lv_k TYPE c LENGTH lc_text_length.
+    DATA lv_l TYPE c LENGTH lc_text_length.
   ENDMETHOD.
 ENDCLASS.
 ```

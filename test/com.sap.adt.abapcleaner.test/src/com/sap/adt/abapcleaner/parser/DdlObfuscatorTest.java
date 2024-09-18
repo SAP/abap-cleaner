@@ -4,12 +4,13 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import org.junit.jupiter.api.Test;
 
+import com.sap.adt.abapcleaner.base.ABAP;
 import com.sap.adt.abapcleaner.base.Language;
 import com.sap.adt.abapcleaner.programbase.ParseException;
 import com.sap.adt.abapcleaner.programbase.UnexpectedSyntaxAfterChanges;
 
 public class DdlObfuscatorTest {
-	private final String SEP = System.lineSeparator();
+	private final String SEP = ABAP.LINE_SEPARATOR; // this must be the same separator that is used in Token.toString()
 	private final Language language = Language.DDL;
 	
 	private Obfuscator obfuscator;

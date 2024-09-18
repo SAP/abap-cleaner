@@ -6,6 +6,36 @@ as well as bugfixes of reported issues, i.e. anything that enhances or changes t
 For a complete list of changes (including documentation, tests, refactoring etc.), please refer to 
 the list of [commits](../../../commits/main).
 
+## 2024-09-18 (version 1.19.0)
+
+**Thanks a lot**, [**MDagni**](https://github.com/MDagni) for opening the issue that led to the bugfix!
+
+* **Enhanced** parser, object model and UI **for Data Definition Language (DDL)**
+* Added new DDL rule '**Standardize annotation layout**'
+* Added new DDL rule '**Rearrange annotations**'
+* Added new DDL rule '**Break before DEFINE etc.**'
+* Added new DDL rule '**Break before AS SELECT etc.**'
+* Added new DDL rule '**Break before JOINs**'
+* Added new DDL rule '**Break before ASSOCIATIONs**'
+* Added new DDL rule '**Break before select list braces**'
+* Added new DDL rule '**Break before WHERE clause etc.**'
+* Added new DDL rule '**Standardize spaces around colon, comma etc.**'
+* Added new DDL rule '**Standardize spaces around brackets**'
+* Added new DDL rule '**Use CamelCase for known entity and field names**'
+* Added new DDL rule '**Correct frequent typos in DDL comments**'
+* Added new DDL rule '**Align view parameters**'
+* Added new DDL rule '**Align source parameters**'
+* Added new DDL rule '**Align function parameters after =>**'
+* Added new DDL rule '**Align logical expressions in views**'
+* Added new DDL rule '**Align name list and GROUP BY list**'
+* Added new DDL rule '**Align JOINs and ASSOCIATIONs**'
+* Added new DDL rule '**Align select list**'
+* Added new DDL rule '**Standardize empty lines between sections**'
+* Added new DDL rule '**Standardize empty lines within sections**'
+* Profiles editor: Made **height of rule references** section **flexible**
+* Fixed rule '**Make implicit type explicit**' for constant used as length in parentheses ([#350](../../../issues/350))
+* Updated **known CamelCase names** for CDS views and fields
+
 ## 2024-07-15 (version 1.18.1)
 
 Great **thanks** to [**suynwa**](https://github.com/suynwa) for the bug report behind this fix!

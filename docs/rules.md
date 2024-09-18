@@ -1,6 +1,6 @@
 # Available Cleanup Rules
 
-ABAP cleaner offers 75 cleanup rules with a total of 301 configuration options:
+ABAP cleaner offers 96 cleanup rules with a total of 446 configuration options:
 
 ## Empty Lines
 
@@ -97,6 +97,42 @@ ABAP cleaner offers 75 cleanup rules with a total of 301 configuration options:
 * [Align conditional expressions](rules/AlignCondExpressionsRule.md)
 * [Align FORM declarations](rules/AlignFormDeclarationRule.md)
 * [Align PERFORM parameters](rules/AlignPerformRule.md)
+
+## DDL Annotations
+
+* [Standardize annotation layout](rules/DdlAnnotationLayoutRule.md)
+* [Rearrange annotations](rules/DdlAnnotationNestingRule.md)
+
+## DDL Line Breaks and Indent
+
+* [Break before DEFINE etc.](rules/DdlPositionDefineRule.md)
+* [Break before AS SELECT etc.](rules/DdlPositionSelectRule.md)
+* [Break before JOINs](rules/DdlPositionJoinRule.md)
+* [Break before ASSOCIATIONs](rules/DdlPositionAssociationRule.md)
+* [Break before select list braces](rules/DdlPositionBracesRule.md)
+* [Break before WHERE clause etc.](rules/DdlPositionClausesRule.md)
+
+## DDL Spaces and Spelling
+
+* [Standardize spaces around colon, comma etc.](rules/DdlSpacesAroundSignsRule.md)
+* [Standardize spaces around brackets](rules/DdlSpacesAroundBracketsRule.md)
+* [Use CamelCase for known entity and field names](rules/DdlCamelCaseNameRule.md)
+* [Correct frequent typos in DDL comments](rules/DdlTypoRule.md)
+
+## DDL Alignment
+
+* [Align view parameters](rules/DdlAlignEntityParametersRule.md)
+* [Align source parameters](rules/DdlAlignSourceParametersRule.md)
+* [Align function parameters after =>](rules/DdlAlignFunctionParametersRule.md)
+* [Align logical expressions in views](rules/DdlAlignLogicalExpressionsRule.md)
+* [Align name list and GROUP BY list](rules/DdlAlignFieldListsRule.md)
+* [Align JOINs and ASSOCIATIONs](rules/DdlAlignDataSourcesRule.md)
+* [Align select list](rules/DdlAlignSelectListRule.md)
+
+## DDL Empty Lines
+
+* [Standardize empty lines between sections](rules/DdlEmptyLinesBetweenSectionsRule.md)
+* [Standardize empty lines within sections](rules/DdlEmptyLinesWithinSectionsRule.md)
 
 [**Back to first page**](../README.md)
 
