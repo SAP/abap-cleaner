@@ -51,7 +51,7 @@ define view C_AnyView
       -- built-in functions
       concat(AnyText,concat('_' ,OtherText)) as AnyTextField,
       division(AnyArg *10,OtherArg,2) as ThirdValue,
-      round(AnyValue/ 100, 5) as RoundedValue,
+      round(AnyValue* 100, 5) as RoundedValue,
 
       //you may format commas in ABAP types in a different way,
       // because these are not built-in functions
@@ -94,7 +94,7 @@ define view C_AnyView
       -- built-in functions
       concat(AnyText, concat('_', OtherText)) as AnyTextField,
       division(AnyArg * 10, OtherArg, 2) as ThirdValue,
-      round(AnyValue / 100, 5) as RoundedValue,
+      round(AnyValue * 100, 5) as RoundedValue,
 
       // you may format commas in ABAP types in a different way,
       // because these are not built-in functions

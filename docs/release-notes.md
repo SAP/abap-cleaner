@@ -6,6 +6,12 @@ as well as bugfixes of reported issues, i.e. anything that enhances or changes t
 For a complete list of changes (including documentation, tests, refactoring etc.), please refer to 
 the list of [commits](../../../commits/main).
 
+## 2024-09-19 (version 1.19.2)
+
+**Great thanks** to [**jrodriguez-rc**](https://github.com/jrodriguez-rc) for reporting this bug so quickly!
+
+* Fixed Parser for **identifiers with namespaces** ([#359](../../../issues/359))
+
 ## 2024-09-18 (version 1.19.1)
 
 **Thanks a lot**, [**MDagni**](https://github.com/MDagni) for opening the issue that led to the bugfix!
