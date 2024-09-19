@@ -2035,6 +2035,30 @@ public class TokenTest {
 	}
 
 	@Test 
+	void testTokenTypeDdlNamespaces() {
+		buildCommand("define view entity /ANY/I_AnyView as select from /ANY/I_OtherView as /ANY/A/l/i/a/s/ { key  /ANY/A/l/i/a/s/./ANY/Field/ as /ANY/Field/ }");
+
+		// ensure that identifiers with namespaces are correctly tokenized and parsed
+		assertEquals(TokenType.IDENTIFIER, findToken("/ANY/I_AnyView").type);
+		assertEquals(TokenType.IDENTIFIER, findToken("/ANY/I_OtherView").type);
+		assertEquals(TokenType.IDENTIFIER, findToken("/ANY/A/l/i/a/s/").type);
+		assertEquals(TokenType.IDENTIFIER, findToken("/ANY/A/l/i/a/s/./ANY/Field/").type);
+		assertEquals(TokenType.IDENTIFIER, findToken("/ANY/Field/").type);
+	}
+
+	@Test 
+	void testTokenTypeDdlNumber() {
+		buildCommand("define view entity I_AnyView as select from I_OtherView { -1 as AnyField, 1.5 as OtherField, (-2.5-3.5) as ThirdField }");
+
+		// ensure that (positive and negative) numbers with decimals are correctly tokenized and parsed
+		assertEquals(TokenType.LITERAL, findToken("1").type);
+		assertEquals(TokenType.LITERAL, findToken("1.5").type);
+		assertEquals(TokenType.LITERAL, findToken("2.5").type);
+		assertEquals(TokenType.LITERAL, findToken("3.5").type);
+		assertEquals(TokenType.OTHER_OP, findToken("-").type);
+	}
+
+	@Test 
 	void testTokenTypeDdlCardinality() {
 		buildCommand("define view I_Any as select from dtab as d1 association [1..*] to dtab2 as d2 on d1.id = d2.id { Any }");
 

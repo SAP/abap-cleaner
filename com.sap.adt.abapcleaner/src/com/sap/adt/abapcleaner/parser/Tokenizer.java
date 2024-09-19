@@ -25,9 +25,12 @@ public class Tokenizer {
 	
 	private final static char[] abapTokenEndChars = new char[] { ' ', '\u00A0', '\r', '\n', ABAP.COMMA_SIGN, ABAP.DOT_SIGN, ABAP.QUOT_MARK, ABAP.QUOT_MARK2, ABAP.COMMENT_SIGN, ABAP.COLON_SIGN, '(', ')' };
 	private final static String abapTokenEndCharsToIncludeInToken = "("; 
-	private final static char[] ddlTokenEndChars = new char[] { ' ', '\u00A0', '\r', '\n', DDL.COMMENT_SIGN, DDL.COLON_SIGN, DDL.QUOT_MARK, DDL.COMMA_SIGN, DDL.SEMICOLON_SIGN, DDL.PARENS_OPEN, DDL.PARENS_CLOSE, DDL.BRACE_OPEN, DDL.BRACE_CLOSE, DDL.BRACKET_OPEN, DDL.BRACKET_CLOSE, '<', '>', '=', '+', '-', '*', '/' };
+	private final static char[] ddlNumericTokenEndChars = new char[] { ' ', '\u00A0', '\r', '\n', DDL.COLON_SIGN, DDL.QUOT_MARK, DDL.COMMA_SIGN, DDL.SEMICOLON_SIGN, DDL.PARENS_OPEN, DDL.PARENS_CLOSE, DDL.BRACE_OPEN, DDL.BRACE_CLOSE, DDL.BRACKET_OPEN, DDL.BRACKET_CLOSE, '<', '>', '=', '+', '-', '*', '/' };
+	private final static char[] ddlIdentifierEndChars   = new char[] { ' ', '\u00A0', '\r', '\n', DDL.COLON_SIGN, DDL.QUOT_MARK, DDL.COMMA_SIGN, DDL.SEMICOLON_SIGN, DDL.PARENS_OPEN, DDL.PARENS_CLOSE, DDL.BRACE_OPEN, DDL.BRACE_CLOSE, DDL.BRACKET_OPEN, DDL.BRACKET_CLOSE, '<', '>', '=', '+', '-', '*' };
+	private final static String[] ddlIdentifierEndStrings = new String[] { DDL.LINE_END_COMMENT, DDL.ASTERISK_COMMENT_START };
 	private final static String ddlComparisonOpChars = "<>!=";
-	private final static String ddlOtherOpChars = "+=*/";
+	private final static char ddlArithmeticOpDiv = '/';
+	private final static String ddlArithmeticOpCharsWithoutDiv = "+-*";
 	private final static char[] nonAbapTokenEndChars = new char[] { '\r', '\n', ABAP.QUOT_MARK, ABAP.COMMENT_SIGN };
 	
 	private final static char[] stringTemplateEndChars = new char[] { ABAP.BRACE_OPEN, ABAP.PIPE };
@@ -124,7 +127,7 @@ public class Tokenizer {
 				
 			} else if (StringUtil.containsAt(text, readPos, DDL.LINE_END_COMMENT) || StringUtil.containsAt(text, readPos, DDL.LINE_END_MINUS_COMMENT)) {
 				// line end comment: the rest of the line
-				tokenText = readDdlUntil(lineFeedChars);
+				tokenText = readDdlUntil(lineFeedChars, null);
 				
 			} else if (curChar == DDL.QUOT_MARK) {
 				// read text literal '...', considering escape char ''
@@ -140,13 +143,22 @@ public class Tokenizer {
 				// comparison operator or => operator
 				tokenText = StringUtil.readTillEndOfAllowedChars(text, readPos, ddlComparisonOpChars);
 
-			} else if (ddlOtherOpChars.indexOf(curChar) >= 0) {
+			} else if (Character.isDigit(curChar)) { // || curChar == '-' && readPos + 1 < text.length() && Character.isDigit(text.charAt(readPos + 1))) {
+				// number, which may start with - and may include . (however, -.5 is not possible)
+				// unlike identifiers, a number stops at / (and thus automatically at // and /*, therefore no need to supply ddlIdentifierEndStrings)
+				tokenText = readDdlUntil(ddlNumericTokenEndChars, null);
+				
+			} else if (curChar == ddlArithmeticOpDiv && !DDL.isCharAllowedForIdentifier(text, readPos + 1, true)) {
+				// '/' is only a division operator if it is NOT directly followed by a char that could start an identifier
+				tokenText = Character.toString(curChar);
+
+			} else if (ddlArithmeticOpCharsWithoutDiv.indexOf(curChar) >= 0) {
 				// arithmetic operator (just one char)
 				tokenText = Character.toString(curChar);
 
 			} else {
-				// normal word, which includes chars from 0-9, a-z, A-Z, as well as ._@# (and < after initial @)
-				tokenText = readDdlUntil(ddlTokenEndChars);
+				// normal word, which includes chars from 0-9, a-z, A-Z, / for namespaces, ._@# and < after initial @
+				tokenText = readDdlUntil(ddlIdentifierEndChars, ddlIdentifierEndStrings);
 			}
 			
 		} else if (curChar == ABAP.LINE_COMMENT_SIGN && isAtLineStart) {
@@ -280,7 +292,7 @@ public class Tokenizer {
 		return text.substring(readPos, tokenEnd);
 	}
 	
-	private String readDdlUntil(char[] delimiterChars) throws UnexpectedSyntaxException {
+	private String readDdlUntil(char[] delimiterChars, String[] delimiterStrings) throws UnexpectedSyntaxException {
 		// read until the first delimiter is found
 		// in the special case of an initial @, < is allowed afterwards, because annotations for CDS entities 
 		// (except for CDS view entities) may start with @< for the annotation after a list element in a comma-separated or semicolon-separated list.
@@ -288,7 +300,7 @@ public class Tokenizer {
 		if (text.charAt(readPos) == DDL.ANNOTATION_SIGN && start < text.length() && text.charAt(start) == '<') {
 			++start;
 		}
-		int tokenEnd = StringUtil.indexOfAny(text, delimiterChars, start); 
+		int tokenEnd = StringUtil.indexOfAny(text, delimiterChars, delimiterStrings, start); 
 
 		if (tokenEnd < 0)
 			tokenEnd = text.length();

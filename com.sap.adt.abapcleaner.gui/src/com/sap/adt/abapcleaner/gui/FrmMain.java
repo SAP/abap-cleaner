@@ -2634,6 +2634,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 			sb.append('\t').append("added configuration count");
 			sb.append('\t').append("total rule count");
 			sb.append('\t').append("total configuration count");
+			sb.append('\t').append("options per rule");
 			sb.append('\t').append("added rule names");
 			sb.append('\t').append("added technical rule names");
 			sb.append('\t').append("added configuration names");
@@ -2646,6 +2647,8 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 			sb.append('\t').append(String.valueOf(addedConfigCount));
 			sb.append('\t').append(String.valueOf(totalRuleCount));
 			sb.append('\t').append(String.valueOf(totalConfigCount));
+			double configPerRule = (totalRuleCount == 0) ? 0 : totalConfigCount / (double)totalRuleCount; 
+			sb.append('\t').append(Cult.format(configPerRule, 3));
 			sb.append('\t').append(String.valueOf(addedRuleNames));
 			sb.append('\t').append(String.valueOf(addedTechnicalRuleNames));
 			sb.append('\t').append(String.valueOf(addedConfigNames));

@@ -1078,4 +1078,47 @@ public class DdlAlignSelectListTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testIdentifiersWithNamespaces() {
+		buildSrc("define view entity /ANY/I_AnyView");
+		buildSrc("  with parameters");
+		buildSrc("    P_Any : /ANY/any_type");
+		buildSrc("");
+		buildSrc("  as select from /ANY/I_OtherView as /ANY/A/l/i/a/s/");
+		buildSrc("");
+		buildSrc("  association to /ANY/I_ThirdView as  _/Other/Alias");
+		buildSrc("  on _/Other/Alias.AnyID = /ANY/A/l/i/a/s/.AnyID");
+		buildSrc("");
+		buildSrc("{");
+		buildSrc("  key  /ANY/A/l/i/a/s/./ANY/Field/ as /ANY/Field/,");
+		buildSrc("");
+		buildSrc("      2 / $parameters.P_Any as /ANY/OtherField,");
+		buildSrc("      1 + 10 * /ANY/A/l/i/a/s/./ANY/ThirdField / 2 as /ANY/ThirdField,");
+		buildSrc("      1 + 10 * /ANY/FourthField / 2 as /ANY/FourthField/,");
+		buildSrc("      1 + _/Other/Alias./ANY/FifthField/ as /ANY/FifthField/,");
+		buildSrc("      _/Other/Alias");
+		buildSrc("}");
+
+		buildExp("define view entity /ANY/I_AnyView");
+		buildExp("  with parameters");
+		buildExp("    P_Any : /ANY/any_type");
+		buildExp("");
+		buildExp("  as select from /ANY/I_OtherView as /ANY/A/l/i/a/s/");
+		buildExp("");
+		buildExp("  association to /ANY/I_ThirdView as  _/Other/Alias");
+		buildExp("  on _/Other/Alias.AnyID = /ANY/A/l/i/a/s/.AnyID");
+		buildExp("");
+		buildExp("{");
+		buildExp("  key /ANY/A/l/i/a/s/./ANY/Field/                  as /ANY/Field/,");
+		buildExp("");
+		buildExp("      2 / $parameters.P_Any                        as /ANY/OtherField,");
+		buildExp("      1 + 10 * /ANY/A/l/i/a/s/./ANY/ThirdField / 2 as /ANY/ThirdField,");
+		buildExp("      1 + 10 * /ANY/FourthField / 2                as /ANY/FourthField/,");
+		buildExp("      1 + _/Other/Alias./ANY/FifthField/           as /ANY/FifthField/,");
+		buildExp("      _/Other/Alias");
+		buildExp("}");
+
+		testRule();
+	}
 }

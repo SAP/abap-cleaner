@@ -1577,8 +1577,7 @@ public class Token {
 			if (i > 0 && isIdentifier != lastWasIdentifier) {
 				// if the text bit is not part of the keyword or the identifier, it is considered a token operator (e.g. "->", "=>", "(" etc.)
 				ColorType bitType = lastWasIdentifier ? colType : opColorType;
-				// in some cases, a Token of type OTHER_OP contains a number, e.g. "ULINE AT /10(20)." and "ULINE AT 10(**)." 
-				if (isDdlOrDcl && AbapCult.stringEquals(text.substring(writtenPos, i), "$projection", true)) 
+				if (isDdlOrDcl && AbapCult.stringEqualsAny(true, text.substring(writtenPos, i), DDL.PROJECTION_PREFIX, DDL.PARAMETER_PREFIX)) 
 					bitType = ColorType.DDL_KEYWORD;
 				if (isAbap && ABAP.isInteger(text.substring(writtenPos, i)))
 					bitType = ColorType.NUMBER;
@@ -2114,8 +2113,14 @@ public class Token {
 		
 		// non-inline declarations
 		if (firstToken.isAnyKeyword(Command.declarationKeywordsReservingMemory)) {
-			if  (prevToken.isAnyKeyword(Command.declarationKeywords) || prevToken.isComma()) {
+			if (prevToken.isAnyKeyword(Command.declarationKeywords) || prevToken.isComma()) {
 				return ABAP.isFieldSymbol(text) ? MemoryAccessType.ASSIGN_TO_FS_OR_DREF : MemoryAccessType.WRITE;
+			} else if (prevToken.isIdentifier() && prevToken.getOpensLevel() && prevPrevToken != null && (prevPrevToken.isAnyKeyword(Command.declarationKeywords) || prevPrevToken.isComma() || prevPrevToken.isChainColon())) { 
+				// e.g. "lc_length" in "DATA lv_text(lc_length) VALUE 'abcde'."
+				return MemoryAccessType.READ;
+			} else if (prevToken.isAnyKeyword("LENGTH", "VALUE")) { // constants can be used for both
+				// e.g. "lc_length" and "lc_text" in "DATA lv_text TYPE c LENGTH lc_length VALUE lc_text."
+				return MemoryAccessType.READ;
 			} else { // e.g. a class name after TYPE REF TO
 				return MemoryAccessType.NONE;
 			}
@@ -3679,5 +3684,17 @@ public class Token {
 		}
 		
 		return false;
+	}
+	
+	/** Returns true if this Token can be followed by an arithmetic operator. 
+	 * Note that the '-' for negative numbers in NOT considered an arithmetic operator here. */
+	public boolean mayBeFollowedByArithmeticOp() {
+		if (textEqualsAny(DDL.PARENS_CLOSE_STRING, DDL.BRACKET_CLOSE_STRING)) {
+			return true;
+		} else if (type == TokenType.IDENTIFIER || type == TokenType.LITERAL) {
+			return true;
+		} else { // KEYWORDS, ASSIGNMENT_OP, OTHER_OP, COMMA, "("
+			return false;
+		}
 	}
 }

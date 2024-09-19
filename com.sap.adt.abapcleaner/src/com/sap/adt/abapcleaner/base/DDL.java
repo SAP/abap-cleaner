@@ -70,6 +70,7 @@ public final class DDL {
 
    public final static String[] listElementSeparators = new String[] { COMMA_SIGN_STRING, SEMICOLON_SIGN_STRING };
    public final static String[] arithmeticOperators = new String[] { "+", "-", "*", "/" };
+   public final static String divisionOperator = "/";
    public final static String[] aggregationFunctions = new String[] { "max", "min", "avg", "sum", "count" };
 
    private static class Collocation {
@@ -505,7 +506,7 @@ public final class DDL {
 
 		char c = text.charAt(pos);
 		
-		if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_') {
+		if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_' || c == '/') { // '_' at start is allowed for aliases, but e.g. not for fields 
 			return true;
 		
 		} else if (isFirstChar && (c == '$' || c == '#' || c == '@')) {

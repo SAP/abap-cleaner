@@ -370,7 +370,7 @@ public class DdlSpacesAroundSignsTest extends RuleTestBase {
 		buildSrc("");
 		buildSrc("      concat(AnyText,concat('_' ,OtherText)) as AnyTextField,");
 		buildSrc("      division(AnyArg *10,OtherArg,2) as ThirdValue,");
-		buildSrc("      round(AnyValue/ 100, 5) as RoundedValue,");
+		buildSrc("      round(AnyValue* 100, 5) as RoundedValue,");
 		buildSrc("");
 		buildSrc("      cast(AnyAmount   as abap.curr(23 ,2)) as AnyAmount  ,");
 		buildSrc("      cast(OtherAmount as abap.curr(23,2)) as OtherAmount ,");
@@ -395,7 +395,7 @@ public class DdlSpacesAroundSignsTest extends RuleTestBase {
 		buildExp("");
 		buildExp("      concat(AnyText , concat('_' , OtherText)) as AnyTextField ,");
 		buildExp("      division(AnyArg * 10 , OtherArg , 2) as ThirdValue ,");
-		buildExp("      round(AnyValue / 100 , 5) as RoundedValue ,");
+		buildExp("      round(AnyValue * 100 , 5) as RoundedValue ,");
 		buildExp("");
 		buildExp("      cast(AnyAmount   as abap.curr(23 ,2)) as AnyAmount  ,");
 		buildExp("      cast(OtherAmount as abap.curr(23 ,2)) as OtherAmount ,");
@@ -457,7 +457,7 @@ public class DdlSpacesAroundSignsTest extends RuleTestBase {
 		buildSrc("");
 		buildSrc("      concat(AnyText,concat('_' ,OtherText)) as AnyTextField,");
 		buildSrc("      division(AnyArg *10,OtherArg,2) as ThirdValue,");
-		buildSrc("      round(AnyValue/ 100, 5) as RoundedValue,");
+		buildSrc("      round(AnyValue- 100, 5) as RoundedValue,");
 		buildSrc("");
 		buildSrc("      cast(AnyAmount   as abap.curr(23 ,2)) as AnyAmount  ,");
 		buildSrc("      cast(OtherAmount as abap.curr(23,2)) as OtherAmount ,");
@@ -473,7 +473,7 @@ public class DdlSpacesAroundSignsTest extends RuleTestBase {
 		buildExp("");
 		buildExp("      concat(AnyText,concat('_',OtherText)) as AnyTextField,");
 		buildExp("      division(AnyArg * 10,OtherArg,2) as ThirdValue,");
-		buildExp("      round(AnyValue / 100, 5) as RoundedValue,");
+		buildExp("      round(AnyValue - 100, 5) as RoundedValue,");
 		buildExp("");
 		buildExp("      cast(AnyAmount   as abap.curr(23,2)) as AnyAmount,");
 		buildExp("      cast(OtherAmount as abap.curr(23,2)) as OtherAmount,");
@@ -496,7 +496,7 @@ public class DdlSpacesAroundSignsTest extends RuleTestBase {
 		buildSrc("");
 		buildSrc("      concat(AnyText,concat('_' ,OtherText)) as AnyTextField,");
 		buildSrc("      division(AnyArg *10,OtherArg,2) as ThirdValue,");
-		buildSrc("      round(AnyValue/ 100, 5) as RoundedValue,");
+		buildSrc("      round(AnyValue* 100, 5) as RoundedValue,");
 		buildSrc("");
 		buildSrc("      cast(AnyAmount   as abap.curr(23 ,2)) as AnyAmount  ,");
 		buildSrc("      cast(OtherAmount as abap.curr(23,2)) as OtherAmount ,");
@@ -512,7 +512,7 @@ public class DdlSpacesAroundSignsTest extends RuleTestBase {
 		buildExp("");
 		buildExp("      concat(AnyText,concat('_',OtherText)) as AnyTextField,");
 		buildExp("      division(AnyArg * 10,OtherArg,2) as ThirdValue,");
-		buildExp("      round(AnyValue / 100,5) as RoundedValue,");
+		buildExp("      round(AnyValue * 100,5) as RoundedValue,");
 		buildExp("");
 		buildExp("      cast(AnyAmount   as abap.curr(23,2)) as AnyAmount,");
 		buildExp("      cast(OtherAmount as abap.curr(23,2)) as OtherAmount,");
@@ -536,7 +536,7 @@ public class DdlSpacesAroundSignsTest extends RuleTestBase {
 		buildSrc("");
 		buildSrc("      concat(AnyText,concat('_' ,OtherText)) as AnyTextField,");
 		buildSrc("      division(AnyArg *10,OtherArg,2) as ThirdValue,");
-		buildSrc("      round(AnyValue/ 100, 5) as RoundedValue,");
+		buildSrc("      round(AnyValue+ 100, 5) as RoundedValue,");
 		buildSrc("");
 		buildSrc("      cast(AnyAmount   as abap.curr(23 ,2)) as AnyAmount  ,");
 		buildSrc("      cast(OtherAmount as abap.curr(23,2)) as OtherAmount ,");
@@ -552,7 +552,7 @@ public class DdlSpacesAroundSignsTest extends RuleTestBase {
 		buildExp("");
 		buildExp("      concat(AnyText,concat('_',OtherText)) as AnyTextField,");
 		buildExp("      division(AnyArg * 10,OtherArg,2) as ThirdValue,");
-		buildExp("      round(AnyValue / 100,5) as RoundedValue,");
+		buildExp("      round(AnyValue + 100,5) as RoundedValue,");
 		buildExp("");
 		buildExp("      cast(AnyAmount   as abap.curr(23, 2)) as AnyAmount,");
 		buildExp("      cast(OtherAmount as abap.curr(23, 2)) as OtherAmount,");
@@ -575,7 +575,7 @@ public class DdlSpacesAroundSignsTest extends RuleTestBase {
 		buildSrc("");
 		buildSrc("      concat(AnyText,concat('_' ,OtherText)) as AnyTextField,");
 		buildSrc("      division(AnyArg *10,OtherArg,2) as ThirdValue,");
-		buildSrc("      round(AnyValue/ 100, 5) as RoundedValue,");
+		buildSrc("      round(AnyValue+ 100, 5) as RoundedValue,");
 		buildSrc("");
 		buildSrc("      cast(AnyAmount   as abap.curr(23 ,2)) as AnyAmount  ,");
 		buildSrc("      cast(OtherAmount as abap.curr(23,2)) as OtherAmount ,");
@@ -591,7 +591,7 @@ public class DdlSpacesAroundSignsTest extends RuleTestBase {
 		buildExp("");
 		buildExp("      concat(AnyText, concat('_', OtherText)) as AnyTextField,");
 		buildExp("      division(AnyArg * 10, OtherArg, 2) as ThirdValue,");
-		buildExp("      round(AnyValue / 100, 5) as RoundedValue,");
+		buildExp("      round(AnyValue + 100, 5) as RoundedValue,");
 		buildExp("");
 		buildExp("      cast(AnyAmount   as abap.curr(23,2)) as AnyAmount,");
 		buildExp("      cast(OtherAmount as abap.curr(23,2)) as OtherAmount,");
@@ -634,6 +634,8 @@ public class DdlSpacesAroundSignsTest extends RuleTestBase {
 
 	@Test
 	void testNoSpaceAroundArithmeticOps() {
+		// ensure that spaces around "/" are NOT removed, because that would be a syntax error
+		
 		rule.configSpaceAroundArithmeticOps.setEnumValue(ChangeType.NEVER);
 
 		buildSrc("define view C_AnyView");
@@ -645,7 +647,7 @@ public class DdlSpacesAroundSignsTest extends RuleTestBase {
 		buildSrc("");
 		buildSrc("      concat(AnyText,concat('_' ,OtherText)) as AnyTextField,");
 		buildSrc("      division(AnyArg *10,OtherArg,2) as ThirdValue,");
-		buildSrc("      round(AnyValue/ 100, 5) as RoundedValue");
+		buildSrc("      round(AnyValue / 100, 5) as RoundedValue");
 		buildSrc("}");
 
 		buildExp("define view C_AnyView");
@@ -657,7 +659,7 @@ public class DdlSpacesAroundSignsTest extends RuleTestBase {
 		buildExp("");
 		buildExp("      concat(AnyText, concat('_', OtherText)) as AnyTextField,");
 		buildExp("      division(AnyArg*10, OtherArg, 2) as ThirdValue,");
-		buildExp("      round(AnyValue/100, 5) as RoundedValue");
+		buildExp("      round(AnyValue / 100, 5) as RoundedValue");
 		buildExp("}");
 
 		testRule();
@@ -814,6 +816,72 @@ public class DdlSpacesAroundSignsTest extends RuleTestBase {
 		buildSrc("group by AnyAlias.AnyKeyField");
 
 		copyExpFromSrc();
+
+		testRule();
+	}
+
+	@Test
+	void testIdentifiersWithNamespaces() {
+		buildSrc("define view entity /ANY/I_AnyView");
+		buildSrc("  with parameters");
+		buildSrc("    P_Any : /ANY/any_type");
+		buildSrc("");
+		buildSrc("  as select from /ANY/I_OtherView as /ANY/A/l/i/a/s/");
+		buildSrc("");
+		buildSrc("  association to /ANY/I_ThirdView as  _/Other/Alias");
+		buildSrc("  on _/Other/Alias.AnyID = /ANY/A/l/i/a/s/.AnyID");
+		buildSrc("");
+		buildSrc("{");
+		buildSrc("  key  /ANY/A/l/i/a/s/./ANY/Field/ as /ANY/Field/,");
+		buildSrc("");
+		buildSrc("      2/ $parameters.P_Any as /ANY/OtherField,");
+		buildSrc("      1+10* /ANY/A/l/i/a/s/./ANY/ThirdField / 2 as /ANY/ThirdField,");
+		buildSrc("      1 + 10 * /ANY/FourthField / 2 as /ANY/FourthField/,");
+		buildSrc("      1+_/Other/Alias./ANY/FifthField/ as /ANY/FifthField/,");
+		buildSrc("      _/Other/Alias");
+		buildSrc("}");
+
+		buildExp("define view entity /ANY/I_AnyView");
+		buildExp("  with parameters");
+		buildExp("    P_Any : /ANY/any_type");
+		buildExp("");
+		buildExp("  as select from /ANY/I_OtherView as /ANY/A/l/i/a/s/");
+		buildExp("");
+		buildExp("  association to /ANY/I_ThirdView as  _/Other/Alias");
+		buildExp("  on _/Other/Alias.AnyID = /ANY/A/l/i/a/s/.AnyID");
+		buildExp("");
+		buildExp("{");
+		buildExp("  key  /ANY/A/l/i/a/s/./ANY/Field/ as /ANY/Field/,");
+		buildExp("");
+		buildExp("      2 / $parameters.P_Any as /ANY/OtherField,");
+		buildExp("      1 + 10 * /ANY/A/l/i/a/s/./ANY/ThirdField / 2 as /ANY/ThirdField,");
+		buildExp("      1 + 10 * /ANY/FourthField / 2 as /ANY/FourthField/,");
+		buildExp("      1 + _/Other/Alias./ANY/FifthField/ as /ANY/FifthField/,");
+		buildExp("      _/Other/Alias");
+		buildExp("}");
+
+		testRule();
+	}
+
+	@Test
+	void testMinusOrPlusSignVersusArithmeticOps() {
+		// ensure that no space is introduced in +x and -x
+		
+		buildSrc("define view entity I_AnyView");
+		buildSrc("  as select from I_OtherView");
+		buildSrc("");
+		buildSrc("{");
+		buildSrc("      -3.5*(-2.5*-5.0)-+5.1 as AnyValue,");
+		buildSrc("      +3.1*(+2.5*+5.0)+-5.1 as OtherValue,");
+		buildSrc("}");
+
+		buildExp("define view entity I_AnyView");
+		buildExp("  as select from I_OtherView");
+		buildExp("");
+		buildExp("{");
+		buildExp("      -3.5 * (-2.5 * -5.0) - +5.1 as AnyValue,");
+		buildExp("      +3.1 * (+2.5 * +5.0) + -5.1 as OtherValue,");
+		buildExp("}");
 
 		testRule();
 	}

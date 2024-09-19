@@ -2648,7 +2648,7 @@ public class Command {
 		if (firstCode == null || !firstCode.isKeyword())
 			return null;
 		Token token = firstCode.getNextCodeSibling();
-		if (token.isChainColon())
+		while (token.isChainColon())
 			token = token.getNextCodeSibling();
 		return (token == null || !token.isIdentifier()) ? null : token.getText(); 
 	}
