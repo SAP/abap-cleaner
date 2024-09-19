@@ -391,6 +391,15 @@ public abstract class RuleForDeclarations extends Rule {
 	}
 
 	private Token executeOnDeclarationLine(Command methodStart, LocalVariables localVariables, Token token, boolean isInOOContext, VariableInfo varInfo) {
+		// length may be supplied in parentheses: "DATA lv_text(lc_length)."
+		if (token.getOpensLevel() && token.hasChildren() && token.getFirstChild().isAttached() && token.getFirstChild().isIdentifier()) {
+			String usedObjectName = LocalVariables.getObjectName(token.getFirstChild().getText(), isInOOContext);
+			localVariables.addUsageInLikeOrValueClause(token, usedObjectName, methodStart, varInfo);
+			
+			// continue behind the parenthesis
+			token = token.getNextCodeSibling();
+		}
+		
 		// if the declaration uses "LIKE ...", count that as a usage of that variable or constant
 		Token next = token.getNextCodeSibling();
 		if (next != null && next.isKeyword("LIKE") && next.getNextCodeSibling() != null) {
@@ -406,9 +415,9 @@ public abstract class RuleForDeclarations extends Rule {
 			
 		} 
 		
-		// if the declaration uses "VALUE <constant>", count that as a usage of <constant>
+		// if the declaration uses "LENGTH <constant>" and/or "VALUE <constant>", count that as a usage of <constant>
 		while (token != null && !token.isCommaOrPeriod()) {
-			if (token.isKeyword("VALUE")) {
+			if (token.isAnyKeyword("LENGTH", "VALUE")) {
 				token = token.getNextCodeSibling();
 				if (token != null && token.isIdentifier()) {
 					// the Token may contain more than the object name, e.g. 'DATA lv_value TYPE i VALUE if_any_interface=>co_any_value.'
@@ -416,7 +425,6 @@ public abstract class RuleForDeclarations extends Rule {
 					String usedObjectName = LocalVariables.getObjectName(token.getText(), isInOOContext);
 					localVariables.addUsageInLikeOrValueClause(token, usedObjectName, methodStart, varInfo);
 				}
-				break;
 			}
 			token = token.getNextCodeSibling();
 		}

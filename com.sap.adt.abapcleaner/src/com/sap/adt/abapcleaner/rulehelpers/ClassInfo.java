@@ -5,6 +5,7 @@ import java.util.HashMap;
 
 import com.sap.adt.abapcleaner.base.ABAP;
 import com.sap.adt.abapcleaner.base.AbapCult;
+import com.sap.adt.abapcleaner.base.StringUtil;
 
 /** encapsulates class or interface definition information: implemented interfaces, defined aliases and method signatures */
 public class ClassInfo {
@@ -39,6 +40,9 @@ public class ClassInfo {
 	
 	/** @param methodName - can be a plain method name, an alias, or INTERFACE~METHOD */
 	public MethodInfo getMethod(String methodName) {
+		if (StringUtil.isNullOrEmpty(methodName))
+			return null;
+		
 		// find the method signature in the class hierarchy (if visible in the code document)
 		ClassInfo curClass = this;
 		do {

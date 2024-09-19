@@ -75,7 +75,7 @@ public class DdlSpacesAroundSignsRule extends RuleForDdlCommands {
 				+ LINE_SEP + "      -- built-in functions"
 				+ LINE_SEP + "      concat(AnyText,concat('_' ,OtherText)) as AnyTextField,"
 				+ LINE_SEP + "      division(AnyArg *10,OtherArg,2) as ThirdValue,"
-				+ LINE_SEP + "      round(AnyValue/ 100, 5) as RoundedValue,"
+				+ LINE_SEP + "      round(AnyValue* 100, 5) as RoundedValue,"
 				+ LINE_SEP + ""
 				+ LINE_SEP + "      //you may format commas in ABAP types in a different way,"
 				+ LINE_SEP + "      // because these are not built-in functions"
@@ -189,14 +189,15 @@ public class DdlSpacesAroundSignsRule extends RuleForDdlCommands {
 			changed |= token.setSpacesLeftAdjustingIndent(spaces, false);
 		}
 		
-		// space before arithmetic operator (+ - * /)
+		// space before arithmetic operators (+ - * /)
 		Token prevToken = token.getPrev();
 		if (prevToken == null && command.getPrev() != null) {
 			// for list elements, commas belong to the previous Command 
 			prevToken = command.getPrev().getLastToken();
 		}
 		Token nextToken = token.getNext();
-		if (spaceAroundArithmeticOps != ChangeType.KEEP_AS_IS && token.textEqualsAny(DDL.arithmeticOperators)) {
+		Token prevCode = token.getPrevCodeToken();
+		if (spaceAroundArithmeticOps != ChangeType.KEEP_AS_IS && token.textEqualsAny(DDL.arithmeticOperators) && prevCode != null && prevCode.mayBeFollowedByArithmeticOp()) {
 			if (token.textEquals("*") && token.isChildOfAny("ASSOCIATION", "COMPOSITION")) {
 				// ignore "association [1..*]", "composition [0..*]" etc., because a space between .. and * is a syntax error
 			} else if (token.textEquals("*") && prevToken != null && prevToken.textEndsWith(".")) { // '!= null' pro forma
@@ -205,6 +206,9 @@ public class DdlSpacesAroundSignsRule extends RuleForDdlCommands {
 				// ignore path expression "_Any[*:...]"
 			} else if (token.textEquals("*") && prevToken != null && prevToken.textEndsWith("(") && nextToken.textStartsWith(")")) { // '!= null' pro forma
 				// ignore "count(*)"
+			} else if (token.textEquals(DDL.divisionOperator) && spaceAroundArithmeticOps == ChangeType.NEVER) {
+				// Spaces around "/" are NOT removed, because attaching "/" to an identifier would be a syntax error, since "/" can be used  
+				// for namespaces: /ANY/Identifier. While "2/" is not a syntax error, it still causes red highlighting in ADT and should therefore be avoided, too. 
 			} else {
 				int spaces = (spaceAroundArithmeticOps == ChangeType.ALWAYS) ? Math.max(token.spacesLeft, 1) : 0;
 				changed |= token.setSpacesLeftAdjustingIndent(spaces, true);
@@ -225,7 +229,10 @@ public class DdlSpacesAroundSignsRule extends RuleForDdlCommands {
 			changeType = (parentPrev != null && parentPrev.textStartsWith(DDL.TYPED_LITERAL_PREFIX)) ? spaceAfterCommaInAbapType : spaceAfterComma;
 		
 		} else if (prevToken.textEqualsAny(DDL.arithmeticOperators)) {
-			changeType = spaceAroundArithmeticOps;
+			Token prevPrevCode = prevToken.getPrevCodeToken();
+			if (prevPrevCode != null && prevPrevCode.mayBeFollowedByArithmeticOp()) {
+				changeType = spaceAroundArithmeticOps;
+			}
 		}
 		
 		if (changeType != ChangeType.KEEP_AS_IS) {
@@ -237,6 +244,9 @@ public class DdlSpacesAroundSignsRule extends RuleForDdlCommands {
 				// ignore star in parenthesis as in "(*)"
 			} else if (prevToken.isDdlParameterColon()) {
 				// ignore colon that starts a parameter name such as ":P_Any"
+			} else if (prevToken.textEquals(DDL.divisionOperator) && changeType == ChangeType.NEVER) {
+				// spaces around "/" are not removed, because attaching "/" to an identifier is a syntax error, since "/" can be used for namespaces: /ANY/Identifier
+				// while "2/" is not a syntax error, it still causes red highlighting in ADT and should therefore be avoided, too 
 			} else {
 				int spaces = (changeType == ChangeType.ALWAYS) ? 1 : 0;
 				changed |= token.setSpacesLeftAdjustingIndent(spaces, true);

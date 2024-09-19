@@ -313,6 +313,25 @@ public final class StringUtil {
 		return -1;
 	}
 	
+	public static int indexOfAny(String string, char[] anyCharOf, String[] anyStringOf, int startIndex) {
+		if (string == null)
+			return -1;
+		
+		int index = startIndex;
+		while (index < string.length()) {
+			char c = string.charAt(index);
+			for (char match : anyCharOf) {
+				if (c == match) {
+					return index;
+				}
+			}
+			if (anyStringOf != null && containsAnyAt(string, index, anyStringOf))
+				return index;
+			++index;
+		}
+		return -1;
+	}
+	
 	public static int indexOfAny(String string, char[] anyOf, int startIndex, char escapeChar) {
 		if (string == null)
 			return -1;
