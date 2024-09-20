@@ -2,6 +2,7 @@ package com.sap.adt.abapcleaner.rules.spaces;
 
 import java.time.LocalDate;
 
+import com.sap.adt.abapcleaner.base.StringUtil;
 import com.sap.adt.abapcleaner.parser.*;
 import com.sap.adt.abapcleaner.programbase.UnexpectedSyntaxAfterChanges;
 import com.sap.adt.abapcleaner.rulebase.*;
@@ -128,11 +129,26 @@ public class SpaceBeforePeriodRule extends RuleForCommands {
 			return true;
 		} 
 		
-		// if the previous Token is a whole comment line, only continue if configured
-		if (prev.isCommentLine() && !configMoveAcrossCommentLines.getValue()) {
-			return false;
+		if (prev.isCommentLine()) { 
+			// if the previous Token is a whole comment line, only continue if configured
+			if (!configMoveAcrossCommentLines.getValue()) {
+				return false;
+			}
+			
+			// skip the following case, in which older ABAP versions automatically generated this comment
+			// when saving "FUNCTION any_function.":
+			//   FUNCTION any_function
+			//    " You can use the template 'functionModuleParameter' to add here the signature!
+			//   .
+			// If this rule now moved the period, a second comment would be generated another time when saving.
+			if (command.firstCodeTokenIsKeyword("FUNCTION")
+					&& StringUtil.contains(prev.getText(), "add here the signature")
+					&& command.getFirstCodeToken().getNextCodeSibling() == token.getPrevCodeSibling()) {
+				return false;
+			}
 		} 
 
+		
 		// process a period or comma which is currently on the next line
 		Token next = token.getNext();
 		// in case of a comma, ensure that any following Token will be on its own line
