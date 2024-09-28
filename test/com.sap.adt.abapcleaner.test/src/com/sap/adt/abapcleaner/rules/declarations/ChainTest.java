@@ -681,4 +681,28 @@ class ChainTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testPerformChainWithAsteriskComment() {
+		buildSrc("  PERFORM any_form USING:");
+		buildSrc("* comment 1");
+		buildSrc("       abap_true,");
+		buildSrc("");
+		buildSrc("* comment 2a");
+		buildSrc("\" comment 2b");
+		buildSrc("       abap_false.");
+
+		buildExp("* comment 1");
+		buildExp("  PERFORM any_form USING");
+		buildExp("       abap_true.");
+		buildExp("");
+		buildExp("* comment 2a");
+		buildExp("  \" comment 2b");
+		buildExp("  PERFORM any_form USING");
+		buildExp("       abap_false.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }

@@ -252,9 +252,8 @@ public class ChainRule extends RuleForCommands {
 				}
 			}
 
-			// if the chain colon was found directly after the first keyword (typically, a declaration keyword) or keyword collocation (like CALL METHOD) ...  
-			if (wasColonAfterInitialKeywords && !keepComments) {
-				// move comment lines (or an initial line-end comment behind the keyword or the chain sign) into a new command
+			// split out comment lines (or an initial line-end comment behind the keyword or the chain sign) into a new command
+			if (!keepComments) { 
 				ArrayList<Command> newCommentCommands = command.splitOutCommentLinesAfter(lastTokenOfPartA); 
 				if (!newCommentCommands.isEmpty()) {
 					useStartLineBreaks = false; // leading empty lines have now been moved to the extracted comment line
