@@ -12,13 +12,14 @@ public class AlignMethodsForTestingRule extends AlignMethodsWithoutParamsRuleBas
    private enum Columns  {
       KEYWORD,
       METHOD_NAME,
+      ABSTRACT,
       FOR_TESTING,
       RAISING,
       LINE_END_COMMENT;
 
 		public int getValue() { return this.ordinal(); }
 	}
-	private static final int MAX_COLUMN_COUNT = 5;
+	private static final int MAX_COLUMN_COUNT = 6;
 
 	private final static RuleReference[] references = new RuleReference[] { new RuleReference(RuleSource.ABAP_CLEANER) };
 
@@ -88,22 +89,22 @@ public class AlignMethodsForTestingRule extends AlignMethodsWithoutParamsRuleBas
 	@Override
 	protected boolean isMatchForFirstCommand(Command command, int pass) {
 		Token firstToken = command.getFirstToken();
-		if (!firstToken .isAnyKeyword("METHODS"))
+		if (!firstToken.isAnyKeyword("METHODS"))
 			return false;
 		if (command.isSimpleChain()) {
 			// if a chain contains methods FOR TESTING, also allow a mixture of FOR TESTING methods with other methods like 'setup', but only WITHOUT parameters
-			if (!firstToken .matchesOnSiblings(false, TokenSearch.ASTERISK, "FOR", "TESTING"))
+			if (!firstToken.matchesOnSiblings(false, TokenSearch.ASTERISK, TokenSearch.makeOptional("ABSTRACT"), "FOR", "TESTING"))
 				return false;
-			return firstToken .matchesOnSiblings(false, "METHODS", ABAP.COLON_SIGN_STRING, TokenSearch.ANY_IDENTIFIER, "FOR", "TESTING")
-			    || firstToken .matchesOnSiblings(false, "METHODS", ABAP.COLON_SIGN_STRING, TokenSearch.ANY_IDENTIFIER, ABAP.COMMA_SIGN_STRING);
+			return firstToken.matchesOnSiblings(false, "METHODS", ABAP.COLON_SIGN_STRING, TokenSearch.ANY_IDENTIFIER, TokenSearch.makeOptional("ABSTRACT"), "FOR", "TESTING")
+			    || firstToken.matchesOnSiblings(false, "METHODS", ABAP.COLON_SIGN_STRING, TokenSearch.ANY_IDENTIFIER, ABAP.COMMA_SIGN_STRING);
 		} else {
-			return firstToken .matchesOnSiblings(false, "METHODS", TokenSearch.ANY_IDENTIFIER, "FOR", "TESTING");
+			return firstToken.matchesOnSiblings(false, "METHODS", TokenSearch.ANY_IDENTIFIER, TokenSearch.makeOptional("ABSTRACT"), "FOR", "TESTING");
 		}
 	}
 
 	@Override
 	protected boolean isMatchForFurtherCommand(Command command, String keywordOfFirstCommand, int pass) {
-		return command.getFirstToken().matchesOnSiblings(false, keywordOfFirstCommand, TokenSearch.ANY_IDENTIFIER, "FOR", "TESTING");
+		return command.getFirstToken().matchesOnSiblings(false, keywordOfFirstCommand, TokenSearch.ANY_IDENTIFIER, TokenSearch.makeOptional("ABSTRACT"), "FOR", "TESTING");
 	}
 
 	@Override
@@ -133,14 +134,22 @@ public class AlignMethodsForTestingRule extends AlignMethodsWithoutParamsRuleBas
 		// method name
 		Token methodName = token;
 		line.setCell(Columns.METHOD_NAME.getValue(), new AlignCellToken(methodName));
+		token = methodName.getNext();
 
-		// keywords FOR TESTING 
-		if (methodName.getNext().matchesOnSiblings(false, "FOR", "TESTING")) {
-			Term forTesting = Term.createForTokenRange(methodName.getNext(), methodName.getNext().getNextSibling());
+		// keywords [ABSTRACT] FOR TESTING [RAISING ...] 
+		if (token.matchesOnSiblings(false, TokenSearch.makeOptional("ABSTRACT"), "FOR", "TESTING")) {
+			// ABSTRACT
+			if (token.isKeyword("ABSTRACT")) {
+				line.setCell(Columns.ABSTRACT.getValue(), new AlignCellToken(token));
+				token = token.getNext();
+			}
+			
+			// FOR TESTING
+			Term forTesting = Term.createForTokenRange(token, token.getNextSibling());
 			line.setCell(Columns.FOR_TESTING.getValue(), new AlignCellTerm(forTesting));
 			token = forTesting.getNext();
 
-			// keyword RAISING
+			// RAISING
 			if (token.isKeyword("RAISING")) {
 				Token period = token.getLastTokenOnSiblings(true, TokenSearch.ASTERISK, ",|.");
 				Term raisingTerm = Term.createForTokenRange(token, period.getPrevCodeSibling());
@@ -153,7 +162,6 @@ public class AlignMethodsForTestingRule extends AlignMethodsWithoutParamsRuleBas
 				table.removeLastLine();
 				return null;
 			}
-			token = methodName.getNext();
 		}
 		
 		while (!token.isCommaOrPeriod() && token.getNext() != null) {
