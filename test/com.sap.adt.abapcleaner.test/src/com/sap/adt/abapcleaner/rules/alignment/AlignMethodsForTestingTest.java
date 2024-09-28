@@ -580,4 +580,58 @@ class AlignMethodsForTestingTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testAbstractMethods() {
+		buildSrc("  METHODS test_setup ABSTRACT");
+		buildSrc("    FOR TESTING.");
+		buildSrc("  METHODS test_functionality");
+		buildSrc("   ABSTRACT");
+		buildSrc("   FOR TESTING.");
+		buildSrc("  METHODS test_display");
+		buildSrc("     ABSTRACT FOR TESTING.");
+		buildSrc("");
+		buildSrc("  \" comment on second group of test methods");
+		buildSrc("  METHODS any_test_method_name ABSTRACT");
+		buildSrc("    FOR TESTING RAISING cx_static_check.");
+		buildSrc("  METHODS other_test_method_name");
+		buildSrc("    FOR TESTING RAISING cx_static_check.");
+		buildSrc("");
+		buildSrc("  METHODS test_invalid_input");
+		buildSrc("     ABSTRACT FOR TESTING.");
+
+		buildExp("  METHODS test_setup             ABSTRACT FOR TESTING.");
+		buildExp("  METHODS test_functionality     ABSTRACT FOR TESTING.");
+		buildExp("  METHODS test_display           ABSTRACT FOR TESTING.");
+		buildExp("");
+		buildExp("  \" comment on second group of test methods");
+		buildExp("  METHODS any_test_method_name   ABSTRACT FOR TESTING RAISING cx_static_check.");
+		buildExp("  METHODS other_test_method_name          FOR TESTING RAISING cx_static_check.");
+		buildExp("");
+		buildExp("  METHODS test_invalid_input     ABSTRACT FOR TESTING.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testAbstractMethodsChain() {
+		buildSrc("  METHODS:");
+		buildSrc("    first_test_method ABSTRACT");
+		buildSrc("      FOR TESTING,");
+		buildSrc("    second_test_method");
+		buildSrc("       ABSTRACT FOR TESTING RAISING cx_message,");
+		buildSrc("    last_test_method");
+		buildSrc(" ABSTRACT");
+		buildSrc(" FOR TESTING.");
+
+		buildExp("  METHODS: first_test_method  ABSTRACT FOR TESTING,");
+		buildExp("           second_test_method ABSTRACT FOR TESTING RAISING cx_message,");
+		buildExp("           last_test_method   ABSTRACT FOR TESTING.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }
