@@ -1551,4 +1551,35 @@ public class LocalDeclarationOrderTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testMoveDataWithAsteriskCommentToInnerMostBlock() {
+		rule.configDataOrder.setEnumValue(LocalDeclarationOrder.ENCLOSING_BLOCK_CHANGE_ORDER);
+
+		buildSrc("  METHOD any_method.");
+		buildSrc("    DATA b TYPE string VALUE `abc`.");
+		buildSrc("    DATA");
+		buildSrc("* comment");
+		buildSrc("         a TYPE string.");
+		buildSrc("");
+		buildSrc("    IF lv_calculate_result = abap_true.");
+		buildSrc("      a = 1.");
+		buildSrc("      b = a.");
+		buildSrc("    ENDIF.");
+		buildSrc("  ENDMETHOD.");
+
+		buildExp("  METHOD any_method.");
+		buildExp("    IF lv_calculate_result = abap_true.");
+		buildExp("      DATA");
+		buildExp("* comment");
+		buildExp("           a TYPE string.");
+		buildExp("      DATA b TYPE string VALUE `abc`.");
+		buildExp("");
+		buildExp("      a = 1.");
+		buildExp("      b = a.");
+		buildExp("    ENDIF.");
+		buildExp("  ENDMETHOD.");
+
+		testRule();
+	}
 }

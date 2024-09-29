@@ -1878,7 +1878,10 @@ public class Token {
 		check(!closesLevel || prevSibling != null && prevSibling.opensLevel);
 		if (testCommentPositions && !parentCommand.isDdlOrDcl()) {
 			// there can be no further Token behind a comment (except in the next line)
-			check(prev == null || !prev.isComment() || lineBreaks > 0); 
+			check(prev == null || !prev.isComment() || lineBreaks > 0);
+			// asterisk comment lines must be at line start
+			check(!isAsteriskCommentLine() || isFirstTokenInCode() || lineBreaks > 0);
+			check(!isAsteriskCommentLine() || spacesLeft == 0);
 		}
 	}
 

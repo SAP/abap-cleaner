@@ -478,7 +478,9 @@ public abstract class RuleTestBase {
 		} catch (IntegrityBrokenException ex) {
 			fail("Error inserting stress test tokens:" + ex.getMessage() + stressTestInfo );
 		}
-
+		@SuppressWarnings("unused")
+		String codeBeforeCleanup = code.toString(); // for debugging
+		
 		// call the Rule under test; the additional stress test Tokens may prevent the rule from being executed, 
 		// but in any case, the result must keep referential integrity
 		try {
