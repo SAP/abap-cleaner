@@ -1121,4 +1121,23 @@ public class DdlAlignSelectListTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testDdicBasedSelectListStartingWithComment() {
+		buildSrc("define view AnyView as");
+		buildSrc("  select");
+		buildSrc(" // a.AnyField,");
+		buildSrc("a.OtherField");
+		buildSrc("");
+		buildSrc("  from AnySource as a");
+
+		buildExp("define view AnyView as");
+		buildExp("  select");
+		buildExp("    // a.AnyField,");
+		buildExp("    a.OtherField");
+		buildExp("");
+		buildExp("  from AnySource as a");
+
+		testRule();
+	}
 }

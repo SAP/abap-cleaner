@@ -5,7 +5,6 @@ import java.time.LocalDate;
 import com.sap.adt.abapcleaner.parser.Code;
 import com.sap.adt.abapcleaner.parser.Command;
 import com.sap.adt.abapcleaner.parser.Token;
-import com.sap.adt.abapcleaner.parser.TokenSearch;
 import com.sap.adt.abapcleaner.programbase.IntegrityBrokenException;
 import com.sap.adt.abapcleaner.programbase.UnexpectedSyntaxAfterChanges;
 import com.sap.adt.abapcleaner.programbase.UnexpectedSyntaxBeforeChanges;
@@ -170,12 +169,12 @@ public class DdlEmptyLinesBetweenSectionsRule extends RuleForDdlCommands {
 
 		} else if (command.startsDdlJoin()) {
 			// empty line between AS SELECT FROM and JOINs
-			if (prevNonComment.getFirstToken().matchesOnSiblings(true, TokenSearch.ASTERISK, "FROM")) {
+			if (prevNonComment.startsDdlFromClause()) {
 				standardizeEmptyLineBefore(code, command, DdlEmptyLineType.forValue(configBetweenSelectFromAndJoins.getValue()));
 			}
 		
 		} else if (command.startsDdlAssociation()) {
-			if (prevNonComment.getFirstToken().matchesOnSiblings(true, TokenSearch.ASTERISK, "FROM")) {
+			if (prevNonComment.startsDdlFromClause()) {
 				// empty line between AS SELECT FROM and JOINs (here reused for ASSOCIATIONs)
 				standardizeEmptyLineBefore(code, command, DdlEmptyLineType.forValue(configBetweenSelectFromAndJoins.getValue()));
 			} else if (prevNonComment.startsDdlJoin()) {

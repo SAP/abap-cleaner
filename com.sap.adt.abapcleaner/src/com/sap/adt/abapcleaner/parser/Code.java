@@ -727,6 +727,6 @@ public class Code {
 	}
 	
 	public boolean isDdlOrDcl() {
-		return firstCommand != null && firstCommand.isDdl();
+		return firstCommand != null && firstCommand.isDdlOrDcl();
 	}
 }

@@ -972,8 +972,8 @@ public class Command {
 		// create a new Command for line breaks at document end
 		if (newToken.getTextLength() == 0 && newToken.lineBreaks > 0)
 			return false;
-		// a comment line cannot add more lines
-		if (firstToken.isComment() && firstToken == lastToken && newToken.lineBreaks > 0) 
+		// a comment at Command start cannot add more Tokens
+		if (firstToken.isComment() && firstToken == lastToken) // even with newToken.lineBreaks == 0 
 			return false;
 		// the base info comment must be a distinct Command (cp. Code.toString(String))
 		if (newToken.textEquals(DDL.BASE_INFO_COMMENT_START))
@@ -1039,7 +1039,7 @@ public class Command {
 		}
 		
 		// start a new Command for the parameter list
-		if (isAtTopLevel && lastCodeToken.isKeyword("PARAMETERS")) {
+		if (isAtTopLevel && lastCodeToken != null && lastCodeToken.isKeyword("PARAMETERS")) {
 			Token lastPrev = lastCodeToken.getPrevCodeToken();
 			if (lastPrev != null && lastPrev.isKeyword("WITH")) {
 				return false;
@@ -1049,10 +1049,10 @@ public class Command {
 		// start a new Command for the select list
 		if (isAtTopLevel && !newToken.isComment() && newToken.textEquals(DDL.BRACE_OPEN_STRING)) {
 			return false;
-		} else if (isAtTopLevel && lastCodeToken.textEquals(DDL.BRACE_OPEN_STRING)) {
+		} else if (isAtTopLevel && lastCodeToken != null && lastCodeToken.textEquals(DDL.BRACE_OPEN_STRING)) {
 			// the "{" that starts the select list is a distinct Command 
 			return false;
-		} else if (isAtTopLevel && lastCodeToken.textEqualsAny("SELECT", "DISTINCT") && !newToken.isComment() && !newToken.isAnyKeyword("DISTINCT", "FROM")) {
+		} else if (isAtTopLevel && lastCodeToken != null && lastCodeToken.textEqualsAny("SELECT", "DISTINCT") && !newToken.isAnyKeyword("DISTINCT", "FROM")) {
 			// first form of DDIC-based views with no braces: 
 			// [DEFINE] [ROOT] VIEW ddic_based_view [name_list] [parameter_list] AS SELECT [DISTINCT] element1, element2, ... FROM data_source ...
 			return false;
@@ -1061,7 +1061,7 @@ public class Command {
 		// within in the select or parameter list, start a new Command after each comma (or semicolon, e.g. for "define table" and "define structure")
 		// or if the new Token starts with "@<"
 		if (isInSelectListWithBraces || isInSelectListWithoutBraces || isInParameterList) {
-			if (lastCodeToken.textEqualsAny(DDL.listElementSeparators) && lastCodeToken.getParent() == null) {
+			if (lastCodeToken != null && lastCodeToken.textEqualsAny(DDL.listElementSeparators) && lastCodeToken.getParent() == null) {
 				return false;
 			} else if (newToken.textStartsWith(DDL.ANNOTATION_AFTER_LIST_ELEMENT_PREFIX)) {
 				return false;
@@ -1091,7 +1091,7 @@ public class Command {
 			//   ONE TO EXACT ONE | ONE TO MANY | ONE TO ONE | TO ONE | TO EXACT ONE | TO MANY
 			if (firstCodeToken.isAnyKeyword("REDEFINE", "ASSOCIATION", "COMPOSITION")) {
 				// skip this section, particularly to avoid that the keyword "TO" in "ASSOCIATION ... TO target" or "EXACT" in "COMPOSITION OF EXACT ONE ..." starts a new Command
-			} else if (newToken.isKeyword("TO") && lastCodeToken.isAnyKeyword("REDIRECTED", "REFERENCE")) {
+			} else if (newToken.isKeyword("TO") && lastCodeToken != null && lastCodeToken.isAnyKeyword("REDIRECTED", "REFERENCE")) {
 				// skip this section to avoid starting a new Command within "REDIRECTED TO" (in projection views) or "REFERENCE TO" (in structures)
 			} else if (newToken.isAnyKeyword("INNER", "LEFT", "RIGHT", "CROSS")) {
 				return false;
@@ -3772,7 +3772,7 @@ public class Command {
 			command = command.getNextSibling();
 		} while (command != null && command.isCommentLine());
 
-		return null;
+		return null; // pro forma
 	}
 
 	public boolean endsMultiLineDdlComment() {
@@ -3827,15 +3827,46 @@ public class Command {
 	void setLanguage(Language newLanguage) {
 		this.language = newLanguage;
 	}
+
+	public final boolean startsDdlFromClause() {
+		return (getDdlFromDataSource() != null);
+	}
+
+	public final Token getDdlFromDataSource() {
+		if (parent != null)
+			return null;
+
+		Token firstCode = getFirstToken();
+		if (firstCode == null)
+			return null;
+
+		// search for the FROM keyword; in DDIC-based views, this may be in a distinct Command after "SELECT [DISTINCT] select_list" Commands!
+		Token fromToken = firstCode.getLastTokenOnSiblings(true, TokenSearch.ASTERISK, "FROM");
+		return (fromToken != null) && fromToken.isKeyword() ? fromToken.getNextCodeSibling() : null;
+	}
 	
 	public final boolean startsDdlJoin() {
 		Token firstCode = getFirstCodeToken();
 		return firstCode != null && firstCode.startsDdlJoin();
 	}
 		
+	public final Token getDdlJoinTarget() {
+		if (!startsDdlJoin()) 
+			return null;
+		Token joinToken = firstToken.getLastTokenOnSiblings(true, TokenSearch.ASTERISK, "JOIN");
+		return (joinToken != null && joinToken.isKeyword()) ? joinToken.getNextCodeSibling() : null;
+	}
+
 	public final boolean startsDdlAssociation() {
 		Token firstCode = getFirstCodeToken();
 		return firstCode != null && firstCode.startsDdlAssociation();
+	}
+
+	public final Token getDdlAssociationTarget() {
+		if (!startsDdlAssociation()) 
+			return null;
+		Token toToken = firstToken.getLastTokenOnSiblings(true, TokenSearch.ASTERISK, "TO", TokenSearch.makeOptional("PARENT"));
+		return (toToken != null && toToken.isKeyword()) ? toToken.getNextCodeSibling() : null;
 	}
 
 	/** for a DDL select list element, returns the first of its preceding annotations (if any), or the element itself */
@@ -3885,15 +3916,6 @@ public class Command {
 		//   return changesSyField(ABAP.SyField.SUBRC) && SyFieldAnalyzer.getSyFieldReadersFor(ABAP.SyField.SUBRC, this).size() >= 2;
 		//   - getCommandsRelatedToPatternMatch() can then return SyFieldAnalyzer.getSyFieldReadersFor(ABAP.SyField.SUBRC, this);
 
-		if (!parentCode.isDdlOrDcl() || isDdlAnnotation())
-			return false;
-		Token token = firstToken;
-		while (token != null) {
-			if (!token.isComment() && !token.textEqualsAny("{", "}") && StringUtil.containsAny(token.text, new String[] { "{", "}", "[", "]" })) {
-				return true;
-			}
-			token = token.getNext();
-		}
       return false;
 	}
 	

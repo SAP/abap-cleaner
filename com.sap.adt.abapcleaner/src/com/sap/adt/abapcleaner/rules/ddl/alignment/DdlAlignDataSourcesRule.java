@@ -134,12 +134,7 @@ public class DdlAlignDataSourcesRule extends RuleForDdlCommands {
 		if (command.getParent() != null)
 			return false;
 		
-		// search for the FROM keyword; in DDIC-based views, this may be in a distinct Command after "SELECT [DISTINCT] select_list" Commands!
-		Token fromToken = command.getFirstToken().getLastTokenOnSiblings(true, TokenSearch.ASTERISK, "FROM");
-		if (fromToken == null || !fromToken.isKeyword())
-			return false;
-		
-		Token dataSource = fromToken.getNextCodeSibling();
+		Token dataSource = command.getDdlFromDataSource();
 		if (dataSource == null) // pro forma 
 			return false;
 
@@ -148,10 +143,11 @@ public class DdlAlignDataSourcesRule extends RuleForDdlCommands {
 		try {
 			buildTable(table, command, dataSource, false);
 			command = command.getNextNonCommentSibling();
-			while (command != null && command.startsDdlJoin()) {
-				Token joinToken = command.getFirstCodeToken().getLastTokenOnSiblings(true, TokenSearch.ASTERISK, "JOIN");
-				if (joinToken != null) // pro forma
-					buildTable(table, command, joinToken.getNextCodeSibling(), true);
+			while (command != null) {
+				Token joinTarget = command.getDdlJoinTarget();
+				if (joinTarget == null) 
+					break;
+				buildTable(table, command, joinTarget, true);
 				command = command.getNextNonCommentCommand();
 			}
 			// unless ASSOCIATIONs shall be aligned with JOINs, ...
@@ -167,10 +163,11 @@ public class DdlAlignDataSourcesRule extends RuleForDdlCommands {
 		
 		// build and align table of ASSOCIATION Commands (possibly adding them to the table of SELECT FROM and JOIN Commands)
 		try {
-			while (command != null && command.startsDdlAssociation()) {
-				Token toToken = command.getFirstCodeToken().getLastTokenOnSiblings(true, TokenSearch.ASTERISK, "TO", TokenSearch.makeOptional("PARENT"));
-				if (toToken != null) // pro forma
-					buildTable(table, command, toToken.getNextCodeSibling(), true);
+			while (command != null) {
+				Token associationTarget = command.getDdlAssociationTarget();
+				if (associationTarget == null) 
+					break;
+				buildTable(table, command, associationTarget, true);
 				command = command.getNextNonCommentCommand();
 			}
 			alignTable(code, table);

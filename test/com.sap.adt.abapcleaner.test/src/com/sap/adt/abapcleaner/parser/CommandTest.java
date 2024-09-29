@@ -1815,6 +1815,78 @@ public class CommandTest {
 		assertEquals(Language.ABAP, buildCommand("\" comment").getLanguage());
 		assertEquals(Language.ABAP, buildCommand("* comment").getLanguage());
 		assertEquals(Language.ABAP, buildCommand("REPORT any_report.").getLanguage());
+	}
+	
+	@Test
+	void testStartOfPrecedingDdlAnnotations() {
+		StringBuilder sb = new StringBuilder();
+		sb.append("define view I_AnyView as select from I_AnySource");
+		sb.append(SEP + "{");
+		sb.append(SEP + "// comment");
+		sb.append(SEP + "@Anno.anyAnno: 'value'");
+		sb.append(SEP + "@Anno.OtherAnno: 'value'");
+		sb.append(SEP + "key AnyField,");
+		sb.append(SEP + "@Anno.ThirdAnno: 'value'");
+		sb.append(SEP + "    OtherField");
+		sb.append(SEP + "}");
+		buildCommand(sb.toString());
+		
+		assertEquals(commands[2], commands[2].getStartOfPrecedingDdlAnnotations());
+		
+		assertEquals(commands[3], commands[3].getStartOfPrecedingDdlAnnotations()); 
+		assertEquals(commands[3], commands[4].getStartOfPrecedingDdlAnnotations()); 
+		assertEquals(commands[3], commands[5].getStartOfPrecedingDdlAnnotations());
+		
+		assertEquals(commands[6], commands[6].getStartOfPrecedingDdlAnnotations()); 
+		assertEquals(commands[6], commands[7].getStartOfPrecedingDdlAnnotations()); 
+	}
 
+	private void buildViewWithDdlComments() {
+		StringBuilder sb = new StringBuilder();
+		sb.append("define view I_AnyView as select from I_AnySource");
+		sb.append(SEP + "{");
+		sb.append(SEP + "  // comment 1");
+		sb.append(SEP + "  /* comment 2 */");
+		sb.append(SEP + "  /* multi-line");
+		sb.append(SEP + "     comment 3 */");
+		sb.append(SEP + "  AnyField");
+		sb.append(SEP + "}");
+		buildCommand(sb.toString());
+	}
+	
+	@Test
+	void testStartsMultiLineDdlComment() {
+		assertFalse(buildCommand("REPORT any_report.").startsMultiLineDdlComment());
+
+		buildViewWithDdlComments();	
+		assertFalse(commands[2].startsMultiLineDdlComment());
+		assertFalse(commands[3].startsMultiLineDdlComment());
+		assertTrue(commands[4].startsMultiLineDdlComment());
+		assertFalse(commands[5].startsMultiLineDdlComment());
+		assertFalse(commands[6].startsMultiLineDdlComment());
+	}
+	
+	@Test
+	void testEndsMultiLineDdlComment() {
+		assertFalse(buildCommand("REPORT any_report.").endsMultiLineDdlComment());
+
+		buildViewWithDdlComments();	
+		assertFalse(commands[2].endsMultiLineDdlComment());
+		assertTrue(commands[3].endsMultiLineDdlComment());
+		assertFalse(commands[4].endsMultiLineDdlComment());
+		assertTrue(commands[5].endsMultiLineDdlComment());
+		assertFalse(commands[6].endsMultiLineDdlComment());
+	}
+	
+	@Test
+	void testLastOfMultiLineDdlComment() {
+		assertNull(buildCommand("REPORT any_report.").getLastOfMultiLineDdlComment());
+
+		buildViewWithDdlComments();	
+		assertNull(commands[2].getLastOfMultiLineDdlComment());
+		assertNull(commands[3].getLastOfMultiLineDdlComment());
+		assertEquals(commands[5], commands[4].getLastOfMultiLineDdlComment());
+		assertNull(commands[5].getLastOfMultiLineDdlComment());
+		assertNull(commands[6].getLastOfMultiLineDdlComment());
 	}
 }

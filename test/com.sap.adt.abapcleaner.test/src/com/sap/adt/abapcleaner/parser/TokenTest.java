@@ -2152,6 +2152,48 @@ public class TokenTest {
 	@Test
 	void testStartsDdlAssociation() {
 		assertFalse(buildCommand("REPORT any_report.", 0).startsDdlAssociation());
+	}
+	
+	@Test
+	void testIsDdlEntityName() {
+		assertFalse(buildCommand("REPORT any_report.", 0).isDdlEntityName());
+		assertFalse(buildCommand("@Annotation.subAnno: 'value'", 0).isDdlEntityName());
 		
+		buildCommand("define view AnyView as select from dtab as d { key AnyField }");
+		assertFalse(findToken("define").isDdlEntityName());
+		assertTrue(findToken("AnyView").isDdlEntityName());
+	}
+	
+	@Test
+	void testIsDdlSourceAliasDefinition() {
+		assertFalse(buildCommand("REPORT any_report.", 0).isDdlSourceAliasDefinition());
+		assertFalse(buildCommand("@Annotation.subAnno: 'value'", 0).isDdlSourceAliasDefinition());
+
+		buildCommand("define view AnyView as select from dtab as d { key AnyField }");
+		assertFalse(findToken("define").isDdlSourceAliasDefinition());
+		assertTrue(findToken("d").isDdlSourceAliasDefinition());
+	}
+	
+	@Test
+	void testIsDdlParameterName() {
+		assertFalse(buildCommand("REPORT any_report.", 0).isDdlParameterName());
+		assertFalse(buildCommand("@Annotation.subAnno: 'value'", 0).isDdlParameterName());
+
+		buildCommand("define view entity AnyView with parameters P_Any : any_type as select from dtab as d { key AnyField }");
+		assertFalse(findToken("entity").isDdlParameterName());
+		assertTrue(findToken("P_Any").isDdlParameterName());
+		assertFalse(findToken("any_type").isDdlParameterName());
+	}
+	
+	@Test
+	void testIsDdlTypeName() {
+		assertFalse(buildCommand("REPORT any_report.", 0).isDdlTypeName());
+		assertFalse(buildCommand("@Annotation.subAnno: 'value'", 0).isDdlTypeName());
+
+		buildCommand("define view entity AnyView with parameters P_Any : any_type as select from dtab as d { key AnyField }");
+		assertFalse(findToken("view").isDdlTypeName());
+		assertFalse(findToken("P_Any").isDdlTypeName());
+		assertFalse(findToken(":").isDdlTypeName());
+		assertTrue(findToken("any_type").isDdlTypeName());
 	}
 }
