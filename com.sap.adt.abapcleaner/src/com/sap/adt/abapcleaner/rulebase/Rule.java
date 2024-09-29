@@ -429,7 +429,7 @@ public abstract class Rule {
 	}
 	
 	public void executeIfAllowedOn(Code code, int releaseRestriction)  throws UnexpectedSyntaxBeforeChanges, UnexpectedSyntaxAfterChanges {
-		if (isCleanupAllowedFor(getRequiredAbapRelease(), code, releaseRestriction)) {
+		if (isCleanupAllowedFor(getRequiredAbapRelease(), code, releaseRestriction) && matchesLanguageOf(code)) {
 			prepare(code);
 			executeOn(code, releaseRestriction);
 		}
@@ -459,7 +459,21 @@ public abstract class Rule {
 		}
 			
 	}
-	
+
+	/** returns true if at least part of the Code could be supported by this Rule */
+	protected boolean matchesLanguageOf(Code code) {
+		// cp. the more fine-granular Command.isBlocked(), which considers non-ABAP sections within ABAP code;
+		// here, by contrast, we just consider that ABAP code can never contain DDL/DCL sections and vice versa
+		boolean codeIsDdlOrDcl = code.isDdlOrDcl();
+		for (Language supportedLanguage : getSupportedLanguages()) {
+			boolean ruleSupportsDdlOrDcl = (supportedLanguage == Language.DDL || supportedLanguage == Language.DCL);
+			if (codeIsDdlOrDcl == ruleSupportsDdlOrDcl) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	protected boolean isCommandBlocked(Command command) {
 		return command.isBlocked(getID(), getSupportedLanguages());
 	}

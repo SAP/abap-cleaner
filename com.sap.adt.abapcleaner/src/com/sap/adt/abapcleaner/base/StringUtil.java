@@ -22,6 +22,21 @@ public final class StringUtil {
 		return count;
 	}
 
+	public static int instrCount(String text, String textBit) {
+		if (text == null)
+			return 0;
+		int count = 0;
+		int pos = 0;
+		do {
+			pos = text.indexOf(textBit, pos);
+			if (pos < 0)
+				break;
+			++count;
+			pos += textBit.length();
+		} while (pos < text.length());
+		return count;
+	}
+
 	public static int spaceCountAtStartOf(String text) {
 		if (StringUtil.isNullOrEmpty(text))
 			return 0;

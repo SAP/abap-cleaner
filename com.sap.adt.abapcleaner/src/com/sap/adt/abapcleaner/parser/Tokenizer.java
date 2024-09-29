@@ -239,7 +239,7 @@ public class Tokenizer {
 		int literalEnd;
 		do {
 			searchPos = text.indexOf(delimiterChar, searchPos); // skip the char at readPos
-			if (searchPos < 0) {
+			if (searchPos < 0) { // pro forma
 				literalEnd = text.length();
 				break;
 			}

@@ -892,6 +892,17 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 
 		new MenuItem(menuExtras, SWT.SEPARATOR);
 
+		MenuItem mmuExtrasAnalyzeDdlFolder = new MenuItem(menuExtras, SWT.NONE);
+		mmuExtrasAnalyzeDdlFolder.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				analyzeCdsViewsInFolder();
+			}
+		});
+		mmuExtrasAnalyzeDdlFolder.setText("Analyze CDS Views in Folder...");
+
+		new MenuItem(menuExtras, SWT.SEPARATOR);
+
 		MenuItem mmuExtrasTestCommentIdentifier = new MenuItem(menuExtras, SWT.NONE);
 		mmuExtrasTestCommentIdentifier.addSelectionListener(new SelectionAdapter() {
 			@Override
@@ -1905,6 +1916,41 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		if (!StringUtil.isNullOrEmpty(result)) {
 			SystemClipboard.setText(result);
 			Message.show("Word frequencies for " + CommentIdentifier.getScopeDescription(mode) + " copied to Clipboard.", shell);
+		}
+	}
+
+	private void analyzeCdsViewsInFolder() {
+		String dir = showDirDialog(defaultCodeDirectory, "Analyze CDS views in folder");
+		String[] paths = getAllPaths(dir, FileType.CODE, false, true);
+		if (paths == null)
+			return;
+
+		final DdlAnalyzer ddlAnalyzer = new DdlAnalyzer();
+		BusyIndicator.showWhile(shell.getDisplay(), new Runnable() {
+			@Override
+			public void run() {
+				Persistency persistency = Persistency.get();
+				for (String path : paths) {
+					String sourceName = persistency.getFileNameWithoutExtension(path);
+					String codeText = persistency.readAllTextFromFile(path);
+					Language codeLanguage = Language.preview(codeText);
+					if (codeLanguage == Language.DDL) {
+						BackgroundJob job = new BackgroundJob(ParseParams.createForWholeCode(sourceName, codeText, ABAP.NEWEST_RELEASE), null);
+						Task result = runJobWithProgressUiIfNeeded(job);
+						ddlAnalyzer.addFile(sourceName, result.getResultingCode());
+					}
+				}
+			}
+		});
+		ddlAnalyzer.finishBuild();
+
+		String[] elemRefAnnotationPaths = new String[] { "Semantics.amount.currencyCode", "Semantics.quantity.unitOfMeasure" };
+		ddlAnalyzer.analyzeInheritedAnnotations(elemRefAnnotationPaths);
+		
+		String result = ddlAnalyzer.getResult(elemRefAnnotationPaths);
+		if (!StringUtil.isNullOrEmpty(result)) {
+			SystemClipboard.setText(result);
+			Message.show("CDS View analysis copied to Clipboard.", shell);
 		}
 	}
 
