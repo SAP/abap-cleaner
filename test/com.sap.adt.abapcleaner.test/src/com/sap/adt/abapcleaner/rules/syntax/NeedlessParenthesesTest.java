@@ -539,4 +539,28 @@ public class NeedlessParenthesesTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testAsteriskCommentAfterOpeningParens() {
+		rule.configRemoveOrParenthesisAnd.setValue(true);
+
+		buildSrc("    CHECK    \" comment 1");
+		buildSrc("             (");
+		buildSrc("* comment 2");
+		buildSrc("                   lt_table1  IS INITIAL");
+		buildSrc("               AND lt_table2  IS INITIAL )");
+		buildSrc("          OR (     lv_amount1 <= 0");
+		buildSrc("               AND lv_amount2 <= 0 ).");
+
+		buildExp("    CHECK    \" comment 1");
+		buildExp("* comment 2");
+		buildExp("                 lt_table1  IS INITIAL");
+		buildExp("             AND lt_table2  IS INITIAL");
+		buildExp("          OR     lv_amount1 <= 0");
+		buildExp("             AND lv_amount2 <= 0.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }

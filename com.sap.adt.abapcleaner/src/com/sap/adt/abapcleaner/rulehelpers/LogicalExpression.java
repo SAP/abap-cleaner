@@ -693,7 +693,8 @@ public class LogicalExpression {
 			
 			// remove the code from inside the parentheses and insert it left of the opening "("  
 			codeInParens.removeFromCommand(true);
-			codeInParens.firstToken.copyWhitespaceFrom(parentheses.firstToken);
+			if (!codeInParens.firstToken.isAsteriskCommentLine())
+				codeInParens.firstToken.copyWhitespaceFrom(parentheses.firstToken);
 			parentheses.firstToken.setWhitespace();
 			parentheses.firstToken.insertLeftSibling(codeInParens);
 			parentheses.removeFromCommand(true);

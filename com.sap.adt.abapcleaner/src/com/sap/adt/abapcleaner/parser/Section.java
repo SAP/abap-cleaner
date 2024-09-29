@@ -143,7 +143,7 @@ public class Section {
 		do {
 			Token token = command.firstToken;
 			while (token != null) {
-				if (token.lineBreaks > 0) {
+				if (token.lineBreaks > 0 && !token.isAsteriskCommentLine()) {
 					token.spacesLeft = Math.max(token.spacesLeft + spaceCount, 0);
 					changed = true;
 				}
