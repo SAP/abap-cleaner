@@ -2332,4 +2332,38 @@ class UnusedVariablesTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testConstantUsedInTypes() {
+		// ensure that the constant is NOT commented out
+
+		buildSrc("  CONSTANTS lc_length TYPE i VALUE 10.");
+		buildSrc("");
+		buildSrc("  TYPES: BEGIN OF ty_s_implicit,");
+		buildSrc("           b TYPE c LENGTH lc_length,");
+		buildSrc("         END OF ty_s_implicit.");
+
+		copyExpFromSrc();
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testConstantUsedInTypesImplicitType() {
+		// ensure that the constant is NOT commented out
+
+		buildSrc("  CONSTANTS lc_length TYPE i VALUE 10.");
+		buildSrc("");
+		buildSrc("  TYPES: BEGIN OF ty_s_implicit,");
+		buildSrc("           b(lc_length),");
+		buildSrc("         END OF ty_s_implicit.");
+
+		copyExpFromSrc();
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }

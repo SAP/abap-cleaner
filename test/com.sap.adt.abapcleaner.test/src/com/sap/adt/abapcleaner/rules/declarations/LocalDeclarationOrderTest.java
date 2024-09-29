@@ -1582,4 +1582,62 @@ public class LocalDeclarationOrderTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testTestContantsUsedInTypes() {
+		// ensure that only DATA is moved, while the three constant stay before TYPES, where they are used
+		
+		buildSrc("  CONSTANTS lc_length1 TYPE i VALUE 10.");
+		buildSrc("  DATA lv_any TYPE i VALUE lc_length1.");
+		buildSrc("  CONSTANTS lc_length2 TYPE i VALUE 10.");
+		buildSrc("  CONSTANTS lc_string TYPE string VALUE `any`.");
+		buildSrc("");
+		buildSrc("  TYPES: BEGIN OF ty_s_implicit,");
+		buildSrc("           bb(lc_length1),");
+		buildSrc("           cc TYPE c LENGTH lc_length2,");
+		buildSrc("           dd LIKE lc_string,");
+		buildSrc("         END OF ty_s_implicit.");
+
+		buildExp("  CONSTANTS lc_length1 TYPE i VALUE 10.");
+		buildExp("  CONSTANTS lc_length2 TYPE i VALUE 10.");
+		buildExp("  CONSTANTS lc_string TYPE string VALUE `any`.");
+		buildExp("");
+		buildExp("  DATA lv_any TYPE i VALUE lc_length1.");
+		buildExp("");
+		buildExp("  TYPES: BEGIN OF ty_s_implicit,");
+		buildExp("           bb(lc_length1),");
+		buildExp("           cc TYPE c LENGTH lc_length2,");
+		buildExp("           dd LIKE lc_string,");
+		buildExp("         END OF ty_s_implicit.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testConstantsUsedInData() {
+		buildSrc("  CONSTANTS lc_length1 TYPE i VALUE 10.");
+		buildSrc("  DATA lv_text1(lc_length1) ##NEEDED.");
+		buildSrc("  CONSTANTS lc_other(lc_length1) VALUE 'abcde' ##NEEDED.");
+		buildSrc("  CONSTANTS lc_length2 TYPE i VALUE 10.");
+		buildSrc("  DATA lv_text2(lc_length2) ##NEEDED.");
+		buildSrc("  CONSTANTS lc_length3 TYPE i VALUE 10.");
+		buildSrc("  DATA lv_length3 TYPE i VALUE lc_length3 ##NEEDED.");
+		buildSrc("  CONSTANTS lc_length4 TYPE i VALUE 10.");
+
+		buildExp("  CONSTANTS lc_length1 TYPE i VALUE 10.");
+		buildExp("  CONSTANTS lc_other(lc_length1) VALUE 'abcde' ##NEEDED.");
+		buildExp("  CONSTANTS lc_length2 TYPE i VALUE 10.");
+		buildExp("  CONSTANTS lc_length3 TYPE i VALUE 10.");
+		buildExp("  CONSTANTS lc_length4 TYPE i VALUE 10.");
+		buildExp("");
+		buildExp("  DATA lv_text1(lc_length1) ##NEEDED.");
+		buildExp("  DATA lv_text2(lc_length2) ##NEEDED.");
+		buildExp("  DATA lv_length3 TYPE i VALUE lc_length3 ##NEEDED.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }

@@ -86,6 +86,11 @@ public class VariableInfo {
       this.parameterInfo = parameterInfo;
    }
 
+   @Override
+   public String toString() { // for debugging
+   	return (declarationToken == null) ? "" : declarationToken.getText();
+   }
+
    public void setNeeded() {
    	isNeeded = true;
    }

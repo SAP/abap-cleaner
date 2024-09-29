@@ -21,6 +21,26 @@ public abstract class RuleForDeclarations extends Rule {
    private final static String[] typesDeclarationKeywords = new String[] {"TYPES"};
    private final static String[] constantsDeclarationKeywords = new String[] {"CONSTANTS"};
 
+   private static class BlockInfo {
+   	private int blockLevel = 0;
+   	private VariableInfo topBlockVarInfo = null;
+   	
+   	private void beginBlock() {
+   		++blockLevel;
+   	}
+   	
+   	private void endBlock() {
+   		--blockLevel;
+   		if (blockLevel == 0) {
+   			topBlockVarInfo = null;
+   		}
+   	}
+
+   	private void setTopBlockVarInfo(VariableInfo topBlockVarInfo) {
+   		this.topBlockVarInfo = topBlockVarInfo;
+   	}
+	}
+
    protected static String getNameKey(String name) {
       return AbapCult.toUpper(name);
    }
@@ -50,7 +70,7 @@ public abstract class RuleForDeclarations extends Rule {
 		MethodVisibility methodVisibility = MethodVisibility.PUBLIC;
 		boolean isInMethod = false; 
 		boolean skipMethod = skipLocalVariableContexts();
-		int blockLevel = 0;
+		BlockInfo blockInfo = new BlockInfo();
 
 		while (command != null) {
 			// determine the current class or interface to add to its method definitions, 
@@ -155,7 +175,7 @@ public abstract class RuleForDeclarations extends Rule {
 					if (command.firstCodeTokenIsAnyKeyword(declarationKeywords)) {
 						boolean isTypeDeclaration = command.firstCodeTokenIsAnyKeyword(typesDeclarationKeywords);
 						boolean isConstantsDeclaration = command.firstCodeTokenIsAnyKeyword(constantsDeclarationKeywords);
-						blockLevel = executeOnDeclarationCommand(command, methodStart, localVariables, isTypeDeclaration, isConstantsDeclaration, blockLevel);
+						executeOnDeclarationCommand(command, methodStart, localVariables, isTypeDeclaration, isConstantsDeclaration, blockInfo);
 					} else if (command.isAsteriskCommentLine()) {
 						executeOnCommentLine(command, localVariables, commentIdentifier);
 					} else if (!command.isAbap()) {
@@ -329,7 +349,7 @@ public abstract class RuleForDeclarations extends Rule {
 		}
 	}
 
-	private int executeOnDeclarationCommand(Command command, Command methodStart, LocalVariables localVariables, boolean isTypeDeclaration, boolean isConstantsDeclaration, int blockLevel) throws UnexpectedSyntaxBeforeChanges {
+	private void executeOnDeclarationCommand(Command command, Command methodStart, LocalVariables localVariables, boolean isTypeDeclaration, boolean isConstantsDeclaration, BlockInfo blockInfo) throws UnexpectedSyntaxBeforeChanges {
 		Token token = command.getFirstCodeToken().getNextCodeToken();
 		boolean isChain = token.isChainColon();
 		if (isChain)
@@ -337,20 +357,20 @@ public abstract class RuleForDeclarations extends Rule {
 
 		boolean isInOOContext = command.isInOOContext();
 		while (token != null) {
-			boolean skipLine = false;
 			boolean isBoundStructuredData = false;
+			boolean isTopBlockStart = false;
+			boolean isBlockEnd = false;
+			
 			if (token.matchesOnSiblings(true, "END", "OF")) {
-				--blockLevel;
-				skipLine = true;
+				blockInfo.endBlock();
+				isBlockEnd = true;
 				
 			} else if (token.matchesOnSiblings(true, "BEGIN", "OF")) {
-				++blockLevel;
+				blockInfo.beginBlock();
 
-				if (blockLevel > 1) {
-					// in case of nested BEGIN OF, do not enter names of inner structures  
-					skipLine = true;
-				} else {
+				if (blockInfo.blockLevel == 1) {
 					// move token to the name of the structure to add its declaration below
+					isTopBlockStart = true;
 					token = token.getNextCodeSibling();
 					token = token.getNextCodeSibling();
 					isBoundStructuredData = true;
@@ -359,14 +379,18 @@ public abstract class RuleForDeclarations extends Rule {
 						token = token.getNextCodeSibling();
 					}
 				}
-			} else { 	
-				skipLine = (blockLevel > 0);
 			}
 			
-			if (!skipLine) {
+			if (blockInfo.blockLevel > 0 && !isTopBlockStart) {
+				// declarations inside BEGIN OF ... blocks may contain usages of constants in LIKE ... or LENGTH ... clauses
+				token = executeOnDeclarationLine(methodStart, localVariables, token, isInOOContext, blockInfo.topBlockVarInfo);
+				
+			} else if (!isBlockEnd) {
 				// add declaration
 				String varName = token.getText();
 				VariableInfo varInfo = localVariables.addDeclaration(token, false, isTypeDeclaration, isConstantsDeclaration, isBoundStructuredData, isInOOContext, false);
+				if (isTopBlockStart) 
+					blockInfo.setTopBlockVarInfo(varInfo);
 
 				// if the pragma ##NEEDED or the pseudo comment "#EC NEEDED is defined for this variable, add a "usage" 
 				// to prevent it from being commented out or deleted
@@ -379,7 +403,7 @@ public abstract class RuleForDeclarations extends Rule {
 			}
 				
 			if (!isChain || token == null) 
-				return blockLevel;
+				return;
 			
 			// move to the next identifier
 			token = token.getLastTokenOnSiblings(true, TokenSearch.ASTERISK, ",|.");
@@ -387,14 +411,15 @@ public abstract class RuleForDeclarations extends Rule {
 				token = token.getNextCodeToken();
 			}
 		}
-		return blockLevel;
+		return;
 	}
 
 	private Token executeOnDeclarationLine(Command methodStart, LocalVariables localVariables, Token token, boolean isInOOContext, VariableInfo varInfo) {
 		// length may be supplied in parentheses: "DATA lv_text(lc_length)."
-		if (token.getOpensLevel() && token.hasChildren() && token.getFirstChild().isAttached() && token.getFirstChild().isIdentifier()) {
-			String usedObjectName = LocalVariables.getObjectName(token.getFirstChild().getText(), isInOOContext);
-			localVariables.addUsageInLikeOrValueClause(token, usedObjectName, methodStart, varInfo);
+		Token firstChild = token.getFirstChild();
+		if (token.getOpensLevel() && firstChild != null && firstChild.isAttached() && firstChild.isIdentifier()) {
+			String usedObjectName = LocalVariables.getObjectName(firstChild.getText(), isInOOContext);
+			localVariables.addUsageInLikeOrValueClause(firstChild, usedObjectName, methodStart, varInfo);
 			
 			// continue behind the parenthesis
 			token = token.getNextCodeSibling();
