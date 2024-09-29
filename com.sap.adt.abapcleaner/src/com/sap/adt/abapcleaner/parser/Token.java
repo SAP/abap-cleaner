@@ -954,7 +954,7 @@ public class Token {
 	 * @throws IntegrityBrokenException 
 	 */
 	public final Token insertLeftSibling(Token newToken) throws IntegrityBrokenException {
-		return insertLeftSibling(newToken, false, false);
+		return insertLeftSibling(newToken, false, null, false);
 	}
 
 	/**
@@ -965,7 +965,7 @@ public class Token {
 	 * @throws IntegrityBrokenException 
 	 */
 	public final Token insertLeftSibling(Token newToken, boolean moveFollowingLinesRight) throws IntegrityBrokenException {
-		return insertLeftSibling(newToken, moveFollowingLinesRight, false);
+		return insertLeftSibling(newToken, moveFollowingLinesRight, null, false);
 	}
 
 	/**
@@ -2115,8 +2115,10 @@ public class Token {
 		} 
 		
 		// non-inline declarations
-		if (firstToken.isAnyKeyword(Command.declarationKeywordsReservingMemory)) {
-			if (prevToken.isAnyKeyword(Command.declarationKeywords) || prevToken.isComma()) {
+		if (firstToken.isAnyKeyword(Command.declarationKeywords)) {
+			if (prevToken.isAnyKeyword(Command.declarationKeywordsReservingMemory) 
+					|| firstToken.isAnyKeyword(Command.declarationKeywordsReservingMemory) && prevToken.isComma()) {
+				// except for TYPES, the declared identifier is in a write or assignment position
 				return ABAP.isFieldSymbol(text) ? MemoryAccessType.ASSIGN_TO_FS_OR_DREF : MemoryAccessType.WRITE;
 			} else if (prevToken.isIdentifier() && prevToken.getOpensLevel() && prevPrevToken != null && (prevPrevToken.isAnyKeyword(Command.declarationKeywords) || prevPrevToken.isComma() || prevPrevToken.isChainColon())) { 
 				// e.g. "lc_length" in "DATA lv_text(lc_length) VALUE 'abcde'."
@@ -2124,7 +2126,7 @@ public class Token {
 			} else if (prevToken.isAnyKeyword("LENGTH", "VALUE")) { // constants can be used for both
 				// e.g. "lc_length" and "lc_text" in "DATA lv_text TYPE c LENGTH lc_length VALUE lc_text."
 				return MemoryAccessType.READ;
-			} else { // e.g. a class name after TYPE REF TO
+			} else { // e.g. a class name after TYPE REF TO or a type name after TYPES
 				return MemoryAccessType.NONE;
 			}
 		}

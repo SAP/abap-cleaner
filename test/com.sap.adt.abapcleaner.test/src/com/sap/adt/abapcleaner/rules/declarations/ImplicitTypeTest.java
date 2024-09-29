@@ -389,4 +389,21 @@ public class ImplicitTypeTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testConstantLengthInParenthesisOfStructure() {
+		buildSrc("  CONSTANTS lc_length TYPE i VALUE 10.");
+		buildSrc("  TYPES: BEGIN OF ty_s_implicit,");
+		buildSrc("           b(lc_length),");
+		buildSrc("         END OF ty_s_implicit.");
+
+		buildExp("  CONSTANTS lc_length TYPE i VALUE 10.");
+		buildExp("  TYPES: BEGIN OF ty_s_implicit,");
+		buildExp("           b TYPE c LENGTH lc_length,");
+		buildExp("         END OF ty_s_implicit.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }

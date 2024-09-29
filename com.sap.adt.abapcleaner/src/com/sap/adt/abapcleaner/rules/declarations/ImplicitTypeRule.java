@@ -277,6 +277,7 @@ public class ImplicitTypeRule extends RuleForCommands {
 			} catch (UnexpectedSyntaxException e) {
 				throw new UnexpectedSyntaxAfterChanges(this, e);		
 			}
+			oldIdentifierWithLength.firstToken.setWhitespace(); // continue after the new identifier, otherwise .removeFromCommand will put a line break after oldIdentifierWithLength 
 			oldIdentifierWithLength.removeFromCommand(false);
 			identifier = newIdentifier; 
 
