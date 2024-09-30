@@ -6,6 +6,18 @@ as well as bugfixes of reported issues, i.e. anything that enhances or changes t
 For a complete list of changes (including documentation, tests, refactoring etc.), please refer to 
 the list of [commits](../../../commits/main).
 
+## 2024-09-30 (version 1.19.3)
+
+**Thank you** very much, [**Raukze**](https://github.com/Raukze), [**MDagni**](https://github.com/MDagni)
+ [**ConjuringCoffee**](https://github.com/ConjuringCoffee) and [**blackfish5**](https://github.com/blackfish5), for inspiring these improvements and fixes!
+
+* Fixed rule '**Remove space before commas and period**' for **auto-generated comment** on FUNCTION ([#348](../../../issues/348))
+* Fixed rule '**Unchain into multiple statements**' for **asterisk comments** after colon ([#363](../../../issues/363))
+* Fixed rule '**Remove needless parentheses**' for **asterisk comments** after colon ([#363](../../../issues/363))
+* Fixed rule '**Rearrange local declarations**' etc. for **CONSTANTS used in TYPES** ([#350](../../../issues/350))
+* Fixed rule '**Align METHODS ... FOR TESTING**' for **ABSTRACT** methods ([#354](../../../issues/354))
+* Updated **known CamelCase names** for CDS views and fields
+
 ## 2024-09-19 (version 1.19.2)
 
 **Great thanks** to [**jrodriguez-rc**](https://github.com/jrodriguez-rc) for reporting this bug so quickly!
