@@ -117,8 +117,9 @@ public class DdlAlignSourceParametersRule extends RuleForDdlAlignParameters {
 		
 		Token token = command.getFirstToken();
 		while (token != null) {
-			// "as select from view( ... )", "union all select from view( ... )", "left outer to many join view( ... )"  etc.
-			token = token.getLastTokenOnSiblings(true, TokenSearch.ASTERISK, "from|join", TokenSearch.ANY_IDENTIFIER, "(");
+			// "as select from view( ... )", "as projection on view( ... )", 
+			// "union all select from view( ... )", "left outer to many join view( ... )"  etc.
+			token = token.getLastTokenOnSiblings(true, TokenSearch.ASTERISK, "from|join|on", TokenSearch.ANY_IDENTIFIER, "(");
 			if (token == null) 
 				break;
 
