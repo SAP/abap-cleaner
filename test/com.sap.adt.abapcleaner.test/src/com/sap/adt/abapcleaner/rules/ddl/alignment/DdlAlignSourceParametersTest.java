@@ -991,4 +991,39 @@ public class DdlAlignSourceParametersTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testAnalyticalQuery() {
+		rule.configParameterPos.setEnumValue(DdlSourceParamPos.SOURCE_NAME_PLUS_2);
+
+		buildSrc("define transient view entity C_AnyQuery");
+		buildSrc("  provider contract analytical_query");
+		buildSrc("  with parameters");
+		buildSrc("    P_AnyParameter   : any_type,");
+		buildSrc("    P_OtherParameter : other_type");
+		buildSrc("");
+		buildSrc("  as projection on I_AnyCube(");
+		buildSrc("           P_AnyParameter   : $parameters.P_AnyParameter,");
+		buildSrc("         P_OtherParameter:  $parameters.P_OtherParameter) as AnyAlias");
+		buildSrc("");
+		buildSrc("{");
+		buildSrc("  AnyAlias.AnyField");
+		buildSrc("}");
+
+		buildExp("define transient view entity C_AnyQuery");
+		buildExp("  provider contract analytical_query");
+		buildExp("  with parameters");
+		buildExp("    P_AnyParameter   : any_type,");
+		buildExp("    P_OtherParameter : other_type");
+		buildExp("");
+		buildExp("  as projection on I_AnyCube(");
+		buildExp("                     P_AnyParameter   : $parameters.P_AnyParameter,");
+		buildExp("                     P_OtherParameter : $parameters.P_OtherParameter) as AnyAlias");
+		buildExp("");
+		buildExp("{");
+		buildExp("  AnyAlias.AnyField");
+		buildExp("}");
+
+		testRule();
+	}
 }
