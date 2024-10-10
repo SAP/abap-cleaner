@@ -107,7 +107,11 @@ public class Token {
 
 	public final boolean isQuotMarkComment() { return isComment() && AbapCult.stringStartsWith(text, ABAP.COMMENT_SIGN_STRING); }
 
-	public final boolean isCommentLine() { return isComment() && isFirstTokenInLine(); }
+	public final boolean isCommentLine() {
+		// in DDL, a line may contain multiple comments, e.g. /* comment */ // comment
+		// however, unlike Command.isCommentLine(), Token.isCommentLine() only returns true if this is the only Token on this line
+		return isComment() && isFirstTokenInLine() && (next == null || next.lineBreaks > 0);
+	}
 
 	public final boolean isQuotMarkCommentLine() { return isCommentLine() && isQuotMarkComment(); }
 
