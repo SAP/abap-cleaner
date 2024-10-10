@@ -12,6 +12,9 @@ import com.sap.adt.abapcleaner.parser.TokenSearch;
 import com.sap.adt.abapcleaner.programbase.UnexpectedSyntaxBeforeChanges;
 
 public class DdlAnalyzer {
+	public static final String[] valueHelpDefAnnotationPaths = new String[] { "Consumption.valueHelpDefinition[].entity.name", "Consumption.valueHelpDefinition[].entity.element" }; 
+	public static final String[] semanticsElemRefAnnotationPaths = new String[] { "Semantics.amount.currencyCode", "Semantics.quantity.unitOfMeasure" };
+
 	private static String getKey(String identifier) {
 		return identifier.toUpperCase();
 	}
@@ -497,8 +500,11 @@ public class DdlAnalyzer {
 						return view.fieldOfName.get(pathBitKey);
 					}
 					
-				} else { // use finalDataSource, which must be != null now
+				} else if (finalDataSource != null) {
 					return new Field(finalDataSource, pathBits[i]);
+					
+				} else {
+					return null;
 				}
 			} 
 			

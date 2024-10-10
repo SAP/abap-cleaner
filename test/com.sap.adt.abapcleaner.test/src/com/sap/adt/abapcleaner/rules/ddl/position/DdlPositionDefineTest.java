@@ -397,4 +397,29 @@ public class DdlPositionDefineTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testMultiCommentLineBeforeDefine() {
+	   // ensure that the empty line is added above the comment, not above "define" 
+		buildSrc("@Analytics.query: true");
+		buildSrc("/*+[hideWarning] { \"IDS\" : [ \"KEY_CHECK\" ]  } */  // any comment");
+		buildSrc("define view entity C_AnyQuery");
+		buildSrc("  as select from I_AnySource");
+		buildSrc("{");
+		buildSrc("  AnyField,");
+		buildSrc("  OtherField");
+		buildSrc("}");
+
+		buildExp("@Analytics.query: true");
+		buildExp("");
+		buildExp("/*+[hideWarning] { \"IDS\" : [ \"KEY_CHECK\" ]  } */  // any comment");
+		buildExp("define view entity C_AnyQuery");
+		buildExp("  as select from I_AnySource");
+		buildExp("{");
+		buildExp("  AnyField,");
+		buildExp("  OtherField");
+		buildExp("}");
+
+		testRule();
+	}
 }

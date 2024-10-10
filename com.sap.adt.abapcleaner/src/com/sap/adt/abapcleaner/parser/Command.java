@@ -155,7 +155,7 @@ public class Command {
 
 	public final boolean isAsteriskCommentLine() { return firstToken.isAsteriskCommentLine(); }
 
-	public final boolean isCommentLine() { return firstToken.isCommentLine() && firstToken.getNext() == null; }
+	public final boolean isCommentLine() { return firstToken.isComment() && firstToken.getNextNonCommentToken() == null; }
 
 	final boolean isEmpty() { return (tokenCount == 1 && StringUtil.isNullOrEmpty(firstToken.text)); }
 
@@ -972,8 +972,8 @@ public class Command {
 		// create a new Command for line breaks at document end
 		if (newToken.getTextLength() == 0 && newToken.lineBreaks > 0)
 			return false;
-		// a comment at Command start cannot add more Tokens
-		if (firstToken.isComment() && firstToken == lastToken) // even with newToken.lineBreaks == 0 
+		// a comment line at Command start cannot add more Tokens
+		if (isCommentLine()) // even with newToken.lineBreaks == 0 
 			return false;
 		// the base info comment must be a distinct Command (cp. Code.toString(String))
 		if (newToken.textEquals(DDL.BASE_INFO_COMMENT_START))
@@ -1082,7 +1082,7 @@ public class Command {
 		}
 		
 		// start a new Command for a JOIN or an ASSOCIATION / COMPOSITION
-		if (isAtTopLevel && newToken.isKeyword()) {
+		if (isAtTopLevel && newToken.isKeyword() && getFirstCodeToken() != null) {
 			Token firstCodeToken = getFirstCodeToken();
 			// a join could either start with INNER, LEFT, RIGHT, CROSS, or directly with the keyword JOIN, or with a cardinality (after implicit INNER):
 			// { [INNER] [cardinality] JOIN | LEFT OUTER [cardinality] JOIN | RIGHT OUTER JOIN | CROSS JOIN } data_source [ON cds_cond]
@@ -2025,7 +2025,7 @@ public class Command {
 		// ensure that the Command has the correct scope: either it is a stand-alone comment line,
 		// or it only contains pragmas, or it ends with a period, only followed by a line-end comment
 		if (firstToken.isComment()) {
-			check(firstToken == lastToken);
+			check(!isAbap() || firstToken == lastToken);
 			check(this.isFirstCommandInCode() || firstToken.lineBreaks > 0);
 		} else if (isAbap() && !representsEmptyLinesAtCodeEnd()) {
 			Token lastCodeToken = getLastCodeToken();

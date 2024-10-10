@@ -892,14 +892,23 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 
 		new MenuItem(menuExtras, SWT.SEPARATOR);
 
-		MenuItem mmuExtrasAnalyzeDdlFolder = new MenuItem(menuExtras, SWT.NONE);
-		mmuExtrasAnalyzeDdlFolder.addSelectionListener(new SelectionAdapter() {
+		MenuItem mmuExtrasAnalyzeDdlSemanticsInFolder = new MenuItem(menuExtras, SWT.NONE);
+		mmuExtrasAnalyzeDdlSemanticsInFolder.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				analyzeCdsViewsInFolder();
+				analyzeCdsViewsInFolder(DdlAnalyzer.semanticsElemRefAnnotationPaths);
 			}
 		});
-		mmuExtrasAnalyzeDdlFolder.setText("Analyze CDS Views in Folder...");
+		mmuExtrasAnalyzeDdlSemanticsInFolder.setText("Analyze Semantic Refs for CDS Views in Folder...");
+
+		MenuItem mmuExtrasAnalyzeDdlValueHelpInFolder = new MenuItem(menuExtras, SWT.NONE);
+		mmuExtrasAnalyzeDdlValueHelpInFolder.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				analyzeCdsViewsInFolder(DdlAnalyzer.valueHelpDefAnnotationPaths);
+			}
+		});
+		mmuExtrasAnalyzeDdlValueHelpInFolder.setText("Analyze Value Help for CDS Views in Folder...");
 
 		new MenuItem(menuExtras, SWT.SEPARATOR);
 
@@ -1919,7 +1928,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		}
 	}
 
-	private void analyzeCdsViewsInFolder() {
+	private void analyzeCdsViewsInFolder(String[] annotationPaths) {
 		String dir = showDirDialog(defaultCodeDirectory, "Analyze CDS views in folder");
 		String[] paths = getAllPaths(dir, FileType.CODE, false, true);
 		if (paths == null)
@@ -1944,10 +1953,9 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		});
 		ddlAnalyzer.finishBuild();
 
-		String[] elemRefAnnotationPaths = new String[] { "Semantics.amount.currencyCode", "Semantics.quantity.unitOfMeasure" };
-		ddlAnalyzer.analyzeInheritedAnnotations(elemRefAnnotationPaths);
+		ddlAnalyzer.analyzeInheritedAnnotations(annotationPaths);
 		
-		String result = ddlAnalyzer.getResult(elemRefAnnotationPaths);
+		String result = ddlAnalyzer.getResult(annotationPaths);
 		if (!StringUtil.isNullOrEmpty(result)) {
 			SystemClipboard.setText(result);
 			Message.show("CDS View analysis copied to Clipboard.", shell);
