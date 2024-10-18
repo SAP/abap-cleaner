@@ -14,8 +14,17 @@ public abstract class RuleForDeclarations extends Rule {
 	/** true if the Rule is to be executed only on class definitions, not on local contexts (i.e. implementations of METHOD, FORM etc.) */
 	protected boolean skipLocalVariableContexts() { return false; }
 
-	protected abstract void executeOn(Code code, ClassInfo classOrInterfaceInfo, int releaseRestriction) throws UnexpectedSyntaxAfterChanges; 
-	protected abstract void executeOn(Code code, Command methodStart, LocalVariables localVariables, int releaseRestriction) throws UnexpectedSyntaxAfterChanges;
+	protected void executeOnClassDefinition(Code code, ClassInfo classOrInterfaceInfo, int releaseRestriction) throws UnexpectedSyntaxAfterChanges {
+		// default implementation is empty
+	}
+
+	protected void executeOnClassImplementation(Code code, ClassInfo classOrInterfaceInfo, int releaseRestriction) throws UnexpectedSyntaxAfterChanges {
+		// default implementation is empty
+	}
+
+	protected void executeOn(Code code, Command methodStart, Variables localVariables, int releaseRestriction) throws UnexpectedSyntaxAfterChanges {
+		// default implementation is empty
+	}
 
    private final static String[] declarationKeywords = new String[] {"TYPES", "CONSTANTS", "DATA", "FIELD-SYMBOLS", "STATICS"}; // "DATA(", "FINAL(" and "FIELD-SYMBOL(" do NOT belong here!
    private final static String[] typesDeclarationKeywords = new String[] {"TYPES"};
@@ -59,7 +68,7 @@ public abstract class RuleForDeclarations extends Rule {
 		HashMap<String, ClassInfo> classesAndInterfaces = new HashMap<String, ClassInfo>();
 		ClassInfo curClassOrInterface = null;
 
-		LocalVariables localVariables = new LocalVariables(this, null);
+		Variables variables = new Variables(this, null, null); // pro forma
 		
 		Command command = code.firstCommand;
 		Command methodStart = null;
@@ -68,6 +77,7 @@ public abstract class RuleForDeclarations extends Rule {
 		// of the class declaration is processed, this will delete attributes!
 		boolean isInDefinition = false;
 		MethodVisibility methodVisibility = MethodVisibility.PUBLIC;
+		VariableAccessType variableAccessType = VariableAccessType.PUBLIC;
 		boolean isInMethod = false; 
 		boolean skipMethod = skipLocalVariableContexts();
 		BlockInfo blockInfo = new BlockInfo();
@@ -79,17 +89,23 @@ public abstract class RuleForDeclarations extends Rule {
 				isInDefinition = true;
 				Token parentClassName = command.getFirstCodeToken().getLastTokenOnSiblings(true, TokenSearch.ASTERISK, "INHERITING", "FROM", TokenSearch.ANY_IDENTIFIER);
 				ClassInfo parentClass = (parentClassName == null) ? null : classesAndInterfaces.get(getNameKey(parentClassName.getText()));
-				curClassOrInterface = new ClassInfo(command.getDefinedName(), parentClass);
+				curClassOrInterface = new ClassInfo(command, command.getDefinedName(), parentClass);
 				classesAndInterfaces.put(getNameKey(curClassOrInterface.name), curClassOrInterface);
-				methodVisibility = MethodVisibility.PUBLIC;
 
+				methodVisibility = MethodVisibility.PUBLIC;
+				variableAccessType = VariableAccessType.PUBLIC;
+				variables = new Variables(this, curClassOrInterface, null);
+				curClassOrInterface.setVariables(variables);
+				
 			} else if (command.isClassImplementationStart()) {
 				curClassOrInterface = classesAndInterfaces.get(getNameKey(command.getDefinedName()));
-			
+				if (curClassOrInterface != null) 
+					curClassOrInterface.setImplementationStart(command);
+				executeOnClassImplementation(code, curClassOrInterface, releaseRestriction);
+
 			} else if (command.isClassEnd() || command.isInterfaceEnd()) {
-				if (isInDefinition) {
-					executeOn(code, curClassOrInterface, releaseRestriction);
-				}
+				if (isInDefinition)
+					executeOnClassDefinition(code, curClassOrInterface, releaseRestriction);
 				isInDefinition = false;
 				curClassOrInterface = null;
 			}
@@ -101,10 +117,16 @@ public abstract class RuleForDeclarations extends Rule {
 					// nothing to do
 				} else if (firstCode.matchesOnSiblings(true, "PUBLIC", "SECTION")) {
 					methodVisibility = MethodVisibility.PUBLIC;
+					variableAccessType = VariableAccessType.PUBLIC;
+					
 				} else if (firstCode.matchesOnSiblings(true, "PROTECTED", "SECTION")) {
 					methodVisibility = MethodVisibility.PROTECTED;
+					variableAccessType = VariableAccessType.PROTECTED;
+				
 				} else if (firstCode.matchesOnSiblings(true, "PRIVATE", "SECTION")) {
 					methodVisibility = MethodVisibility.PRIVATE;
+					variableAccessType = VariableAccessType.PRIVATE;
+				
 				} else if (firstCode.isAnyKeyword("METHODS", "CLASS-METHODS")) {
 					// add one or several method definitions
 					addMethodDefinitions(curClassOrInterface, methodVisibility, command);
@@ -122,16 +144,16 @@ public abstract class RuleForDeclarations extends Rule {
 			
 			if (command.endsLocalVariableContext()) {
 				if (!skipMethod)
-					callExecuteOnMethod(code, methodStart, localVariables, releaseRestriction);
+					callExecuteOnMethod(code, methodStart, variables, releaseRestriction);
 				methodStart = null;
 				isInMethod = false;
-				localVariables = new LocalVariables(this, null);
+				variables = new Variables(this, curClassOrInterface, null);
 			}
 			// do NOT attach the next section with "else if", since "AT SELECTION-SCREEN" may both end and start   
 			// a "local variable context" at the same time
 			if (command.startsLocalVariableContext()) {
 				if (!skipMethod)
-					callExecuteOnMethod(code, methodStart, localVariables, releaseRestriction);
+					callExecuteOnMethod(code, methodStart, variables, releaseRestriction);
 				methodStart = command;
 				isInMethod = true;
 				MethodInfo curMethod = null;
@@ -140,13 +162,13 @@ public abstract class RuleForDeclarations extends Rule {
 				}
 				// reset skipMethod to false, unless methods are generally skipped by this Rule
 				skipMethod = skipLocalVariableContexts();
-				localVariables = new LocalVariables(this, curMethod);
+				variables = new Variables(this, curClassOrInterface, curMethod);
 			}
 			
 			if (isInMethod && command.firstCodeTokenIsAnyKeyword("TEST-SEAM", "TEST-INJECTION")) {
 				// if test seams / test injections are used in this method, rules like the UnusedVariablesRule and 
 				// FinalVariableRule must skip this method, because variable definitions and/or usages may be out of sight
-				localVariables.setMethodUsesMacrosOrTestInjection();
+				variables.setMethodUsesMacrosOrTestInjection();
 				// skip this section to avoid variable definitions from these sections to be moved by the LocalDeclarationOrderRule
 				command = command.getNextSibling();
 				continue;
@@ -157,7 +179,7 @@ public abstract class RuleForDeclarations extends Rule {
 				// must be skipped for this method 
 				Token next = command.getFirstCodeToken().getNextCodeToken();
 				if (next.textEquals("(") && next.hasChildren() && next.getFirstChild().isAttached()) {
-					localVariables.setMethodUsesDynamicAssign();
+					variables.setMethodUsesDynamicAssign();
 				}
 
 			} else if (command.firstCodeTokenIsKeyword("DEFINE")) {
@@ -169,43 +191,50 @@ public abstract class RuleForDeclarations extends Rule {
 
 			commandForErrorMsg = command;
 			
-			// read local variable declarations or usage from the current Command
-			if (isInMethod && !skipMethod) {
-				try {
+			try {
+				if (!isInMethod) {
+					// read attributes
 					if (command.firstCodeTokenIsAnyKeyword(declarationKeywords)) {
 						boolean isTypeDeclaration = command.firstCodeTokenIsAnyKeyword(typesDeclarationKeywords);
 						boolean isConstantsDeclaration = command.firstCodeTokenIsAnyKeyword(constantsDeclarationKeywords);
-						executeOnDeclarationCommand(command, methodStart, localVariables, isTypeDeclaration, isConstantsDeclaration, blockInfo);
+						executeOnDeclarationCommand(command, null, variables, isTypeDeclaration, isConstantsDeclaration, blockInfo, variableAccessType);
+					}				
+
+				} else if (isInMethod && !skipMethod) {
+					// read local variable declarations or usage from the current Command
+					if (command.firstCodeTokenIsAnyKeyword(declarationKeywords)) {
+						boolean isTypeDeclaration = command.firstCodeTokenIsAnyKeyword(typesDeclarationKeywords);
+						boolean isConstantsDeclaration = command.firstCodeTokenIsAnyKeyword(constantsDeclarationKeywords);
+						executeOnDeclarationCommand(command, methodStart, variables, isTypeDeclaration, isConstantsDeclaration, blockInfo, VariableAccessType.LOCAL);
 					} else if (command.isAsteriskCommentLine()) {
-						executeOnCommentLine(command, localVariables, commentIdentifier);
+						executeOnCommentLine(command, variables, commentIdentifier);
 					} else if (!command.isAbap()) {
-						executeOnNonAbapSection(command, localVariables);
+						executeOnNonAbapSection(command, variables);
 					} else {
-						executeOnOtherCommand(command, localVariables);
+						executeOnOtherCommand(command, variables);
 					}
 					
 					// if macros are used in this method, rules like the UnusedVariablesRule and FinalVariableRule 
 					// must skip this method, because variable definitions and/or usages may be out of sight
 					if (command.usesMacro()) {
-						localVariables.setMethodUsesMacrosOrTestInjection();
+						variables.setMethodUsesMacrosOrTestInjection();
 					}
-					
-				} catch (UnexpectedSyntaxBeforeChanges ex) {
-					ex.addToLog();
-					skipMethod = true;
 				}
+			} catch (UnexpectedSyntaxBeforeChanges ex) {
+				ex.addToLog();
+				skipMethod = true;
 			}
 
 			command = command.getNext();
 		}
-		if (!localVariables.isEmpty()) {
+		if (!variables.isEmpty()) {
 			if (!skipMethod)
-				callExecuteOnMethod(code, methodStart, localVariables, releaseRestriction);
-			localVariables = new LocalVariables(this, null);
+				callExecuteOnMethod(code, methodStart, variables, releaseRestriction);
+			variables = new Variables(this, null, null);
 		}
 	}
 
-	private void callExecuteOnMethod(Code code, Command methodStart, LocalVariables localVariables, int releaseRestriction) throws UnexpectedSyntaxAfterChanges {
+	private void callExecuteOnMethod(Code code, Command methodStart, Variables localVariables, int releaseRestriction) throws UnexpectedSyntaxAfterChanges {
 		if (methodStart != null && !methodStart.startsAMDPMethod()) {
 			executeOn(code, methodStart, localVariables, releaseRestriction);
 		}
@@ -349,7 +378,7 @@ public abstract class RuleForDeclarations extends Rule {
 		}
 	}
 
-	private void executeOnDeclarationCommand(Command command, Command methodStart, LocalVariables localVariables, boolean isTypeDeclaration, boolean isConstantsDeclaration, BlockInfo blockInfo) throws UnexpectedSyntaxBeforeChanges {
+	private void executeOnDeclarationCommand(Command command, Command methodStart, Variables variables, boolean isTypeDeclaration, boolean isConstantsDeclaration, BlockInfo blockInfo, VariableAccessType variableAccessType) throws UnexpectedSyntaxBeforeChanges {
 		Token token = command.getFirstCodeToken().getNextCodeToken();
 		boolean isChain = token.isChainColon();
 		if (isChain)
@@ -383,23 +412,23 @@ public abstract class RuleForDeclarations extends Rule {
 			
 			if (blockInfo.blockLevel > 0 && !isTopBlockStart) {
 				// declarations inside BEGIN OF ... blocks may contain usages of constants in LIKE ... or LENGTH ... clauses
-				token = executeOnDeclarationLine(methodStart, localVariables, token, isInOOContext, blockInfo.topBlockVarInfo);
+				token = executeOnDeclarationLine(methodStart, variables, token, isInOOContext, blockInfo.topBlockVarInfo);
 				
 			} else if (!isBlockEnd) {
 				// add declaration
 				String varName = token.getText();
-				VariableInfo varInfo = localVariables.addDeclaration(token, false, isTypeDeclaration, isConstantsDeclaration, isBoundStructuredData, isInOOContext, false);
+				VariableInfo varInfo = variables.addDeclaration(token, false, isTypeDeclaration, isConstantsDeclaration, isBoundStructuredData, isInOOContext, false, variableAccessType);
 				if (isTopBlockStart) 
 					blockInfo.setTopBlockVarInfo(varInfo);
 
 				// if the pragma ##NEEDED or the pseudo comment "#EC NEEDED is defined for this variable, add a "usage" 
 				// to prevent it from being commented out or deleted
 				if (isNeededPragmaOrPseudoCommentFound(token, false)) {
-					localVariables.setNeeded(varName);
+					variables.setNeeded(varName);
 				}
 
 				// find usages of other variables or constants in LIKE ... or VALUE ... clauses
-				token = executeOnDeclarationLine(methodStart, localVariables, token, isInOOContext, varInfo); 
+				token = executeOnDeclarationLine(methodStart, variables, token, isInOOContext, varInfo); 
 			}
 				
 			if (!isChain || token == null) 
@@ -414,12 +443,12 @@ public abstract class RuleForDeclarations extends Rule {
 		return;
 	}
 
-	private Token executeOnDeclarationLine(Command methodStart, LocalVariables localVariables, Token token, boolean isInOOContext, VariableInfo varInfo) {
+	private Token executeOnDeclarationLine(Command methodStart, Variables variables, Token token, boolean isInOOContext, VariableInfo varInfo) {
 		// length may be supplied in parentheses: "DATA lv_text(lc_length)."
 		Token firstChild = token.getFirstChild();
 		if (token.getOpensLevel() && firstChild != null && firstChild.isAttached() && firstChild.isIdentifier()) {
-			String usedObjectName = LocalVariables.getObjectName(firstChild.getText(), isInOOContext);
-			localVariables.addUsageInLikeOrValueClause(firstChild, usedObjectName, methodStart, varInfo);
+			String usedObjectName = Variables.getObjectName(firstChild.getText(), isInOOContext);
+			variables.addUsageInLikeOrValueClause(firstChild, usedObjectName, methodStart, varInfo);
 			
 			// continue behind the parenthesis
 			token = token.getNextCodeSibling();
@@ -435,9 +464,8 @@ public abstract class RuleForDeclarations extends Rule {
 				token = token.getNextCodeSibling();
 			}
 			// the Token may contain more than the object name, e.g. 'DATA ls_struc LIKE LINE OF lr_ref->lt_table.'
-			String usedObjectName = LocalVariables.getObjectName(token.getText(), isInOOContext);
-			localVariables.addUsageInLikeOrValueClause(token, usedObjectName, methodStart, varInfo);
-			
+			String usedObjectName = Variables.getObjectName(token.getText(), isInOOContext);
+			variables.addUsageInLikeOrValueClause(token, usedObjectName, methodStart, varInfo);
 		} 
 		
 		// if the declaration uses "LENGTH <constant>" and/or "VALUE <constant>", count that as a usage of <constant>
@@ -447,8 +475,8 @@ public abstract class RuleForDeclarations extends Rule {
 				if (token != null && token.isIdentifier()) {
 					// the Token may contain more than the object name, e.g. 'DATA lv_value TYPE i VALUE if_any_interface=>co_any_value.'
 					// however, no calculations (lc_any + 1) or substrings (lc_data+4(2)) are possible
-					String usedObjectName = LocalVariables.getObjectName(token.getText(), isInOOContext);
-					localVariables.addUsageInLikeOrValueClause(token, usedObjectName, methodStart, varInfo);
+					String usedObjectName = Variables.getObjectName(token.getText(), isInOOContext);
+					variables.addUsageInLikeOrValueClause(token, usedObjectName, methodStart, varInfo);
 				}
 			}
 			token = token.getNextCodeSibling();
@@ -456,7 +484,7 @@ public abstract class RuleForDeclarations extends Rule {
 		return token;
 	}
 
-	private void executeOnCommentLine(Command command, LocalVariables localVariables, CommentIdentifier commentIdentifier) {
+	private void executeOnCommentLine(Command command, Variables variables, CommentIdentifier commentIdentifier) {
 		// ignore * comment lines if no commentIdentifier is passed
 		if (commentIdentifier == null)
 			return;
@@ -487,12 +515,12 @@ public abstract class RuleForDeclarations extends Rule {
 			boolean isAssignment = isClearCommand || (isAssignmentCommand && i == 0) || (isAddCommand && AbapCult.stringEquals(prevWordText, "TO", true))
 					|| (isSubtractCommand && AbapCult.stringEquals(prevWordText, "FROM", true)) || (isMultiplyOrDivideCommand && i == 1);
 			boolean isUsageInSelfAssignment = !isAssignment && AbapCult.stringEquals(word, assignedToVar, true);
-			localVariables.addUsage(command.getFirstToken(), word, isAssignment, isUsageInSelfAssignment, true, false, false);
+			variables.addUsage(command.getFirstToken(), word, isAssignment, isUsageInSelfAssignment, true, false, false);
 			prevWordText = word;
 		}
 	}
 
-	private void executeOnNonAbapSection(Command command, LocalVariables localVariables) throws UnexpectedSyntaxBeforeChanges {
+	private void executeOnNonAbapSection(Command command, Variables localVariables) throws UnexpectedSyntaxBeforeChanges {
 		final String hostVarEscape = " :";
 		
 		if (localVariables.isEmpty())
@@ -522,7 +550,7 @@ public abstract class RuleForDeclarations extends Rule {
 		}
 	}
 	
-	private void executeOnOtherCommand(Command command, LocalVariables localVariables) throws UnexpectedSyntaxBeforeChanges {
+	private void executeOnOtherCommand(Command command, Variables localVariables) throws UnexpectedSyntaxBeforeChanges {
 		Token firstCode = command.getFirstCodeToken();
 		if (firstCode == null)
 			return;
@@ -545,7 +573,7 @@ public abstract class RuleForDeclarations extends Rule {
 		// - "lv_receiver+4(2) = ..."
 		// note, however, that in "lo_instance->member = ...", lo_instance is NOT the receiver, because the assignment only happens to the memory 
 		// which is *referenced* by lo_instance (so, in this case, lo_instance is *used*, NOT assigned to)  
-		String assignedToVar = isAssignmentCommand ? LocalVariables.getObjectName(firstCode.getText(), command.isInOOContext()) : null;
+		String assignedToVar = isAssignmentCommand ? Variables.getObjectName(firstCode.getText(), command.isInOOContext()) : null;
 		if (assignedToVar != null && !isAccessToVarMemory(firstCode.getText(), assignedToVar.length(), isInOOContext)) // e.g. in "var->member = ...", "var" is not assigned to, but *used*
 			assignedToVar = null;
 
@@ -559,7 +587,7 @@ public abstract class RuleForDeclarations extends Rule {
 
 				// process inline declaration
 				token = token.getNext();
-				localVariables.addDeclaration(token, true, false, false, false, isInOOContext, isAssignedInMessageInto);
+				localVariables.addDeclaration(token, true, false, false, false, isInOOContext, isAssignedInMessageInto, VariableAccessType.LOCAL);
 
 				// if the pragma ##NEEDED is defined for this variable, add a "usage" to prevent it from being commented out or deleted
 				if (isNeededPragmaOrPseudoCommentFound(token, false))
@@ -748,7 +776,7 @@ public abstract class RuleForDeclarations extends Rule {
 		return false;
 	}
 
-	private void addRefConstructor(Token refKeyword, LocalVariables localVariables) {
+	private void addRefConstructor(Token refKeyword, Variables localVariables) {
 		// In cases like 'DATA(dref) = REF #( dobj )' or 'any_method( ir_data = REF #( dobj ) )', note down that 
 		// a data reference is created to the memory area of the local variable; in such a case, the FinalVariableRule 
 		// will never change DATA(dobj) to FINAL(dobj), because the data reference could change the memory anywhere. 
@@ -762,7 +790,7 @@ public abstract class RuleForDeclarations extends Rule {
 		}
 	}
 	
-	private void addAssignedFieldSymbolOrDataRef(Token fieldSymbolOrDataRef, LocalVariables localVariables) {
+	private void addAssignedFieldSymbolOrDataRef(Token fieldSymbolOrDataRef, Variables localVariables) {
 		// a) In cases like 'ASSIGN itab[ ... ] TO <fs>', notify itab about the assignment of a <fs>, so indirect  
 		// write accesses to itab with '<fs>-component = 1' can later be identified as (potential) write accesses to itab.
 

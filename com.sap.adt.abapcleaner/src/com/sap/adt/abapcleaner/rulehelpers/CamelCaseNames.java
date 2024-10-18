@@ -18,6 +18,7 @@ import com.sap.adt.abapcleaner.base.Cult;
 import com.sap.adt.abapcleaner.base.StringUtil;
 import com.sap.adt.abapcleaner.programbase.Persistency;
 import com.sap.adt.abapcleaner.programbase.Program;
+import com.sap.adt.abapcleaner.rulebase.Profile;
 
 public class CamelCaseNames {
 	public static final String FIELD_NAMES_SOURCE_PREFIX = "field_names";
@@ -321,7 +322,7 @@ public class CamelCaseNames {
 		return new CamelCaseNames(type, hashAndCaseBits, loadDuration_ms);
 	}
 
-	public static CamelCaseNames createFromTextFiles(CamelCaseNameType type, String[] paths, StringBuilder sbSummary, StringBuilder sbDetails, boolean checkStartsWithZ) {
+	public static CamelCaseNames createFromTextFiles(CamelCaseNameType type, String[] paths, StringBuilder sbSummary, StringBuilder sbDetails, boolean checkStartsWithZ, boolean checkUnknownPrefixesOrSuffixes) {
 		long startTime_ms = System.currentTimeMillis();
 
 		// collect valid CamelCaseNames from the supplied files
@@ -336,7 +337,7 @@ public class CamelCaseNames {
 		Arrays.sort(paths);
 	   for (String path : paths) {
 			try {
-				readEntryCount += createFromTextFile(type, path, sbDetails, checkStartsWithZ, namesByCamelCase, discardedNames);
+				readEntryCount += createFromTextFile(type, path, sbDetails, checkStartsWithZ, checkUnknownPrefixesOrSuffixes, namesByCamelCase, discardedNames);
 			} catch (IOException e) {
 			}
 	   }
@@ -432,7 +433,7 @@ public class CamelCaseNames {
 		return new CamelCaseNames(type, hashAndCaseBits, createDuration_ms);
 	}
 
-	private static int createFromTextFile(CamelCaseNameType type, String path, StringBuilder sbDetails, boolean checkStartsWithZ, HashMap<String, NameInfo> namesByCamelCase, HashSet<String> discardedNames) throws IOException {
+	private static int createFromTextFile(CamelCaseNameType type, String path, StringBuilder sbDetails, boolean checkStartsWithZ, boolean checkUnknownPrefixesOrSuffixes, HashMap<String, NameInfo> namesByCamelCase, HashSet<String> discardedNames) throws IOException {
 		Persistency persistency = Persistency.get();
 		if (!persistency.fileExists(path)) 
 			return 0;
@@ -502,7 +503,7 @@ public class CamelCaseNames {
 				// do not analyze and report the same discarded name again if it appears multiple times (e.g. in different source files) 
 				continue;
 			} else {
-				String discardReason = checkDiscardReasons(camelCaseName, type, checkStartsWithZ, isApproved);
+				String discardReason = checkDiscardReasons(camelCaseName, type, checkStartsWithZ, checkUnknownPrefixesOrSuffixes, isApproved);
 				if (discardReason != null) {
 					addDetails(sourceFile, camelCaseName, isApproved, discardReason, sbDetails);
 					discardedNames.add(camelCaseName);
@@ -524,7 +525,7 @@ public class CamelCaseNames {
 		return readEntryCount;
 	}
 
-	private static String checkDiscardReasons(String name, CamelCaseNameType type, boolean checkStartsWithZ, boolean isApproved) {
+	public static String checkDiscardReasons(String name, CamelCaseNameType type, boolean checkStartsWithZ, boolean checkUnknownPrefixesOrSuffixes, boolean isApproved) {
 		// is the name too long?
 		if (name.length() > ABAP.MAX_VARIABLE_NAME_LENGTH) {
 			return "too long: " + Cult.format(name.length()) + " chars";
@@ -563,7 +564,7 @@ public class CamelCaseNames {
 
 		// does the name contain any unknown prefixes or suffixes?
 		String nameCore = removeAllowedPrefixesAndSuffixes(type, nameWithoutNamespace);
-		if (nameCore.indexOf('_') >= 0) {
+		if (checkUnknownPrefixesOrSuffixes && nameCore.indexOf('_') >= 0) {
 			return "has unknown prefixes or suffixes" + TAB + nameCore;
 		}
 
@@ -808,8 +809,18 @@ public class CamelCaseNames {
 		bufferedWriter.close();
 	}
 	
-	public String applyCamelCaseTo(String text, boolean requireUpperAfterLower, boolean requireApproval) {
-		return applyCamelCaseTo(text, getCaseBitsFor(text), requireUpperAfterLower, requireApproval);
+	public String applyCamelCaseTo(String text, boolean requireUpperAfterLower, boolean requireApproval, Profile profile) {
+		String camelCase = applyCamelCaseTo(text, getCaseBitsFor(text), requireUpperAfterLower, requireApproval);
+		
+		// if no name was found, search in the custom names, if any
+		if (camelCase == null && profile != null) {
+			CustomCamelCaseNames customNames = (nameType == CamelCaseNameType.VIEW) ? profile.customViewNames : profile.customFieldNames;
+			if (customNames != null) {
+				camelCase = customNames.applyCamelCaseTo(text);
+			}
+		}
+
+		return camelCase;
 	}
 
 	private int getCaseBitsFor(String text) {

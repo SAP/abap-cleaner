@@ -13,6 +13,7 @@ public class FileSystemDouble implements IFileSystem {
 		public byte[] data;
 		public boolean isAnsiEncoded;
 		public boolean isWriteProtected;
+		public long lastModified;
 		
 		public FileInfo(String path, byte[] data) {
 			this.path = path;
@@ -61,10 +62,18 @@ public class FileSystemDouble implements IFileSystem {
 
 	public void setWriteProtect(String path, boolean isWriteProtected) {
 		FileInfo fileInfo = fileInfos.get(getKey(path));
-		if (fileInfo != null)
+		if (fileInfo != null) {
 			fileInfo.isWriteProtected = isWriteProtected;
+		}
 	}
 	
+	public void setLastModified(String path, long lastModified) {
+		FileInfo fileInfo = fileInfos.get(getKey(path));
+		if (fileInfo != null) {
+			fileInfo.lastModified = lastModified;
+		}
+	}
+
 	public void clear() {
 		fileInfos.clear();
 		directories.clear();
@@ -83,6 +92,14 @@ public class FileSystemDouble implements IFileSystem {
 		if (path == null)
 			return false;
 		return fileInfos.containsKey(getKey(path));
+	}
+
+	@Override
+	public long getLastModified(String path) {
+		if (path == null)
+			return 0;
+		FileInfo fileInfo = fileInfos.get(getKey(path));
+		return (fileInfo == null) ? 0 : fileInfo.lastModified;
 	}
 
 	@Override
@@ -218,6 +235,4 @@ public class FileSystemDouble implements IFileSystem {
 		// TODO: better mocking required??
 		return path;
 	}
-	
-	
 }

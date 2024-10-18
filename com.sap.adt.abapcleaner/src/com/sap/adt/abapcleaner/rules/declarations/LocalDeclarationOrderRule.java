@@ -25,8 +25,7 @@ import com.sap.adt.abapcleaner.rulebase.RuleGroupID;
 import com.sap.adt.abapcleaner.rulebase.RuleID;
 import com.sap.adt.abapcleaner.rulebase.RuleReference;
 import com.sap.adt.abapcleaner.rulebase.RuleSource;
-import com.sap.adt.abapcleaner.rulehelpers.ClassInfo;
-import com.sap.adt.abapcleaner.rulehelpers.LocalVariables;
+import com.sap.adt.abapcleaner.rulehelpers.Variables;
 import com.sap.adt.abapcleaner.rulehelpers.VariableInfo;
 
 public class LocalDeclarationOrderRule extends RuleForDeclarations {
@@ -157,13 +156,7 @@ public class LocalDeclarationOrderRule extends RuleForDeclarations {
 	}
 
 	@Override
-	protected void executeOn(Code code, ClassInfo classInfo, int releaseRestriction) throws UnexpectedSyntaxAfterChanges {
-		// nothing to do on class definition level
-		return;
-	}
-
-	@Override
-	protected void executeOn(Code code, Command methodStart, LocalVariables localVariables, int releaseRestriction) throws UnexpectedSyntaxAfterChanges {
+	protected void executeOn(Code code, Command methodStart, Variables localVariables, int releaseRestriction) throws UnexpectedSyntaxAfterChanges {
 		HashMap<Command, Command> writePosOfParent = new HashMap<>(); 
 		HashMap<Command, Token> writePosOfChain = new HashMap<>(); 
 		
@@ -195,7 +188,7 @@ public class LocalDeclarationOrderRule extends RuleForDeclarations {
 	}
 
 	/** rearranges all declarations of the supplied type in the configured order */
-	private void rearrange(DeclarationType declarationType, LocalDeclarationOrder useOrder, Code code, Command methodStart, LocalVariables localVariables, HashMap<Command, Command> writePosOfParent, HashMap<Command, Token> writePosOfChain) throws UnexpectedSyntaxAfterChanges {
+	private void rearrange(DeclarationType declarationType, LocalDeclarationOrder useOrder, Code code, Command methodStart, Variables localVariables, HashMap<Command, Command> writePosOfParent, HashMap<Command, Token> writePosOfChain) throws UnexpectedSyntaxAfterChanges {
 		boolean rearrangeChains = configRearrangeChains.getValue();
 		boolean considerComments = configConsiderComments.getValue();
 		
@@ -244,7 +237,7 @@ public class LocalDeclarationOrderRule extends RuleForDeclarations {
 	}
 
 	/** returns the order in which local variables shall be rearranged, depending on configuration */
-	private Iterable<VariableInfo> getLocalsOrder(LocalDeclarationOrder useOrder, LocalVariables localVariables) {
+	private Iterable<VariableInfo> getLocalsOrder(LocalDeclarationOrder useOrder, Variables localVariables) {
 		if (useOrder == LocalDeclarationOrder.METHOD_START_KEEP_ORDER) 
 			return localVariables.getLocalsInDeclarationOrder();
 		else if (configConsiderComments.getValue())
@@ -388,7 +381,7 @@ public class LocalDeclarationOrderRule extends RuleForDeclarations {
 
 	/** moves the supplied Section to the next write position under the supplied ('enclosing') parent Command, adjusts empty lines 
 	 * before and after the (old and new) position of the section, and updates the write position */
-	private void moveSection(Section section, Command methodStart, Command parent, Code code, HashMap<Command, Command> writePosOfParent, LocalVariables localVariables) throws UnexpectedSyntaxAfterChanges {
+	private void moveSection(Section section, Command methodStart, Command parent, Code code, HashMap<Command, Command> writePosOfParent, Variables localVariables) throws UnexpectedSyntaxAfterChanges {
 		// do not move the section if any of its Commands are blocked
 		Command command = section.firstCommand;
 		while (command != null) {
@@ -516,7 +509,7 @@ public class LocalDeclarationOrderRule extends RuleForDeclarations {
 		} 
 	}
 
-	private boolean canSectionBeMoved(Section section, Command writePos, Command methodStart, LocalVariables localVariables) {
+	private boolean canSectionBeMoved(Section section, Command writePos, Command methodStart, Variables localVariables) {
 		HashSet<Command> declarationsBefore = null;
 		for (VariableInfo testLocal : localVariables.getLocalsInDeclarationOrder()) {
 			if (testLocal.isParameter() || testLocal.getTypeSource() == null || !section.contains(testLocal.declarationToken.getParentCommand())) {

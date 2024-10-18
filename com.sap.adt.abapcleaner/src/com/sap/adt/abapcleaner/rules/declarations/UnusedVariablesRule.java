@@ -4,8 +4,7 @@ import com.sap.adt.abapcleaner.base.*;
 import com.sap.adt.abapcleaner.parser.*;
 import com.sap.adt.abapcleaner.programbase.*;
 import com.sap.adt.abapcleaner.rulebase.*;
-import com.sap.adt.abapcleaner.rulehelpers.ClassInfo;
-import com.sap.adt.abapcleaner.rulehelpers.LocalVariables;
+import com.sap.adt.abapcleaner.rulehelpers.Variables;
 import com.sap.adt.abapcleaner.rulehelpers.VariableInfo;
 
 import java.time.LocalDate;
@@ -144,13 +143,7 @@ public class UnusedVariablesRule extends RuleForDeclarations {
 	}
 
 	@Override
-	protected void executeOn(Code code, ClassInfo classInfo, int releaseRestriction) throws UnexpectedSyntaxAfterChanges {
-		// nothing to do on class definition level
-		return;
-	}
-
-	@Override
-	protected void executeOn(Code code, Command methodStart, LocalVariables localVariables, int releaseRestriction) throws UnexpectedSyntaxAfterChanges, IntegrityBrokenException {
+	protected void executeOn(Code code, Command methodStart, Variables localVariables, int releaseRestriction) throws UnexpectedSyntaxAfterChanges, IntegrityBrokenException {
 		// even if there are no local variables, remove obsolete comments that were generated in previous runs of this cleanup rule 
 		// but are no more attached to a declaration
 		try {

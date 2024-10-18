@@ -1889,4 +1889,96 @@ public class CommandTest {
 		assertNull(commands[5].getLastOfMultiLineDdlComment());
 		assertNull(commands[6].getLastOfMultiLineDdlComment());
 	}
+	
+	@Test
+	void testIsTestingAnnotation() {
+		assertFalse(buildCommand("\" comment").isTestingAnnotation());
+		assertFalse(buildCommand("\"! comment").isTestingAnnotation());
+		assertFalse(buildCommand("\"! testing").isTestingAnnotation());
+		assertFalse(buildCommand("\"! testing I_AnyView").isTestingAnnotation());
+		
+		assertTrue(buildCommand("\"!@testing I_AnyView").isTestingAnnotation());
+		assertTrue(buildCommand("\"!  @  testing I_AnyView").isTestingAnnotation());
+	}
+	
+	@Test
+	void testGetInitialBlockLevel() {
+		StringBuilder sb = new StringBuilder();
+		sb.append("TYPES BEGIN OF ty_s_any.");
+		sb.append(SEP + "TYPES a TYPE i.");
+		sb.append(SEP + "TYPES BEGIN OF ty_s_inner.");
+		sb.append(SEP + "TYPES b TYPE i.");
+		sb.append(SEP + "TYPES END OF ty_s_inner.");
+		sb.append(SEP + "TYPES END OF ty_s_any.");
+		sb.append(SEP + "TYPES ty_other TYPE i.");
+		buildCommand(sb.toString());
+		assertEquals(0, commands[0].getInitialBlockLevel());
+		assertEquals(1, commands[1].getInitialBlockLevel());
+		assertEquals(1, commands[2].getInitialBlockLevel());
+		assertEquals(2, commands[3].getInitialBlockLevel());
+		assertEquals(2, commands[4].getInitialBlockLevel());
+		assertEquals(1, commands[5].getInitialBlockLevel());
+		assertEquals(0, commands[6].getInitialBlockLevel());
+	}
+	
+	@Test
+	void testGetSourceLineBreaks() {
+		StringBuilder sb = new StringBuilder();
+		sb.append("DATA a TYPE i.");
+		sb.append(SEP + "a = 1.");
+		sb.append(SEP + SEP + "a = 2.");
+		sb.append(" a = 3.");
+		buildCommand(sb.toString());
+		
+		for (Command command : commands)
+			command.firstToken.setLineBreaks(1);
+		
+		assertEquals(0, commands[0].getSourceLineBreaksBefore());
+		assertEquals(1, commands[1].getSourceLineBreaksBefore());
+		assertEquals(2, commands[2].getSourceLineBreaksBefore());
+		assertEquals(0, commands[3].getSourceLineBreaksBefore());
+	}
+	
+	@Test
+	void testIsCommentLine() {
+		assertTrue(buildCommand("\" comment").isCommentLine());
+		assertTrue(buildCommand("* comment").isCommentLine());
+		assertFalse(buildCommand("REPORT any_report").isCommentLine());
+
+		assertTrue(buildCommand("// comment").isCommentLine());
+		assertTrue(buildCommand("/* comment */").isCommentLine());
+		assertTrue(buildCommand("/* comment */ // other comment in same line").isCommentLine());
+		assertFalse(buildCommand("@Annotation.subAnno: 'value'").isCommentLine());
+	}
+	
+	@Test
+	void testEndsLoop() {
+		buildCommand("LOOP AT lt_any INTO DATA(ls_any). IF a = 1. ENDIF. ENDLOOP.");
+		assertFalse(commands[0].endsLoop());
+		assertFalse(commands[1].endsLoop());
+		assertFalse(commands[2].endsLoop());
+		assertTrue(commands[3].endsLoop());
+	}
+	
+	@Test
+	void testIsDcl() {
+		assertFalse(buildCommand("REPORT any_report.").isDcl());
+		assertFalse(buildCommand("define view I_AnyView as select from I_AnySource { }").isDcl());
+		assertTrue(buildCommand("define role I_AnyView grant select on I_AnySource where ( AnyField ) = aspect pfcg_auth( ANY, OTHER, THIRD, ACTVT = '03' );").isDcl());
+	}
+	
+	@Test
+	void testLastCodeTokenIsKeyword() {
+		assertFalse(buildCommand("@Annotation.subAnno: 'value'").lastCodeTokenIsKeyword("define"));
+		assertFalse(buildCommand("// comment").lastCodeTokenIsKeyword("define"));
+		assertFalse(buildCommand("// comment").lastCodeTokenIsAnyKeyword("define", "view"));
+		
+		buildCommand("define view I_AnyView as select from I_AnySource { AnyField } where AnyField is not initial");
+		Command lastCommand = commands[commands.length - 1];
+		assertFalse(lastCommand.lastCodeTokenIsKeyword("null"));
+		assertTrue(lastCommand.lastCodeTokenIsKeyword("initial"));
+
+		assertFalse(lastCommand.lastCodeTokenIsAnyKeyword("is", "null"));
+		assertTrue(lastCommand.lastCodeTokenIsAnyKeyword("initial", "null"));
+	}
 }

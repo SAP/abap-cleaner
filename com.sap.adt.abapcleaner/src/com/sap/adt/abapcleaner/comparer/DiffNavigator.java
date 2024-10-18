@@ -154,6 +154,12 @@ public class DiffNavigator {
 		// if the code snippet contains METHOD with no CLASS around it, move to METHOD level (= in this case, top level)
 		while (startCommand.getParent() != null && startCommand.getParent().isMethodFunctionOrFormStart()) 
 			startCommand = startCommand.getParent();
+		// if the profile may move METHOD implementations, move to top level
+		if (profile.mayMoveMethods()) {
+			while (startCommand.getParent() != null && startCommand.getParent().isClassImplementationStart()) { 
+				startCommand = startCommand.getParent();
+			}
+		}
 		// similarly, move the last command to possibly have a parent, but no grandparent (i.e., assuming CLASS ... METHOD ..., move to ENDMETHOD level)
 		while (lastCommand != null && lastCommand.getParent() != null && lastCommand.getParent().getParent() != null)
 			lastCommand = lastCommand.getParent().getNextSibling();

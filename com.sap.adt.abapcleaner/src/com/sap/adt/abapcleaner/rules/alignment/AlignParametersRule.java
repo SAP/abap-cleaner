@@ -199,8 +199,7 @@ public class AlignParametersRule extends RuleForCommands {
 	
 	@Override
 	protected boolean executeOn(Code code, Command command, int releaseRestriction) throws UnexpectedSyntaxAfterChanges {
-		// we do NOT process SQL commands here, as their syntax is completely different (e.g. "WHERE client = :sy-mandt")
-		if (command.isAbapSqlOperation() || command.isCommentLine())
+		if (command.isCommentLine())
 			return false;
 		Token firstCode = command.getFirstCodeToken();
 		if (firstCode == null)
@@ -350,15 +349,16 @@ public class AlignParametersRule extends RuleForCommands {
 		}
 		
 		Token prev = token.getPrevCodeSibling();
-		if (prev != null && prev.isKeyword()) {
-			if (prev.isKeyword("METHOD")) {
-				// e.g. 'CALL METHOD any_method( ... )'  
-				return ContentType.PROCEDURAL_CALL_PARAMS;
-			} else {
-				// e.g. 'result = any_method( ... )', 'result = VALUE ty_s_any( ... )', 'param = VALUE #( ... )' 
-				return ContentType.CONSTRUCTOR_EXPR;
-			}
+		if (prev != null && prev.isKeyword("METHOD")) {
+			// e.g. 'CALL METHOD any_method( ... )'  
+			return ContentType.PROCEDURAL_CALL_PARAMS;
+
+		} else if (prev != null && prev.isAnyKeyword("NEW", "VALUE")) {
+			// e.g. 'result = VALUE ty_s_any( ... )', 'param = VALUE #( ... )' 
+			return ContentType.CONSTRUCTOR_EXPR;
+
 		} else {
+			// e.g. 'result = any_method( ... )', 'SELECT ... FROM I_AnyView( P_AnyParam = ... )'
 			return ContentType.FUNCTIONAL_CALL_PARAMS;
 		}
 	}
@@ -1021,34 +1021,24 @@ public class AlignParametersRule extends RuleForCommands {
 	}
 
 	private boolean alignAsteriskComment(Token comment, int parameterIndent, int assignmentOpIndent) {
-		// check whether the asterisk comment line has the format "***   parameter   =   ..." (with any number of spaces and asterisks)
-		String commentText = comment.getText();
-		if (commentText.indexOf('=') < 0)
-			return false;
-
-		int equalsSignPos = commentText.indexOf('=');
-		String[] asterisksAndParamName = StringUtil.split(commentText.substring(0, equalsSignPos), ' ', true);
-		if (asterisksAndParamName.length != 2 || !ABAP.mayBeVariableName(asterisksAndParamName[1], false, comment.getParentCommand().isInOOContext()))
+		String[] bits = comment.getBitsOfCommentedOutAssignment();
+		if (bits == null)
 			return false;
 
 		// align the commented-out assignment
-		String parameterName = asterisksAndParamName[1];
 		StringBuilder sb = new StringBuilder();
-		sb.append(asterisksAndParamName[0]); // any number of asterisks, by which the remaining text will be additionally shifted to the right
+		sb.append(bits[0]); // any number of asterisks, by which the remaining text will be additionally shifted to the right
+
 		sb.append(StringUtil.repeatChar(' ', parameterIndent));
-		sb.append(parameterName); 
-		int spaces = assignmentOpIndent - parameterIndent - parameterName.length();
-		sb.append(StringUtil.repeatChar(' ', Math.max(spaces, 1)));
-		sb.append('=');
-		if (equalsSignPos + 1 < commentText.length())
-			sb.append(' ').append(commentText.substring(equalsSignPos + 1).stripLeading());
+		sb.append(bits[1]); // parameter name 
 		
-		String newText = sb.toString();
-		if (newText.equals(comment.getText())) {
-			return false;
-		} else {
-			comment.setText(newText, false);
-			return true;
-		}
+		int spaces = assignmentOpIndent - parameterIndent - bits[1].length();
+		sb.append(StringUtil.repeatChar(' ', Math.max(spaces, 1)));
+		sb.append(bits[2]); // =
+		
+		if (!StringUtil.isNullOrEmpty(bits[3]))
+			sb.append(' ').append(bits[3]); // right-hand side term
+		
+		return comment.setText(sb.toString(), false);
 	}
 }

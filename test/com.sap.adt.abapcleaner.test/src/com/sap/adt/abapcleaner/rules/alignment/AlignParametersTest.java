@@ -1,5 +1,7 @@
 package com.sap.adt.abapcleaner.rules.alignment;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -28,6 +30,11 @@ class AlignParametersTest extends RuleTestBase {
 		rule.configKeepComponentsOnSingleLine.setEnumValue(ComponentsOnSingleLine.IF_BELOW_MAX_LINE_LENGTH);
 		rule.configKeepOtherOneLiners.setEnumValue(ComponentsOnSingleLine.NEVER);
 		rule.configAllowContentLeftOfAssignOp.setEnumValue(ContentLeftOfAssignOp.TO_KEEP_MAX_LINE_LENGTH);
+	}
+
+	@Test
+	void testDependsOnExternalFiles() {
+		assertFalse(rule.dependsOnExternalFiles());
 	}
 	
 	@Test
@@ -2999,6 +3006,228 @@ class AlignParametersTest extends RuleTestBase {
 		buildExp("         ASSIGNING FIELD-SYMBOL(<group>).");
 		buildExp("      cl_demo_output=>write( |{ <group>-indx } { <group>-key1 } { <group>-key2 } { <group>-count }| ).");
 		buildExp("    ENDLOOP.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testSelectWithDataSourceParameters() {
+		buildSrc("    SELECT");
+		buildSrc("      FROM P_AnyView( P_AnyYear   = @lv_year,");
+		buildSrc("* P_AnyQuarterFrom = '1'");
+		buildSrc("                                             P_AnyPeriodFrom = '001',P_AnyYearTo     = '2020', \" comment");
+		buildSrc("* P_AnyQuarterTo = '2'");
+		buildSrc("                                p_AnyPeriodTo   =   '004' )");
+		buildSrc("      FIELDS AnyField");
+		buildSrc("      INTO TABLE @lt_any_table.");
+
+		buildExp("    SELECT");
+		buildExp("      FROM P_AnyView( P_AnyYear       = @lv_year,");
+		buildExp("*                      P_AnyQuarterFrom = '1'");
+		buildExp("                      P_AnyPeriodFrom = '001',");
+		buildExp("                      P_AnyYearTo     = '2020', \" comment");
+		buildExp("*                      P_AnyQuarterTo  = '2'");
+		buildExp("                      p_AnyPeriodTo   = '004' )");
+		buildExp("      FIELDS AnyField");
+		buildExp("      INTO TABLE @lt_any_table.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testFunctionalCallInHostExpression() {
+		buildSrc("    SELECT any_col, other_col");
+		buildSrc("      FROM any_dtab");
+		buildSrc("      WHERE any_col = @lv_any_value");
+		buildSrc("        AND other_col = @( NEW cl_any_class( )->any_method( EXPORTING iv_any_param = 'literal'");
+		buildSrc("                                                        iv_other_param = lv_other_value iv_third_param = 42 ) )");
+		buildSrc("      INTO TABLE @FINAL(lt_any_result).");
+
+		buildExp("    SELECT any_col, other_col");
+		buildExp("      FROM any_dtab");
+		buildExp("      WHERE any_col = @lv_any_value");
+		buildExp("        AND other_col = @( NEW cl_any_class( )->any_method( EXPORTING iv_any_param   = 'literal'");
+		buildExp("                                                                      iv_other_param = lv_other_value");
+		buildExp("                                                                      iv_third_param = 42 ) )");
+		buildExp("      INTO TABLE @FINAL(lt_any_result).");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testSelectFieldListWithFunction() {
+		buildSrc("    SELECT FROM any_dtab");
+		buildSrc("           FIELDS id,");
+		buildSrc("                  currency_conversion(");
+		buildSrc("  amount = amount,source_currency =    currency,");
+		buildSrc("                     target_currency = @lv_currency,");
+		buildSrc("*                target_currency   =  @lv_currency2,");
+		buildSrc("                    exchange_rate_date    = @lv_date,");
+		buildSrc("                    round = 'X', on_error =");
+		buildSrc("                      @sql_currency_conversion=>c_on_error-fail ) AS amount,");
+		buildSrc("                    @currency  AS currency");
+		buildSrc("            INTO TABLE @DATA(lt_result).");
+
+		buildExp("    SELECT FROM any_dtab");
+		buildExp("           FIELDS id,");
+		buildExp("                  currency_conversion( amount             = amount,");
+		buildExp("                                       source_currency    = currency,");
+		buildExp("                                       target_currency    = @lv_currency,");
+		buildExp("*                                       target_currency    = @lv_currency2,");
+		buildExp("                                       exchange_rate_date = @lv_date,");
+		buildExp("                                       round              = 'X',");
+		buildExp("                                       on_error           = @sql_currency_conversion=>c_on_error-fail ) AS amount,");
+		buildExp("                    @currency  AS currency");
+		buildExp("            INTO TABLE @DATA(lt_result).");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testSelectFieldListWithNestedFunctions() {
+		buildSrc("    SELECT SINGLE");
+		buildSrc("      FROM any_dtab");
+		buildSrc("      FIELDS timestamp1,");
+		buildSrc("            tstmp_is_valid( timestamp1 ) AS valid1,");
+		buildSrc("            tstmp_seconds_between( tstmp1 = tstmp_current_utctimestamp( ),");
+		buildSrc("                          tstmp2   = tstmp_add_seconds( tstmp  =   timestamp1,");
+		buildSrc("                                       seconds = CAST( num1 AS DEC( 15,0 ) ), on_error = @sql_tstmp_add_seconds=>fail ),");
+		buildSrc("                        on_error   =    @sql_tstmp_seconds_between=>fail ) AS difference");
+		buildSrc("      INTO @DATA(lv_result).");
+
+		buildExp("    SELECT SINGLE");
+		buildExp("      FROM any_dtab");
+		buildExp("      FIELDS timestamp1,");
+		buildExp("            tstmp_is_valid( timestamp1 ) AS valid1,");
+		buildExp("            tstmp_seconds_between( tstmp1   = tstmp_current_utctimestamp( ),");
+		buildExp("                                   tstmp2   = tstmp_add_seconds( tstmp    = timestamp1,");
+		buildExp("                                                                 seconds  = CAST( num1 AS DEC( 15,0 ) ),");
+		buildExp("                                                                 on_error = @sql_tstmp_add_seconds=>fail ),");
+		buildExp("                                   on_error = @sql_tstmp_seconds_between=>fail ) AS difference");
+		buildExp("      INTO @DATA(lv_result).");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testSelectWithParametersAndNestedFunction() {
+		rule.configMaxLineLength.setValue(80);
+
+		buildSrc("    SELECT FROM any_dtab(");
+		buildSrc("              p_ts_from = @( CONV timestamp( cl_abap_tstmp=>subtractsecs(");
+		buildSrc("                                  tstmp = ts");
+		buildSrc("                                     secs  =   3600 ) ) ),");
+		buildSrc("                  p_ts_to =  @( CONV timestamp(  cl_abap_tstmp=>add(");
+		buildSrc("                                     tstmp = ts secs  = 3600 ) ) ) )");
+		buildSrc("           FIELDS any_field");
+		buildSrc("           INTO TABLE @DATA(lt_result).");
+
+		buildExp("    SELECT FROM any_dtab(");
+		buildExp("                    p_ts_from = @( CONV timestamp( cl_abap_tstmp=>subtractsecs(");
+		buildExp("                                                       tstmp = ts");
+		buildExp("                                                       secs  = 3600 ) ) ),");
+		buildExp("                    p_ts_to   = @( CONV timestamp(  cl_abap_tstmp=>add(");
+		buildExp("                                                        tstmp = ts");
+		buildExp("                                                        secs  = 3600 ) ) ) )");
+		buildExp("           FIELDS any_field");
+		buildExp("           INTO TABLE @DATA(lt_result).");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testSelectWithBuiltInFunctionInWhere() {
+		buildSrc("    SELECT any_field");
+		buildSrc("      FROM any_dtab");
+		buildSrc("      WHERE any_field = 'E'");
+		buildSrc("        AND like_regexpr( pcre = @regex,");
+		buildSrc("                            value =   text,");
+		buildSrc("                       case_sensitive  = ' ' ) = 1");
+		buildSrc("      ORDER BY any_field");
+		buildSrc("      INTO TABLE @DATA(lt_result)");
+		buildSrc("      UP TO 100 ROWS.");
+
+		buildExp("    SELECT any_field");
+		buildExp("      FROM any_dtab");
+		buildExp("      WHERE any_field = 'E'");
+		buildExp("        AND like_regexpr( pcre           = @regex,");
+		buildExp("                          value          = text,");
+		buildExp("                          case_sensitive = ' ' ) = 1");
+		buildExp("      ORDER BY any_field");
+		buildExp("      INTO TABLE @DATA(lt_result)");
+		buildExp("      UP TO 100 ROWS.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testSelectFirstValueOverUnchanged() {
+		buildSrc("    SELECT id, col1, col2, col3,");
+		buildSrc("           FIRST_VALUE( col2 ) OVER( PARTITION BY col1 ORDER BY col3 )");
+		buildSrc("                       AS first_value,");
+		buildSrc("           LAST_VALUE( col2 ) OVER( PARTITION BY col1 ORDER BY col3");
+		buildSrc("                       ROWS BETWEEN UNBOUNDED PRECEDING");
+		buildSrc("                         AND UNBOUNDED FOLLOWING )");
+		buildSrc("                       AS last_value");
+		buildSrc("      FROM demo_update");
+		buildSrc("      INTO TABLE @DATA(lt_result).");
+
+		copyExpFromSrc();
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testSelectHierarchyUnchanged() {
+		buildSrc("    SELECT agg~*");
+		buildSrc("           FROM HIERARCHY_DESCENDANTS_AGGREGATE(");
+		buildSrc("                  SOURCE HIERARCHY(");
+		buildSrc("                           SOURCE any_source");
+		buildSrc("                            CHILD TO PARENT ASSOCIATION _relat");
+		buildSrc("                             START WHERE id = 'A'");
+		buildSrc("                              SIBLINGS ORDER BY id )");
+		buildSrc("                    MEASURES MIN( num ) AS min,");
+		buildSrc("                              MAX( num ) AS max,");
+		buildSrc("                               SUM( num ) AS sum,");
+		buildSrc("                                COUNT( * ) AS cnt");
+		buildSrc("                  WHERE hierarchy_level <= @level ) AS agg");
+		buildSrc("           INTO TABLE @DATA(lt_any).");
+
+		copyExpFromSrc();
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testSelectSumCaseUnchanged() {
+		buildSrc("    SELECT SUM( CASE WHEN     any_col   = @lv_any_value");
+		buildSrc("                          AND other_col = @lv_other_value");
+		buildSrc("                     THEN 1");
+		buildSrc("                     ELSE 0");
+		buildSrc("                END ) AS any_col");
+		buildSrc("      FROM any_dtab");
+		buildSrc("      WHERE third_col = @lv_third_value");
+		buildSrc("      INTO @DATA(ls_any_struc).");
+
+		copyExpFromSrc();
 
 		putAnyMethodAroundSrcAndExp();
 

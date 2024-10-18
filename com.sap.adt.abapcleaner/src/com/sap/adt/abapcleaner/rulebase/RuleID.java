@@ -12,6 +12,7 @@ public enum RuleID  {
    EMPTY_LINES_WITHIN_METHODS,
    EMPTY_LINES_OUTSIDE_METHODS,
    EMPTY_LINES_IN_CLASS_DEFINITION,
+   CDS_TEST_CLASS_LINES,
    
    // Spaces 
    SPACES_IN_EMPTY_BRACKETS, // for compatibility, this old RuleID is kept, while the class was renamed from SpacesInEmptyBracketsRule to SpaceAroundTextLiteralRule
@@ -85,6 +86,7 @@ public enum RuleID  {
    // Pretty Printer
    UPPER_AND_LOWER_CASE,
    CAMEL_CASE_NAME,
+   CAMEL_CASE_IN_CDS_TEST,
    INSET,
 
 	// Alignment 

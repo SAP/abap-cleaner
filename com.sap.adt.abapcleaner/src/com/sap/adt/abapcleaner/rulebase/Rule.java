@@ -41,7 +41,7 @@ import java.time.LocalDate;
 import java.util.*;
 
 public abstract class Rule {
-	public static final int RULE_COUNT = 96;
+	public static final int RULE_COUNT = 98;
 	public static final int RULE_GROUP_COUNT = 12;
 
 	protected static final String LINE_SEP = ABAP.LINE_SEPARATOR;
@@ -84,6 +84,7 @@ public abstract class Rule {
          new EmptyLinesInClassDefinitionRule(profile),
          new EmptyLinesWithinMethodsRule(profile),
          new EmptyLinesOutsideMethodsRule(profile),
+         new CdsTestClassLinesRule(profile),
          
          // spaces
          new SpaceAroundTextLiteralRule(profile),
@@ -148,6 +149,7 @@ public abstract class Rule {
          // pretty printer
          new UpperAndLowerCaseRule(profile),
          new CamelCaseNameRule(profile),
+         new CamelCaseInCdsTestRule(profile),
          new IndentRule(profile),
          
          // alignment
@@ -248,7 +250,10 @@ public abstract class Rule {
 	/** true if adherence to this rule is explicitly demanded by the 
 	 * <a href="https://github.com/SAP/styleguides/blob/main/clean-abap/CleanABAP.md">Clean ABAP style guide</a> */
 	public boolean isEssential() { return false; }
-	
+
+	/** true if the rule depends on the content of file that are stored separately and might have changed when the focus returns */
+	public boolean dependsOnExternalFiles() { return false; }
+
 	public abstract String getExample();
 	
 	public ConfigValue[] getConfigValues() { return new ConfigValue[] { new ConfigInfoValue(this, "(no options available for this rule)") }; }
@@ -258,6 +263,9 @@ public abstract class Rule {
 	protected abstract void executeOn(Code code, int releaseRestriction) throws UnexpectedSyntaxBeforeChanges, UnexpectedSyntaxAfterChanges;
 
 	public boolean isConfigValueEnabled(ConfigValue configValue) { return true; }
+	
+	/** returns the path of a file or folder to be opened */
+	public String buttonClicked(ConfigValue configValue) { return null; }
 	
 	public final Profile parentProfile;
 	/** holds the Command that is currently processed in executeOn() which may be used for error messages */

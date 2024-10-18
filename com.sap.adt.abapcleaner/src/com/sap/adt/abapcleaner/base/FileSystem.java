@@ -33,6 +33,11 @@ public class FileSystem implements IFileSystem {
 	}
 
 	@Override
+	public long getLastModified(String path) {
+		return (new File(path)).lastModified();
+	}
+
+	@Override
 	public boolean deleteFile(String path) {
 		return (new File(path)).delete();
 	}

@@ -23,6 +23,7 @@ class ValueStatementTest extends RuleTestBase {
 		rule.configMoveIdentifiers.setValue(true);
 		rule.configMoveComplexExpressions.setValue(true); 
 		rule.configMoveMethodCalls.setValue(false);
+		rule.configSkipIfRowsCommentedOut.setValue(true);
 	}
 	
 	@Test
@@ -338,6 +339,98 @@ class ValueStatementTest extends RuleTestBase {
 		buildSrc("                        b = 'Y' ) ).");
 		
 		copyExpFromSrc();
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testSkipIfRowsCommentedOut() {
+		buildSrc("    lts_data = VALUE #( ( a = 2  b = 3  c = 6 )");
+		buildSrc("*                        ( a = 1  b = 4  c = 8 ) ");
+		buildSrc("                        ( a = 2  b = 5  c = 10 )  ).");
+
+		copyExpFromSrc();
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testDoNotSkipIfRowsCommentedOut() {
+		rule.configSkipIfRowsCommentedOut.setValue(false);
+
+		buildSrc("    lts_data = VALUE #( ( a = 2  b = 3  c = 6 )");
+		buildSrc("*                        ( a = 1  b = 4  c = 8 ) ");
+		buildSrc("                        ( a = 2  b = 5  c = 10 )  ).");
+
+		buildExp("    lts_data = VALUE #( a = 2");
+		buildExp("                        ( b = 3  c = 6 )");
+		buildExp("*                        ( a = 1  b = 4  c = 8 ) ");
+		buildExp("                        ( b = 5  c = 10 )  ).");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testCommentedOutValueNotExtracted() {
+		buildSrc("    lts_data = VALUE #( ( a = 2");
+		buildSrc("*                          b = 3");
+		buildSrc("                          c = 6 )");
+		buildSrc("                        ( a = 2");
+		buildSrc("                          b = 3");
+		buildSrc("                          c = 8 ) ).");
+
+		buildExp("    lts_data = VALUE #( a = 2");
+		buildExp("                        (");
+		buildExp("*                          b = 3");
+		buildExp("                          c = 6 )");
+		buildExp("                        ( b = 3");
+		buildExp("                          c = 8 ) ).");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testGroupingWithEmptyLines() {
+		// ensure that grouping (i.e. the empty line above fifth_comp) is preserved when factoring out, 
+		// while the empty line is NOT propagated to the following factored-out components;
+		// also, ensure that an additional empty line is added above the first table row in such a case 
+		
+		buildSrc("    lt_any_table = VALUE #( ( any_comp    = 'T1'");
+		buildSrc("                              other_comp  = 'T2'");
+		buildSrc("                              third_comp  = '2'");
+		buildSrc("                              fourth_comp = 'T3'");
+		buildSrc("");
+		buildSrc("                              fifth_comp  = 'T4'");
+		buildSrc("                              comp_6      = 'T4'");
+		buildSrc("                              comp_7      = 'T4' )");
+		buildSrc("                            ( any_comp    = 'T1'");
+		buildSrc("                              other_comp  = 'T2'");
+		buildSrc("                              third_comp  = '3'");
+		buildSrc("                              fourth_comp = 'T5'");
+		buildSrc("");
+		buildSrc("                              fifth_comp  = 'T4'");
+		buildSrc("                              comp_6      = 'T4'");
+		buildSrc("                              comp_7      = 'T4' ) ).");
+
+		buildExp("    lt_any_table = VALUE #( any_comp    = 'T1'");
+		buildExp("                            other_comp  = 'T2'");
+		buildExp("");
+		buildExp("                            fifth_comp  = 'T4'");
+		buildExp("                            comp_6      = 'T4'");
+		buildExp("                            comp_7      = 'T4'");
+		buildExp("");
+		buildExp("                            ( third_comp  = '2'");
+		buildExp("                              fourth_comp = 'T3' )");
+		buildExp("                            ( third_comp  = '3'");
+		buildExp("                              fourth_comp = 'T5' ) ).");
 
 		putAnyMethodAroundSrcAndExp();
 

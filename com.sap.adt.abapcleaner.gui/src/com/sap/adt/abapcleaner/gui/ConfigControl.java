@@ -11,7 +11,7 @@ abstract class ConfigControl {
    public abstract Control[] getControls();
    public abstract Control[] getControlsForHighlight();
    public abstract void setDefault();
-   public abstract void setEnabled(boolean enabled);
+   public abstract void setEnabled(boolean writable, boolean enabled);
    
    protected ConfigValue configValue;
    protected IConfigDisplay configDisplay;

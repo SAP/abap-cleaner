@@ -65,13 +65,13 @@ public class VariableInfo {
    public boolean isAssignedInMessageInto() { return assignedCountInMessageInto > 0; }
    public boolean isAssignedInComment() { return assignedCountInComment > 0; }
    
-   public VariableInfo(Token declarationToken, boolean isDeclaredInline, boolean isType, boolean isConstant, boolean isBoundStructuredData) {
+   public VariableInfo(Token declarationToken, boolean isDeclaredInline, boolean isType, boolean isConstant, boolean isBoundStructuredData, VariableAccessType variableAccessType) {
       this.declarationToken = declarationToken;
       this.isDeclaredInline = isDeclaredInline;
       this.isType = isType;
       this.isConstant = isConstant;
       this.isBoundStructuredData = isBoundStructuredData;
-      this.accessType = VariableAccessType.LOCAL;
+      this.accessType = variableAccessType;
       this.parameterInfo = null;
    }
 
@@ -141,8 +141,9 @@ public class VariableInfo {
 	}
 
 	public void addAssignedFieldSymol(VariableInfo fieldSymbolInfo) {
-		if (fieldSymbolInfo != null && !assignedFieldSymbols.contains(fieldSymbolInfo))
+		if (fieldSymbolInfo != null && !assignedFieldSymbols.contains(fieldSymbolInfo)) {
 			assignedFieldSymbols.add(fieldSymbolInfo);
+		}
 	}
 	
 	public void addReferenceByDataRef() {

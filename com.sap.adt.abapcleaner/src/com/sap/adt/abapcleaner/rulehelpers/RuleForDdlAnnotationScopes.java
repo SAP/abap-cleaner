@@ -25,8 +25,10 @@ public abstract class RuleForDdlAnnotationScopes extends Rule {
 
 	@Override
 	protected void executeOn(Code code, int releaseRestriction) throws UnexpectedSyntaxBeforeChanges, UnexpectedSyntaxAfterChanges {
+		final boolean allowCommentsInAnnotations = false; // not yet supported
+		
 		Command command = code.firstCommand;
-		DdlAnnotationScope scope = new DdlAnnotationScope();
+		DdlAnnotationScope scope = new DdlAnnotationScope(allowCommentsInAnnotations );
 
 		boolean skipSection = false;
 		while (command != null) {
@@ -38,7 +40,7 @@ public abstract class RuleForDdlAnnotationScopes extends Rule {
 				if (!skipSection && !scope.isEmpty()) {
 					executeOn(code, scope);
 				}
-				scope = new DdlAnnotationScope();
+				scope = new DdlAnnotationScope(allowCommentsInAnnotations );
 				skipSection = false;
 			
 			} else if (isCommandBlocked(command)) {

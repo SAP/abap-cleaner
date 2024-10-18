@@ -1,6 +1,7 @@
 package com.sap.adt.abapcleaner.parser;
 
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.Test;
 
@@ -54,6 +55,7 @@ public class DdlObfuscatorTest {
    	String actCodeText = code.toString();
    	
    	// helper for creating tests:
+   	/*
    	if (!actCodeText.equals(expCodeText)) {
    		// only report differences
 	   	System.out.print("\t\ttest(\"" + codeText.replaceAll("\r\n", "\" + SEP + \"") + "\",");
@@ -61,9 +63,8 @@ public class DdlObfuscatorTest {
 	   	System.out.print("\t\t\t\t\"" + actCodeText.replaceAll("\r\n", "\" + SEP + \"") + "\");");
 	   	System.out.println();
    	}
-   	/*
-   	assertEquals(expCodeText, actCodeText);
    	*/
+   	assertEquals(expCodeText, actCodeText);
 	}
 
 	@Test
@@ -155,7 +156,7 @@ public class DdlObfuscatorTest {
 
 		// unsupported annotations with comments
 		test("define view entity Vw as select from Src1 as Al1 { @Semantics.amount.currencyCode: /* comment */ 'Fld2' key Al1.Fld1, @Consumption.valueHelpDefinition.entity:[{name: 'Src2', element:'FldX'}] Al2.Fld2, Al2.Fld3 }",
-				"define view entity V1 as select from D1 as A1 { @Semantics.amount.currencyCode: /* comment */ 'T1' key A1.F1, @Consumption.valueHelpDefinition.entity:[{name: 'V2', element:'F2'}] A2.F3, A2.F4 }");
+				"define view entity V1 as select from D1 as A1 { @Semantics.amount.currencyCode: /* comment */ 'F1' key A1.F2, @Consumption.valueHelpDefinition.entity:[{name: 'V2', element:'F3'}] A2.F1, A2.F4 }");
 
 		// literals outside of annotations
 		test("define view entity Vw as select from Src1 as Al1 { key Al1.Fld1 as Fld1, 'Lit1' as Fld2, concat('Lit2', 'Lit3') as Fld3, cast(42 as any_type) as Fld4 }",

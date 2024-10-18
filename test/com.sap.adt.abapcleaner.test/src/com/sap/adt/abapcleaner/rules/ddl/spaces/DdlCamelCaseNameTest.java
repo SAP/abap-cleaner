@@ -1,5 +1,7 @@
 package com.sap.adt.abapcleaner.rules.ddl.spaces;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -24,6 +26,11 @@ public class DdlCamelCaseNameTest extends RuleTestBase {
 		
 		rule.configOnlyApprovedNames.setValue(true);
 		rule.configRequireAllFieldsKnown.setValue(true);
+	}
+
+	@Test
+	void testDependsOnExternalFiles() {
+		assertTrue(rule.dependsOnExternalFiles());
 	}
 
 	@Test

@@ -56,8 +56,8 @@ class ConfigCheckBox extends ConfigControl {
    }
 
    @Override
-   public void setEnabled(boolean enabled) {
-   	chkValue.setEnabled(enabled);
+   public void setEnabled(boolean writable, boolean enabled) {
+   	chkValue.setEnabled(writable && enabled);
    }
    
    private void selectionChanged() {

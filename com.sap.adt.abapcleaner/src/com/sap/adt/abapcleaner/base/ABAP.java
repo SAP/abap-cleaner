@@ -109,6 +109,7 @@ public final class ABAP {
 	public static final String ABAP_DOC_EXCEPTION_ANNOTATION = "@exception";
    public static final char NAMESPACE_SIGN = '/';
    public static final char TABLE_EXPR_BRACKET_OPEN = '[';
+   public static final String TABLE_EXPR_BRACKET_OPEN_STRING = "[";
    public static final char TABLE_EXPR_BRACKET_CLOSE = ']';
    public static final char PRAGMA_PARAMETER_BRACKET_OPEN = '[';
    public static final char PRAGMA_PARAMETER_BRACKET_CLOSE = ']';
@@ -185,14 +186,26 @@ public final class ABAP {
 	public final static String[] abapSqlAggregateFunctions = new String[] { "AVG(", "MEDIAN(", "MAX(", "MIN(", "SUM(", "PRODUCT(", "STDDEV(", "VAR(", "CORR(", "CORR_SPEARMAN(", "STRING_AGG(", "COUNT(", "GROUPING(", "ALLOW_PRECISION_LOSS(" };
    public final static String[] abapSqlLiteralTypes = new String[] { "INT1", "INT2", "INT4", "INT8", "DEC", "DECFLOAT16", "D16N", "DF16_RAW", "D16R ", "DECFLOAT34", "D34N", "DF34_RAW", "D34R", "DF16_DEC", "D16D", "DF34_DEC", "D34D", "FLTP", "CHAR", "STRING", "SSTRING", "RAW", "RAWSTRING", "NUMC", "CLNT", "LANG", "DATS", "DATN", "TIMS", "TIMN", "UTCLONG", "CURR", "CUKY", "QUAN", "UNIT" };
    /** ABAP SQL functions contain CAST, aggregate functions, numeric / string / coalesce / UUID functions, special conversion / date / time functions, but NOT window expressions */
-	public final static String[] abapSqlFunctions = new String[] { "CAST(", "ALLOW_PRECISION_LOSS(", "AVG(", "CORR(", "CORR_SPEARMAN(", "COUNT(", "GROUPING(", "MAX(", "MEDIAN(", "MIN(", "PRODUCT(", "STDDEV(", "STRING_AGG(", "SUM(", "VAR(", 
+	public final static String[] abapSqlFunctions = new String[] { "CAST(", "ALLOW_PRECISION_LOSS(", "AVG(", "CORR(", "CORR_SPEARMAN(", "COUNT(", "GROUPING(", "MAX(", "MEDIAN(", "MIN(", "PRODUCT(", "STDDEV(", "STRING_AGG(", "SUM(", "VAR(",
+				"ROW_NUMBER(", "RANK(", "DENSE_RANK(", "NTILE(", "LEAD(", "LAG(", "FIRST_VALUE(", "LAST_VALUE(", // win_func
 				"abap_system_timezone(", "abap_user_timezone(", "abs(", "add_days(", "add_months(", "as_geo_json(", "bintohex(", "ceil(", "coalesce(", "concat(", "concat_with_space(", "currency_conversion(", "datn_add_days(", "datn_add_months(", 
 				"datn_days_between(", "dats_add_days(", "dats_add_months(", "dats_days_between(", "dats_from_datn(", "dats_is_valid(", "dats_tims_to_tstmp(", "dats_to_datn(", "dayname(", "days_between(", "div(", "division(", "extract_day(", "extract_hour(", 
 				"extract_minute(", "extract_month(", "extract_second(", "extract_year(", "floor(", "hextobin(", "initcap(", "instr(", "is_valid(", "left(", "length(", "like_regexpr(", "locate(", "locate_regexpr(", "locate_regexpr_after(", "lower(", "lpad(", 
 				"ltrim(", "mod(", "monthname(", "occurrences_regexpr(", "replace(", "replace_regexpr(", "right(", "round(", "rpad(", "rtrim(", "substring(", "substring_regexpr(", "tims_from_timn(", "tims_is_valid(", "tims_to_timn(", "to_blob(", "to_clob(", 
 				"tstmp_add_seconds(", "tstmp_current_utctimestamp(", "tstmp_is_valid(", "tstmp_seconds_between(", "tstmp_to_dats(", "tstmp_to_dst(", "tstmp_to_tims(", "tstmpl_from_utcl(", "tstmpl_to_utcl(", "unit_conversion(", "upper(", "utcl_add_seconds(", 
 				"utcl_current(", "utcl_seconds_between(", "uuid(", "weekday(" }; 
-
+	public final static String[] abapSqlFunctionsWithAssignments = new String[] {
+			// String Functions
+			"like_regexpr(", "locate_regexpr(", "locate_regexpr_after(", "occurrences_regexpr(", "replace_regexpr(", "substring_regexpr(",
+			// Unit and Currency Conversion Functions
+			"currency_conversion(", "unit_conversion(",
+			// Time Stamp Functions
+			"tstmp_seconds_between(", "tstmp_add_seconds(",
+			// Time Zone Functions
+			"abap_system_timezone(", "abap_user_timezone(",
+			// Date/Time Conversions                         
+			"tstmp_to_dats(", "tstmp_to_tims(", "tstmp_to_dst(", "dats_tims_to_tstmp(", "tstmpl_to_utcl(", "tstmpl_from_utcl(", "dats_to_datn(", "dats_from_datn(", "tims_to_timn(", "tims_from_timn(" };
+	
    public final static String[] builtInAbapTypes = new String[] { "b", "c", "d", "decfloat16", "decfloat34", "f", "i", "int8", "n", "p", "s", "string", "t", "utclong", "x", "xstring" };
    public final static String[] builtInDdicTypes = new String[] { "abap_bool", "abap_boolean", "d16n", "d34n", "datn", "geom_ewkb", "ggm1", "int1", "int2", "int4", "timn", "utcl" };
 

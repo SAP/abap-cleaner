@@ -648,8 +648,9 @@ public class Token {
 				// text may still contain spaces for several Tokens, e.g. "TRANSPORTING NO FIELDS"
 				Token testToken = token.getLastTokenOfPlainSequence(siblingsOnly, skipCommentsAndPragmas, StringUtil.split(text, space, false));
 				match = (testToken != null);
-				if (match)
+				if (match) {
 					token = testToken;
+				}
 			}
 
 			if (match) {
@@ -2617,11 +2618,13 @@ public class Token {
 	public Token getEndOfParamsOrComponentsList() {
 		if (!getOpensLevel() || !hasChildren() || isLiteral()) {
 			return null;
-		} else if (next.isAttached() && (next.isIdentifier() || next.isLiteral() || next.textEquals("*"))) {
-			// e.g. DATA(lv_variable) or lv_any(5) or lv_any+5(*)
+		} else if (next.isAttached() && (next.isIdentifier() || next.isLiteral() || next.textEqualsAny("*", "**"))) {
+			// e.g. DATA(lv_variable) or lv_any(5) or lv_any+5(*) or ULINE AT /10(**).
 			return null; 
-
-		} else if (textEqualsAny("boolc(", "boolx(", "xsdbool(")) {
+		}
+		
+		boolean isSqlOperation = parentCommand.isAbapSqlOperation();
+		if (textEqualsAny("boolc(", "boolx(", "xsdbool(")) {
 			// skip built-in functions for logical expressions; also skip "boolx( bool = log_exp bit = bit )", 
 			// because parameters that expect a log_exp are not yet considered in AlignParametersRule. 
 			return null;
@@ -2633,12 +2636,36 @@ public class Token {
 			// Also note that a class may define methods with the same name as a built-in function; in such a case,   
 			// the built-in function is 'shadowed' (even if the method has a different signature) and the method is called.
 
+		} else if (isSqlOperation && isAnyKeyword("OVER(", "HIERARCHY(", "HIERARCHY_SIBLINGS(", "HIERARCHY_ANCESTORS(", "HIERARCHY_DESCENDANTS(", "HIERARCHY_ANCESTORS_AGGREGATE(", "HIERARCHY_DESCENDANTS_AGGREGATE(")) {
+			// skip win_func OVER( ... ) and SELECT FROM hierarchy_data( ... ) 
+			return null;
+
+		} else if (isSqlOperation && textEqualsAny(ABAP.abapSqlFunctions)) {
+			// skip ABAP SQL table functions, unless they use assignments to formal parameters
+			return textEqualsAny(ABAP.abapSqlFunctionsWithAssignments) ? getNextCodeSibling() : null;
+			
+		} else if (isSqlOperation && textEquals("@(")) {
+			// skip host expression
+			return null;
+			
+		} else if (isSqlOperation && textEndsWith("[")) {
+			// skip ABAP SQL path expressions
+			return null;
+			
 		} else if (textEquals("(")) {
 			// stand-alone " ( " only starts a component list in case of LOOP AT ... GROUP BY ( ... ) or if it is a row  
 			// inside a VALUE or NEW constructor expression, not if it is part of arithmetic expressions etc.
+			
+			Token prev = getPrevCodeSibling();  
 			if (parent == null && this.opensGroupKey()) {
 				// LOOP AT ... GROUP BY ( key1 = dobj1 key2 = dobj2 ... [gs = GROUP SIZE] [gi = GROUP INDEX] ) ...
 				return getNextCodeSibling();
+			} else if (isSqlOperation && prev != null && prev.isKeyword()) {
+				// e.g. SELECT FROM ( ... ) ... JOIN ( ... ), MODIFY ... FROM ( SELECT ...),
+				// GROUP BY GROUPING SETS ( ... ), UNION ALL|INTERSECT ( SELECT ... ),
+				// WHERE ... IN ( SELECT ... ), WHERE ... IN ( ..., ... ), WHERE ... EXISTS ( SELECT ... ),
+				// WHERE operand {=|...} ALL|ANY|SOME ( SELECT ... ), INTO ( ...,  ... )
+				return null;
 			} else if (parent == null) {
 				// otherwise, stand-alone " ( " on top level must be part of an arithmetic expression
 				return null;
@@ -2655,7 +2682,6 @@ public class Token {
 			// - "WHERE (see https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/index.htm?file=abenfor_conditional.htm)
 			// The above conditions already excluded the case " ( ( ".  
 			// do NOT use getPrevCodeToken() here, as it may return the "#(" of the VALUE or NEW constructor, which has TokenType.OTHER_OP
-			Token prev = getPrevCodeSibling();  
 			if (prev != null && !prev.textEquals(")") && (prev.isAssignmentOperator() || prev.isComparisonOperator() || prev.isOtherOp() || prev.isAnyKeyword("UNTIL", "WHILE", "WHERE"))) {
 				return null;
 			}
@@ -2664,8 +2690,10 @@ public class Token {
 			// as the token opens a level but is not a stand-alone "(", it must be a method call or a constructor expression,  
 			// because the Tokens "method_name(", "VALUE #(" etc. have text immediately attached to the top level parenthesis
 			Token prev = getPrevCodeToken();
-			if (prev != null && prev.isAnyKeyword("CONV", "CORRESPONDING", "CAST", "REF", "EXACT", "REDUCE", "FILTER", "COND", "SWITCH")) {
-				// do not align inside these constructor expressions
+			if (prev != null && prev.isAnyKeyword("NEW", "VALUE")) {
+				// continue below
+			} else if (prev != null && prev.isAnyKeyword(ABAP.constructorOperators)) {
+				// do not align inside these constructor expressions (exception: NEW and VALUE, see above)
 				return null;
 			}
 		}
@@ -3255,12 +3283,16 @@ public class Token {
 		closesLevel = true; 
 	}
 	
-	/** returns a StrucInfo instance if the Token as a whole is the name of a structure or one of its components */
+	/** returns a StrucInfo instance if the Token as a whole is the name of a structure or one of its components;
+	 *  for asterisk comments, only the most frequent case of a commented-out assignment inside a VALUE or NEW constructor is considered */
 	public StrucElement getStrucInfo() {
-		if (!isIdentifier()) {
+		boolean isIdentifier = isIdentifier();
+		boolean isComment = isAsteriskCommentLine();
+		
+		if (!isIdentifier && !isComment) {
 			return null;
 
-		} else if (text.indexOf(ABAP.COMPONENT_SELECTOR) > 0) {
+		} else if (isIdentifier && text.indexOf(ABAP.COMPONENT_SELECTOR) > 0) {
 			// this includes cases in ABAP SQL like '@ls_any-comp' 
 			return StrucElement.createPartialForExprWithComponent(this);
 		}
@@ -3268,7 +3300,7 @@ public class Token {
 		// fields inside table expressions: itab[ comp = ... ]
 		Token nextCode = getNextCodeSibling();
 		Token prevCode = getPrevCodeSibling();
-		if (parent != null && parent.textEndsWith("[") && nextCode != null && nextCode.textEquals("=")) {
+		if (isIdentifier && parent != null && parent.textEndsWith("[") && nextCode != null && nextCode.textEquals("=")) {
 			return textEquals(ABAP.TABLE_LINE) ? null : StrucElement.createForComponentName(this, parent);
 		}
 
@@ -3287,17 +3319,19 @@ public class Token {
 
 				} else if (ctorKeyword.isAnyKeyword("VALUE", "NEW")) {
 					// VALUE #( comp = ... ) or VALUE #( ( comp = ... ) )
-					if (nextIsAssign) {
+					if (isIdentifier && nextIsAssign) {
+						return StrucElement.createForComponentName(this, ctorStart);
+					} else if (isComment && getBitsOfCommentedOutAssignment() != null) {
 						return StrucElement.createForComponentName(this, ctorStart);
 					}
 				
-				} else if (ctorKeyword.isAnyKeyword("FILTER")) {
+				} else if (isIdentifier && ctorKeyword.isAnyKeyword("FILTER")) {
 					// FILTER type( itab [EXCEPT] [IN ftab] [USING KEY keyname] WHERE c1 op f1 [AND c2 op f2 [...]] ) ...
 					if (nextCode != null && nextCode.isComparisonOperator()) { // this could also be <= etc.
 						return StrucElement.createForComponentName(this, ctorStart);
 					}
 				
-				} else if (ctorKeyword.isKeyword("CORRESPONDING")) {
+				} else if (isIdentifier && ctorKeyword.isKeyword("CORRESPONDING")) {
 					// CORRESPONDING #( ... [MAPPING   { t1 = s1 [DISCARDING DUPLICATES] }
 					//                               | { ( t1 = s1 [DISCARDING DUPLICATES] [MAPPING ...] [EXCEPT ...] ) }
 					//                               | { t1 = [s1] DEFAULT expr1 } ... ]  
@@ -3323,7 +3357,10 @@ public class Token {
 				}
 			}			
 		}
-
+		// for comments, only the most frequent case of a commented-out assignment inside a VALUE or NEW constructor is considered  
+		if (isComment())
+			return null;
+		
 		Token firstCode = parentCommand.getFirstCodeToken();
 		Token prevPrevCode = (prevCode == null) ? null : prevCode.getPrevCodeSibling();
 		Token prevPrevPrevCode = (prevPrevCode == null) ? null : prevPrevCode.getPrevCodeSibling();
@@ -3705,5 +3742,27 @@ public class Token {
 		} else { // KEYWORDS, ASSIGNMENT_OP, OTHER_OP, COMMA, "("
 			return false;
 		}
+	}
+	
+	/** check whether the Token is an asterisk comment line in the format "***  parameter_or_component  =  ..." 
+	 *  (with any number of spaces and asterisks); if so, returns a String[4], e.g.  
+	 *  { "***", "parameter_or_component_name", "=", "any_term" } */
+	public String[] getBitsOfCommentedOutAssignment() {
+		if (!isAsteriskCommentLine())
+			return null;
+
+		// check whether the asterisk comment line has the format "***   parameter   =   ..." (with any number of spaces and asterisks)
+		String commentText = getText();
+		int equalsSignPos = commentText.indexOf('=');
+		if (equalsSignPos < 0)
+			return null;
+
+		String[] asterisksAndParamName = StringUtil.split(commentText.substring(0, equalsSignPos), ' ', true);
+		if (asterisksAndParamName.length != 2)
+			return null;
+		else if (!ABAP.mayBeVariableName(asterisksAndParamName[1], false, getParentCommand().isInOOContext()))
+			return null;
+
+		return new String[] { asterisksAndParamName[0], asterisksAndParamName[1], "=", commentText.substring(equalsSignPos + 1).trim() };
 	}
 }

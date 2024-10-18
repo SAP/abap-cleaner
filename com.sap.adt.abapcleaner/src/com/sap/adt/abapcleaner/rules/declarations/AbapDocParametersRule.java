@@ -21,7 +21,6 @@ import com.sap.adt.abapcleaner.rulebase.RuleSource;
 import com.sap.adt.abapcleaner.rulehelpers.AbapDoc;
 import com.sap.adt.abapcleaner.rulehelpers.ClassInfo;
 import com.sap.adt.abapcleaner.rulehelpers.ExceptionInfo;
-import com.sap.adt.abapcleaner.rulehelpers.LocalVariables;
 import com.sap.adt.abapcleaner.rulehelpers.MethodInfo;
 import com.sap.adt.abapcleaner.rulehelpers.ParameterInfo;
 
@@ -133,7 +132,7 @@ public class AbapDocParametersRule extends RuleForDeclarations {
 	}
 
 	@Override
-	protected void executeOn(Code code, ClassInfo classOrInterfaceInfo, int releaseRestriction) throws UnexpectedSyntaxAfterChanges {
+	protected void executeOnClassDefinition(Code code, ClassInfo classOrInterfaceInfo, int releaseRestriction) throws UnexpectedSyntaxAfterChanges {
 		for (MethodInfo methodInfo : classOrInterfaceInfo.getMethodsInOrder()) {
 			try {
 				// determine whether ABAP Doc exists for this method
@@ -237,10 +236,5 @@ public class AbapDocParametersRule extends RuleForDeclarations {
 		}
 
 		return changed;
-	}
-
-	@Override
-	protected void executeOn(Code code, Command methodStart, LocalVariables localVariables, int releaseRestriction) throws UnexpectedSyntaxAfterChanges {
-		// nothing to be done on local variable contexts
 	}
 }

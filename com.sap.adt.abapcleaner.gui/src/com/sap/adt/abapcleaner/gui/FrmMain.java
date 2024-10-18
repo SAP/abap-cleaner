@@ -892,26 +892,6 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 
 		new MenuItem(menuExtras, SWT.SEPARATOR);
 
-		MenuItem mmuExtrasAnalyzeDdlSemanticsInFolder = new MenuItem(menuExtras, SWT.NONE);
-		mmuExtrasAnalyzeDdlSemanticsInFolder.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				analyzeCdsViewsInFolder(DdlAnalyzer.semanticsElemRefAnnotationPaths);
-			}
-		});
-		mmuExtrasAnalyzeDdlSemanticsInFolder.setText("Analyze Semantic Refs for CDS Views in Folder...");
-
-		MenuItem mmuExtrasAnalyzeDdlValueHelpInFolder = new MenuItem(menuExtras, SWT.NONE);
-		mmuExtrasAnalyzeDdlValueHelpInFolder.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				analyzeCdsViewsInFolder(DdlAnalyzer.valueHelpDefAnnotationPaths);
-			}
-		});
-		mmuExtrasAnalyzeDdlValueHelpInFolder.setText("Analyze Value Help for CDS Views in Folder...");
-
-		new MenuItem(menuExtras, SWT.SEPARATOR);
-
 		MenuItem mmuExtrasTestCommentIdentifier = new MenuItem(menuExtras, SWT.NONE);
 		mmuExtrasTestCommentIdentifier.addSelectionListener(new SelectionAdapter() {
 			@Override
@@ -947,6 +927,35 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 			}
 		});
 		mmuExtrasTestAllCommentLines.setText("Test Comment Identifier with All Comment Lines");
+
+		new MenuItem(menuExtras, SWT.SEPARATOR);
+
+		MenuItem mmuExtrasApplyCamelCaseToClipboard = new MenuItem(menuExtras, SWT.NONE);
+		mmuExtrasApplyCamelCaseToClipboard.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				applyCamelCaseToClipboard();
+			}
+		});
+		mmuExtrasApplyCamelCaseToClipboard.setText("Apply CamelCase VDM View and Field Names to Clipboard");
+
+		MenuItem mmuExtrasAnalyzeDdlSemanticsInFolder = new MenuItem(menuExtras, SWT.NONE);
+		mmuExtrasAnalyzeDdlSemanticsInFolder.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				analyzeCdsViewsInFolder(DdlAnalyzer.semanticsElemRefAnnotationPaths, false);
+			}
+		});
+		mmuExtrasAnalyzeDdlSemanticsInFolder.setText("Analyze Semantic Refs for CDS Views in Folder...");
+
+		MenuItem mmuExtrasAnalyzeDdlValueHelpInFolder = new MenuItem(menuExtras, SWT.NONE);
+		mmuExtrasAnalyzeDdlValueHelpInFolder.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				analyzeCdsViewsInFolder(DdlAnalyzer.valueHelpDefAnnotationPaths, true);
+			}
+		});
+		mmuExtrasAnalyzeDdlValueHelpInFolder.setText("Analyze Value Help for CDS Views in Folder...");
 
 		new MenuItem(menuExtras, SWT.SEPARATOR);
 
@@ -1928,7 +1937,55 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		}
 	}
 
-	private void analyzeCdsViewsInFolder(String[] annotationPaths) {
+	private void applyCamelCaseToClipboard() {
+		if (!SystemClipboard.containsText())
+			return;
+		
+		CamelCaseNames viewNames = CamelCaseNames.getViewNames();
+		CamelCaseNames fieldNames = CamelCaseNames.getFieldNames();
+
+		int totalViewNameCount = 0;
+		int totalFieldNameCount = 0;
+		int replacedViewNameCount = 0;
+		int replacedFieldNameCount = 0;
+		
+		String text = SystemClipboard.getText();
+		StringBuilder sb = new StringBuilder();
+		for (int i = 0; i < text.length(); ++i) {
+			if (ABAP.isCharAllowedForVariableNames(text, i, true, false, true)) {
+				String name = ABAP.readTillEndOfVariableName(text, i, false, true);
+				String camelCase = viewNames.applyCamelCaseTo(name, false, false, curProfile);
+				if (camelCase != null) {
+					++totalViewNameCount;
+					if (!name.equals(camelCase)) {
+						++replacedViewNameCount;
+					}
+				} else {
+					camelCase = fieldNames.applyCamelCaseTo(name, false, false, curProfile);
+					if (camelCase != null) {
+						++totalFieldNameCount;
+						if (!name.equals(camelCase)) {
+							++replacedFieldNameCount;
+						}
+					}
+				}
+				sb.append((camelCase != null) ? camelCase : name);
+				i += name.length() - 1;
+			} else {
+				sb.append(text.charAt(i));
+			}
+		}
+		SystemClipboard.setText(sb.toString());
+		
+		String totalViewNames = StringUtil.getCountAndUnit(totalViewNameCount, "view name", "view names");
+		String totalFieldNames = StringUtil.getCountAndUnit(totalFieldNameCount, "field name", "field names");
+		
+		String msg = "Replaced " + Cult.format(replacedViewNameCount) + " / " + totalViewNames 
+						+ " and " + Cult.format(replacedFieldNameCount) + " / " + totalFieldNames + " in clipboard.";
+		Message.show(msg, shell);
+	}
+	
+	private void analyzeCdsViewsInFolder(String[] annotationPaths, boolean considerIgnorePropagation) {
 		String dir = showDirDialog(defaultCodeDirectory, "Analyze CDS views in folder");
 		String[] paths = getAllPaths(dir, FileType.CODE, false, true);
 		if (paths == null)
@@ -1953,7 +2010,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		});
 		ddlAnalyzer.finishBuild();
 
-		ddlAnalyzer.analyzeInheritedAnnotations(annotationPaths);
+		ddlAnalyzer.analyzeAnnotations(annotationPaths, considerIgnorePropagation);
 		
 		String result = ddlAnalyzer.getResult(annotationPaths);
 		if (!StringUtil.isNullOrEmpty(result)) {
@@ -2479,7 +2536,8 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		StringBuilder sbSummary = new StringBuilder();
 		StringBuilder sbDetails = new StringBuilder();
 		boolean checkStartsWithZ = (camelCaseNameType == CamelCaseNameType.VIEW);
-		CamelCaseNames camelCaseNames = CamelCaseNames.createFromTextFiles(camelCaseNameType, paths, sbSummary, sbDetails, checkStartsWithZ);
+		boolean checkUnknownPrefixesOrSuffixes = true;
+		CamelCaseNames camelCaseNames = CamelCaseNames.createFromTextFiles(camelCaseNameType, paths, sbSummary, sbDetails, checkStartsWithZ, checkUnknownPrefixesOrSuffixes);
 		String targetPath = persistency.combinePaths(targetDir, resourceFile);
 		try {
 			camelCaseNames.saveAsResource(targetPath);

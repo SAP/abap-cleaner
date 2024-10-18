@@ -1,5 +1,8 @@
 package com.sap.adt.abapcleaner.rules.declarations;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -875,5 +878,26 @@ public class AbapDocParametersTest extends RuleTestBase {
 		putAnyClassDefAroundSrcAndExp();
 
 		testRule();
+	}
+	
+	@Test 
+	void testIsConfigValueEnabled() {
+		assertTrue(rule.isConfigValueEnabled(rule.configAddExceptions));
+		
+		rule.configAddParameters.setEnumValue(AddAbapDocType.ALWAYS);
+		rule.configAddExceptions.setEnumValue(AddAbapDocType.ALWAYS);
+		assertTrue(rule.isConfigValueEnabled(rule.configAddAlwaysWarning));
+
+		rule.configAddParameters.setEnumValue(AddAbapDocType.ALWAYS_AS_NON_SYNCHRONIZED);
+		rule.configAddExceptions.setEnumValue(AddAbapDocType.ALWAYS);
+		assertTrue(rule.isConfigValueEnabled(rule.configAddAlwaysWarning));
+
+		rule.configAddParameters.setEnumValue(AddAbapDocType.ALWAYS);
+		rule.configAddExceptions.setEnumValue(AddAbapDocType.NEVER);
+		assertTrue(rule.isConfigValueEnabled(rule.configAddAlwaysWarning));
+
+		rule.configAddParameters.setEnumValue(AddAbapDocType.ONLY_FOR_NON_SYNCHRONIZED);
+		rule.configAddExceptions.setEnumValue(AddAbapDocType.ALWAYS_AS_NON_SYNCHRONIZED);
+		assertFalse(rule.isConfigValueEnabled(rule.configAddAlwaysWarning));
 	}
 }

@@ -116,7 +116,7 @@ public class StrucElement {
 		// refine the template's contextId (which was so far derived from the parent Token), by additionally making it depend on 
 		// the 'path' to the component, e.g. 'ls_struc-', 'lo_instance->ms_struc-', 'itab[]-' etc.
 		// if textOffset == 0, this is not needed, because then this element is a structure name 'ty_s_any-...' or a view alias 'a~...'
-		this.contextId = (textOffset == 0) ? template.contextId : (template.contextId ^ getPathToComponent(template.token, textOffset).toUpperCase().hashCode());
+		this.contextId = (textOffset == 0 || template.token.isComment()) ? template.contextId : (template.contextId ^ getPathToComponent(template.token, textOffset).toUpperCase().hashCode());
 	}
 
 	public boolean isMixed() {

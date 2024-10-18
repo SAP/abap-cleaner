@@ -6,6 +6,7 @@ import java.nio.charset.Charset;
 public interface IFileSystem {
    // File
 	public boolean fileExists(String path);
+	public long getLastModified(String path);
 	public boolean deleteFile(String path);
 	public boolean renameFile(String sourcePath, String destPath);
 

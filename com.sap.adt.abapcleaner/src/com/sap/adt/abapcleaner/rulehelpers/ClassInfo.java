@@ -6,6 +6,7 @@ import java.util.HashMap;
 import com.sap.adt.abapcleaner.base.ABAP;
 import com.sap.adt.abapcleaner.base.AbapCult;
 import com.sap.adt.abapcleaner.base.StringUtil;
+import com.sap.adt.abapcleaner.parser.Command;
 
 /** encapsulates class or interface definition information: implemented interfaces, defined aliases and method signatures */
 public class ClassInfo {
@@ -13,6 +14,7 @@ public class ClassInfo {
       return AbapCult.toUpper(name);
    }
 
+   public final Command declarationCommand;
 	public final String name;
 	public final ClassInfo parentClass;
 
@@ -22,7 +24,11 @@ public class ClassInfo {
 	private HashMap<String, MethodInfo> methods;
 	private ArrayList<MethodInfo> methodsInOrder;
 	
-	public ClassInfo(String name, ClassInfo parentClass) {
+	private Variables variables;
+   private Command implementationStart; // may be null while the DEFINITION part is being processed
+
+	public ClassInfo(Command declarationCommand, String name, ClassInfo parentClass) {
+		this.declarationCommand = declarationCommand;
 		this.name = name;
 		this.parentClass = parentClass;
 		
@@ -36,6 +42,50 @@ public class ClassInfo {
 	public void addMethod(MethodInfo method) {
 		methods.put(getNameKey(method.name), method);
 		methodsInOrder.add(method);
+	}
+	
+	public void setVariables(Variables variables) {
+		this.variables = variables;
+	}
+	
+	public Variables getVariables() {
+		return variables;
+	}
+
+	public void setImplementationStart(Command implementationStart) {
+	   this.implementationStart = implementationStart;
+	}
+
+	public Command getImplementationStart() {
+	   return implementationStart;
+	}
+
+	/** returns the local variable or, otherwise, the attribute of the supplied name */
+	public VariableInfo getLocalVariableOrAttribute(Variables localVariables, String objectName, boolean isType, boolean searchInParentClasses) {
+		VariableInfo variableInfo = null;
+		if (localVariables != null)
+			variableInfo = localVariables.getVariableInfo(objectName, isType);
+		// do NOT attach with "else if":
+		if (variableInfo == null)
+			variableInfo = getAttribute(objectName, isType, searchInParentClasses);
+		return variableInfo;
+	}
+	
+	/** returns the (public, protected or private) attribute of the supplied name */
+	public VariableInfo getAttribute(String objectName, boolean isType, boolean searchInParentClasses) {
+		ClassInfo classInfo = this;
+		while (classInfo != null) {
+			VariableInfo variableInfo = variables.getVariableInfo(objectName, isType);
+			if (variableInfo != null) {
+				if (classInfo == this || variableInfo.accessType != VariableAccessType.PRIVATE) {
+					return variableInfo;
+				}
+			}
+			if (!searchInParentClasses)
+				break;
+			classInfo = classInfo.parentClass;
+		}
+		return null;
 	}
 	
 	/** @param methodName - can be a plain method name, an alias, or INTERFACE~METHOD */
