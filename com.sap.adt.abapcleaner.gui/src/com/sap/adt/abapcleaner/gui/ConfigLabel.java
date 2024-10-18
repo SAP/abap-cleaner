@@ -48,7 +48,8 @@ class ConfigLabel extends ConfigControl {
    }
 
    @Override
-   public void setEnabled(boolean enabled) {
+   public void setEnabled(boolean writable, boolean enabled) {
+   	// for ConfigLabel, writable is ignored
    	String newText = enabled ? configValue.description : " ";
    	// avoid layout request when the Control is first created to avoid issues with background color in dark theme 
    	if (!newText.equals(lblDescription.getText())) {

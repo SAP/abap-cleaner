@@ -104,8 +104,8 @@ class ConfigIntBox extends ConfigControl {
    }
 
    @Override
-   public void setEnabled(boolean enabled) {
-   	txtValue.setEnabled(enabled);
+   public void setEnabled(boolean writable, boolean enabled) {
+   	txtValue.setEnabled(writable && enabled);
    }
    
    private void txtValueKeyPressed(KeyEvent e) {

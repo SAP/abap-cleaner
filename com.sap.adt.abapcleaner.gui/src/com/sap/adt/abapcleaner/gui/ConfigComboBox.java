@@ -69,8 +69,8 @@ class ConfigComboBox extends ConfigControl {
    }
    
    @Override
-   public void setEnabled(boolean enabled) {
-   	cboValue.setEnabled(enabled);
+   public void setEnabled(boolean writable, boolean enabled) {
+   	cboValue.setEnabled(writable && enabled);
    }
    
    private void selectionChanged() {

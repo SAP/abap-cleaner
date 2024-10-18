@@ -24,6 +24,8 @@ import org.eclipse.swt.events.KeyAdapter;
 import org.eclipse.swt.events.KeyEvent;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.events.ShellAdapter;
+import org.eclipse.swt.events.ShellEvent;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.FontData;
@@ -368,6 +370,17 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 			}
 		});
 
+		shell.addShellListener(new ShellAdapter() {
+			@Override
+			public void shellActivated(ShellEvent e) {
+				// refresh the example, because new custom CamelCase view or field names could have been added to the text files
+				// (CamelCaseNameRule, CamelCaseInCdsTestRule, DdlCamelCaseNameRule)
+				if (curRule != null && curRule.dependsOnExternalFiles()) { 
+					refreshExample(curRule, null);
+				}
+			}
+		});
+
 		shell.setImage(SWTResourceManager.getImage(FrmProfiles.class, "/ShellImage.png"));
 		shell.setSize(1024, 768);
 		shell.setMaximized(true);
@@ -560,11 +573,19 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 		chkRules.addKeyListener(new KeyAdapter() {
 			@Override
 			public void keyPressed(KeyEvent e) {
+				boolean shiftPressed = ((e.stateMask & SWT.SHIFT) != 0);
 				boolean controlPressed = ((e.stateMask & SWT.CONTROL) != 0);
 				if (controlPressed && e.keyCode == 'c') {
 					int index = chkRules.getSelectionIndex();
 					if (index >= 0) {
-						SystemClipboard.setText(chkRules.getItem(index).getText());
+						String text;
+						if (shiftPressed && itemsInChkRules[index] instanceof Rule && Program.showDevFeatures()) {
+				      	Rule selectedRule = (Rule)itemsInChkRules[index];
+				      	text = selectedRule.getClass().getSimpleName();
+			      	} else {
+							text = chkRules.getItem(index).getText();
+						} 
+						SystemClipboard.setText(text);
 					}
 				}
 			}
@@ -773,7 +794,9 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 		btnPasteExample.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				exampleCodeFromClipboard();
+				if (exampleCodeFromClipboard()) {
+					codeDisplay.forceFocus();
+				}
 			}
 		});
 		btnPasteExample.setText("&Paste ->");
@@ -784,8 +807,10 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 		btnDefaultExample.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				if (curRule != null)
+				if (curRule != null) {
 					refreshExample(curRule, curRule.getExample());
+					codeDisplay.forceFocus();
+				}
 			}
 		});
 		btnDefaultExample.setText("Default");
@@ -802,6 +827,7 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 				boolean simplify = ((e.stateMask & SWT.CONTROL) != 0);
 				Obfuscator obfuscator = Obfuscator.createFor(codeDisplay.getCodeLanguage(), commandScope, simplify, simplify, simplify, simplify, true);  
 				obfuscateExampleCode(obfuscator);
+				codeDisplay.forceFocus();
 			}
 		});
 		btnObfuscate.setText("&Obfusc.");
@@ -815,6 +841,7 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 				boolean showMessage = ((e.stateMask & SWT.SHIFT) == 0);
 				boolean defaultConfigOnly = ((e.stateMask & SWT.CONTROL) != 0);
 				generateUnitTestClass(defaultConfigOnly, showMessage);
+				codeDisplay.forceFocus();
 			}
 		});
 		btnGenerateUnitTestClass.setText("UT Class");
@@ -827,6 +854,7 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 			public void widgetSelected(SelectionEvent e) {
 				boolean showMessage = ((e.stateMask & SWT.SHIFT) == 0);
 				codeDisplay.generateUnitTest(true, showMessage);
+				codeDisplay.forceFocus();
 			}
 		});
 		btnGenerateUnitTest.setText("Gen. &UT");
@@ -840,6 +868,7 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 				boolean showMessage = ((e.stateMask & SWT.SHIFT) == 0);
 				boolean fullStatement = ((e.stateMask & SWT.CONTROL) != 0);
 				codeDisplay.generateExample(fullStatement, showMessage);
+				codeDisplay.forceFocus();
 			}
 		});
 		btnGenerateExample.setText("Gen. &Ex.");
@@ -1196,7 +1225,7 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
          } else {
            throw new IndexOutOfBoundsException("unknown ConfigControl");
          }
-      	configControl.setEnabled(isProfileWritable && rule.isConfigValueEnabled(configValue));
+      	configControl.setEnabled(isProfileWritable, rule.isConfigValueEnabled(configValue));
          configControls.add(configControl);
          Control[] controls = configControl.getControls();
          for (int column = 0; column < controls.length; ++column) { 
@@ -1324,11 +1353,20 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
       
       if (curRule != null && configControls != null) {
 	      for (ConfigControl configControl : configControls) {
-	      	configControl.setEnabled(!curRule.parentProfile.isReadOnly && curRule.isConfigValueEnabled(configControl.getConfigValue()));
+	      	configControl.setEnabled(!curRule.parentProfile.isReadOnly, curRule.isConfigValueEnabled(configControl.getConfigValue()));
 	      }
       }
       
       refreshHighlight(true);
+   }
+
+   public final void buttonClicked(ConfigValue configValue) {
+      if (curRule != null && configControls != null) {
+      	String path = curRule.buttonClicked(configValue);
+      	if (!StringUtil.isNullOrEmpty(path)) {
+      		ProgramLauncher.startProcess(path);
+      	}
+      }
    }
 
    private void refreshHighlight(boolean curRuleOnly) {

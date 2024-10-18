@@ -231,4 +231,8 @@ public class PersistencyBase {
 		
 		return appDataDir + subfolder;
 	}
+
+	public long getLastModified(String path) {
+		return fileSystem.getLastModified(path);
+	}
 }

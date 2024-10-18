@@ -1,5 +1,6 @@
 package com.sap.adt.abapcleaner.rules.syntax;
 
+import com.sap.adt.abapcleaner.base.StringUtil;
 import com.sap.adt.abapcleaner.parser.*;
 import com.sap.adt.abapcleaner.programbase.*;
 import com.sap.adt.abapcleaner.rulebase.*;
@@ -81,6 +82,21 @@ public class ValueStatementRule extends RuleForTokens {
 			+ LINE_SEP + "                              currency       = if_any_interface=>co_any_currency" 
 			+ LINE_SEP + "                              account        = '67890'" 
 			+ LINE_SEP + "                              guid           = '2' ) )." 
+			+ LINE_SEP 
+			+ LINE_SEP + "    \" statements that contain commented-out table rows should be skipped," 
+			+ LINE_SEP + "    \" because the commented-out content can not be considered" 
+			+ LINE_SEP + "    lts_data = VALUE #( ( a = 2  b = 3  c = 6 )" 
+			+ LINE_SEP + "*                        ( a = 1  b = 4  c = 8 ) " 
+			+ LINE_SEP + "                        ( a = 2  b = 5  c = 10 )  )." 
+			+ LINE_SEP 
+			+ LINE_SEP + "    \" by contrast, statements with commented-out assignments can be processed," 
+			+ LINE_SEP + "    \" because the parameters in those assignments will never be moved to the top:"
+			+ LINE_SEP + "    lts_data = VALUE #( ( a = 2" 
+			+ LINE_SEP + "*                          b = 3" 
+			+ LINE_SEP + "                          c = 6 )" 
+			+ LINE_SEP + "                        ( a = 2" 
+			+ LINE_SEP + "                          b = 3" 
+			+ LINE_SEP + "                          c = 8 ) )." 
 			+ LINE_SEP + "  ENDMETHOD.";
    }
 
@@ -90,8 +106,9 @@ public class ValueStatementRule extends RuleForTokens {
 	final ConfigBoolValue configMoveIdentifiers = new ConfigBoolValue(this, "MoveIdentifiers", "Move assignments with identifiers / constants", true);
 	final ConfigBoolValue configMoveComplexExpressions = new ConfigBoolValue(this, "MoveComplexExpressions", "Move assignments with complex expressions", true); 
 	final ConfigBoolValue configMoveMethodCalls = new ConfigBoolValue(this, "MoveMethodCalls", "Move assignments with method calls (WARNING: could change behavior if methods with side effects are called!)", false);
+	final ConfigBoolValue configSkipIfRowsCommentedOut = new ConfigBoolValue(this, "SkipIfRowsCommentedOut", "Skip statements that contain commented-out rows", true, true, LocalDate.of(2024, 10, 11));
 
-	private final ConfigValue[] configValues = new ConfigValue[] { configMoveIntegerLiterals, configMoveFloatLiterals, configMoveStringLiterals, configMoveIdentifiers, configMoveComplexExpressions, configMoveMethodCalls };
+	private final ConfigValue[] configValues = new ConfigValue[] { configMoveIntegerLiterals, configMoveFloatLiterals, configMoveStringLiterals, configMoveIdentifiers, configMoveComplexExpressions, configMoveMethodCalls, configSkipIfRowsCommentedOut };
 
 	@Override
 	public ConfigValue[] getConfigValues() { return configValues; }
@@ -111,9 +128,28 @@ public class ValueStatementRule extends RuleForTokens {
 				|| !nextCode.getNext().matchesOnSiblings(true, TokenSearch.ASTERISK, "("))
 			return false;
 
+		// skip the statement if it contains commented-out table(!) rows
+		Token parentToken = nextCode;
+		if (configSkipIfRowsCommentedOut.getValue()) {
+			Token test = parentToken.getFirstChild();
+			while (test != null) {
+				if (test.isAsteriskCommentLine()) {
+					String commentText = test.getText();
+					int parensOpenPos = commentText.indexOf('(');
+					if (parensOpenPos > 0) {
+						String[] asterisksAndParens = StringUtil.split(commentText.substring(0, parensOpenPos), ' ', true);
+						// return if the opening "(" is only preceded by *** (any number) and spaces 
+						if (asterisksAndParens.length == 1) {
+							return false;
+						}
+					}
+				}
+				test = test.getNextSibling();
+			}
+		}
+
 		// determine minimum indentation for parameters (in case putting them behind the opening bracket would exceed line length):
 		// if the result of the method call, table expression etc. is assigned, the parameters must remain right of the assignment operator
-		Token parentToken = nextCode;
 		AlignTable commonAssignmentsTable;
 		try {
 			commonAssignmentsTable = createTableFromAssignmentSequence(parentToken);
@@ -214,24 +250,35 @@ public class ValueStatementRule extends RuleForTokens {
 		if (insertBeforeToken.lineBreaks == 0)
 			insertBeforeToken.setWhitespace(1, indent);
 
+		int lineBreaksBeforeAdjust = -1;
+		int nextLineBreaksBeforeAdjust = -1;
+		boolean hasEmptyLine = false;
 		for (AlignLine line : firstRow.getLines()) {
 			String simplifiedText = line.getSimplifiedText();
-			if (!commonAssignments.containsKey(simplifiedText))
+			if (!commonAssignments.containsKey(simplifiedText)) {
+				lineBreaksBeforeAdjust = -1;
 				continue;
+			}
 
 			Term lineToMove = getLineToMove(line);
-			setWhitespaceAfter(lineToMove);
+			// remember the number of line breaks above the next assignment before the adjustment
+			nextLineBreaksBeforeAdjust = setWhitespaceAfter(lineToMove);
 			lineToMove.removeFromCommand(false);
 
 			Token identifier = lineToMove.firstToken;
-			if (insertBeforeToken.getPrev().getOpensLevel())
+			if (insertBeforeToken.getPrev().getOpensLevel()) {
 				identifier.setWhitespace();
-			else if (identifier.lineBreaks == 0) // insertBefore.getPrev() could be a comment or part of a BASE section etc.
+			} else if (identifier.lineBreaks == 0) { // insertBefore.getPrev() could be a comment or part of a BASE section etc.
 				identifier.setWhitespace(1, indent);
-			else if (identifier.lineBreaks > 0)
-				identifier.spacesLeft = indent;
+			} else if (identifier.lineBreaks > 0) {
+				// if multiple assignments are 'factored out', ensure that an empty line above the first assignment 
+				// is not propagated to all subsequent assignments  
+				int lineBreaks = (lineBreaksBeforeAdjust < 0) ? identifier.lineBreaks : Math.max(lineBreaksBeforeAdjust, 1);
+				identifier.setWhitespace(lineBreaks, indent);
+				hasEmptyLine |= (lineBreaks > 1);
+			}
 			insertBeforeToken.insertLeftSibling(lineToMove);
-
+			
 			for (int rowIndex = 1; rowIndex < rows.size(); ++rowIndex) {
 				AlignTable row = rows.get(rowIndex);
 				AlignLine furtherLine = row.getLineBySimplifiedText(simplifiedText); // line must exist, otherwise this entry would have been removed from commonAssignments
@@ -240,8 +287,13 @@ public class ValueStatementRule extends RuleForTokens {
 				setWhitespaceAfter(lineToRemove);
 				lineToRemove.removeFromCommand(false);
 			}
+			lineBreaksBeforeAdjust = nextLineBreaksBeforeAdjust;
 		}
-
+		// if the 'factored out' assignments contained at least one empty line, add another empty line before the first table row 
+		if (hasEmptyLine) {
+			insertBeforeToken.setLineBreaks(Math.max(insertBeforeToken.lineBreaks, 2));
+		}
+		
 		// move closing brackets to line end, since .setWhitespaceAfter() does not move them if they are preceded by a comment 
 		if (closeBracketsAtLineEndRule == null)
 			closeBracketsAtLineEndRule = (ClosingBracketsPositionRule) parentProfile.getRule(RuleID.CLOSING_BRACKETS_POSITION);
@@ -260,7 +312,7 @@ public class ValueStatementRule extends RuleForTokens {
 		}
 	}
 
-	private void setWhitespaceAfter(Term lineToMove) {
+	private int setWhitespaceAfter(Term lineToMove) {
 		Token next = lineToMove.getNext();
 		if (next.closesLevel() && next.lineBreaks == 0) {
 			Token prev = lineToMove.getPrev();
@@ -272,10 +324,14 @@ public class ValueStatementRule extends RuleForTokens {
 				// because the remaining parameter may not end with '
 				next.spacesLeft = Math.max(next.spacesLeft, 1);
 			}
+			return -1;
 		} else if (!next.closesLevel() && !next.isAsteriskCommentLine()) {
+			int nextLineBreaksBeforeAdjust = next.lineBreaks;
 			next.copyWhitespaceFrom(lineToMove.firstToken);
+			return nextLineBreaksBeforeAdjust;
+		} else {
+			return -1;
 		}
-
 	}
 	
 	private AlignTable createTableFromAssignmentSequence(Token parentToken) throws UnexpectedSyntaxException {
@@ -314,5 +370,4 @@ public class ValueStatementRule extends RuleForTokens {
 		table.endToken = token;
 		return table;
 	}
-
 }

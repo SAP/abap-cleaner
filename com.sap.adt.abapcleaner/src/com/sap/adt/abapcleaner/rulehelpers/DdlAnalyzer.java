@@ -25,6 +25,7 @@ public class DdlAnalyzer {
 		private final boolean isViewEntity;
 		@SuppressWarnings("unused")
 		private final int viewPart;
+		private final boolean ignorePropagatedAnnotations; 
 		private final View mainView; // the first part of a view that contains UNION / EXCEPT / INTERSECT
 		
 		private final ArrayList<Parameter> parametersInOrder = new ArrayList<>();
@@ -35,11 +36,12 @@ public class DdlAnalyzer {
 		private final HashMap<String, DataSource> dataSourceOfAlias = new HashMap<>(); 
 		private final HashMap<String, Field> fieldOfName = new HashMap<>(); 
 		
-		private View(String fileName, String entityName, boolean isViewEntity, int viewPart, View mainView) {
+		private View(String fileName, String entityName, boolean isViewEntity, int viewPart, boolean ignorePropagatedAnnotations, View mainView) {
 			this.fileName = fileName;
 			this.entityName = entityName;
 			this.isViewEntity = isViewEntity;
 			this.viewPart = viewPart;
+			this.ignorePropagatedAnnotations = ignorePropagatedAnnotations;
 			this.mainView = mainView;
 		}
 		
@@ -164,16 +166,8 @@ public class DdlAnalyzer {
 			return (dataSource != null);
 		}
 		
-		private Annotation findAnyAnnotation(String[] paths) {
-			if (paths == null)
-				return null;
-			for (String path : paths) {
-				Annotation annotation = annotations.get(getKey(path));
-				if (annotation != null) {
-					return annotation;
-				}
-			}
-			return null;
+		private Annotation findAnnotation(String path) {
+			return annotations.get(getKey(path)); // may be null
 		}
 	}
 	
@@ -219,8 +213,9 @@ public class DdlAnalyzer {
 		String entityName = "";
 		
 		int viewPart = 0; // is increased for each UNION / EXCEPT / INTERSECT, which defines new aliases
+		boolean ignorePropagatedAnnotations = false;
 		Command command = code.firstCommand;
-		DdlAnnotationScope scope = new DdlAnnotationScope();
+		DdlAnnotationScope scope = new DdlAnnotationScope(true);
 		while (command != null) {
 			if (command.isCommentLine()) {
 				command = command.getNext();
@@ -232,18 +227,22 @@ public class DdlAnalyzer {
 			if (entityNameToken != null) {
 				entityName = entityNameToken.getText();
 				isViewEntity = entityNameToken.getPrevCodeSibling().isKeyword("ENTITY");
+				DdlAnnotation ignorePropagatedAnno = scope.findAnnotation("Metadata.ignorePropagatedAnnotations");
+				ignorePropagatedAnnotations = (ignorePropagatedAnno != null && !ignorePropagatedAnno.getValue().equalsIgnoreCase("false")) ;
 				
-				view = new View(fileName, entityName, isViewEntity, viewPart, null);
+				view = new View(fileName, entityName, isViewEntity, viewPart, ignorePropagatedAnnotations, null);
+				
 				mainView = view;
 				viewsInOrder.add(view);
 				viewOfEntityName.put(getKey(entityName), view);
-
+				scope = new DdlAnnotationScope(true);
+				
 				// TODO: consider name lists! 
 			
 			} else if (command.startsDdlUnionEtc()) {
 				++viewPart;
 				String entityNameWithSuffix = entityName + "+" + String.valueOf(viewPart);
-				view = new View(fileName, entityNameWithSuffix, isViewEntity, viewPart, mainView);
+				view = new View(fileName, entityNameWithSuffix, isViewEntity, viewPart, ignorePropagatedAnnotations, mainView);
 				viewsInOrder.add(view);
 				// viewOfEntityName.put(getKey(entityNameWithSuffix), view);
 			} // do NOT attach with "else if", because UNION ... also contains FROM ...
@@ -252,7 +251,7 @@ public class DdlAnalyzer {
 				// read parameters
 				if (command.isDdlParametersElement()) { 
 					addParameter(view, command, scope);
-					scope = new DdlAnnotationScope();
+					scope = new DdlAnnotationScope(true);
 				} 
 				
 				// read data sources: FROM clause, JOINs and ASSOCIATIONs
@@ -269,7 +268,7 @@ public class DdlAnalyzer {
 				// read fields
 				if (command.isDdlSelectElement()) { 
 					addField(view, command, scope);
-					scope = new DdlAnnotationScope();
+					scope = new DdlAnnotationScope(true);
 				} 
 			}
 			
@@ -437,46 +436,61 @@ public class DdlAnalyzer {
 		}		
 	}
 
-	public void analyzeInheritedAnnotations(String[] annotationPaths) {
+	/**
+	 * determines the values of (direct or inherited) annotations of select list elements
+	 * @param annotationPaths - annotation paths to be analyzed
+	 * @param considerIgnorePropagation - true if the annotation '@Metadata.ignorePropagatedAnnotations: true' shall be considered; 
+	 * false if annotations shall be listed as inherited regardless of the annotation 
+	 */
+	public void analyzeAnnotations(String[] annotationPaths, boolean considerIgnorePropagation) {
+		if (annotationPaths == null) 
+			return;
+		
 		boolean stopAtAggregation = true;
 		
 		for (View view : viewsInOrder) {
 			for (Field field : view.fieldsInOrder) {
-				// does the field already have the annotations directly?
-				if (field.findAnyAnnotation(annotationPaths) != null)
-					continue;
-				// in a view entity, the annotation of the main select list is 'inherited'
-				if (view.isViewEntity && view.mainView != null) {
-					Field mainViewField = view.mainView.fieldOfName.get(getKey(field.name));
-					if (mainViewField != null) { // pro forma
-						Annotation mainFieldAnnotation = mainViewField.findAnyAnnotation(annotationPaths);
-						if (mainFieldAnnotation != null) {
-							field.annotations.put(getKey(mainFieldAnnotation.path), mainFieldAnnotation);
-							continue;
+				for (String annotationPath : annotationPaths) {
+					// does the field already have the annotation directly?
+					if (field.findAnnotation(annotationPath) != null)
+						continue;
+
+					// in a view entity, the annotation of the main select list is used
+					if (view.isViewEntity && view.mainView != null) {
+						Field mainViewField = view.mainView.fieldOfName.get(getKey(field.name));
+						if (mainViewField != null) { // pro forma
+							Annotation mainFieldAnnotation = mainViewField.findAnnotation(annotationPath);
+							if (mainFieldAnnotation != null) {
+								field.annotations.put(getKey(mainFieldAnnotation.path), mainFieldAnnotation);
+								continue;
+							}
 						}
 					}
-				}
-				if (stopAtAggregation && field.aggregationCount > 0)
-					continue;
-				
-				Field sourceField = getSourceField(field);
-				while (sourceField != null && !sourceField.wasInferred()) {
-					Annotation annotation = sourceField.findAnyAnnotation(annotationPaths);
-					if (annotation != null) {
-						// add the inherited annotations to the existing ones; 
-						// with annotation.parentField, it can always be determined whether the annotation was inherited
-						field.annotations.put(getKey(annotation.path), annotation);
-						break;
+					if (stopAtAggregation && field.aggregationCount > 0)
+						continue;
+					if (considerIgnorePropagation && view.ignorePropagatedAnnotations) 
+						continue;
+
+					// find inherited annotations
+					Field sourceField = getSourceField(field, considerIgnorePropagation);
+					while (sourceField != null && !sourceField.wasInferred()) {
+						Annotation annotation = sourceField.findAnnotation(annotationPath);
+						if (annotation != null) {
+							// add the inherited annotations to the existing ones; 
+							// with annotation.parentField, it can always be determined whether the annotation was inherited
+							field.annotations.put(getKey(annotation.path), annotation);
+							break;
+						}
+						if (stopAtAggregation && sourceField.aggregationCount > 0)
+							break;
+						sourceField = getSourceField(sourceField, considerIgnorePropagation);
 					}
-					if (stopAtAggregation && sourceField.aggregationCount > 0)
-						break;
-					sourceField = getSourceField(sourceField);
 				}
 			}
 		}
 	}
 
-	private Field getSourceField(Field field) {
+	private Field getSourceField(Field field, boolean considerIgnorePropagation) {
 		String[] pathBits = StringUtil.split(field.sourcePath, '.', true);
 		View view = field.parentView;
 		DataSource finalDataSource = null; // if no View instance is known for a DataSource at the end of the pathBits, at least this instance is filled
@@ -510,6 +524,8 @@ public class DdlAnalyzer {
 			
 			if (view == null)
 				break;
+			else if (considerIgnorePropagation && view.ignorePropagatedAnnotations)
+				break;
 
 			// find the data source, either in this view ...
 			DataSource dataSource = view.getDataSource(pathBitKey);
@@ -520,7 +536,7 @@ public class DdlAnalyzer {
 					break;
 
 				// the exposedAssociation may itself contain a path, which must be resolved recursively to find its data source
-				Field associationSource = getSourceField(exposedAssociation);
+				Field associationSource = getSourceField(exposedAssociation, considerIgnorePropagation);
 				if (associationSource == null) 
 					break;
 				dataSource = associationSource.dataSource;
@@ -532,7 +548,7 @@ public class DdlAnalyzer {
 			view = dataSource.view;
 			if (view == null) {
 				finalDataSource = dataSource;
-			}
+			} 
 		}
 		return null;
 	}
@@ -584,7 +600,7 @@ public class DdlAnalyzer {
 				sb.append(TAB).append(String.valueOf(field.aggregationCount));
 
 				// source view and field
-				Field sourceField = getSourceField(field);
+				Field sourceField = getSourceField(field, false);
 				if (sourceField == null) {
 					sb.append(TAB).append("");
 					sb.append(TAB).append("");

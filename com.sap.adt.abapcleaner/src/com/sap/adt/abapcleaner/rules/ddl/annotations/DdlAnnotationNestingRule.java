@@ -91,8 +91,8 @@ public class DdlAnnotationNestingRule extends RuleForDdlAnnotationScopes {
    private final ConfigInfoValue configInfoNesting = new ConfigInfoValue(this, "Nesting", ConfigInfoStyle.HEADING);
    final ConfigEnumValue<DdlAnnotationNestingDepth> configNestingMinDepth = new ConfigEnumValue<DdlAnnotationNestingDepth>(this, "NestingMinDepth", "Use nesting for structured annotations:", nestingDepthTexts, DdlAnnotationNestingDepth.values(), DdlAnnotationNestingDepth.LEVEL_3);
    private final ConfigInfoValue configInfoAnnotationLists = new ConfigInfoValue(this, "To refine the above setting, you can enter comma-separated annotation names to always/never be nested (e.g. \"Consumption.valueHelpDefinition, ObjectModel.usageType, Search\"):", ConfigInfoStyle.NORMAL);
-   final ConfigTextValue configNestingAllowList = new ConfigTextValue(this, "NestingAllowList", "Always allow nesting for annotations starting with:", "", ConfigTextType.DDL_ANNOTATION_LIST);
-	final ConfigTextValue configNestingBlockList = new ConfigTextValue(this, "NestingBlockList", "Always block nesting for annotations starting with:", "", ConfigTextType.DDL_ANNOTATION_LIST);
+   final ConfigTextValue configNestingAllowList = new ConfigTextValue(this, "NestingAllowList", "Always allow nesting for annotations starting with:", "", ConfigTextType.DDL_ANNOTATION_LIST, 1024, "");
+	final ConfigTextValue configNestingBlockList = new ConfigTextValue(this, "NestingBlockList", "Always block nesting for annotations starting with:", "", ConfigTextType.DDL_ANNOTATION_LIST, 1024, "");
 
    private final ConfigInfoValue configInfoOrder = new ConfigInfoValue(this, "Order", ConfigInfoStyle.HEADING);
    final ConfigEnumValue<DdlAnnotationSortOrder> configSortOrder = new ConfigEnumValue<DdlAnnotationSortOrder>(this, "SortOrder", "Order of annotations:", new String[] { "Sort by first level, but keep sub-levels as they are", "Sort by first and second level, keep others as they are", "Sort alphabetically by all levels", "Keep as is (as far as nestings allows)" }, DdlAnnotationSortOrder.values(), DdlAnnotationSortOrder.BY_TWO_ELEMS);

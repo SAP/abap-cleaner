@@ -325,4 +325,18 @@ public class Persistency extends PersistencyBase {
 		
 		return renameFile(sourcePath, destPath);
 	}
+	
+	public final String getValidPath(String fileName, boolean allowDirSep) {
+		char dirSep = getDirectorySeparatorChar();
+		String invalidChars = new String(getInvalidFileNameChars());
+		StringBuilder sb = new StringBuilder();
+		for (char c : fileName.toCharArray()) {
+			if (invalidChars.indexOf(c) < 0) {
+				sb.append(c);
+			} else if (c == '\\' || c == '/' || c == dirSep) {
+				sb.append(dirSep);
+			}
+		}
+		return sb.toString();
+	}
 }

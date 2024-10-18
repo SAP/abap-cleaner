@@ -7,16 +7,20 @@ import java.util.HashSet;
 
 import com.sap.adt.abapcleaner.base.ABAP;
 import com.sap.adt.abapcleaner.base.AbapCult;
+import com.sap.adt.abapcleaner.base.StringUtil;
 import com.sap.adt.abapcleaner.parser.Code;
 import com.sap.adt.abapcleaner.parser.Command;
 import com.sap.adt.abapcleaner.parser.StrucElement;
 import com.sap.adt.abapcleaner.parser.Token;
+import com.sap.adt.abapcleaner.programbase.Persistency;
 import com.sap.adt.abapcleaner.programbase.Program;
 import com.sap.adt.abapcleaner.programbase.UnexpectedSyntaxAfterChanges;
 import com.sap.adt.abapcleaner.rulebase.ConfigBoolValue;
 import com.sap.adt.abapcleaner.rulebase.ConfigEnumValue;
 import com.sap.adt.abapcleaner.rulebase.ConfigInfoValue;
 import com.sap.adt.abapcleaner.rulebase.ConfigIntValue;
+import com.sap.adt.abapcleaner.rulebase.ConfigTextType;
+import com.sap.adt.abapcleaner.rulebase.ConfigTextValue;
 import com.sap.adt.abapcleaner.rulebase.ConfigValue;
 import com.sap.adt.abapcleaner.rulebase.Profile;
 import com.sap.adt.abapcleaner.rulebase.Rule;
@@ -27,6 +31,9 @@ import com.sap.adt.abapcleaner.rulebase.RuleSource;
 import com.sap.adt.abapcleaner.rulehelpers.CamelCaseNames;
 
 public class CamelCaseNameRule extends Rule {
+	private static final String defaultCustomFieldNamesFile = "CustomFieldNames.txt";
+	private static final String defaultCustomViewNamesFile = "CustomViewNames.txt";
+
 	private final static RuleReference[] references = new RuleReference[] {
 			new RuleReference(RuleSource.ABAP_CLEANER), 
 			new RuleReference(RuleSource.ABAP_KEYWORD_DOCU, "Use uppercase for keywords and lowercase for operands", "abenlower_upper_case_guidl.htm") };
@@ -53,6 +60,9 @@ public class CamelCaseNameRule extends Rule {
 	public RuleReference[] getReferences() { return references; }
 
 	@Override
+	public boolean dependsOnExternalFiles() { return true; } // this rule depends on the .txt files for custom view and field names
+
+	@Override
    public String getExample() {
       return "" 
 			+ LINE_SEP + "  METHOD camel_case_names." 
@@ -64,8 +74,8 @@ public class CamelCaseNameRule extends Rule {
 			+ LINE_SEP + "    lt_company = VALUE I_COMPANYCODE( ( companycode                  = '1234'" 
 			+ LINE_SEP + "                                        companycodename              = 'Company Name'" 
 			+ LINE_SEP + "                                        cityname                     = 'Berlin'" 
-			+ LINE_SEP + "                                        chartofaccounts              = 'ABCD'" 
-			+ LINE_SEP + "                                        FiscalyeaRVariant            = 'K4'" 
+			+ LINE_SEP + "*                                        chartofaccounts              = 'ABCD'" 
+			+ LINE_SEP + "*                                        FiscalyeaRVariant            = 'K4'" 
 			+ LINE_SEP + "                                        nontaxabletransactiontaxcode = 'AB'" 
 			+ LINE_SEP + "                                        taxrptgdateisactive          = abap_true" 
 			+ LINE_SEP + "                                        cashdiscountbaseamtisnetamt  = abap_false ) )." 
@@ -129,7 +139,7 @@ public class CamelCaseNameRule extends Rule {
 
 	final ConfigBoolValue configProcessViewNames = new ConfigBoolValue(this, "ProcessViewNames", "Change known view names to CamelCase", true);
 	final ConfigBoolValue configProcessFieldNames = new ConfigBoolValue(this, "ProcessFieldNames", "Change known field names to CamelCase", true);
-	// final ConfigBoolValue configProcessComments = new ConfigBoolValue(this, "ProcessComments", "Change known names in comments", true);
+	final ConfigBoolValue configProcessComments = new ConfigBoolValue(this, "ProcessComments", "Consider commented-out * lines in VALUE or NEW constructors", true, false, LocalDate.of(2024, 10, 16));
 	final ConfigInfoValue configContextInfo = new ConfigInfoValue(this, "To decide whether to change a known field name to CamelCase, " + Program.PRODUCT_NAME + " analyzes its context, e.g. all field names in a VALUE constructor, a SELECT statement, a table key etc.");
 	final ConfigIntValue configMinLengthOfSureMatch = new ConfigIntValue(this, "MinLengthOfSureMatch", "Consider known field names a 'sure match' if they are at least", "chars long and contain an upper case letter after a lower case one", 1, 11, 30);
 	final ConfigBoolValue configRequireApprovalForSureMatch = new ConfigBoolValue(this, "RequireApprovalForSureMatch", "Only consider approved names a 'sure match'", false);
@@ -139,9 +149,13 @@ public class CamelCaseNameRule extends Rule {
 			new String[] { "change all known field names in the context (discouraged)", "change all approved field names in the context (discouraged)", "change 'sure matches' only", "do not change any field names in the context" }, CamelCaseContextWithUnknownAction.values(), CamelCaseContextWithUnknownAction.CHANGE_NONE);
 	final ConfigEnumValue<CamelCaseDeviationAction> configDeviationAction = new ConfigEnumValue<CamelCaseDeviationAction>(this, "DeviationAction", "Correct existing 'CameLcasE' name",
 			new String[] { "if it differs from a known name", "if it differs from an approved name", "never" }, CamelCaseDeviationAction.values(), CamelCaseDeviationAction.CHANGE_IF_APPROVED);
+	final ConfigInfoValue configCustomFileInfo = new ConfigInfoValue(this, "Custom view and field names can be maintained in text files inside the (local or synchronized) folder of this profile, simply using the line format CamelCaseName<ENTER>");
+	public final ConfigTextValue configCustomViewNamesFile = new ConfigTextValue(this, "CustomViewNamesFile", "Custom view names file in profile folder:", defaultCustomViewNamesFile, ConfigTextType.FOLDER_FILE_NAME, 30, "Open ...", defaultCustomViewNamesFile, LocalDate.of(2024, 10, 15));
+	public final ConfigTextValue configCustomFieldNamesFile = new ConfigTextValue(this, "CustomFieldNamesFile", "Custom field names file in profile folder:", defaultCustomFieldNamesFile, ConfigTextType.FOLDER_FILE_NAME, 30, "Open ...", defaultCustomFieldNamesFile, LocalDate.of(2024, 10, 15));
 
-	private final ConfigValue[] configValues = new ConfigValue[] { configProcessViewNames, configProcessFieldNames, 
-			configContextInfo, configMinLengthOfSureMatch, configRequireApprovalForSureMatch, configContextAllKnownAction, configContextWithUnknownAction, configDeviationAction }; // configProcessComments
+	private final ConfigValue[] configValues = new ConfigValue[] { configProcessViewNames, configProcessFieldNames, configProcessComments, 
+			configContextInfo, configMinLengthOfSureMatch, configRequireApprovalForSureMatch, configContextAllKnownAction, configContextWithUnknownAction, configDeviationAction,
+			configCustomFileInfo, configCustomViewNamesFile, configCustomFieldNamesFile}; 
 
 	@Override
 	public ConfigValue[] getConfigValues() { return configValues; }
@@ -167,6 +181,38 @@ public class CamelCaseNameRule extends Rule {
 		}
 	}
 	
+	@Override
+	public String buttonClicked(ConfigValue configValue) {
+		if (configValue != configCustomViewNamesFile && configValue != configCustomFieldNamesFile) // pro forma
+			return null;
+		
+		// profiles that were just imported from an external file may not yet have a profile path
+		if (StringUtil.isNullOrEmpty(parentProfile.path)) 
+			return null;
+
+		// for a read-only profile, always return the folder to be opened (i.e. do not create or open text files directly) 
+		Persistency persistency = Persistency.get();
+		String dir = persistency.getDirectoryName(parentProfile.path);
+		if (parentProfile.isReadOnly)
+			return dir;
+
+		// for a local profile, create a text file if it does not already exist
+		String folderFile = ((ConfigTextValue)configValue).getValue();
+		String path = persistency.combinePaths(dir, folderFile);
+		if (!persistency.fileExists(path)) {
+			String LINE_SEP = System.lineSeparator();
+			String viewOrFieldName = (configValue == configCustomViewNamesFile ? "view" : "field");
+			String defaultText = "* CUSTOM " + viewOrFieldName.toUpperCase() + " NAMES" + LINE_SEP
+									 + "* Please enter one CamelCase " + viewOrFieldName + " name per line." + LINE_SEP  
+									 + "* Empty lines, * comment lines and \" line-end comments are ignored." + LINE_SEP;
+
+			persistency.writeAllTextToFile(path, defaultText, false);
+		}
+		
+		// return the text file to be opened (or, if it could not be created, its folder) 
+		return persistency.fileExists(path) ? path : dir;
+	}
+
 	@Override
 	public void executeOn(Code code, int releaseRestriction) throws UnexpectedSyntaxAfterChanges {
 		boolean isInsideMethod = false; // for a code snippet that only covers a part of a method, this intentionally stays false
@@ -206,7 +252,9 @@ public class CamelCaseNameRule extends Rule {
 		// get settings for this Command, depending on its context
 		boolean processViewNames = configProcessViewNames.getValue();
 		boolean processFieldNames = configProcessFieldNames.getValue();
-		// boolean processComments = configProcessComments.getValue();
+		if (!processViewNames && !processFieldNames)
+			return;
+		boolean processComments = configProcessComments.getValue() && processFieldNames; // only commented-out field names are changed
 
 		boolean isInOOContext = command.isInOOContext();
 		boolean isDeclaration = command.isDeclaration() || command.isDeclarationInClassDef();
@@ -215,11 +263,11 @@ public class CamelCaseNameRule extends Rule {
 		Token token = command.getFirstToken();
 		
 		while (token != null) {
-			if ((processViewNames || processFieldNames) && token.isIdentifier()) { 
+			if (token.isIdentifier() || processComments && token.isAsteriskCommentLine()) { 
 				buildContexts(token, isInOOContext, isDeclaration, isAbapSql, contexts);
-			} // else if (processComments && token.isComment()) { ...
+			} 
 	
-			token = token.getNextNonCommentToken();
+			token = token.getNext();
 		}
 	}
 	
@@ -231,6 +279,20 @@ public class CamelCaseNameRule extends Rule {
 		boolean processViewNames = configProcessViewNames.getValue();
 		boolean processFieldNames = configProcessFieldNames.getValue();
 
+		// for commented-out code, only the most frequent case of a commented-out assignment in a NEW or VALUE constructor is considered
+		if (token.isAsteriskCommentLine()) {
+			if (strucInfo.isComponentNameOrAlias()) {
+				String[] bits = token.getBitsOfCommentedOutAssignment();
+				if (bits != null) { // pro forma
+					int offset = token.getText().indexOf(bits[1]);
+					if (offset > 0) { // pro forma
+						addStrucElement(StrucElement.createForComponentName(strucInfo, offset, bits[1].length()), contexts);
+					}
+				}
+			}
+			return;
+		}
+		
 		// split composed identifiers "any_class=>any_structure-any_component", or "any_class=>any_method(" into multiple parts
 		// in order to apply the rule to each part; otherwise, "IF_ANY_INTERFACE~any_method" would be considered a 'mixed case'
 		ArrayList<String> textBits = ABAP.splitIdentifier(token.getText(), false, isInOOContext);
@@ -331,10 +393,10 @@ public class CamelCaseNameRule extends Rule {
 					String textBit = element.getTokenTextBitWithoutParamPrefix();
 					
 					boolean requireUpperAfterLower = !element.isStructureNameOrAlias();
-					if (element.textLength >= minFieldLength && knownNames.applyCamelCaseTo(textBit, requireUpperAfterLower, requireApprovalForSureMatch) != null) {
+					if (element.textLength >= minFieldLength && knownNames.applyCamelCaseTo(textBit, requireUpperAfterLower, requireApprovalForSureMatch, parentProfile) != null) {
 						++context.sureCount;
 						sureElements.add(element);
-					} else if (knownNames.applyCamelCaseTo(textBit, false, false) != null) {
+					} else if (knownNames.applyCamelCaseTo(textBit, false, false, parentProfile) != null) {
 						++context.candidateCount;
 						candidates.add(element);
 					} else {
@@ -387,7 +449,7 @@ public class CamelCaseNameRule extends Rule {
 		}
 
 		CamelCaseNames knownNames = getKnownNamesFor(element);
-		String changedTextBit = knownNames.applyCamelCaseTo(textBit, requireUpperAfterLower, requireApproval);
+		String changedTextBit = knownNames.applyCamelCaseTo(textBit, requireUpperAfterLower, requireApproval, parentProfile);
 		if (changedTextBit != null && element.replaceTokenTextBitAddingParamPrefix(changedTextBit)) {
 			code.addRuleUse(this, element.token.getParentCommand());
 		}

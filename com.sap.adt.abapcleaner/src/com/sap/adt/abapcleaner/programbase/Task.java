@@ -223,6 +223,7 @@ public class Task implements IProgress {
 		try {
 			if (cleanupParams.executeSingleRuleOnly()) {
 				appliedRuleCount = 1;
+				cleanupParams.rule.parentProfile.updateCustomNames();
 				cleanupParams.rule.executeIfAllowedOn(resultingCode, cleanupParams.releaseRestriction);
 			} else {
 				appliedRuleCount = cleanupParams.profile.getActiveRuleCount();

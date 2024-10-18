@@ -74,7 +74,7 @@ public class DdlObfuscator extends Obfuscator {
 		
 		DdlAnnotationScope scope = null;
 		if (command.isDdlAnnotation()) {
-			scope = new DdlAnnotationScope();
+			scope = new DdlAnnotationScope(true);
 			try {
 				scope.add(command);
 			} catch (UnexpectedSyntaxBeforeChanges e) {

@@ -20,8 +20,7 @@ import com.sap.adt.abapcleaner.rulebase.RuleGroupID;
 import com.sap.adt.abapcleaner.rulebase.RuleID;
 import com.sap.adt.abapcleaner.rulebase.RuleReference;
 import com.sap.adt.abapcleaner.rulebase.RuleSource;
-import com.sap.adt.abapcleaner.rulehelpers.ClassInfo;
-import com.sap.adt.abapcleaner.rulehelpers.LocalVariables;
+import com.sap.adt.abapcleaner.rulehelpers.Variables;
 import com.sap.adt.abapcleaner.rulehelpers.MethodVisibility;
 import com.sap.adt.abapcleaner.rulehelpers.VariableAccessType;
 import com.sap.adt.abapcleaner.rulehelpers.VariableInfo;
@@ -142,13 +141,7 @@ public class UnusedParametersRule extends RuleForDeclarations {
 	}
 
 	@Override
-	protected void executeOn(Code code, ClassInfo classInfo, int releaseRestriction) throws UnexpectedSyntaxAfterChanges {
-		// nothing to do on class definition level
-		return;
-	}
-
-	@Override
-	protected void executeOn(Code code, Command methodStart, LocalVariables localVariables, int releaseRestriction) throws UnexpectedSyntaxAfterChanges, IntegrityBrokenException {
+	protected void executeOn(Code code, Command methodStart, Variables localVariables, int releaseRestriction) throws UnexpectedSyntaxAfterChanges, IntegrityBrokenException {
 		// skip this method if macros or dynamic ASSIGN are used inside the method, because parameters may be used 
 		// inside the macros or dynamically (note that macro code may be local or 'out of sight')
 		if (localVariables.getMethodUsesMacrosOrTestInjection() || localVariables.getMethodUsesDynamicAssign())

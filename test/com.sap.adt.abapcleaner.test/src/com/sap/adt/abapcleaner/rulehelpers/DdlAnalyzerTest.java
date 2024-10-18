@@ -205,7 +205,7 @@ public class DdlAnalyzerTest {
 
 	private String getResult(String[] annotationPaths) {
 		ddlAnalyzer.finishBuild();
-		ddlAnalyzer.analyzeInheritedAnnotations(annotationPaths);
+		ddlAnalyzer.analyzeAnnotations(annotationPaths, true);
 		return ddlAnalyzer.getResult(annotationPaths);
 	}
 

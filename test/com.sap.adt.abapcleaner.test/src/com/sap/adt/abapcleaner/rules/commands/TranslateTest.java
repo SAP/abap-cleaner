@@ -1,5 +1,8 @@
 package com.sap.adt.abapcleaner.rules.commands;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -22,6 +25,17 @@ public class TranslateTest extends RuleTestBase {
 		rule.configReplaceUnevenMasks.setValue(true);
 		rule.configProcessChains.setValue(true);
 		rule.configSkipUnknownTypes.setValue(true);
+	}
+
+	@Test
+	void testIsConfigValueEnabled() {
+		assertTrue(rule.isConfigValueEnabled(rule.configReplaceTranslateToUpperLower));
+
+		rule.configSkipUnknownTypes.setValue(true);
+		assertFalse(rule.isConfigValueEnabled(rule.configUnknownTypeWarning));
+
+		rule.configSkipUnknownTypes.setValue(false);
+		assertTrue(rule.isConfigValueEnabled(rule.configUnknownTypeWarning));
 	}
 
 	@Test

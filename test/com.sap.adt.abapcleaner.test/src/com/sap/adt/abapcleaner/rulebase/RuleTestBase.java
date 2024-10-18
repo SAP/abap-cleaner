@@ -507,6 +507,7 @@ public abstract class RuleTestBase {
 		
 		int lineCount = diffNav.getLineCount();
 
+		assertEquals(code.firstCommand.getLanguage(), diffNav.getCodeLanguage());
 		assertEquals(0, diffNav.getCurLine());
 		assertTrue(diffNav.getLineCount() > 0);
 		assertEquals(lineCount == 00, diffNav.isEmpty());

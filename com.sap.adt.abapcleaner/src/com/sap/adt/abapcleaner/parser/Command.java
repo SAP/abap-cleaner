@@ -922,7 +922,7 @@ public class Command {
 	final void addToken(Token token) {
 		if (token == null)
 			throw new NullPointerException("token");
-		if (firstToken == null)
+		if (firstToken == null) // pro forma
 			firstToken = token;
 		lastToken = token;
 		++tokenCount;
@@ -3801,9 +3801,7 @@ public class Command {
 		if (identifier == null) 
 			identifier = start.getLastTokenOnSiblings(true, TokenSearch.makeOptional("DEFINE"), "HIERARCHY", TokenSearch.ANY_IDENTIFIER);
 		if (identifier == null) 
-			identifier = start.getLastTokenOnSiblings(true, "DEFINE", "TRANSIENT", "VIEW", TokenSearch.ANY_IDENTIFIER);
-		if (identifier == null) 
-			identifier = start.getLastTokenOnSiblings(true, "DEFINE", "TRANSIENT", "VIEW", TokenSearch.ANY_IDENTIFIER);
+			identifier = start.getLastTokenOnSiblings(true, "DEFINE", "TRANSIENT", "VIEW", TokenSearch.makeOptional("ENTITY"), TokenSearch.ANY_IDENTIFIER);
 
 		// extension
 		if (identifier == null) 
@@ -3836,12 +3834,8 @@ public class Command {
 		if (parent != null)
 			return null;
 
-		Token firstCode = getFirstToken();
-		if (firstCode == null)
-			return null;
-
 		// search for the FROM keyword; in DDIC-based views, this may be in a distinct Command after "SELECT [DISTINCT] select_list" Commands!
-		Token fromToken = firstCode.getLastTokenOnSiblings(true, TokenSearch.ASTERISK, "FROM");
+		Token fromToken = firstToken.getLastTokenOnSiblings(true, TokenSearch.ASTERISK, "FROM");
 		return (fromToken != null) && fromToken.isKeyword() ? fromToken.getNextCodeSibling() : null;
 	}
 	
@@ -3900,7 +3894,22 @@ public class Command {
 	public final boolean endsDdlSelectListWithBrace() {
 		return getClosesLevel() && getFirstCodeToken() != null && getFirstCodeToken().textEquals(DDL.BRACE_CLOSE_STRING); // "!= null" pro forma
 	}
-		
+
+	public final boolean isTestingAnnotation() {
+		if (!isAbapDoc())
+			return false;
+		String text = firstToken.text;
+		int testingPos = text.indexOf("testing "); // the annotation only works in lower case
+		if (testingPos < 0)
+			return false;
+		// there may or may not be spaces before or after the @ sign
+		return text.substring(0, testingPos).replace(" ", "").equals(ABAP.ABAP_DOC_SIGN + ABAP.AT_SIGN_STRING);
+	}
+
+	public final boolean isLocalTestClassDefinitionStart() {
+		return firstCodeTokenIsKeyword("CLASS") && !isPublicClassDefinitionStart() && firstToken.matchesOnSiblings(true, TokenSearch.ASTERISK, "FOR", "TESTING");
+	}
+	
 	/** Returns true if the Command matches a hard-coded pattern or condition.
 	 * This method can be used during development to search for examples in all sample code files. */
 	public final boolean matchesPattern() {

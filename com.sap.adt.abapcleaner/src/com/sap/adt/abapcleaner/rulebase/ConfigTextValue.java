@@ -5,6 +5,7 @@ import java.time.LocalDate;
 import com.sap.adt.abapcleaner.base.ABAP;
 import com.sap.adt.abapcleaner.base.DDL;
 import com.sap.adt.abapcleaner.base.StringUtil;
+import com.sap.adt.abapcleaner.programbase.Persistency;
 
 /**
  * Exposes a configuration value that can be set with a TextBox.
@@ -13,6 +14,9 @@ public class ConfigTextValue extends ConfigValue {
 	public final String defaultValue;
 	public final String neutralValue;
 	public final ConfigTextType textType;
+	// the visible length may or may not reflect the maximum possible input length
+	public final int visibleLengthHint;
+	public final String buttonText;
 	
 	public final String getValue() { 
 		return rule.getString(settingName); 
@@ -22,8 +26,15 @@ public class ConfigTextValue extends ConfigValue {
 		// validate the input value, also preventing 'ABAP Injection'
 		if (textType == ConfigTextType.ABAP_CLASS) {
 			value = ABAP.toVariableName(value);
+			
 		} else if (textType == ConfigTextType.DDL_ANNOTATION_LIST) {
-			value = DDL.toAnnotationList(value); 
+			value = DDL.toAnnotationList(value);
+			
+		} else if (textType == ConfigTextType.FOLDER_FILE_NAME) {
+			Persistency persistency = Persistency.get();
+			if (persistency != null) {
+				value = persistency.getValidPath(value, true);
+			}
 		}
 
 		rule.setString(settingName, (value != null) ? value : "");
@@ -48,17 +59,19 @@ public class ConfigTextValue extends ConfigValue {
 		setValue(neutralValue);
 	}
 
-	public ConfigTextValue(Rule rule, String settingName, String description, String defaultValue, ConfigTextType textType) {
+	public ConfigTextValue(Rule rule, String settingName, String description, String defaultValue, ConfigTextType textType, int visibleLength, String buttonText) {
 		// as no distinct neutralValue is provided, use the defaultValue twice
-		this(rule, settingName, description, defaultValue, textType, defaultValue, null);
+		this(rule, settingName, description, defaultValue, textType, visibleLength, buttonText, defaultValue, null);
 	}
 	
 	/** Constructor for configuration that is added to an existing rule in a later update and therefore has a distinct neutralValue */
-	public ConfigTextValue(Rule rule, String settingName, String description, String defaultValue, ConfigTextType textType, String neutralValue, LocalDate dateCreated) {
+	public ConfigTextValue(Rule rule, String settingName, String description, String defaultValue, ConfigTextType textType, int visibleLength, String buttonText, String neutralValue, LocalDate dateCreated) {
 		super(rule, settingName, description, dateCreated);
 		this.defaultValue = defaultValue;
 		this.textType = textType;
 		this.neutralValue = neutralValue;
+		this.visibleLengthHint = visibleLength;
+		this.buttonText = buttonText;
 	}
 
 	@Override
@@ -66,17 +79,6 @@ public class ConfigTextValue extends ConfigValue {
 		return description + " [" + defaultValue + "]";
 	}
 	
-	public int getMaxLength() {
-		switch(textType) {
-			case ABAP_CLASS:
-				return 30;
-			case DDL_ANNOTATION_LIST:
-				return 1024;
-			default:
-				return 30;
-		}
-	}
-
 	private static String getCodeForValue(String value) {
 		return "\"" + StringUtil.getEscapeText(value) + "\"";
 	}

@@ -43,7 +43,7 @@ public class DdlAnnotationNestingTest extends RuleTestBase {
 	   layoutRule.configAlignValues.setValue(false);
 	   layoutRule.configAlignTablesInArrays.setValue(true);
 	}
-
+	
 	@Test
 	void testNestingFromLevel3() {
 		buildSrc("@ObjectModel.lifecycle.draft.notificationBeforeExpiryInterval: 'PT10D'");

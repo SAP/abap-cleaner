@@ -67,7 +67,11 @@ public class PersistencyDouble extends Persistency {
 	public void setWriteProtect(String path, boolean isWriteProtected) {
 		fileSystemDouble.setWriteProtect(path, isWriteProtected);
 	}
-	
+
+	public void setLastModified(String path, long lastModified) {
+		fileSystemDouble.setLastModified(path, lastModified);
+	}
+
 	public String getTempPath(String file) {
 		return combinePaths(getTempDir(), file);
 	}

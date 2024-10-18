@@ -178,7 +178,7 @@ public class AssertParameterOrderRule extends RuleForCommands {
 			new String[] { "expectation first (LOWER..UPPER, PATTERN, LINE)", "actual value first (NUMBER, TEXT, TABLE)", "keep as is" }, AssertParameterOrder.values(), AssertParameterOrder.EXP_FIRST);
 	final ConfigEnumValue<AssertParameterOrder> configReturnCodeParamOrder = new ConfigEnumValue<AssertParameterOrder>(this, "ReturnCodeParamOrder", "Methods checking return code (ASSERT_SUBRC, _RETURN_CODE):",
 			new String[] { "expectation first (EXP)", "actual value first (ACT)", "keep as is" }, AssertParameterOrder.values(), AssertParameterOrder.EXP_FIRST);
-	final ConfigTextValue configAssertClassName = new ConfigTextValue(this, "AssertClassName", "Product code assert class name:", "", ConfigTextType.ABAP_CLASS);
+	final ConfigTextValue configAssertClassName = new ConfigTextValue(this, "AssertClassName", "Product code assert class name:", "", ConfigTextType.ABAP_CLASS, 30, "");
 
 	private final ConfigValue[] configValues = new ConfigValue[] { configInfoOrder, configComparisonParamOrder, configNumTextTableParamOrder, configReturnCodeParamOrder, configAssertClassName };
  

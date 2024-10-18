@@ -1,5 +1,7 @@
 package com.sap.adt.abapcleaner.rules.prettyprinter;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -19,13 +21,21 @@ public class CamelCaseNameTest extends RuleTestBase {
 		// setup default test configuration (may be modified in the individual test methods)
 		rule.configProcessViewNames.setValue(true);
 		rule.configProcessFieldNames.setValue(true);
+		rule.configProcessComments.setValue(true);
 		rule.configMinLengthOfSureMatch.setValue(11);
 		rule.configRequireApprovalForSureMatch.setValue(false);
 		rule.configContextAllKnownAction.setEnumValue(CamelCaseContextAllKnownAction.CHANGE_ALL_KNOWN);
 		rule.configContextWithUnknownAction.setEnumValue(CamelCaseContextWithUnknownAction.CHANGE_NONE);
 		rule.configDeviationAction.setEnumValue(CamelCaseDeviationAction.CHANGE_IF_APPROVED);
+		rule.configCustomViewNamesFile.setValue("CustomViewNames.txt");
+		rule.configCustomFieldNamesFile.setValue("CustomFieldNames.txt");
 	}
 
+	@Test
+	void testDependsOnExternalFiles() {
+		assertTrue(rule.dependsOnExternalFiles());
+	}
+	
 	@Test
 	void testChangeViewAndFieldNames() {
 		buildSrc("    DATA lt_company TYPE STANDARD TABLE OF i_companycode.");
@@ -791,6 +801,58 @@ public class CamelCaseNameTest extends RuleTestBase {
 		buildSrc("    APPEND ls_struc TO lt_target SORTED BY companyCode.");
 
 		buildExp("    APPEND ls_struc TO lt_target SORTED BY CompanyCode.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testCommentedOutComponentsChanged() {
+		buildSrc("    lt_company = VALUE I_COMPANYCODE( ( companycode                  = '1234'");
+		buildSrc("                                        companycodename              = 'Company Name'");
+		buildSrc("                                        cityname                     = 'Berlin'");
+		buildSrc("*                                        chartofaccounts              = 'ABCD'");
+		buildSrc("*                                        FiscalyeaRVariant            = 'K4'");
+		buildSrc("                                        nontaxabletransactiontaxcode = 'AB'");
+		buildSrc("                                        taxrptgdateisactive          = abap_true");
+		buildSrc("                                        cashdiscountbaseamtisnetamt  = abap_false ) ).");
+
+		buildExp("    lt_company = VALUE I_CompanyCode( ( CompanyCode                  = '1234'");
+		buildExp("                                        CompanyCodeName              = 'Company Name'");
+		buildExp("                                        CityName                     = 'Berlin'");
+		buildExp("*                                        ChartOfAccounts              = 'ABCD'");
+		buildExp("*                                        FiscalYearVariant            = 'K4'");
+		buildExp("                                        NonTaxableTransactionTaxCode = 'AB'");
+		buildExp("                                        TaxRptgDateIsActive          = abap_true");
+		buildExp("                                        CashDiscountBaseAmtIsNetAmt  = abap_false ) ).");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testCommentedOutComponentsUnchanged() {
+		rule.configProcessComments.setValue(false);
+
+		buildSrc("    lt_company = VALUE I_COMPANYCODE( ( companycode                  = '1234'");
+		buildSrc("                                        companycodename              = 'Company Name'");
+		buildSrc("                                        cityname                     = 'Berlin'");
+		buildSrc("*                                        chartofaccounts              = 'ABCD'");
+		buildSrc("*                                        FiscalyeaRVariant            = 'K4'");
+		buildSrc("                                        nontaxabletransactiontaxcode = 'AB'");
+		buildSrc("                                        taxrptgdateisactive          = abap_true");
+		buildSrc("                                        cashdiscountbaseamtisnetamt  = abap_false ) ).");
+
+		buildExp("    lt_company = VALUE I_CompanyCode( ( CompanyCode                  = '1234'");
+		buildExp("                                        CompanyCodeName              = 'Company Name'");
+		buildExp("                                        CityName                     = 'Berlin'");
+		buildExp("*                                        chartofaccounts              = 'ABCD'");
+		buildExp("*                                        FiscalyeaRVariant            = 'K4'");
+		buildExp("                                        NonTaxableTransactionTaxCode = 'AB'");
+		buildExp("                                        TaxRptgDateIsActive          = abap_true");
+		buildExp("                                        CashDiscountBaseAmtIsNetAmt  = abap_false ) ).");
 
 		putAnyMethodAroundSrcAndExp();
 

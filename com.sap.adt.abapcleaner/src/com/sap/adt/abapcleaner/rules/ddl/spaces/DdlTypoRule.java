@@ -160,7 +160,7 @@ public class DdlTypoRule extends RuleForDdlCommands {
 		final boolean convertBritishToAmerican = configConvertBritishToAmerican.getValue();
 
 		// create an annotation 'scope' from the current Command
-		DdlAnnotationScope scope = new DdlAnnotationScope();
+		DdlAnnotationScope scope = new DdlAnnotationScope(true);
 		try {
 			scope.add(command);
 		} catch (UnexpectedSyntaxBeforeChanges e) {

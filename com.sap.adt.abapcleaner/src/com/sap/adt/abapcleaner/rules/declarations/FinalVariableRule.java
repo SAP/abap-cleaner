@@ -14,8 +14,7 @@ import com.sap.adt.abapcleaner.rulebase.RuleGroupID;
 import com.sap.adt.abapcleaner.rulebase.RuleID;
 import com.sap.adt.abapcleaner.rulebase.RuleReference;
 import com.sap.adt.abapcleaner.rulebase.RuleSource;
-import com.sap.adt.abapcleaner.rulehelpers.ClassInfo;
-import com.sap.adt.abapcleaner.rulehelpers.LocalVariables;
+import com.sap.adt.abapcleaner.rulehelpers.Variables;
 import com.sap.adt.abapcleaner.rulehelpers.VariableInfo;
 
 public class FinalVariableRule extends RuleForDeclarations {
@@ -100,13 +99,7 @@ public class FinalVariableRule extends RuleForDeclarations {
 	}
 
 	@Override
-	protected void executeOn(Code code, ClassInfo classInfo, int releaseRestriction) throws UnexpectedSyntaxAfterChanges {
-		// nothing to do on class definition level
-		return;
-	}
-
-	@Override
-	protected void executeOn(Code code, Command methodStart, LocalVariables localVariables, int releaseRestriction) throws UnexpectedSyntaxAfterChanges {
+	protected void executeOn(Code code, Command methodStart, Variables localVariables, int releaseRestriction) throws UnexpectedSyntaxAfterChanges {
 		// skip this method if macros or dynamic ASSIGN are used inside the method to avoid making variables FINAL that 
 		// are used inside the macros or dynamically (note that macro code may be local or 'out of sight')
 		if (localVariables.isEmpty() || localVariables.getMethodUsesMacrosOrTestInjection() || localVariables.getMethodUsesDynamicAssign())

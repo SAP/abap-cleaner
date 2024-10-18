@@ -3,13 +3,17 @@ package com.sap.adt.abapcleaner.gui;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.ModifyEvent;
 import org.eclipse.swt.events.ModifyListener;
+import org.eclipse.swt.events.SelectionAdapter;
+import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.layout.GridData;
+import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
 
+import com.sap.adt.abapcleaner.base.StringUtil;
 import com.sap.adt.abapcleaner.rulebase.*;
 
 class ConfigTextBox extends ConfigControl {
@@ -18,11 +22,16 @@ class ConfigTextBox extends ConfigControl {
 	
    private Label lblDescription;
    private Text txtValue;
-   private Label lblEmpty;
+   private Button btnAction;
+   private Label lblEmpty; // only used if no btnAction is used
 
    @Override
    public Control[] getControls() {
-      return new Control[] { lblDescription, txtValue, lblEmpty };
+   	if (btnAction != null) {
+   		return new Control[] { lblDescription, txtValue, btnAction };
+   	} else {
+   		return new Control[] { lblDescription, txtValue, lblEmpty };
+   	}
    }
    @Override
 	public Control[] getControlsForHighlight() { 
@@ -50,14 +59,25 @@ class ConfigTextBox extends ConfigControl {
       // set the width hint depending on the width of the maximum value
       GC gc = new GC(txtValue);
       gc.setFont(txtValue.getFont());
-      boolean grabExcessHorizontalSpace = (configValue.getMaxLength() >= MAX_WIDTH_IN_CHARS);
+      boolean grabExcessHorizontalSpace = (configValue.visibleLengthHint >= MAX_WIDTH_IN_CHARS);
       GridData gridData = new GridData((grabExcessHorizontalSpace ? SWT.FILL : SWT.BEGINNING), SWT.CENTER, grabExcessHorizontalSpace, false);
-      int maxWidthInChars = Math.min(configValue.getMaxLength(), MAX_WIDTH_IN_CHARS);
+      int maxWidthInChars = Math.min(configValue.visibleLengthHint, MAX_WIDTH_IN_CHARS);
       gridData.widthHint = (int) (gc.getFontMetrics().getAverageCharacterWidth() * maxWidthInChars);
       txtValue.setLayoutData(gridData);
       gc.dispose();
 
-      lblEmpty = new Label(parent, SWT.NONE);
+      if (StringUtil.isNullOrEmpty(configValue.buttonText)) {
+         lblEmpty = new Label(parent, SWT.NONE);
+      } else {
+			btnAction = new Button(parent, SWT.NONE);
+			btnAction.setText(configValue.buttonText);
+			btnAction.addSelectionListener(new SelectionAdapter() {
+				@Override
+				public void widgetSelected(SelectionEvent e) {
+					configDisplay.buttonClicked(configValue);
+				}
+			});
+      }
    }
 
    @Override
@@ -69,9 +89,15 @@ class ConfigTextBox extends ConfigControl {
       	removeListeners(txtValue, SWT.Modify);
          txtValue = null;
       }
+      
+      if (btnAction != null) {
+      	removeListeners(btnAction, SWT.Selection);
+      	btnAction = null;
+      }
 
-      if (lblEmpty != null)
+      if (lblEmpty != null) {
       	lblEmpty = null;
+      }
    }
 
    @Override
@@ -82,7 +108,7 @@ class ConfigTextBox extends ConfigControl {
    }
 
    @Override
-   public void setEnabled(boolean enabled) {
-   	txtValue.setEnabled(enabled);
+   public void setEnabled(boolean writable, boolean enabled) {
+   	txtValue.setEnabled(writable && enabled);
    }
 }

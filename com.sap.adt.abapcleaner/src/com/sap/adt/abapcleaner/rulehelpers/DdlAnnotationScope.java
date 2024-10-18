@@ -17,15 +17,21 @@ import com.sap.adt.abapcleaner.rulebase.Rule;
 public class DdlAnnotationScope {
 	private ArrayList<DdlAnnotation> annotations = new ArrayList<>();
 	
+	private final boolean allowComments;
+	
 	private Command firstCommand;
 	private Command lastCommand;
-
+	
 	private ArrayList<DdlAnnotationNestingRange> nestingRanges;
 
 	public ArrayList<DdlAnnotation> getAnnotations() { return annotations; }
 	public boolean isEmpty() { return annotations.isEmpty(); }
 	public Command getFirstCommand() { return firstCommand; }
 	public Command getLastCommand() { return lastCommand; }
+	
+	public DdlAnnotationScope(boolean allowComments) {
+		this.allowComments = allowComments;
+	}
 	
 	public void add(Command command) throws UnexpectedSyntaxBeforeChanges {
 		if (firstCommand == null)
@@ -40,9 +46,17 @@ public class DdlAnnotationScope {
 		Token token = command.getFirstToken();
 		int lineBreaks = token.lineBreaks;
 		while (token != null) {
-			if (token.isComment())
-				throw new UnexpectedSyntaxBeforeChanges(null, token, "annotations with comments not yet supported");
-			
+			if (token.isComment()) {
+				if (allowComments) {
+					// simply skip the comment (only possible if annotation layout is not changed)
+					token = token.getNext();
+					continue;
+				} else {
+					// 
+					throw new UnexpectedSyntaxBeforeChanges(null, token, "annotations with comments not yet supported");
+				}
+			}
+				
 			if (token.textEqualsAny(DDL.BRACE_OPEN_STRING)) {
 				expectingValue = false;
 				DdlAnnotationElement lastElement = elements.get(elements.size() - 1);
@@ -650,5 +664,14 @@ public class DdlAnnotationScope {
 			target = target.getNext();
 		}
 		return changed;
+	}
+	
+	public DdlAnnotation findAnnotation(String path) {
+		for (DdlAnnotation annotation : annotations) {
+			if (annotation.getPath().equals(path)) {
+				return annotation;
+			}
+		}
+		return null;
 	}
 }

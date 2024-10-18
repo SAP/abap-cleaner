@@ -39,7 +39,7 @@ public class DdlAnnotationTest {
 		} 
 		
 		// create the DdlAnnotationScope
-		DdlAnnotationScope scope = new DdlAnnotationScope();
+		DdlAnnotationScope scope = new DdlAnnotationScope(true);
 		Command command = code.firstCommand;
 		while (command != null) {
 			try {

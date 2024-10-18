@@ -403,4 +403,13 @@ class RuleTest {
 			}
 		}
 	}
+	
+	@Test
+	void testButtonClicked() {
+		Rule[] rules = Profile.createDefault().getAllRules();
+		
+		for (Rule rule : rules) {
+			assertNull(rule.buttonClicked(null));
+		}
+	}
 }

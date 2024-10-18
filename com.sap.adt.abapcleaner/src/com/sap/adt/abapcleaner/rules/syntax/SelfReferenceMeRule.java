@@ -7,8 +7,7 @@ import com.sap.adt.abapcleaner.parser.*;
 import com.sap.adt.abapcleaner.programbase.Program;
 import com.sap.adt.abapcleaner.programbase.UnexpectedSyntaxAfterChanges;
 import com.sap.adt.abapcleaner.rulebase.*;
-import com.sap.adt.abapcleaner.rulehelpers.ClassInfo;
-import com.sap.adt.abapcleaner.rulehelpers.LocalVariables;
+import com.sap.adt.abapcleaner.rulehelpers.Variables;
 import com.sap.adt.abapcleaner.rulehelpers.MethodInfo;
 
 public class SelfReferenceMeRule extends RuleForDeclarations {
@@ -83,13 +82,7 @@ public class SelfReferenceMeRule extends RuleForDeclarations {
 	}
 
 	@Override
-	protected void executeOn(Code code, ClassInfo classInfo, int releaseRestriction) throws UnexpectedSyntaxAfterChanges {
-		// nothing to do on class definition level
-		return;
-	}
-
-	@Override
-	protected void executeOn(Code code, Command methodStart, LocalVariables localVariables, int releaseRestriction) throws UnexpectedSyntaxAfterChanges {
+	protected void executeOn(Code code, Command methodStart, Variables localVariables, int releaseRestriction) throws UnexpectedSyntaxAfterChanges {
 		Command command = methodStart.getNext();
 		while (command != null && command != methodStart.getNextSibling()) {
 			if (!isCommandBlocked(command)) { 
@@ -111,11 +104,11 @@ public class SelfReferenceMeRule extends RuleForDeclarations {
 		}
 	}
 
-	private boolean executeOn(Code code, Command command, Token token, LocalVariables localVariables) throws UnexpectedSyntaxAfterChanges {
+	private boolean executeOn(Code code, Command command, Token token, Variables localVariables) throws UnexpectedSyntaxAfterChanges {
 		// determine the identifier behind 'me->'; note that token may contain expressions like 'me->mo_instance->any_method('
 		boolean isInOOContext = command.isInOOContext();
 		String expression = token.getText().substring(selfReferenceMe.length());
-		String identifier = LocalVariables.getObjectName(expression, isInOOContext);
+		String identifier = Variables.getObjectName(expression, isInOOContext);
 		boolean identifierIsMethodName = (expression.endsWith("(") && identifier.length() == expression.length() - ")".length());
 
 		boolean isMethodSignatureKnown = localVariables.isMethodSignatureKnown();
@@ -130,7 +123,7 @@ public class SelfReferenceMeRule extends RuleForDeclarations {
 
 			// if there is a method parameter with the same name as the attribute, do NOT remove 'me->'
 			// (typically, IMPORTING parameters in constructors are stored to attributes: 'me->name = name.')
-			if (isMethodSignatureKnown && methodInfo.hasParameter(identifier)) 
+			if (isMethodSignatureKnown && methodInfo.hasParameter(identifier)) // pro forma - localVariables already contains the parameters
 				return false;
 
 			if (!isMethodSignatureKnown) {
@@ -140,7 +133,7 @@ public class SelfReferenceMeRule extends RuleForDeclarations {
 				if (token.isFirstTokenInCommand() && token.getNext() != null && token.getNext().isAssignmentOperator()) {
 					Token valueToken = token.getNext().getNext();
 					while (valueToken != null) {
-						if (valueToken.isIdentifier() && AbapCult.stringEquals(identifier, LocalVariables.getObjectName(valueToken.getText(), isInOOContext), true))
+						if (valueToken.isIdentifier() && AbapCult.stringEquals(identifier, Variables.getObjectName(valueToken.getText(), isInOOContext), true))
 							return false;
 						valueToken = valueToken.getNext();
 					}

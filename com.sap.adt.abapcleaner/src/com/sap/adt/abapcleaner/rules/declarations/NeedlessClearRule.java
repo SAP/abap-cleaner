@@ -20,8 +20,7 @@ import com.sap.adt.abapcleaner.rulebase.RuleGroupID;
 import com.sap.adt.abapcleaner.rulebase.RuleID;
 import com.sap.adt.abapcleaner.rulebase.RuleReference;
 import com.sap.adt.abapcleaner.rulebase.RuleSource;
-import com.sap.adt.abapcleaner.rulehelpers.ClassInfo;
-import com.sap.adt.abapcleaner.rulehelpers.LocalVariables;
+import com.sap.adt.abapcleaner.rulehelpers.Variables;
 import com.sap.adt.abapcleaner.rulehelpers.VariableInfo;
 
 public class NeedlessClearRule extends RuleForDeclarations {
@@ -109,13 +108,7 @@ public class NeedlessClearRule extends RuleForDeclarations {
 	}
 
 	@Override
-	protected void executeOn(Code code, ClassInfo classInfo, int releaseRestriction) throws UnexpectedSyntaxAfterChanges {
-		// nothing to do on class definition level
-		return;
-	}
-
-	@Override
-	protected void executeOn(Code code, Command methodStart, LocalVariables localVariables, int releaseRestriction) throws UnexpectedSyntaxAfterChanges, IntegrityBrokenException {
+	protected void executeOn(Code code, Command methodStart, Variables localVariables, int releaseRestriction) throws UnexpectedSyntaxAfterChanges, IntegrityBrokenException {
 		// skip this method if macros are used inside the method (note that macro code may be local or 'out of sight')
 		if (localVariables.isEmpty() || localVariables.getMethodUsesMacrosOrTestInjection() || isCommandBlocked(methodStart))
 			return;
@@ -169,7 +162,7 @@ public class NeedlessClearRule extends RuleForDeclarations {
 		}
 	}
 	
-	private void executeOnClear(Code code, Command command, LocalVariables localVariables, NeedlessClearAction action, boolean isAtStart) throws IntegrityBrokenException, UnexpectedSyntaxAfterChanges {
+	private void executeOnClear(Code code, Command command, Variables localVariables, NeedlessClearAction action, boolean isAtStart) throws IntegrityBrokenException, UnexpectedSyntaxAfterChanges {
 		if (isCommandBlocked(command) || action == NeedlessClearAction.IGNORE)
 			return;
 
@@ -202,7 +195,7 @@ public class NeedlessClearRule extends RuleForDeclarations {
 		}
 	}
 	
-	private boolean canRemoveClear(Token token, LocalVariables localVariables, boolean isAtStart, boolean isInOOContext) {
+	private boolean canRemoveClear(Token token, Variables localVariables, boolean isAtStart, boolean isInOOContext) {
 		// excluded cases where the variable is not defined locally (e.g. parameters or attributes), 
 		// as well as cases defined with DATA ... BEGIN OF
 		VariableInfo varInfo = localVariables.getVariableInfo(token, false);

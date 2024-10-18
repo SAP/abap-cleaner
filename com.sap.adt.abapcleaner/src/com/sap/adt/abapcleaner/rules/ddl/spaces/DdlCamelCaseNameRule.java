@@ -50,6 +50,9 @@ public class DdlCamelCaseNameRule extends Rule {
 	public Language[] getSupportedLanguages() { return ddlOnly; }
 
 	@Override
+	public boolean dependsOnExternalFiles() { return true; } // this rule depends on the .txt files for custom view and field names
+
+	@Override
 	public String getExample() {
 		return "" 
 				+ LINE_SEP + "define view entity i_Companycode"
@@ -206,7 +209,7 @@ public class DdlCamelCaseNameRule extends Rule {
 			return false;
 		
 		CamelCaseNames fieldNames = CamelCaseNames.getFieldNames();
-		String camelCaseFieldName = fieldNames.applyCamelCaseTo(fieldNameText, false, onlyApproved);
+		String camelCaseFieldName = fieldNames.applyCamelCaseTo(fieldNameText, false, onlyApproved, parentProfile);
 		return (camelCaseFieldName == null);
 	}
 	
@@ -220,7 +223,7 @@ public class DdlCamelCaseNameRule extends Rule {
 			return false;
 
 		CamelCaseNames viewNames = CamelCaseNames.getViewNames();
-		String camelCaseEntityName = viewNames.applyCamelCaseTo(entityName.getText(), false, onlyApproved);
+		String camelCaseEntityName = viewNames.applyCamelCaseTo(entityName.getText(), false, onlyApproved, parentProfile);
 		if (camelCaseEntityName == null) 
 			return false;
 			
@@ -246,7 +249,7 @@ public class DdlCamelCaseNameRule extends Rule {
 
 		// test whether a view with this name exists
 		CamelCaseNames viewNames = CamelCaseNames.getViewNames();
-		String camelCase = viewNames.applyCamelCaseTo(alias, false, onlyApproved);
+		String camelCase = viewNames.applyCamelCaseTo(alias, false, onlyApproved, parentProfile);
 
 		if (camelCase != null) {
 			String camelCaseAlias = underscorePrefix + camelCase;
@@ -269,7 +272,7 @@ public class DdlCamelCaseNameRule extends Rule {
 		// test whether a view name with an (added or different) entity prefix exists
 		for (String testEntityPrefixLetter : CamelCaseNames.getEntityPrefixLetters()) {
 			String testPrefix = testEntityPrefixLetter + "_";
-			camelCase = viewNames.applyCamelCaseTo(testPrefix + aliasWithoutEntityPrefix, false, onlyApproved);
+			camelCase = viewNames.applyCamelCaseTo(testPrefix + aliasWithoutEntityPrefix, false, onlyApproved, parentProfile);
 			if (camelCase != null) {
 				String camelCaseAlias = underscorePrefix + entityPrefix + camelCase.substring(testPrefix.length());
 				if (isAssociation)
@@ -293,7 +296,7 @@ public class DdlCamelCaseNameRule extends Rule {
 			return false;
 		
 		CamelCaseNames fieldNames = CamelCaseNames.getFieldNames();
-		String camelCaseFieldName = fieldNames.applyCamelCaseTo(fieldName.getText(), false, onlyApproved);
+		String camelCaseFieldName = fieldNames.applyCamelCaseTo(fieldName.getText(), false, onlyApproved, parentProfile);
 		if (camelCaseFieldName == null) 
 			return false;
 			
@@ -304,7 +307,7 @@ public class DdlCamelCaseNameRule extends Rule {
 		boolean changed = false;
 		
 		// create an annotation 'scope' from the current Command
-		DdlAnnotationScope scope = new DdlAnnotationScope();
+		DdlAnnotationScope scope = new DdlAnnotationScope(true);
 		try {
 			scope.add(command);
 		} catch (UnexpectedSyntaxBeforeChanges e) {
@@ -327,10 +330,10 @@ public class DdlCamelCaseNameRule extends Rule {
 			// determine the CamelCase view name / field name / association name
 			String newValue = null;
 			if (configFixEntityName.getValue() && DDL.isKnownEntityRefAnnotation(path)) {
-				newValue = CamelCaseNames.getViewNames().applyCamelCaseTo(value, false, onlyApproved);
+				newValue = CamelCaseNames.getViewNames().applyCamelCaseTo(value, false, onlyApproved, parentProfile);
 
 			} else if (allowFieldNames && configFixFieldNames.getValue() && (DDL.isKnownElementRefAnnotation(path) || referencesRemoteElement)) {
-				newValue = CamelCaseNames.getFieldNames().applyCamelCaseTo(value, false, onlyApproved);
+				newValue = CamelCaseNames.getFieldNames().applyCamelCaseTo(value, false, onlyApproved, parentProfile);
 			
 			} else if (configFixAliases.getValue() && DDL.isKnownAssociationRefAnnotation(path)) {
 				newValue = associationAliases.get(getAliasKey(value));

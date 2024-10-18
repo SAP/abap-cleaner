@@ -35,7 +35,7 @@ public enum Language {
 			|| StringUtil.containsAtIgnoringCase(text, pos, "[define]", "[root]", "view", "[entity]")
 			|| StringUtil.containsAtIgnoringCase(text, pos, "[define]", "table", "function")
 			|| StringUtil.containsAtIgnoringCase(text, pos, "[define]", "hierarchy")
-			|| StringUtil.containsAtIgnoringCase(text, pos, "define", "transient", "view")
+			|| StringUtil.containsAtIgnoringCase(text, pos, "define", "transient", "view", "[entity]")
 
 			// extension
 			|| StringUtil.containsAtIgnoringCase(text, pos, "extend", "abstract", "entity")

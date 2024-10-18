@@ -12,7 +12,7 @@ import com.sap.adt.abapcleaner.parser.Token;
 import com.sap.adt.abapcleaner.programbase.UnexpectedSyntaxBeforeChanges;
 import com.sap.adt.abapcleaner.rulebase.Rule;
 
-public class LocalVariables {
+public class Variables {
    private static String getNameKey(String name, boolean isType) {
    	// types can use the same identifiers as data objects (e.g. "TYPES BEGIN OF group ..." and "DATA group TYPE TABLE OF group"), 
    	// therefore we use a prefix to store types independently
@@ -34,7 +34,8 @@ public class LocalVariables {
 	// -------------------------------------------------------------------------
 	
    private final Rule rule;
-   private final MethodInfo methodInfo;
+   private final ClassInfo classInfo;
+   private final MethodInfo methodInfo; // null for attributes
    private final boolean isInOOContext;
    public final VariableInfo returningParameter;
    private boolean methodUsesMacrosOrTestInjection;
@@ -49,8 +50,9 @@ public class LocalVariables {
 	public HashSet<VariableInfo> localsWithUsage = new HashSet<VariableInfo>();
 	public HashSet<VariableInfo> localsWithNonCommentUsage = new HashSet<VariableInfo>();
 
-	public LocalVariables(Rule rule, MethodInfo methodInfo) {
+	public Variables(Rule rule, ClassInfo classInfo, MethodInfo methodInfo) {
 		this.rule = rule;
+		this.classInfo = classInfo;
 		this.methodInfo = methodInfo;
 		this.isInOOContext = (methodInfo == null) ? false : methodInfo.isInOOContext;
 		
@@ -75,6 +77,10 @@ public class LocalVariables {
 		return (methodInfo != null && !methodInfo.isRedefinition);
 	}
 	
+	public ClassInfo getClassInfo() {
+		return classInfo;
+	}
+	
 	public MethodInfo getMethodInfo() {
 		return methodInfo;
 	}
@@ -95,7 +101,7 @@ public class LocalVariables {
 		return localsInNonCommentUsageOrder;
 	}
 	
-	public VariableInfo addDeclaration(Token identifier, boolean isDeclaredInline, boolean isType, boolean isConstant, boolean isBoundStructuredData, boolean isInOOContext, boolean isAssignedInMessageInto) throws UnexpectedSyntaxBeforeChanges {
+	public VariableInfo addDeclaration(Token identifier, boolean isDeclaredInline, boolean isType, boolean isConstant, boolean isBoundStructuredData, boolean isInOOContext, boolean isAssignedInMessageInto, VariableAccessType variableAccessType) throws UnexpectedSyntaxBeforeChanges {
 		if (!identifier.isIdentifier())
 			throw new UnexpectedSyntaxBeforeChanges(rule, identifier, "Expected an identifier, but found " + identifier.getTypeAndTextForErrorMessage() + "!");
 
@@ -111,7 +117,7 @@ public class LocalVariables {
 		if (locals.containsKey(key))
 			throw new UnexpectedSyntaxBeforeChanges(rule, identifier, (isConstant ? "Constant" : "Variable") + " '" + identifier.getText() + "' seems to be declared twice!");
 
-		VariableInfo varInfo = new VariableInfo(identifier, isDeclaredInline, isType, isConstant, isBoundStructuredData);
+		VariableInfo varInfo = new VariableInfo(identifier, isDeclaredInline, isType, isConstant, isBoundStructuredData, variableAccessType);
 		if (isDeclaredInline) {
 			varInfo.addAssignment(identifier, isAssignedInMessageInto);
 		}

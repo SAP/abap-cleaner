@@ -3,6 +3,10 @@ package com.sap.adt.abapcleaner.rulebase;
 import com.sap.adt.abapcleaner.base.*;
 import com.sap.adt.abapcleaner.parser.*;
 import com.sap.adt.abapcleaner.programbase.*;
+import com.sap.adt.abapcleaner.rulehelpers.CamelCaseNameType;
+import com.sap.adt.abapcleaner.rulehelpers.CustomCamelCaseNames;
+import com.sap.adt.abapcleaner.rules.emptylines.CdsTestClassLinesRule;
+import com.sap.adt.abapcleaner.rules.prettyprinter.CamelCaseNameRule;
 import com.sap.adt.abapcleaner.rules.spaces.NeedlessSpacesRule;
 import com.sap.adt.abapcleaner.rules.spaces.SpaceAroundCommentSignRule;
 import com.sap.adt.abapcleaner.rules.spaces.SpaceAroundTextLiteralRule;
@@ -124,7 +128,10 @@ public class Profile {
 	// -------------------------------------------------------------------------
 	
 	public String name;
+	public String path;
 	public boolean isReadOnly;
+	public CustomCamelCaseNames customViewNames = new CustomCamelCaseNames(CamelCaseNameType.VIEW);
+	public CustomCamelCaseNames customFieldNames = new CustomCamelCaseNames(CamelCaseNameType.FIELD);
 	
 	/** <p>determines handling of new features, i.e. a) new Rules, or b) new configuration options added later to existing Rules:<p> 
 	 * <ul><li>true = new Rules will automatically be activated, and new configuration options will be set to their 
@@ -165,8 +172,8 @@ public class Profile {
 	}
 	private Profile(ISettingsReader reader, String namePrefix) throws IOException {
 		name = namePrefix + reader.getFileNameWithoutExtension();
+		path = reader.getPath();
 		isReadOnly = !StringUtil.isNullOrEmpty(namePrefix);
-		// path = reader.path;
 		initializeRules();
 		load(reader);
 	}
@@ -185,6 +192,7 @@ public class Profile {
 	}
 	private Profile(String name) {
 		this.name = name;
+		this.path = null;
 		this.isReadOnly = false;
 		this.autoActivateNewFeatures = AUTO_ACTIVATE_NEW_FEATURES_DEFAULT;
 		initializeRules();
@@ -195,6 +203,7 @@ public class Profile {
 	}
 	private Profile(String name, Profile model) {
 		this.name = name;
+		this.path = null; // use own profile directory
 		this.isReadOnly = false;
 		this.autoActivateNewFeatures = model.autoActivateNewFeatures;
 		
@@ -222,6 +231,9 @@ public class Profile {
 		executeRules(code, releaseRestriction, false, null);
 	}
 	public final void executeRules(Code code, int releaseRestriction, boolean executeInactiveRules, IProgress progress) throws CleanException {
+		// update custom camel case names
+		updateCustomNames();
+		
 		int rulesToExecuteCount = 0;
 		if (executeInactiveRules)
 			rulesToExecuteCount = rules.length;
@@ -258,6 +270,19 @@ public class Profile {
 			++executedCount;
 			if (progress != null)
 				progress.report(TaskType.CLEANER, executedCount / (double) rulesToExecuteCount);
+		}
+	}
+
+	public void updateCustomNames() {
+		if (path == null || Persistency.get() == null)
+			return;
+		
+		CamelCaseNameRule camelCaseNameRule = (CamelCaseNameRule)getRule(RuleID.CAMEL_CASE_NAME); 
+		String profileDir = Persistency.get().getDirectoryName(path);
+		try {
+			customViewNames.load(profileDir, camelCaseNameRule.configCustomViewNamesFile.getValue());
+			customFieldNames.load(profileDir, camelCaseNameRule.configCustomFieldNamesFile.getValue());
+		} catch (IOException e) {
 		}
 	}
 
@@ -426,5 +451,14 @@ public class Profile {
 	public String getNameWithoutPrefix() {
 		int infixPos = name.indexOf(READ_ONLY_INFIX);
 		return (infixPos < 0) ? name : name.substring(infixPos + READ_ONLY_INFIX.length());
+	}
+	
+	public boolean mayMoveMethods() {
+		boolean mayMoveMethods = false;
+		
+		CdsTestClassLinesRule rule = (CdsTestClassLinesRule)getRule(RuleID.CDS_TEST_CLASS_LINES);
+		mayMoveMethods |= rule.isActive && rule.configMovePrepareMethods.getValue();
+		
+		return mayMoveMethods;
 	}
 }

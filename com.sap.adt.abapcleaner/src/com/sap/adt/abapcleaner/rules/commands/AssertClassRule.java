@@ -149,7 +149,7 @@ public class AssertClassRule extends RuleForCommands {
 			+ LINE_SEP + "ENDCLASS.";
 	}
 
-	final ConfigTextValue configAssertClassName = new ConfigTextValue(this, "AssertClassName", "Assert class name:", "cx_assert", ConfigTextType.ABAP_CLASS);
+	final ConfigTextValue configAssertClassName = new ConfigTextValue(this, "AssertClassName", "Assert class name:", "cx_assert", ConfigTextType.ABAP_CLASS, 30, "");
 	final ConfigBoolValue configProcessChains = new ConfigBoolValue(this, "ProcessChains", "Unchain ASSERT: chains (required for processing them with this rule)", true, false, LocalDate.of(2023, 10, 27));
 
 	private final ConfigValue[] configValues = new ConfigValue[] { configAssertClassName, configProcessChains };

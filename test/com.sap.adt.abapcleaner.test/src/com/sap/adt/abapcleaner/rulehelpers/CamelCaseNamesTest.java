@@ -49,15 +49,15 @@ public class CamelCaseNamesTest {
 	public void testHasFieldNameResource() {
 		CamelCaseNames fieldNames = CamelCaseNames.getFieldNames();
 		assertTrue(fieldNames.getEntryCount() > 0);
-		assertEquals("CompanyCode", fieldNames.applyCamelCaseTo("companycode", true, true));
-		assertEquals(null, fieldNames.applyCamelCaseTo("currency", true, false));
+		assertEquals("CompanyCode", fieldNames.applyCamelCaseTo("companycode", true, true, null));
+		assertEquals(null, fieldNames.applyCamelCaseTo("currency", true, false, null));
 	}
 
 	@Test
 	public void testHasViewNameResource() {
 		CamelCaseNames viewNames = CamelCaseNames.getViewNames();
 		assertTrue(viewNames.getEntryCount() > 0);
-		assertEquals("I_CompanyCode", viewNames.applyCamelCaseTo("i_companycode", true, true));
+		assertEquals("I_CompanyCode", viewNames.applyCamelCaseTo("i_companycode", true, true, null));
 	}
 
 	@Test
@@ -100,7 +100,7 @@ public class CamelCaseNamesTest {
 		persistencyDouble.writeAllTextToFile(path1, sb.toString(), false);
 		StringBuilder sbSummary = createStringBuilders ? new StringBuilder() : null;
 		StringBuilder sbDetails = createStringBuilders ? new StringBuilder() : null;
-		names = CamelCaseNames.createFromTextFiles(type, new String[] { path1 }, sbSummary, sbDetails, true);
+		names = CamelCaseNames.createFromTextFiles(type, new String[] { path1 }, sbSummary, sbDetails, true, true);
 		summary = createStringBuilders ? sbSummary.toString() : null;
 		details = createStringBuilders ? sbDetails.toString() : null; 
 	}
@@ -123,36 +123,36 @@ public class CamelCaseNamesTest {
 
 	private void assertKept(String name, boolean expUpperAfterLower, boolean expApproval, String... nameVariants) {
 		// expect that the same CamelCase name is returned when passing name in given, lower, or upper case
-		assertEquals(name, names.applyCamelCaseTo(name, expUpperAfterLower, expApproval));
-		assertEquals(name, names.applyCamelCaseTo(name.toLowerCase(), expUpperAfterLower, expApproval));
-		assertEquals(name, names.applyCamelCaseTo(name.toUpperCase(), expUpperAfterLower, expApproval));
+		assertEquals(name, names.applyCamelCaseTo(name, expUpperAfterLower, expApproval, null));
+		assertEquals(name, names.applyCamelCaseTo(name.toLowerCase(), expUpperAfterLower, expApproval, null));
+		assertEquals(name, names.applyCamelCaseTo(name.toUpperCase(), expUpperAfterLower, expApproval, null));
 		
 		if (!expUpperAfterLower) {
 			// expect that applyCamelCaseTo() returns null if requireUpperAfterLower == true is demanded 
-			assertEquals(null, names.applyCamelCaseTo(name, true, expApproval));
-			assertEquals(null, names.applyCamelCaseTo(name.toLowerCase(), true, expApproval));
-			assertEquals(null, names.applyCamelCaseTo(name.toUpperCase(), true, expApproval));
+			assertEquals(null, names.applyCamelCaseTo(name, true, expApproval, null));
+			assertEquals(null, names.applyCamelCaseTo(name.toLowerCase(), true, expApproval, null));
+			assertEquals(null, names.applyCamelCaseTo(name.toUpperCase(), true, expApproval, null));
 		}
 		if (!expApproval) {
 			// expect that applyCamelCaseTo() returns null if requireApproval == true is demanded 
-			assertEquals(null, names.applyCamelCaseTo(name, expUpperAfterLower, true));
-			assertEquals(null, names.applyCamelCaseTo(name.toLowerCase(), expUpperAfterLower, true));
-			assertEquals(null, names.applyCamelCaseTo(name.toUpperCase(), expUpperAfterLower, true));
+			assertEquals(null, names.applyCamelCaseTo(name, expUpperAfterLower, true, null));
+			assertEquals(null, names.applyCamelCaseTo(name.toLowerCase(), expUpperAfterLower, true, null));
+			assertEquals(null, names.applyCamelCaseTo(name.toUpperCase(), expUpperAfterLower, true, null));
 		}
 		
 		if (nameVariants != null) {
 			for (String nameVariant : nameVariants) {
-				assertEquals(name, names.applyCamelCaseTo(nameVariant, expUpperAfterLower, expApproval));
+				assertEquals(name, names.applyCamelCaseTo(nameVariant, expUpperAfterLower, expApproval, null));
 			}
 		}
 	}
 
 	private void assertDiscarded(String name, String... messageBits) {
-		String camelCase = names.applyCamelCaseTo(name, true, false);
+		String camelCase = names.applyCamelCaseTo(name, true, false, null);
 		if (camelCase == null) {
-			assertNull(names.applyCamelCaseTo(name, true, false));
-			assertNull(names.applyCamelCaseTo(name.toLowerCase(), true, false));
-			assertNull(names.applyCamelCaseTo(name.toUpperCase(), true, false));
+			assertNull(names.applyCamelCaseTo(name, true, false, null));
+			assertNull(names.applyCamelCaseTo(name.toLowerCase(), true, false, null));
+			assertNull(names.applyCamelCaseTo(name.toUpperCase(), true, false, null));
 		} else {
 			// if a CamelCase name is returned, expect it to be different (i.e. to have upper case characters in different places) 
 			assertFalse(name.equals(camelCase));

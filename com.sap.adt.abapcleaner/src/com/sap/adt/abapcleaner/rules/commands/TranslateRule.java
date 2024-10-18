@@ -23,8 +23,7 @@ import com.sap.adt.abapcleaner.rulebase.RuleGroupID;
 import com.sap.adt.abapcleaner.rulebase.RuleID;
 import com.sap.adt.abapcleaner.rulebase.RuleReference;
 import com.sap.adt.abapcleaner.rulebase.RuleSource;
-import com.sap.adt.abapcleaner.rulehelpers.ClassInfo;
-import com.sap.adt.abapcleaner.rulehelpers.LocalVariables;
+import com.sap.adt.abapcleaner.rulehelpers.Variables;
 import com.sap.adt.abapcleaner.rulehelpers.VariableInfo;
 
 public class TranslateRule extends RuleForDeclarations {
@@ -138,13 +137,7 @@ public class TranslateRule extends RuleForDeclarations {
 	}
 
 	@Override
-	protected void executeOn(Code code, ClassInfo classOrInterfaceInfo, int releaseRestriction) throws UnexpectedSyntaxAfterChanges {
-		// nothing to do on class definition level
-		return;
-	}
-
-	@Override
-	protected void executeOn(Code code, Command methodStart, LocalVariables localVariables, int releaseRestriction) throws UnexpectedSyntaxAfterChanges {
+	protected void executeOn(Code code, Command methodStart, Variables localVariables, int releaseRestriction) throws UnexpectedSyntaxAfterChanges {
 		Command command = methodStart;
 		Command methodEnd = command.getNextSibling();
 		while (command != methodEnd) {
@@ -166,7 +159,7 @@ public class TranslateRule extends RuleForDeclarations {
 		}
 	}
 
-	private void executeOnCommand(Code code, Command command, LocalVariables localVariables, int releaseRestriction) throws UnexpectedSyntaxBeforeChanges, UnexpectedSyntaxAfterChanges {
+	private void executeOnCommand(Code code, Command command, Variables localVariables, int releaseRestriction) throws UnexpectedSyntaxBeforeChanges, UnexpectedSyntaxAfterChanges {
 		// for the syntax of the deprecated TRANSLATE statement, see https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/index.htm?file=abaptranslate.htm
 		Token firstToken = command.getFirstToken();
 		if (firstToken == null) // pro forma
@@ -200,7 +193,7 @@ public class TranslateRule extends RuleForDeclarations {
 		}
 	}
 
-	private boolean isVarSureToBeCharlike(Token identifier, LocalVariables localVariables) {
+	private boolean isVarSureToBeCharlike(Token identifier, Variables localVariables) {
 		if (identifier == null)
 			return false;
 		VariableInfo varInfo = localVariables.getVariableInfo(identifier, false);
@@ -212,7 +205,7 @@ public class TranslateRule extends RuleForDeclarations {
 		Token toToken = identifier1.getNextCodeSibling();
 		Token upperLowerToken = toToken.getNextCodeSibling();
 		Token caseToken = upperLowerToken.getNextCodeSibling();
-		if (caseToken.getNextCodeSibling() == null || !caseToken.getNextCodeSibling().isPeriod())
+		if (!caseToken.getNextCodeSibling().isPeriod()) // pro forma
 			return false;
 		
 		int sourceLineNum = identifier1.sourceLineNum;
@@ -245,9 +238,7 @@ public class TranslateRule extends RuleForDeclarations {
 		Token maskToken = usingToken.getNextCodeSibling();
 		
 		// only process if there is a single mask literal (not an identifier, a concatenation of several literals, etc.)
-		if (!maskToken.isStringLiteral())
-			return false;
-		else if (maskToken.getNextCodeSibling() == null || !maskToken.getNextCodeSibling().isPeriod())
+		if (!maskToken.isStringLiteral() || !maskToken.getNextCodeSibling().isPeriod()) // || ... pro forma
 			return false;
 
 		int sourceLineNum = identifier1.sourceLineNum;
