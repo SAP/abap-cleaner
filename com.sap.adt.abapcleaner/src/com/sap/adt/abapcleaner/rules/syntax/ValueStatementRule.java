@@ -83,7 +83,7 @@ public class ValueStatementRule extends RuleForTokens {
 			+ LINE_SEP + "                              account        = '67890'" 
 			+ LINE_SEP + "                              guid           = '2' ) )." 
 			+ LINE_SEP 
-			+ LINE_SEP + "    \" statements that contain commented-out table rows should be skipped," 
+			+ LINE_SEP + "    \" statements in which entire table rows ( ... ) are commented-out should be skipped,"
 			+ LINE_SEP + "    \" because the commented-out content can not be considered" 
 			+ LINE_SEP + "    lts_data = VALUE #( ( a = 2  b = 3  c = 6 )" 
 			+ LINE_SEP + "*                        ( a = 1  b = 4  c = 8 ) " 
@@ -106,7 +106,7 @@ public class ValueStatementRule extends RuleForTokens {
 	final ConfigBoolValue configMoveIdentifiers = new ConfigBoolValue(this, "MoveIdentifiers", "Move assignments with identifiers / constants", true);
 	final ConfigBoolValue configMoveComplexExpressions = new ConfigBoolValue(this, "MoveComplexExpressions", "Move assignments with complex expressions", true); 
 	final ConfigBoolValue configMoveMethodCalls = new ConfigBoolValue(this, "MoveMethodCalls", "Move assignments with method calls (WARNING: could change behavior if methods with side effects are called!)", false);
-	final ConfigBoolValue configSkipIfRowsCommentedOut = new ConfigBoolValue(this, "SkipIfRowsCommentedOut", "Skip statements that contain commented-out rows", true, true, LocalDate.of(2024, 10, 11));
+	final ConfigBoolValue configSkipIfRowsCommentedOut = new ConfigBoolValue(this, "SkipIfRowsCommentedOut", "Skip statements that contain commented-out table rows", true, true, LocalDate.of(2024, 10, 11));
 
 	private final ConfigValue[] configValues = new ConfigValue[] { configMoveIntegerLiterals, configMoveFloatLiterals, configMoveStringLiterals, configMoveIdentifiers, configMoveComplexExpressions, configMoveMethodCalls, configSkipIfRowsCommentedOut };
 

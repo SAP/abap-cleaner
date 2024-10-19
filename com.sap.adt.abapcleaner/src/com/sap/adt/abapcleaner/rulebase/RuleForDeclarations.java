@@ -290,11 +290,10 @@ public abstract class RuleForDeclarations extends Rule {
 	}
 
 	private void addMethodDefinitions(ClassInfo curClassOrInterface, MethodVisibility methodVisibility, Command command) {
-		Token token = command.getFirstCodeToken();
-		if (token == null)
-			return;
-		if (command.isSimpleChain())
+		Token token = command.getFirstCodeToken().getNextCodeSibling();
+		while (token != null && token.isChainColon())
 			token = token.getNextCodeSibling();
+		token = token.getPrevCodeSibling();
 		
 		while (token != null && !token.isPeriod()) {
 			// move to the method name 
