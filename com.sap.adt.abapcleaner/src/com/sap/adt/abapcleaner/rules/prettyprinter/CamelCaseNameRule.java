@@ -17,6 +17,7 @@ import com.sap.adt.abapcleaner.programbase.Program;
 import com.sap.adt.abapcleaner.programbase.UnexpectedSyntaxAfterChanges;
 import com.sap.adt.abapcleaner.rulebase.ConfigBoolValue;
 import com.sap.adt.abapcleaner.rulebase.ConfigEnumValue;
+import com.sap.adt.abapcleaner.rulebase.ConfigInfoStyle;
 import com.sap.adt.abapcleaner.rulebase.ConfigInfoValue;
 import com.sap.adt.abapcleaner.rulebase.ConfigIntValue;
 import com.sap.adt.abapcleaner.rulebase.ConfigTextType;
@@ -31,6 +32,7 @@ import com.sap.adt.abapcleaner.rulebase.RuleSource;
 import com.sap.adt.abapcleaner.rulehelpers.CamelCaseNames;
 
 public class CamelCaseNameRule extends Rule {
+	public static final String displayName = "Use CamelCase for known CDS names";
 	private static final String defaultCustomFieldNamesFile = "CustomFieldNames.txt";
 	private static final String defaultCustomViewNamesFile = "CustomViewNames.txt";
 
@@ -45,7 +47,7 @@ public class CamelCaseNameRule extends Rule {
 	public RuleGroupID getGroupID() { return RuleGroupID.PRETTY_PRINTER; }
 
 	@Override
-	public String getDisplayName() { return "Use CamelCase for known CDS names"; }
+	public String getDisplayName() { return displayName; }
 
 	@Override
 	public String getDescription() { return "Changes known VDM CDS view names and field names to CamelCase."; }
@@ -139,8 +141,8 @@ public class CamelCaseNameRule extends Rule {
 
 	final ConfigBoolValue configProcessViewNames = new ConfigBoolValue(this, "ProcessViewNames", "Change known view names to CamelCase", true);
 	final ConfigBoolValue configProcessFieldNames = new ConfigBoolValue(this, "ProcessFieldNames", "Change known field names to CamelCase", true);
-	final ConfigBoolValue configProcessComments = new ConfigBoolValue(this, "ProcessComments", "Consider commented-out * lines in VALUE or NEW constructors", true, false, LocalDate.of(2024, 10, 16));
-	final ConfigInfoValue configContextInfo = new ConfigInfoValue(this, "To decide whether to change a known field name to CamelCase, " + Program.PRODUCT_NAME + " analyzes its context, e.g. all field names in a VALUE constructor, a SELECT statement, a table key etc.");
+	final ConfigBoolValue configProcessComments = new ConfigBoolValue(this, "ProcessComments", "Consider commented-out lines in VALUE or NEW constructors (expected format: '*  component = ...')", true, false, LocalDate.of(2024, 10, 16));
+	final ConfigInfoValue configContextInfo = new ConfigInfoValue(this, "To decide whether to change a known field name to CamelCase, " + Program.PRODUCT_NAME + " analyzes its context, e.g. all field names in a VALUE constructor, a SELECT statement, a table key etc.", ConfigInfoStyle.NORMAL);
 	final ConfigIntValue configMinLengthOfSureMatch = new ConfigIntValue(this, "MinLengthOfSureMatch", "Consider known field names a 'sure match' if they are at least", "chars long and contain an upper case letter after a lower case one", 1, 11, 30);
 	final ConfigBoolValue configRequireApprovalForSureMatch = new ConfigBoolValue(this, "RequireApprovalForSureMatch", "Only consider approved names a 'sure match'", false);
 	final ConfigEnumValue<CamelCaseContextAllKnownAction> configContextAllKnownAction = new ConfigEnumValue<CamelCaseContextAllKnownAction>(this, "ContextAllKnownAction", "If a context contains a 'sure match' and all field names are known:",
@@ -149,7 +151,7 @@ public class CamelCaseNameRule extends Rule {
 			new String[] { "change all known field names in the context (discouraged)", "change all approved field names in the context (discouraged)", "change 'sure matches' only", "do not change any field names in the context" }, CamelCaseContextWithUnknownAction.values(), CamelCaseContextWithUnknownAction.CHANGE_NONE);
 	final ConfigEnumValue<CamelCaseDeviationAction> configDeviationAction = new ConfigEnumValue<CamelCaseDeviationAction>(this, "DeviationAction", "Correct existing 'CameLcasE' name",
 			new String[] { "if it differs from a known name", "if it differs from an approved name", "never" }, CamelCaseDeviationAction.values(), CamelCaseDeviationAction.CHANGE_IF_APPROVED);
-	final ConfigInfoValue configCustomFileInfo = new ConfigInfoValue(this, "Custom view and field names can be maintained in text files inside the (local or synchronized) folder of this profile, simply using the line format CamelCaseName<ENTER>");
+	final ConfigInfoValue configCustomFileInfo = new ConfigInfoValue(this, "Custom view and field names can be maintained in text files inside the (local or synchronized) folder of this profile, simply using the line format CamelCaseName<ENTER>", ConfigInfoStyle.NORMAL, LocalDate.of(2024, 10, 15));
 	public final ConfigTextValue configCustomViewNamesFile = new ConfigTextValue(this, "CustomViewNamesFile", "Custom view names file in profile folder:", defaultCustomViewNamesFile, ConfigTextType.FOLDER_FILE_NAME, 30, "Open ...", defaultCustomViewNamesFile, LocalDate.of(2024, 10, 15));
 	public final ConfigTextValue configCustomFieldNamesFile = new ConfigTextValue(this, "CustomFieldNamesFile", "Custom field names file in profile folder:", defaultCustomFieldNamesFile, ConfigTextType.FOLDER_FILE_NAME, 30, "Open ...", defaultCustomFieldNamesFile, LocalDate.of(2024, 10, 15));
 

@@ -11,6 +11,7 @@ import com.sap.adt.abapcleaner.programbase.IntegrityBrokenException;
 import com.sap.adt.abapcleaner.programbase.UnexpectedSyntaxAfterChanges;
 import com.sap.adt.abapcleaner.programbase.UnexpectedSyntaxBeforeChanges;
 import com.sap.adt.abapcleaner.rulebase.ConfigEnumValue;
+import com.sap.adt.abapcleaner.rulebase.ConfigInfoStyle;
 import com.sap.adt.abapcleaner.rulebase.ConfigInfoValue;
 import com.sap.adt.abapcleaner.rulebase.ConfigIntValue;
 import com.sap.adt.abapcleaner.rulebase.ConfigValue;
@@ -78,7 +79,7 @@ public class DdlPositionClausesRule extends RuleForDdlPosition {
 	final ConfigEnumValue<DdlLineBreakWithoutNever> configBreakBeforeUnionEtc = new ConfigEnumValue<DdlLineBreakWithoutNever>(this, "BreakBeforeUnionEtc", "Break before EXCEPT / INTERSECT / UNION:", lineBreakSelectionWithoutNever, DdlLineBreakWithoutNever.values(), DdlLineBreakWithoutNever.ALWAYS);
 	final ConfigIntValue configUnionEtcIndent = new ConfigIntValue(this, "UnionEtcIndent", "Indent if breaking:", "", 0, 0, MAX_INDENT);
 	
-	final ConfigInfoValue configInfoBreakBeforeSelect = new ConfigInfoValue(this, "The position of SELECT FROM after a UNION etc. can be changed with the rule '" + DdlPositionSelectRule.defaultDisplayName + "'");
+	final ConfigInfoValue configInfoBreakBeforeSelect = new ConfigInfoValue(this, "The position of SELECT FROM after a UNION etc. can be changed with the rule '" + DdlPositionSelectRule.defaultDisplayName + "'", ConfigInfoStyle.NORMAL);
 	
 	private final ConfigValue[] configValues = new ConfigValue[] { configBreakBeforeWhereEtc, configWhereEtcIndent, configBreakBeforeUnionEtc, configUnionEtcIndent, configInfoBreakBeforeSelect };
 	

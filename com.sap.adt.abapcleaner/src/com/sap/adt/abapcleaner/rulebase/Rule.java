@@ -256,7 +256,7 @@ public abstract class Rule {
 
 	public abstract String getExample();
 	
-	public ConfigValue[] getConfigValues() { return new ConfigValue[] { new ConfigInfoValue(this, "(no options available for this rule)") }; }
+	public ConfigValue[] getConfigValues() { return new ConfigValue[] { new ConfigInfoValue(this, "(no options available for this rule)", ConfigInfoStyle.NORMAL) }; }
 
 	protected void prepare(Code code) { }
 

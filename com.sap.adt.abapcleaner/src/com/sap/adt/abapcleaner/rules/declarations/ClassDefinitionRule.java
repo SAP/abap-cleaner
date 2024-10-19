@@ -13,6 +13,7 @@ import com.sap.adt.abapcleaner.programbase.UnexpectedSyntaxAfterChanges;
 import com.sap.adt.abapcleaner.programbase.UnexpectedSyntaxException;
 import com.sap.adt.abapcleaner.rulebase.ConfigBoolValue;
 import com.sap.adt.abapcleaner.rulebase.ConfigEnumValue;
+import com.sap.adt.abapcleaner.rulebase.ConfigInfoStyle;
 import com.sap.adt.abapcleaner.rulebase.ConfigInfoValue;
 import com.sap.adt.abapcleaner.rulebase.ConfigIntValue;
 import com.sap.adt.abapcleaner.rulebase.ConfigValue;
@@ -140,7 +141,7 @@ public class ClassDefinitionRule extends RuleForCommands {
 			new String[] { "2 spaces", "4 spaces", "align with class name", "align with DEFINITION keyword" }, ClassDefIndentStyle.values(), ClassDefIndentStyle.PLUS_2);
 	final ConfigEnumValue<ClassDefOneLinerAction> configOneLinerAction = new ConfigEnumValue<ClassDefOneLinerAction>(this, "OneLinerAction", "One-/Two-liners:",
 			new String[] { "create after CLASS ... DEFINITION", "create below CLASS ... DEFINITION", "keep existing", "always split to multi-line" }, ClassDefOneLinerAction.values(), ClassDefOneLinerAction.KEEP);
-	final ConfigInfoValue configMultiLiners = new ConfigInfoValue(this, "For multi-liners, start new line for:");
+	final ConfigInfoValue configMultiLiners = new ConfigInfoValue(this, "For multi-liners, start new line for:", ConfigInfoStyle.NORMAL);
 	final ConfigBoolValue configNewLineForPublic = new ConfigBoolValue(this, "NewLineForPublic", "PUBLIC", true);
 	final ConfigBoolValue configNewLineForInheriting = new ConfigBoolValue(this, "NewLineForInheriting", "INHERITING FROM ...", true);
 	final ConfigBoolValue configNewLineForAbstractOrFinal = new ConfigBoolValue(this, "NewLineForAbstractOrFinal", "ABSTRACT, FINAL", false);

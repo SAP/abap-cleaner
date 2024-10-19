@@ -14,6 +14,7 @@ import com.sap.adt.abapcleaner.programbase.UnexpectedSyntaxAfterChanges;
 import com.sap.adt.abapcleaner.programbase.UnexpectedSyntaxBeforeChanges;
 import com.sap.adt.abapcleaner.programbase.UnexpectedSyntaxException;
 import com.sap.adt.abapcleaner.rulebase.ConfigEnumValue;
+import com.sap.adt.abapcleaner.rulebase.ConfigInfoStyle;
 import com.sap.adt.abapcleaner.rulebase.ConfigInfoValue;
 import com.sap.adt.abapcleaner.rulebase.ConfigTextType;
 import com.sap.adt.abapcleaner.rulebase.ConfigTextValue;
@@ -171,7 +172,7 @@ public class AssertParameterOrderRule extends RuleForCommands {
 			+ LINE_SEP + "  ENDMETHOD.";
 	}
 
-	final ConfigInfoValue configInfoOrder = new ConfigInfoValue(this, "Ensure order of parameters for expectation and actual value:");
+	final ConfigInfoValue configInfoOrder = new ConfigInfoValue(this, "Ensure order of parameters for expectation and actual value:", ConfigInfoStyle.NORMAL);
 	final ConfigEnumValue<AssertParameterOrder> configComparisonParamOrder = new ConfigEnumValue<AssertParameterOrder>(this, "ComparisonParamOrder", "Methods comparing values (ASSERT_EQUALS..., _DIFFERS, _THAT, _CHAR...)",
 			new String[] { "expectation first (EXP)", "actual value first (ACT, ACT_AS_TEXT)", "keep as is" }, AssertParameterOrder.values(), AssertParameterOrder.EXP_FIRST);
 	final ConfigEnumValue<AssertParameterOrder> configNumTextTableParamOrder = new ConfigEnumValue<AssertParameterOrder>(this, "NumTextTableParamOrder", "Methods checking numbers, text and tables (_NUMBER..., _TEXT_..., _TABLE_...)",

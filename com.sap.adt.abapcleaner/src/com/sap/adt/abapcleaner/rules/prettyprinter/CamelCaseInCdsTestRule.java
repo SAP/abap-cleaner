@@ -55,10 +55,10 @@ public class CamelCaseInCdsTestRule extends RuleForDeclarations {
 	public String getDisplayName() { return "Use CamelCase in test class for CDS view"; }
 
 	@Override
-	public String getDescription() { return "Changes known VDM CDS view names (in class name, variable names, literals, comments etc.) to CamelCase; cleans up ABAP doc, standardizes empty lines etc."; }
+	public String getDescription() { return "Changes known VDM CDS view names to CamelCase (in class name, variable names, literals, comments etc.)."; }
 
 	@Override
-	public String getHintsAndRestrictions() { return "This rule only works on local test classes with a @!testing <CDS view name> annotation, as created by the ADT command 'New ABAP Test Class'."; }
+	public String getHintsAndRestrictions() { return "This rule only works on local test classes with a \"!@testing <CDS view name> annotation, as created by the ADT command 'New ABAP Test Class'. Custom view and field names from rule '" + CamelCaseNameRule.displayName + "' are reused."; }
 
 	@Override
 	public LocalDate getDateCreated() { return LocalDate.of(2024, 10, 14); }
@@ -80,7 +80,7 @@ public class CamelCaseInCdsTestRule extends RuleForDeclarations {
    			+ LINE_SEP + "    CLASS-DATA environment TYPE REF TO if_cds_test_environment."
    			+ LINE_SEP + ""
    			+ LINE_SEP + "    \" table names are put to CamelCase if they start with a prefix like td_, lt_, lts_ etc.,"
-   			+ LINE_SEP + "    \" followed by the CDS view name from the respective TYPE definition (possibly incomplete)"
+   			+ LINE_SEP + "    \" followed by the CDS view name from the respective TYPE definition (possibly shortened)"
    			+ LINE_SEP + "    DATA td_i_raperfoblgnwithtocurperda TYPE STANDARD TABLE OF i_raperfoblgnwithtocurperdamt WITH EMPTY KEY."
    			+ LINE_SEP + "    DATA td_i_businesspartner           TYPE STANDARD TABLE OF i_businesspartner WITH EMPTY KEY."
    			+ LINE_SEP + "    DATA td_i_customer                  TYPE STANDARD TABLE OF i_customer WITH EMPTY KEY."
@@ -97,6 +97,7 @@ public class CamelCaseInCdsTestRule extends RuleForDeclarations {
    			+ LINE_SEP + ""
    			+ LINE_SEP + "CLASS ltc_c_raperfoblgnwithtocurperd IMPLEMENTATION."
    			+ LINE_SEP + "  METHOD class_setup."
+   			+ LINE_SEP + "    \" CamelCase can even be applied to literals: inside the test environment, to_upper( ) is used"
    			+ LINE_SEP + "    environment = cl_cds_test_environment=>create("
    			+ LINE_SEP + "                    i_for_entity      = 'C_RAPERFOBLGNWITHTOCURPERDAMT'"
    			+ LINE_SEP + "                    i_dependency_list = VALUE #( type ='CDS_VIEW'"
@@ -130,7 +131,11 @@ public class CamelCaseInCdsTestRule extends RuleForDeclarations {
    			+ LINE_SEP + ""
    			+ LINE_SEP + "  METHOD aunit_for_cds_method."
    			+ LINE_SEP + "    prepare_testdata( )."
+   			+ LINE_SEP + ""
+   			+ LINE_SEP + "    \" since a SELECT on the view under test only accesses the test doubles that were prepared above,"
+   			+ LINE_SEP + "    \" a WHERE clause is often not required, so #EC CI_NOWHERE can be added to satisfy code checks"
    			+ LINE_SEP + "    SELECT * FROM C_RAPerfOblgnWithToCurPerdAmt INTO TABLE @act_results."
+   			+ LINE_SEP + ""
    			+ LINE_SEP + "    cl_abap_unit_assert=>fail( msg = 'Place your assertions here' )."
    			+ LINE_SEP + "  ENDMETHOD."
    			+ LINE_SEP + "ENDCLASS.";

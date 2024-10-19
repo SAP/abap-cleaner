@@ -22,6 +22,7 @@ import com.sap.adt.abapcleaner.rulebase.RuleSource;
 import com.sap.adt.abapcleaner.rulehelpers.CamelCaseNames;
 import com.sap.adt.abapcleaner.rulehelpers.DdlAnnotation;
 import com.sap.adt.abapcleaner.rulehelpers.DdlAnnotationScope;
+import com.sap.adt.abapcleaner.rules.prettyprinter.CamelCaseNameRule;
 
 public class DdlCamelCaseNameRule extends Rule {
 	private final static RuleReference[] references = new RuleReference[] { new RuleReference(RuleSource.ABAP_CLEANER) };
@@ -38,7 +39,7 @@ public class DdlCamelCaseNameRule extends Rule {
 	@Override
 	public String getDescription() { return "Fixes upper and lower case of known entity names and field names, and of aliases named after known entity names."; }
 
-	public String getHintsAndRestrictions() { return "This rule only changes view and field names where they are defined; usages are automatically adjusted upon save."; }
+	public String getHintsAndRestrictions() { return "This rule only changes view and field names where they are defined; usages are automatically adjusted upon save. Custom view and field names from rule '" + CamelCaseNameRule.displayName + "' are reused."; }
 
 	@Override
 	public LocalDate getDateCreated() { return LocalDate.of(2024, 9, 11); }

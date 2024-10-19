@@ -1,5 +1,7 @@
 package com.sap.adt.abapcleaner.rulebase;
 
+import java.time.LocalDate;
+
 /**
  * Exposes a configuration information that can be displayed with a Label.
  */
@@ -19,13 +21,12 @@ public class ConfigInfoValue extends ConfigValue {
 	public void setNeutral() {
 	}
 
-	public ConfigInfoValue(Rule rule, String description) {
-		super(rule, "", description);
-		this.style = ConfigInfoStyle.NORMAL;
+	public ConfigInfoValue(Rule rule, String description, ConfigInfoStyle style) {
+		this(rule, description, style, null);
 	}
 
-	public ConfigInfoValue(Rule rule, String description, ConfigInfoStyle style) {
-		super(rule, "", description);
+	public ConfigInfoValue(Rule rule, String description, ConfigInfoStyle style, LocalDate dateCreated) {
+		super(rule, "", description, dateCreated);
 		this.style = style;
 	}
 

@@ -55,10 +55,10 @@ public class CdsTestClassLinesRule extends RuleForDeclarations {
 	public String getDisplayName() { return "Standardize test classes for CDS views"; }
 
 	@Override
-	public String getDescription() { return "Standardizes empty lines and removes ABAP Doc instructions from test classes for CDS views."; }
+	public String getDescription() { return "Standardizes empty lines and removes repetitive ABAP Doc instructions from test classes for CDS views."; }
 
 	@Override
-	public String getHintsAndRestrictions() { return "This rule only works on local test classes with a @!testing <CDS view name> annotation, as created by the ADT command 'New ABAP Test Class'."; }
+	public String getHintsAndRestrictions() { return "This rule only works on local test classes with a \"!@testing <CDS view name> annotation, as created by the ADT command 'New ABAP Test Class'."; }
 
 	@Override
 	public LocalDate getDateCreated() { return LocalDate.of(2024, 10, 16); }
