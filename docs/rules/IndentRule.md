@@ -1,4 +1,4 @@
-[<-- previous rule](CamelCaseNameRule.md) | [overview](../rules.md) | [next rule -->](AlignAbapDocRule.md)
+[<-- previous rule](CamelCaseInCdsTestRule.md) | [overview](../rules.md) | [next rule -->](AlignAbapDocRule.md)
 
 # Indent lines
 

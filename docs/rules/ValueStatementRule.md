@@ -12,6 +12,7 @@ Shortens VALUE statements for internal tables by factoring out assignments that 
 * \[X\] Move assignments with identifiers / constants
 * \[X\] Move assignments with complex expressions
 * \[ \] Move assignments with method calls \(WARNING: could change behavior if methods with side effects are called\!\)
+* \[X\] Skip expressions that contain commented-out table rows
 
 ## Examples
 
@@ -26,7 +27,7 @@ Shortens VALUE statements for internal tables by factoring out assignments that 
     lts_data_exp = VALUE #( ( item_key       = '20220010000101'
                               item_type      = lt_item[ 1 ]->item_data-item_type
                               contract_id    = lt_item[ 1 ]->get_contract_id( )
-                              contrac_type   = 'ABCD'
+                              contract_type  = 'ABCD'
                               category       = 'AB'
                               flag           = if_any_interface=>co_any_flag
                               is_defined     = 'Y'
@@ -50,6 +51,21 @@ Shortens VALUE statements for internal tables by factoring out assignments that 
                               currency       = if_any_interface=>co_any_currency
                               account        = '67890'
                               guid           = '2' ) ).
+
+    " statements in which entire table rows ( ... ) are commented-out should be skipped,
+    " because the commented-out content can not be considered
+    lts_data = VALUE #( ( a = 2  b = 3  c = 6 )
+*                        ( a = 1  b = 4  c = 8 ) 
+                        ( a = 2  b = 5  c = 10 )  ).
+
+    " by contrast, statements with commented-out assignments can be processed,
+    " because the parameters in those assignments will never be moved to the top:
+    lts_data = VALUE #( ( a = 2
+*                          b = 3
+                          c = 6 )
+                        ( a = 2
+                          b = 3
+                          c = 8 ) ).
   ENDMETHOD.
 ```
 
@@ -65,25 +81,39 @@ Resulting code:
 
     lts_data_exp = VALUE #( item_key       = '20220010000101'
                             item_type      = lt_item[ 1 ]->item_data-item_type
+                            contract_type  = 'ABCD'
                             is_defined     = 'Y'
                             gjahr          = 2022
                             poper          = '001'
                             currency       = if_any_interface=>co_any_currency
                             ( contract_id    = lt_item[ 1 ]->get_contract_id( )
-                              contrac_type   = 'ABCD'
                               category       = 'AB'
                               flag           = if_any_interface=>co_any_flag
                               amount         = 6000
                               account        = '12345'
                               guid           = '1')
                             ( contract_id    = lt_item[ 1 ]->get_contract_id( )
-                              contract_type  = 'ABCD'
                               category       = 'CD'
                               flag           = if_any_interface=>co_other_flag
                               is_optional    = abap_true
                               amount         = -6000
                               account        = '67890'
                               guid           = '2' ) ).
+
+    " statements in which entire table rows ( ... ) are commented-out should be skipped,
+    " because the commented-out content can not be considered
+    lts_data = VALUE #( ( a = 2  b = 3  c = 6 )
+*                        ( a = 1  b = 4  c = 8 ) 
+                        ( a = 2  b = 5  c = 10 )  ).
+
+    " by contrast, statements with commented-out assignments can be processed,
+    " because the parameters in those assignments will never be moved to the top:
+    lts_data = VALUE #( a = 2
+                        (
+*                          b = 3
+                          c = 6 )
+                        ( b = 3
+                          c = 8 ) ).
   ENDMETHOD.
 ```
 

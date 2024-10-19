@@ -1,12 +1,13 @@
 # Available Cleanup Rules
 
-ABAP cleaner offers 96 cleanup rules with a total of 446 configuration options:
+ABAP cleaner offers 98 cleanup rules with a total of 461 configuration options:
 
 ## Empty Lines
 
 * [Standardize empty lines within methods](rules/EmptyLinesWithinMethodsRule.md)
 * [Separate methods and classes with empty lines](rules/EmptyLinesOutsideMethodsRule.md)
 * [Standardize empty lines in class definitions](rules/EmptyLinesInClassDefinitionRule.md)
+* [Standardize test classes for CDS views](rules/CdsTestClassLinesRule.md)
 
 ## Spaces
 
@@ -76,6 +77,7 @@ ABAP cleaner offers 96 cleanup rules with a total of 446 configuration options:
 
 * [Convert upper and lower case](rules/UpperAndLowerCaseRule.md)
 * [Use CamelCase for known CDS names](rules/CamelCaseNameRule.md)
+* [Use CamelCase in test class for CDS view](rules/CamelCaseInCdsTestRule.md)
 * [Indent lines](rules/IndentRule.md)
 
 ## Alignment

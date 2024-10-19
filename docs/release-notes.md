@@ -6,6 +6,20 @@ as well as bugfixes of reported issues, i.e. anything that enhances or changes t
 For a complete list of changes (including documentation, tests, refactoring etc.), please refer to 
 the list of [commits](../../../commits/main).
 
+## 2024-10-19 (version 1.20.0)
+
+**Great thanks** to [**ConjuringCoffee**](https://github.com/ConjuringCoffee) for the issue behind the custom view and field names!
+
+* Added new rule '**Standardize test classes for CDS views**'
+* Added new rule '**Use CamelCase in test class for CDS view**'
+* Enhanced rule '**Use CamelCase for known CDS names**' for **custom view and field names** ([#281](../../../issues/281))
+* Enhanced rule '**Use CamelCase for known CDS names**' with option to **consider commented-out assignments**
+* Enhanced rule '**Shorten VALUE statements**' with option to skip expressions with **commented-out table rows**
+* Enhanced rule '**Align parameters and components**' for parameters and host expressions in **SELECT** statements
+* Enhanced DDL rule '**Align source parameters**' for **analytical queries**
+* Fixed **DDL parser** for **multiple comments** in one line
+* Updated **known CamelCase names** for CDS views and fields
+
 ## 2024-09-30 (version 1.19.3)
 
 **Thank you** very much, [**Raukze**](https://github.com/Raukze), [**MDagni**](https://github.com/MDagni)

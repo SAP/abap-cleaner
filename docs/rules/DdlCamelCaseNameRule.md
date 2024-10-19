@@ -4,7 +4,7 @@
 
 Fixes upper and lower case of known entity names and field names, and of aliases named after known entity names.
 
-This rule only changes view and field names where they are defined; usages are automatically adjusted upon save.
+This rule only changes view and field names where they are defined; usages are automatically adjusted upon save. Custom view and field names from rule 'Use CamelCase for known CDS names' are reused.
 
 ## Options
 
