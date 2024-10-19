@@ -1,4 +1,4 @@
-[<-- previous rule](UpperAndLowerCaseRule.md) | [overview](../rules.md) | [next rule -->](IndentRule.md)
+[<-- previous rule](UpperAndLowerCaseRule.md) | [overview](../rules.md) | [next rule -->](CamelCaseInCdsTestRule.md)
 
 # Use CamelCase for known CDS names
 
@@ -14,12 +14,16 @@ This rule does not distinguish between structures from ABAP or CDS View context 
 
 * \[X\] Change known view names to CamelCase
 * \[X\] Change known field names to CamelCase
+* \[X\] Consider commented-out lines in VALUE or NEW constructors \(expected format: '\*  component = ...'\)
 * To decide whether to change a known field name to CamelCase, ABAP cleaner analyzes its context, e.g. all field names in a VALUE constructor, a SELECT statement, a table key etc.
 * Consider known field names a 'sure match' if they are at least \[11\] chars long and contain an upper case letter after a lower case one
 * \[ \] Only consider approved names a 'sure match'
 * If a context contains a 'sure match' and all field names are known: \[change all known field names in the context\]
 * If a context contains a 'sure match' but also an unknown field name: \[do not change any field names in the context\]
 * Correct existing 'CameLcasE' name \[if it differs from an approved name\]
+* Custom view and field names can be maintained in text files inside the \(local or synchronized\) folder of this profile, simply using the line format CamelCaseName<ENTER>
+* Custom view names file in profile folder: \[CustomViewNames.txt\]
+* Custom field names file in profile folder: \[CustomFieldNames.txt\]
 
 ## Examples
 
@@ -35,8 +39,8 @@ This rule does not distinguish between structures from ABAP or CDS View context 
     lt_company = VALUE I_COMPANYCODE( ( companycode                  = '1234'
                                         companycodename              = 'Company Name'
                                         cityname                     = 'Berlin'
-                                        chartofaccounts              = 'ABCD'
-                                        FiscalyeaRVariant            = 'K4'
+*                                        chartofaccounts              = 'ABCD'
+*                                        FiscalyeaRVariant            = 'K4'
                                         nontaxabletransactiontaxcode = 'AB'
                                         taxrptgdateisactive          = abap_true
                                         cashdiscountbaseamtisnetamt  = abap_false ) ).
@@ -111,8 +115,8 @@ Resulting code:
     lt_company = VALUE I_CompanyCode( ( CompanyCode                  = '1234'
                                         CompanyCodeName              = 'Company Name'
                                         CityName                     = 'Berlin'
-                                        ChartOfAccounts              = 'ABCD'
-                                        FiscalYearVariant            = 'K4'
+*                                        ChartOfAccounts              = 'ABCD'
+*                                        FiscalYearVariant            = 'K4'
                                         NonTaxableTransactionTaxCode = 'AB'
                                         TaxRptgDateIsActive          = abap_true
                                         CashDiscountBaseAmtIsNetAmt  = abap_false ) ).

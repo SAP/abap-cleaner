@@ -1,4 +1,4 @@
-[<-- previous rule](EmptyLinesOutsideMethodsRule.md) | [overview](../rules.md) | [next rule -->](SpaceAroundTextLiteralRule.md)
+[<-- previous rule](EmptyLinesOutsideMethodsRule.md) | [overview](../rules.md) | [next rule -->](CdsTestClassLinesRule.md)
 
 # Standardize empty lines in class definitions
 

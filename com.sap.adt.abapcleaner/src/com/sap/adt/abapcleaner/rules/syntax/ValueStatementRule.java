@@ -58,7 +58,7 @@ public class ValueStatementRule extends RuleForTokens {
 			+ LINE_SEP + "    lts_data_exp = VALUE #( ( item_key       = '20220010000101'" 
 			+ LINE_SEP + "                              item_type      = lt_item[ 1 ]->item_data-item_type" 
 			+ LINE_SEP + "                              contract_id    = lt_item[ 1 ]->get_contract_id( )" 
-			+ LINE_SEP + "                              contrac_type   = 'ABCD'" 
+			+ LINE_SEP + "                              contract_type  = 'ABCD'" 
 			+ LINE_SEP + "                              category       = 'AB'" 
 			+ LINE_SEP + "                              flag           = if_any_interface=>co_any_flag" 
 			+ LINE_SEP + "                              is_defined     = 'Y'" 
@@ -106,7 +106,7 @@ public class ValueStatementRule extends RuleForTokens {
 	final ConfigBoolValue configMoveIdentifiers = new ConfigBoolValue(this, "MoveIdentifiers", "Move assignments with identifiers / constants", true);
 	final ConfigBoolValue configMoveComplexExpressions = new ConfigBoolValue(this, "MoveComplexExpressions", "Move assignments with complex expressions", true); 
 	final ConfigBoolValue configMoveMethodCalls = new ConfigBoolValue(this, "MoveMethodCalls", "Move assignments with method calls (WARNING: could change behavior if methods with side effects are called!)", false);
-	final ConfigBoolValue configSkipIfRowsCommentedOut = new ConfigBoolValue(this, "SkipIfRowsCommentedOut", "Skip statements that contain commented-out table rows", true, true, LocalDate.of(2024, 10, 11));
+	final ConfigBoolValue configSkipIfRowsCommentedOut = new ConfigBoolValue(this, "SkipIfRowsCommentedOut", "Skip expressions that contain commented-out table rows", true, true, LocalDate.of(2024, 10, 11));
 
 	private final ConfigValue[] configValues = new ConfigValue[] { configMoveIntegerLiterals, configMoveFloatLiterals, configMoveStringLiterals, configMoveIdentifiers, configMoveComplexExpressions, configMoveMethodCalls, configSkipIfRowsCommentedOut };
 

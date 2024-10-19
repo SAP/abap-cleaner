@@ -1,4 +1,4 @@
-[<-- previous rule](EmptyLinesInClassDefinitionRule.md) | [overview](../rules.md) | [next rule -->](ClosingBracketsPositionRule.md)
+[<-- previous rule](CdsTestClassLinesRule.md) | [overview](../rules.md) | [next rule -->](ClosingBracketsPositionRule.md)
 
 # Put spaces around text literals
 
