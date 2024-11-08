@@ -943,7 +943,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		mmuExtrasAnalyzeDdlSemanticsInFolder.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				analyzeCdsViewsInFolder(DdlAnalyzer.semanticsElemRefAnnotationPaths, false);
+				analyzeCdsViewsInFolder(DdlAnalyzer.semanticsElemRefAnnotationPaths, null, false);
 			}
 		});
 		mmuExtrasAnalyzeDdlSemanticsInFolder.setText("Analyze Semantic Refs for CDS Views in Folder...");
@@ -952,10 +952,22 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		mmuExtrasAnalyzeDdlValueHelpInFolder.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				analyzeCdsViewsInFolder(DdlAnalyzer.valueHelpDefAnnotationPaths, true);
+				analyzeCdsViewsInFolder(DdlAnalyzer.valueHelpDefAnnotationPaths, null, true);
 			}
 		});
 		mmuExtrasAnalyzeDdlValueHelpInFolder.setText("Analyze Value Help for CDS Views in Folder...");
+
+		MenuItem mmuExtrasAnalyzeDdlFieldDataSources = new MenuItem(menuExtras, SWT.NONE);
+		mmuExtrasAnalyzeDdlFieldDataSources.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+		      FrmInputBox inputBox = new FrmInputBox();
+		      String commaSeparatedfieldNames = inputBox.open("", "Comma-Separated Field Names to Analyze", true, shell);
+		      String[] fieldNames = StringUtil.split(commaSeparatedfieldNames, ",", true, true);
+				analyzeCdsViewsInFolder(null, fieldNames, true); 
+			}
+		});
+		mmuExtrasAnalyzeDdlFieldDataSources.setText("Analyze Data Sources for Fields of CDS Views in Folder...");
 
 		new MenuItem(menuExtras, SWT.SEPARATOR);
 
@@ -1985,7 +1997,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		Message.show(msg, shell);
 	}
 	
-	private void analyzeCdsViewsInFolder(String[] annotationPaths, boolean considerIgnorePropagation) {
+	private void analyzeCdsViewsInFolder(String[] annotationPaths, String[] fieldNames, boolean considerIgnorePropagation) {
 		String dir = showDirDialog(defaultCodeDirectory, "Analyze CDS views in folder");
 		String[] paths = getAllPaths(dir, FileType.CODE, false, true);
 		if (paths == null)
@@ -1999,7 +2011,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 				for (String path : paths) {
 					String sourceName = persistency.getFileNameWithoutExtension(path);
 					String codeText = persistency.readAllTextFromFile(path);
-					Language codeLanguage = Language.preview(codeText);
+					Language codeLanguage = Language.preview(codeText); 
 					if (codeLanguage == Language.DDL) {
 						BackgroundJob job = new BackgroundJob(ParseParams.createForWholeCode(sourceName, codeText, ABAP.NEWEST_RELEASE), null);
 						Task result = runJobWithProgressUiIfNeeded(job);
@@ -2010,9 +2022,12 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		});
 		ddlAnalyzer.finishBuild();
 
-		ddlAnalyzer.analyzeAnnotations(annotationPaths, considerIgnorePropagation);
+		if (annotationPaths != null)
+			ddlAnalyzer.analyzeAnnotations(annotationPaths, considerIgnorePropagation);
+		else if (fieldNames != null)
+			ddlAnalyzer.analyzeFieldDataSources(fieldNames);
 		
-		String result = ddlAnalyzer.getResult(annotationPaths);
+		String result = ddlAnalyzer.getResult(annotationPaths, fieldNames);
 		if (!StringUtil.isNullOrEmpty(result)) {
 			SystemClipboard.setText(result);
 			Message.show("CDS View analysis copied to Clipboard.", shell);

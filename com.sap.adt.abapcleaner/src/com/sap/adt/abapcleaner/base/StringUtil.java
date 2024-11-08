@@ -55,6 +55,13 @@ public final class StringUtil {
 	 * returns null only if text == null, otherwise a String array that may have .length == 0 if empty entries shall be removed
 	 */
 	public static String[] split(String text, String separator, boolean removeEmptyEntries) {
+		return split(text, separator, removeEmptyEntries, false);
+	}
+	
+	/**
+	 * returns null only if text == null, otherwise a String array that may have .length == 0 if empty entries shall be removed
+	 */
+	public static String[] split(String text, String separator, boolean removeEmptyEntries, boolean trimResults) {
 		if (text == null) 
 			return null;
 		else if (text.length() == 0) 
@@ -65,16 +72,21 @@ public final class StringUtil {
 		do {
 			int sepPos = text.indexOf(separator, start);
 			if (sepPos < 0) {
-				if (start < text.length())
-					results.add(text.substring(start, text.length()));
-				else if (!removeEmptyEntries)
-					results.add("");
+				String bit = (start < text.length()) ? text.substring(start, text.length()) : "";
+				if (trimResults)
+					bit = bit.trim();
+				if (bit.length() > 0 || !removeEmptyEntries) 
+					results.add(bit);
 				break;
+			} 
+
+			String bit = (sepPos > start) ? text.substring(start, sepPos) : "";
+			if (trimResults)
+				bit = bit.trim();
+			if (bit.length() > 0 || !removeEmptyEntries) {
+				results.add(bit);
 			}
-			if (sepPos > start) 
-				results.add(text.substring(start, sepPos));
-			else if (!removeEmptyEntries)
-				results.add("");
+			
 			start = sepPos + separator.length();
 		} while(true);
 
@@ -85,6 +97,13 @@ public final class StringUtil {
 	 * returns null only if text == null, otherwise a String array that may have .length == 0 if empty entries shall be removed
 	 */
 	public static String[] split(String text, char separator, boolean removeEmptyEntries) {
+		return split(text, separator, removeEmptyEntries, false);
+	}
+
+	/**
+	 * returns null only if text == null, otherwise a String array that may have .length == 0 if empty entries shall be removed
+	 */
+	public static String[] split(String text, char separator, boolean removeEmptyEntries, boolean trimResults) {
 		if (text == null) 
 			return null;
 		else if (text.length() == 0) 
@@ -95,16 +114,21 @@ public final class StringUtil {
 		do {
 			int sepPos = text.indexOf(separator, start);
 			if (sepPos < 0) {
-				if (start < text.length())
-					results.add(text.substring(start, text.length()));
-				else if (!removeEmptyEntries)
-					results.add("");
+				String bit = (start < text.length()) ? text.substring(start, text.length()) : "";
+				if (trimResults)
+					bit = bit.trim();
+				if (bit.length() > 0 || !removeEmptyEntries) 
+					results.add(bit);
 				break;
 			}
-			if (sepPos > start) 
-				results.add(text.substring(start, sepPos));
-			else if (!removeEmptyEntries)
-				results.add("");
+
+			String bit = (sepPos > start) ? text.substring(start, sepPos) : "";
+			if (trimResults)
+				bit = bit.trim();
+			if (bit.length() > 0 || !removeEmptyEntries) {
+				results.add(bit);
+			}
+
 			start = sepPos + 1;
 		} while(true);
 
@@ -112,15 +136,8 @@ public final class StringUtil {
 	}
 
 	/**
-	 * returns null only if text == null, otherwise a String array that may have .length == 0 if empty entries shall be removed;
-	 * keeps all quotes "..." together, even if they contain the separator char
-	 */
-	public static String[] split(String text, char separator, boolean removeEmptyEntries, boolean skipQuots) {
-		return split(text, new char[] { separator }, removeEmptyEntries, skipQuots);
-	}
-
-	/**
-	 * returns null only if text == null, otherwise a String array that may have .length == 0 if empty entries shall be removed
+	 * returns null only if text == null, otherwise a String array that may have .length == 0 if empty entries shall be removed; 
+	 * skipQuots = true keeps all quotes "..." together, even if they contain the separator char
 	 */
 	public static String[] split(String text, char[] separators, boolean removeEmptyEntries) {
 		return split(text, separators, removeEmptyEntries, false);
@@ -128,7 +145,7 @@ public final class StringUtil {
 
 	/**
 	 * returns null only if text == null, otherwise a String array that may have .length == 0 if empty entries shall be removed;
-	 * keeps all quotes "..." together, even if they contain one of the separator chars
+	 * skipQuots = true keeps all quotes "..." together, even if they contain the separator char
 	 */
 	public static String[] split(String text, char[] separators, boolean removeEmptyEntries, boolean skipQuots) {
 		if (text == null) 
@@ -479,6 +496,19 @@ public final class StringUtil {
 			return false;
 		else
 			return string1.equalsIgnoreCase(string2);
+	}
+	
+	public static boolean equalsAnyIgnoreCase(String string1, String[] strings2) {
+		if (string1 == null && strings2 == null)
+			return true;
+		else if (string1 == null || strings2 == null)
+			return false;
+		for (String string2 : strings2) {
+			if (string1.equalsIgnoreCase(string2)) {
+				return true;
+			}
+		}
+		return false;
 	}
 	
 	public static String inferLineSeparator(String text) {

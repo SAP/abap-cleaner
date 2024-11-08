@@ -206,7 +206,7 @@ public class DdlAnalyzerTest {
 	private String getResult(String[] annotationPaths) {
 		ddlAnalyzer.finishBuild();
 		ddlAnalyzer.analyzeAnnotations(annotationPaths, true);
-		return ddlAnalyzer.getResult(annotationPaths);
+		return ddlAnalyzer.getResult(annotationPaths, null); 
 	}
 
 	@Test
@@ -246,7 +246,7 @@ public class DdlAnalyzerTest {
 		addThirdBaseView();
 		addConsumingView();
 		
-		String result = getResult(null);
+		String result = getResult(new String[] {});
 
 		// expect all fields of the views to be listed
 		assertEquals(1 + 36, result.split(System.lineSeparator()).length);

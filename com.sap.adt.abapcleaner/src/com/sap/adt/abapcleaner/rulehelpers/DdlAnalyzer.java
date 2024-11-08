@@ -27,6 +27,9 @@ public class DdlAnalyzer {
 		private final int viewPart;
 		private final boolean ignorePropagatedAnnotations; 
 		private final View mainView; // the first part of a view that contains UNION / EXCEPT / INTERSECT
+		@SuppressWarnings("unused")
+		private View prevView; // the previous part of a UNION / EXCEPT / INTERSECT
+		private View nextView; // the next part of a UNION / EXCEPT / INTERSECT
 		
 		private final ArrayList<Parameter> parametersInOrder = new ArrayList<>();
 		private final ArrayList<DataSource> dataSourcesInOrder = new ArrayList<>();
@@ -36,13 +39,17 @@ public class DdlAnalyzer {
 		private final HashMap<String, DataSource> dataSourceOfAlias = new HashMap<>(); 
 		private final HashMap<String, Field> fieldOfName = new HashMap<>(); 
 		
-		private View(String fileName, String entityName, boolean isViewEntity, int viewPart, boolean ignorePropagatedAnnotations, View mainView) {
+		private View(String fileName, String entityName, boolean isViewEntity, int viewPart, boolean ignorePropagatedAnnotations, View mainView, View prevView) {
 			this.fileName = fileName;
 			this.entityName = entityName;
 			this.isViewEntity = isViewEntity;
 			this.viewPart = viewPart;
 			this.ignorePropagatedAnnotations = ignorePropagatedAnnotations;
 			this.mainView = mainView;
+			this.prevView = prevView;
+			if (prevView != null) {
+				prevView.nextView = this;
+			}
 		}
 		
 		private DataSource getDataSource(String key) {
@@ -202,6 +209,8 @@ public class DdlAnalyzer {
 
 	private HashMap<String, View> viewOfEntityName = new HashMap<>();
 	private ArrayList<View> viewsInOrder = new ArrayList<>(); // also contains UNION etc. parts as <entity name>+1 etc.
+
+	private HashMap<Field, String> dataSourcesOfField = new HashMap<>();
 	
 	public void addFile(String fileName, Code code) {
 		if (code == null || !code.isDdlOrDcl())
@@ -230,7 +239,7 @@ public class DdlAnalyzer {
 				DdlAnnotation ignorePropagatedAnno = scope.findAnnotation("Metadata.ignorePropagatedAnnotations");
 				ignorePropagatedAnnotations = (ignorePropagatedAnno != null && !ignorePropagatedAnno.getValue().equalsIgnoreCase("false")) ;
 				
-				view = new View(fileName, entityName, isViewEntity, viewPart, ignorePropagatedAnnotations, null);
+				view = new View(fileName, entityName, isViewEntity, viewPart, ignorePropagatedAnnotations, null, null);
 				
 				mainView = view;
 				viewsInOrder.add(view);
@@ -242,7 +251,8 @@ public class DdlAnalyzer {
 			} else if (command.startsDdlUnionEtc()) {
 				++viewPart;
 				String entityNameWithSuffix = entityName + "+" + String.valueOf(viewPart);
-				view = new View(fileName, entityNameWithSuffix, isViewEntity, viewPart, ignorePropagatedAnnotations, mainView);
+				View prevView = view;
+				view = new View(fileName, entityNameWithSuffix, isViewEntity, viewPart, ignorePropagatedAnnotations, mainView, prevView);
 				viewsInOrder.add(view);
 				// viewOfEntityName.put(getKey(entityNameWithSuffix), view);
 			} // do NOT attach with "else if", because UNION ... also contains FROM ...
@@ -257,6 +267,9 @@ public class DdlAnalyzer {
 				// read data sources: FROM clause, JOINs and ASSOCIATIONs
 				if (command.startsDdlFromClause()) {
 					addDataSource(view, command.getDdlFromDataSource(), false, false);
+				
+				} else if (command.startsDdlProjectionClause()) {
+					addDataSource(view, command.getDdlProjectionDataSource(), false, false);
 				
 				} else if (command.startsDdlJoin()) {
 					addDataSource(view, command.getDdlJoinTarget(), true, false);
@@ -490,7 +503,60 @@ public class DdlAnalyzer {
 		}
 	}
 
+	/**
+	 * determines the chain of data sources of a field with one of the supplied names
+	 * @param fieldNames - names of the fields to be analyzed
+	 */
+	public void analyzeFieldDataSources(String[] fieldNames) {
+		final boolean considerIgnorePropagation = false;
+		
+		if (fieldNames == null) 
+			return;
+		
+		for (View view : viewsInOrder) {
+			for (Field field : view.fieldsInOrder) {
+				if (!StringUtil.equalsAnyIgnoreCase(field.name, fieldNames))
+					continue;
+
+				// find inheritance path
+				StringBuilder sbResultPaths = new StringBuilder();
+
+				Field sourceField = getSourceField(field, considerIgnorePropagation);
+				if (sourceField != null) {
+					analyzeFieldDataSources(sourceField.parentView, field.name, "", sbResultPaths);
+				}
+
+				if (sbResultPaths.length() > 0) {
+					dataSourcesOfField.put(field, "\"" + sbResultPaths.toString() + "\"");
+				}
+			}
+		}
+	}
+
+	private void analyzeFieldDataSources(View view, String fieldName, String basePath, StringBuilder sbResultPaths) {
+		View viewPart = view;
+		while (viewPart != null) {
+			String curPath = (basePath.length() > 0) ? basePath + " -> " + viewPart.entityName : viewPart.entityName; 
+
+			Field field = viewPart.fieldOfName.get(getKey(fieldName)); // may be null, in which case sourceField will also be null
+			if (field != null && field.castCount > 0) 
+				curPath += "*";
+			Field sourceField = getSourceField(field, false);
+			if (sourceField == null || sourceField.wasInferred()) {
+				if (sbResultPaths.length() > 0)
+					sbResultPaths.append(System.lineSeparator());
+				sbResultPaths.append(curPath);
+			} else {
+				analyzeFieldDataSources(sourceField.parentView, sourceField.name, curPath, sbResultPaths);
+			}
+
+			viewPart = viewPart.nextView;
+		}
+	}
+	
 	private Field getSourceField(Field field, boolean considerIgnorePropagation) {
+		if (field == null)
+			return null;
 		String[] pathBits = StringUtil.split(field.sourcePath, '.', true);
 		View view = field.parentView;
 		DataSource finalDataSource = null; // if no View instance is known for a DataSource at the end of the pathBits, at least this instance is filled
@@ -553,7 +619,7 @@ public class DdlAnalyzer {
 		return null;
 	}
 
-	public String getResult(String[] annotationPaths) {
+	public String getResult(String[] annotationPaths, String[] fieldNames) {
 		final String LINE_SEP = System.lineSeparator();
 		final String TAB = "\t";
 		
@@ -570,6 +636,9 @@ public class DdlAnalyzer {
 				sb.append(TAB).append("Source of " + outputName);
 			}
 		}
+		if (fieldNames != null) {
+			sb.append(TAB).append("Data Sources");
+		}
 		sb.append(LINE_SEP);
 
 		// field lines
@@ -580,9 +649,15 @@ public class DdlAnalyzer {
 				pack = view.fileName.substring(0, packageSepPos); 
 			}
 			for (Field field : view.fieldsInOrder) {
-				if (field.isExposedAssociation)
+				boolean showField = false;
+				if (annotationPaths != null && !field.isExposedAssociation)
+					showField = true;
+				if (fieldNames != null && dataSourcesOfField.containsKey(field))
+					showField = true;
+
+				if (!showField)
 					continue;
-				
+					
 				// ID and package
 				sb.append(view.entityName + "." + field.name);
 				sb.append(TAB).append(pack);
@@ -628,6 +703,9 @@ public class DdlAnalyzer {
 							sb.append(TAB).append(sourceOfInheritedAnno);
 						}
 					}
+				}
+				if (fieldNames != null) {
+					sb.append(TAB).append(dataSourcesOfField.get(field));
 				}
 				
 				sb.append(LINE_SEP);
