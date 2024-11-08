@@ -179,7 +179,7 @@ public class CamelCaseNames {
 		int nameIndex = -1;
 		int statusIndex = -1;
 		int lastChangedIndex = -1;
-		String[] headerCells = StringUtil.split(lines[0], '\t', false, true);
+		String[] headerCells = StringUtil.split(lines[0], new char[] { '\t' }, false, true);
 		for (int index = 0; index < headerCells.length; ++index) {
 			String cell = headerCells[index];
 			if (cell.equals("CDS View Name") || cell.equals("Field Name")) {
@@ -199,7 +199,7 @@ public class CamelCaseNames {
 		int redundantEntryCount = 0;
 		String lastName = "";
 		for (int lineIndex = 1; lineIndex < lines.length; ++lineIndex) {
-			String[] cells = StringUtil.split(lines[lineIndex], '\t', false, true);
+			String[] cells = StringUtil.split(lines[lineIndex], new char[] { '\t' }, false, true);
 			if (nameIndex >= cells.length || statusIndex >= cells.length || lastChangedIndex >= cells.length) 
 				return "Only " + Cult.format(cells.length) + " cells found in line " + Cult.format(lineIndex) + ". Last valid name: " + lastName;
 

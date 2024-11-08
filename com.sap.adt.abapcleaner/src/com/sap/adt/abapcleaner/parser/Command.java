@@ -3839,6 +3839,19 @@ public class Command {
 		return (fromToken != null) && fromToken.isKeyword() ? fromToken.getNextCodeSibling() : null;
 	}
 	
+	public final boolean startsDdlProjectionClause() {
+		return (getDdlProjectionDataSource() != null);
+	}
+
+	public final Token getDdlProjectionDataSource() {
+		if (parent != null)
+			return null;
+
+		// search for the AS PROJECTION ON keywords
+		Token onToken = firstToken.getLastTokenOnSiblings(true, TokenSearch.ASTERISK, "AS", "PROJECTION", "ON");
+		return (onToken != null) && onToken.isKeyword() ? onToken.getNextCodeSibling() : null;
+	}
+	
 	public final boolean startsDdlJoin() {
 		Token firstCode = getFirstCodeToken();
 		return firstCode != null && firstCode.startsDdlJoin();
