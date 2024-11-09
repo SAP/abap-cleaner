@@ -1725,8 +1725,14 @@ public class Command {
 			Token comment = token.getNext();
 			comment.removeFromCommand();
 			int lineBreaks = Math.max(comment.lineBreaks, 1);
-			if (splitOutCount == 0) 
-				lineBreaks = Math.max(lineBreaks, firstTokenInLine.lineBreaks);
+			if (splitOutCount == 0) {
+				if (firstToken.isFirstTokenInCode()) {
+					// at document start, lineBreaks may even be 0
+					lineBreaks = firstToken.lineBreaks;
+				} else {
+					lineBreaks = Math.max(lineBreaks, firstTokenInLine.lineBreaks);
+				}
+			}
 			int indent = comment.isAsteriskCommentLine() ? 0 : basicIndent;
 			comment.setWhitespace(lineBreaks, indent);
 
@@ -1738,8 +1744,8 @@ public class Command {
 			}
 
 			insertPrev(newCommentCommand, false);
-			if (firstToken.lineBreaks > 1)
-				firstToken.lineBreaks = 1;
+			// ensure that firstToken is attached in the next line (at document start, it may even have .lineBreaks = 0)  
+			firstToken.lineBreaks = 1;
 
 			newCommentCommands.add(newCommentCommand);
 			++splitOutCount;

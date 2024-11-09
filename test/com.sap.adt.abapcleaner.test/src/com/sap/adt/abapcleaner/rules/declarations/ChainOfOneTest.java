@@ -377,4 +377,20 @@ class ChainOfOneTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testDataWithAbapDocAtDocumentStart() {
+		// ensure that a line break is added before DATA if it is the very first line of the code document
+		buildSrc("DATA:");
+		buildSrc("");
+		buildSrc("  \"! Any ABAP Doc");
+		buildSrc("  \"! Other ABAP Doc");
+		buildSrc("  gv_any_var TYPE i.");
+
+		buildExp("\"! Any ABAP Doc");
+		buildExp("\"! Other ABAP Doc");
+		buildExp("DATA gv_any_var TYPE i.");
+
+		testRule();
+	}
 }
