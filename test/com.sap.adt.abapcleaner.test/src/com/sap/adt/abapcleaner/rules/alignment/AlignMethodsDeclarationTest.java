@@ -1838,4 +1838,44 @@ class AlignMethodsDeclarationTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testFinalForEvent() {
+		buildSrc("    METHODS any_method FINAL");
+		buildSrc("        FOR EVENT any_event OF cl_any_class");
+		buildSrc("       IMPORTING iv_any");
+		buildSrc("               iv_other");
+		buildSrc("      iv_third.");
+
+		buildExp("    METHODS any_method FINAL");
+		buildExp("      FOR EVENT any_event OF cl_any_class");
+		buildExp("      IMPORTING iv_any");
+		buildExp("                iv_other");
+		buildExp("                iv_third.");
+
+		putAnyClassDefAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testFinalForEventInOwnLines() {
+		buildSrc("    METHODS any_method");
+		buildSrc("   FINAL");
+		buildSrc("        FOR EVENT any_event OF cl_any_class");
+		buildSrc("       IMPORTING iv_any");
+		buildSrc("               iv_other");
+		buildSrc("      iv_third.");
+
+		buildExp("    METHODS any_method");
+		buildExp("      FINAL");
+		buildExp("      FOR EVENT any_event OF cl_any_class");
+		buildExp("      IMPORTING iv_any");
+		buildExp("                iv_other");
+		buildExp("                iv_third.");
+
+		putAnyClassDefAroundSrcAndExp();
+
+		testRule();
+	}
 }

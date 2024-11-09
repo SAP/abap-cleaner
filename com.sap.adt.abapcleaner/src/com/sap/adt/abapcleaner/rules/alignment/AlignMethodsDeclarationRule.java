@@ -136,7 +136,7 @@ public class AlignMethodsDeclarationRule extends AlignDeclarationSectionRuleBase
 
 	@Override
 	protected boolean isMatchForFirstCommand(Command command, int pass) {
-		return command.firstCodeTokenIsAnyKeyword("METHODS", "CLASS-METHODS");
+		return command.firstCodeTokenIsAnyKeyword("METHODS", "CLASS-METHODS") && !command.isRapHandlerMethodDef();
 	}
 
 	@Override
@@ -188,8 +188,9 @@ public class AlignMethodsDeclarationRule extends AlignDeclarationSectionRuleBase
 					
 				} else if (token.isKeyword() && token.matchesOnSiblings(true, "ABSTRACT|FINAL|DEFAULT IGNORE|DEFAULT FAIL|AMDP OPTION|FOR EVENT")) {
 					token = addOptionalKeywords(token, table);
-					if (token.matchesOnSiblings(true, "FOR EVENT"))
+					if (token.matchesOnSiblings(true, "FOR EVENT")) {
 						isMethodForEvent = true;
+					}
 					
 				} else if (token.isAnyKeyword("TYPE", "LIKE")) {
 					token = addParameter(token, table);
@@ -249,12 +250,7 @@ public class AlignMethodsDeclarationRule extends AlignDeclarationSectionRuleBase
 
 	private Token addAccessOrException(Token token, AlignTable table, boolean isMethodForEvent) {
 		// if an access keyword or parameter was already found, create a new table line
-		AlignLine line = table.getLastLine();
-		if (  line.getCell(Columns.ACCESS.getValue()) != null
-			|| line.getCell(Columns.PARAMETER_NAME.getValue()) != null) {
-			line = table.addLine();
-		}
-
+		AlignLine line = getLineWithFreeCell(table, Columns.ACCESS);
 		line.setCell(Columns.ACCESS.getValue(), new AlignCellToken(token));
 
 		// in some cases, a simple list of parameter/exception names follows without 'TYPE', so we add non-comment Tokens 
@@ -286,12 +282,21 @@ public class AlignMethodsDeclarationRule extends AlignDeclarationSectionRuleBase
 		return token;
 	}
 	
-	private Token addForTestingOrRedefinition(Token token, AlignTable table) {
+	private AlignLine getLineWithFreeCell(AlignTable table, Columns column) {
+		// if the supplied column (or a column after it) was already entered to the current line, create a new table line;
+		// otherwise continue on the current one
 		AlignLine line = table.getLastLine();
-		// if an access keyword was already found, create a new table line
-		if (line.getCell(Columns.ACCESS.getValue()) != null) {
-			line = table.addLine();
+		for (int columnIndex = column.getValue(); columnIndex < MAX_COLUMN_COUNT; ++columnIndex) {
+			if (line.getCell(columnIndex) != null) {
+				return table.addLine();
+			}
 		}
+		return line;
+	}
+
+	private Token addForTestingOrRedefinition(Token token, AlignTable table) {
+		AlignLine line = getLineWithFreeCell(table, Columns.ACCESS);
+
 		// "FOR TESTING" and "[FINAL] REDEFINITION" are always aligned (whether or not they were preceded by a line break)
 		// with the "IMPORTING" etc. keywords of other method declarations (but overriding their width with 1)
 		AlignCell forTestingKeyword = AlignCellToken.createSpecial(token, 0, true);
@@ -325,8 +330,8 @@ public class AlignMethodsDeclarationRule extends AlignDeclarationSectionRuleBase
 		// this may later be changed by the dedicated AlignMethodsForTestingRule etc.; keywords that are put on the same line as the method name 
 		// (like ABSTRACT, FINAL, DEFAULT IGNORE, DEFAULT FAIL, AMDP OPTION [READ-ONLY] [CDS SESSION CLIENT clnt|CURRENT], 
 		// FOR TESTING, FOR EVENT evt OF {class|intf}) are simply skipped, leaving them in their position
-		if (token.lineBreaks > 0) {
-			AlignLine line = table.getLastLine();
+		if (token.lineBreaks > 0) { 
+			AlignLine line = getLineWithFreeCell(table, Columns.ACCESS);
 			AlignCell optionalKeyword = AlignCellToken.createSpecial(token, 0, true);
 			line.setCell(Columns.ACCESS.getValue(), optionalKeyword);
 		}
@@ -334,11 +339,7 @@ public class AlignMethodsDeclarationRule extends AlignDeclarationSectionRuleBase
 	}
 
 	private Token addParameter(Token typeOrLikeToken, AlignTable table) throws UnexpectedSyntaxBeforeChanges {
-		AlignLine line = table.getLastLine();
-		// if a parameter was already found, create a new table line
-		if (line.getCell(Columns.PARAMETER_NAME.getValue()) != null) {
-			line = table.addLine();
-		}
+		AlignLine line = getLineWithFreeCell(table, Columns.PARAMETER_NAME);
 		
 		// the parameter name is the term that precedes TYPE or LIKE
 		AlignCell parameterNameCell;
