@@ -8,19 +8,24 @@ import com.sap.adt.abapcleaner.parser.Token;
 import com.sap.adt.abapcleaner.parser.TokenSearch;
 import com.sap.adt.abapcleaner.parser.TokenType;
 import com.sap.adt.abapcleaner.programbase.IntegrityBrokenException;
+import com.sap.adt.abapcleaner.programbase.Program;
 import com.sap.adt.abapcleaner.programbase.UnexpectedSyntaxAfterChanges;
 import com.sap.adt.abapcleaner.programbase.UnexpectedSyntaxBeforeChanges;
 import com.sap.adt.abapcleaner.rulebase.ConfigBoolValue;
+import com.sap.adt.abapcleaner.rulebase.ConfigInfoStyle;
+import com.sap.adt.abapcleaner.rulebase.ConfigInfoValue;
 import com.sap.adt.abapcleaner.rulebase.ConfigValue;
 import com.sap.adt.abapcleaner.rulebase.Profile;
-import com.sap.adt.abapcleaner.rulebase.RuleForCommands;
+import com.sap.adt.abapcleaner.rulebase.RuleForDeclarations;
 import com.sap.adt.abapcleaner.rulebase.RuleGroupID;
 import com.sap.adt.abapcleaner.rulebase.RuleID;
 import com.sap.adt.abapcleaner.rulebase.RuleReference;
 import com.sap.adt.abapcleaner.rulebase.RuleSource;
+import com.sap.adt.abapcleaner.rulehelpers.TriState;
+import com.sap.adt.abapcleaner.rulehelpers.Variables;
 import com.sap.adt.abapcleaner.rules.alignment.AlignParametersRule;
 
-public class CondenseRule extends RuleForCommands {
+public class CondenseRule extends RuleForDeclarations {
 	private final static RuleReference[] references = new RuleReference[] {
 			new RuleReference(RuleSource.ABAP_STYLE_GUIDE, "Prefer functional to procedural language constructs", "#prefer-functional-to-procedural-language-constructs"), 
 			new RuleReference(RuleSource.ABAP_KEYWORD_DOCU, "CONDENSE", "abapcondense.htm"), 
@@ -56,13 +61,19 @@ public class CondenseRule extends RuleForCommands {
    public String getExample() {
       return "" 
 			+ LINE_SEP + "  METHOD replace_condense." 
+			+ LINE_SEP + "    TYPES: BEGIN OF ty_s_any_struc,"
+			+ LINE_SEP + "             field TYPE c LENGTH 10,"
+			+ LINE_SEP + "           END OF ty_s_any_struc."
+			+ LINE_SEP + ""
 			+ LINE_SEP + "    CONSTANTS lc_abc_with_gaps TYPE string VALUE `  a   b   c  `." 
 			+ LINE_SEP + ""
-			+ LINE_SEP + "    DATA lv_text_a   TYPE char30 VALUE lc_abc_with_gaps." 
-			+ LINE_SEP + "    DATA lv_text_b   TYPE char30 VALUE lc_abc_with_gaps." 
-			+ LINE_SEP + "    DATA lv_text_c   TYPE char30 VALUE lc_abc_with_gaps." 
-			+ LINE_SEP + "    DATA lv_string_a TYPE string VALUE lc_abc_with_gaps." 
-			+ LINE_SEP + "    DATA lv_string_b TYPE string VALUE lc_abc_with_gaps." 
+			+ LINE_SEP + "    DATA lv_text_a      TYPE char30 VALUE lc_abc_with_gaps." 
+			+ LINE_SEP + "    DATA lv_text_b      TYPE char30 VALUE lc_abc_with_gaps." 
+			+ LINE_SEP + "    DATA lv_text_c      TYPE char30 VALUE lc_abc_with_gaps." 
+			+ LINE_SEP + "    DATA lv_string_a    TYPE string VALUE lc_abc_with_gaps." 
+			+ LINE_SEP + "    DATA lv_string_b    TYPE string VALUE lc_abc_with_gaps." 
+			+ LINE_SEP + "    DATA ls_structure   TYPE ty_s_any_struc."
+			+ LINE_SEP + "    DATA l_unknown_type TYPE if_any_interface=>ty_unknown_type."
 			+ LINE_SEP + ""
 			+ LINE_SEP + "    \" condense first text field to 'a b c', second one to 'abc'"
 			+ LINE_SEP + "    CONDENSE lv_text_a." 
@@ -75,6 +86,13 @@ public class CondenseRule extends RuleForCommands {
 			+ LINE_SEP + "    \" condense text field with offset 5 and length 7 to `  a  b c`"
 			+ LINE_SEP + "    \" (specifying offset and length in write positions is possible for text fields, but not for strings)"
 			+ LINE_SEP + "    CONDENSE lv_text_c+5(7)."
+			+ LINE_SEP + ""
+			+ LINE_SEP + "    \" unlike CONDENSE, the string function condense( ) does not work on structured data; therefore,"
+			+ LINE_SEP + "    \" changing the next statements might cause syntax errors. You can activate the option"
+			+ LINE_SEP + "    \" 'Only replace CONDENSE for known unstructured types' to restrict this cleanup rule"
+			+ LINE_SEP + "    \" to cases in which " + Program.PRODUCT_NAME + " can clearly determine the type (as above)"
+			+ LINE_SEP + "    CONDENSE ls_structure."
+			+ LINE_SEP + "    CONDENSE l_unknown_type."
 			+ LINE_SEP + "  ENDMETHOD.";
    }
 
@@ -82,11 +100,22 @@ public class CondenseRule extends RuleForCommands {
    final ConfigBoolValue configSpecifyDel = new ConfigBoolValue(this, "SpecifyDel", "Explicitly specify parameter del = ` `, except for NO-GAPS", false);
    final ConfigBoolValue configSpecifyFromForNoGaps = new ConfigBoolValue(this, "SpecifyFromForNoGaps", "Explicitly specify parameter from = ` ` for NO-GAPS", true);
    final ConfigBoolValue configKeepParamsOnOneLine = new ConfigBoolValue(this, "KeepParamsOnOneLine", "Keep parameters on one line (see rule '" + AlignParametersRule.DISPLAY_NAME + "', option '" + AlignParametersRule.OPTION_NAME_KEEP_OTHER_ONE_LINERS + "')", false);
+	final ConfigBoolValue configSkipUnknownTypes = new ConfigBoolValue(this, "SkipUnknownTypes", "Only replace CONDENSE for known unstructured types (STRING, C, N, CHAR10 etc.)", true, true, LocalDate.of(2024, 11, 9));
+	final ConfigInfoValue configUnknownTypeWarning = new ConfigInfoValue(this, "Warning: deactivating this option might lead to syntax errors if your code contains CONDENSE with structured types (but at least the syntax check will immediately show this)", ConfigInfoStyle.WARNING);
 
-   private final ConfigValue[] configValues = new ConfigValue[] { configSpecifyValName, configSpecifyDel, configSpecifyFromForNoGaps, configKeepParamsOnOneLine };
+   private final ConfigValue[] configValues = new ConfigValue[] { configSpecifyValName, configSpecifyDel, configSpecifyFromForNoGaps, configKeepParamsOnOneLine, configSkipUnknownTypes, configUnknownTypeWarning };
 
 	@Override
 	public ConfigValue[] getConfigValues() { return configValues; }
+
+	@Override
+	public boolean isConfigValueEnabled(ConfigValue configValue) {
+		if (configValue == configUnknownTypeWarning) {
+			return !configSkipUnknownTypes.getValue();
+		} else {
+			return true; 
+		}
+	}
 
 	public CondenseRule(Profile profile) {
 		super(profile);
@@ -94,15 +123,44 @@ public class CondenseRule extends RuleForCommands {
 	}
 
 	@Override
-	protected boolean executeOn(Code code, Command command, int releaseRestriction) throws UnexpectedSyntaxBeforeChanges, UnexpectedSyntaxAfterChanges {
+	protected void executeOn(Code code, Command methodStart, Variables localVariables, int releaseRestriction) throws UnexpectedSyntaxAfterChanges {
+		Command command = methodStart;
+		Command methodEnd = command.getNextSibling();
+		while (command != methodEnd) {
+			commandForErrorMsg = command;
+
+			if (!isCommandBlocked(command)) {
+				try {
+					if (executeOnCommand(code, command, localVariables, releaseRestriction)) {
+						code.addRuleUse(this, command);
+					}
+				} catch (UnexpectedSyntaxBeforeChanges ex) {
+					// log the error and continue with next command
+					ex.addToLog();
+				}
+			}
+			
+			command = command.getNext();
+		}
+	}
+
+	private boolean executeOnCommand(Code code, Command command, Variables localVariables, int releaseRestriction) throws UnexpectedSyntaxBeforeChanges, UnexpectedSyntaxAfterChanges {
 		Token firstToken = command.getFirstToken();
-		if (firstToken == null)
+		if (firstToken == null) {
 			return false;
+		}
+		TriState argHasUnstructuredCharlikeType = localVariables.varHasUnstructuredCharlikeType(firstToken.getNextCodeSibling());
+		if (argHasUnstructuredCharlikeType == TriState.FALSE
+				|| argHasUnstructuredCharlikeType == TriState.UNKNOWN && configSkipUnknownTypes.getValue()) {
+			// skip Command: this variable might represent a structured type, which can be processed with CONDENSE, 
+			// but would lead to a syntax error with condense( )
+			return false;
+		} 
 
 		// expect 'CONDENSE text [NO-GAPS].' without comments or pragmas
 		if (!firstToken.matchesOnSiblings(false, "CONDENSE", TokenSearch.ANY_IDENTIFIER, TokenSearch.makeOptional("NO-GAPS"), ".")) {
 			return false;
-		}
+		} 
 		
 		Token condenseKeyword = firstToken;
 		Token identifier = condenseKeyword.getNextCodeSibling();

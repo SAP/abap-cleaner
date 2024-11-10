@@ -24,7 +24,7 @@ import com.sap.adt.abapcleaner.rulebase.RuleID;
 import com.sap.adt.abapcleaner.rulebase.RuleReference;
 import com.sap.adt.abapcleaner.rulebase.RuleSource;
 import com.sap.adt.abapcleaner.rulehelpers.Variables;
-import com.sap.adt.abapcleaner.rulehelpers.VariableInfo;
+import com.sap.adt.abapcleaner.rulehelpers.TriState;
 
 public class TranslateRule extends RuleForDeclarations {
 	private final static RuleReference[] references = new RuleReference[] {
@@ -176,12 +176,18 @@ public class TranslateRule extends RuleForDeclarations {
 		
 		for (Command unchainedCommand : unchainedCommands) {
 			firstToken = unchainedCommand.getFirstCodeToken();
-			if (firstToken == null) {
-				// skip Command
-			} else if (configSkipUnknownTypes.getValue() && !isVarSureToBeCharlike(firstToken.getNextCodeSibling(), localVariables)) {
+			if (firstToken == null) 
+				continue;
+
+			TriState argHasUnstructuredCharlikeType = localVariables.varHasUnstructuredCharlikeType(firstToken.getNextCodeSibling());
+			if (argHasUnstructuredCharlikeType == TriState.FALSE
+					|| argHasUnstructuredCharlikeType == TriState.UNKNOWN && configSkipUnknownTypes.getValue()) {
 				// skip Command: this variable might represent a structured type, which can be processed with TRANSLATE, 
 				// but would lead to a syntax error with to_upper( ), to_lower( ) or translate( )
-			} else if (firstToken.matchesOnSiblings(false, "TRANSLATE", TokenSearch.ANY_IDENTIFIER, "TO", "UPPER|LOWER", "CASE")) {
+				continue;
+			}
+			
+			if (firstToken.matchesOnSiblings(false, "TRANSLATE", TokenSearch.ANY_IDENTIFIER, "TO", "UPPER|LOWER", "CASE")) {
 				if (configReplaceTranslateToUpperLower.getValue() && replaceTranslateToUpperOrLower(unchainedCommand, firstToken)) {
 					code.addRuleUse(this, unchainedCommand);
 				}
@@ -191,13 +197,6 @@ public class TranslateRule extends RuleForDeclarations {
 				}
 			}
 		}
-	}
-
-	private boolean isVarSureToBeCharlike(Token identifier, Variables localVariables) {
-		if (identifier == null)
-			return false;
-		VariableInfo varInfo = localVariables.getVariableInfo(identifier, false);
-		return (varInfo != null) && varInfo.hasKnownUnstructuredCharlikeType();
 	}
 
 	private boolean replaceTranslateToUpperOrLower(Command command, Token firstToken) throws UnexpectedSyntaxAfterChanges, IntegrityBrokenException {

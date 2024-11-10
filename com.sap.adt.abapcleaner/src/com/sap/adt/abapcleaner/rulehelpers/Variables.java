@@ -211,4 +211,13 @@ public class Variables {
 	public boolean getMethodUsesDynamicAssign() {
 		return methodUsesDynamicAssign;
 	}
+
+	public TriState varHasUnstructuredCharlikeType(Token identifier) {
+		if (identifier == null)
+			return TriState.FALSE;
+		// get the variable info for the entire identifier text, meaning that for composed identifiers like 
+		// 'ls_struc-comp' and 'lo_obj->mv_attr', this method will deliberately return .UNKNOWN
+		VariableInfo varInfo = getVariableInfo(identifier.getText(), false);
+		return (varInfo == null) ? TriState.UNKNOWN : varInfo.hasUnstructuredCharlikeType(this);
+	}
 }
