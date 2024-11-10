@@ -472,4 +472,39 @@ public class TranslateTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testKnownStructuredTypesKept() {
+		// expect 'TRANSLATE ls_structure ...' to be kept even with this configuration, because its type is visible and structured
+
+		rule.configSkipUnknownTypes.setValue(false);
+
+		buildSrc("    TYPES: BEGIN OF ty_s_any_struc,");
+		buildSrc("             field TYPE c LENGTH 10,");
+		buildSrc("           END OF ty_s_any_struc.");
+		buildSrc("");
+		buildSrc("    DATA ls_structure   TYPE ty_s_any_struc.");
+		buildSrc("    DATA l_unknown_type TYPE ty_unknown_type.");
+		buildSrc("");
+		buildSrc("    TRANSLATE ls_structure TO UPPER CASE.");
+		buildSrc("    TRANSLATE ls_structure TO LOWER CASE.");
+		buildSrc("    TRANSLATE ls_structure USING 'a1b2'.");
+		buildSrc("    TRANSLATE l_unknown_type TO UPPER CASE.");
+
+		buildExp("    TYPES: BEGIN OF ty_s_any_struc,");
+		buildExp("             field TYPE c LENGTH 10,");
+		buildExp("           END OF ty_s_any_struc.");
+		buildExp("");
+		buildExp("    DATA ls_structure   TYPE ty_s_any_struc.");
+		buildExp("    DATA l_unknown_type TYPE ty_unknown_type.");
+		buildExp("");
+		buildExp("    TRANSLATE ls_structure TO UPPER CASE.");
+		buildExp("    TRANSLATE ls_structure TO LOWER CASE.");
+		buildExp("    TRANSLATE ls_structure USING 'a1b2'.");
+		buildExp("    l_unknown_type = to_upper( l_unknown_type ).");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }	

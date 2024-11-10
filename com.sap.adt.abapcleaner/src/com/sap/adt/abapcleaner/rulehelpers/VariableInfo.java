@@ -211,35 +211,42 @@ public class VariableInfo {
    }
    
    /** returns true if the type of the variable is a known character-like type that is not structured */
-   public boolean hasKnownUnstructuredCharlikeType() {
+   public TriState hasUnstructuredCharlikeType(Variables variables) {
    	VariableInfo varInfo = this;
    	while (varInfo.typeSource != null)
    		varInfo = varInfo.typeSource;
    	
    	Token token = varInfo.declarationToken; 
    	if (token == null) // pro forma
-   		return false;
+   		return TriState.UNKNOWN;
    	
    	// move to the 'TYPE' or 'LIKE' keyword in 'lv_var TYPE ...' or 'VALUE(rv_var) TYPE ...'
    	token = token.getNext().textEquals(")") ? token.getNext().getNextCodeSibling() : token.getNextCodeSibling();
    	if (token == null) // pro forma
-   		return false;
+   		return TriState.UNKNOWN;
    	boolean isType = token.isKeyword("TYPE");
    	boolean isLike = token.isKeyword("LIKE");
    	if (!isType && !isLike)
-   		return false;
+   		return TriState.UNKNOWN;
 
    	token = token.getNextCodeSibling();
    	if (token == null) // pro forma
-   		return false;
+   		return TriState.UNKNOWN;
+   	else if (token.isKeyword()) // e.g. STANDARD TABLE OF ...
+   		return TriState.FALSE;
    	
+   	// if the type is itself defined locally, find out whether it is a structured type
+   	VariableInfo typeInfo = variables.getVariableInfo(token.getText(), true);
+   	if (typeInfo != null && typeInfo.isBoundStructuredData)
+   		return TriState.FALSE;
+
    	// built-in character-like types: string, c [LENGTH ...], n [LENGTH ...]; 
    	// built-in date/time types d, t (but not utclong) and corresponding built-in ABAP Dictionary types
    	if (isType && token.textEqualsAny("string", "c", "n", "d", "t", "datn", "dats", "timn", "tims", "sstring", "lang")) 
-   		return true;
+   		return TriState.TRUE;
    	// generic types (only possible for field symbols)
    	if (isType && token.textEqualsAny("clike", "csequence")) 
-   		return true;
+   		return TriState.TRUE;
 
    	// character-like system fields and their types e.g. sy-uname / syst_uname (esp. with length > 1)
    	String syField = null;
@@ -249,16 +256,17 @@ public class VariableInfo {
    		syField = token.getText().substring("syst_".length());
    	}
    	if (syField != null && AbapCult.stringEqualsAny(true, syField, "abcde", "cprog", "dbnam", "dbsys", "host", "langu", "ldbpg", "lisel", "msgid", "msgty", "msgv1", "msgv2", "msgv3", "msgv4", "pfkey", "slset", "sysid", "tcode", "title", "ucomm", "uname", "zonlo"))
-	   	return true;
+	   	return TriState.TRUE;
 
    	// char5, numc5 etc.
    	String text = token.getText();
    	if (isType && StringUtil.hasTrailingDigits(text)) {
 	   	String textWithoutDigits = StringUtil.removeTrailingDigits(text);
 	   	if (AbapCult.stringEqualsAny(true, textWithoutDigits, "char", "numc")) { 
-	   		return true;
+	   		return TriState.TRUE;
 	   	}
-   	}   	
-   	return false;
+   	}
+   	
+   	return TriState.UNKNOWN;
    }
 }

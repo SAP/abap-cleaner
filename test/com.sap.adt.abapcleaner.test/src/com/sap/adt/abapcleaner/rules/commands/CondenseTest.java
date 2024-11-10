@@ -1,5 +1,8 @@
 package com.sap.adt.abapcleaner.rules.commands;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -21,6 +24,18 @@ public class CondenseTest extends RuleTestBase {
 	   rule.configSpecifyDel.setValue(false);
 	   rule.configSpecifyFromForNoGaps.setValue(true);
 		rule.configKeepParamsOnOneLine.setValue(false);
+		rule.configSkipUnknownTypes.setValue(false);
+	}
+
+	@Test
+	void testIsConfigValueEnabled() {
+		assertTrue(rule.isConfigValueEnabled(rule.configKeepParamsOnOneLine));
+
+		rule.configSkipUnknownTypes.setValue(true);
+		assertFalse(rule.isConfigValueEnabled(rule.configUnknownTypeWarning));
+
+		rule.configSkipUnknownTypes.setValue(false);
+		assertTrue(rule.isConfigValueEnabled(rule.configUnknownTypeWarning));
 	}
 
 	@Test
@@ -168,6 +183,56 @@ public class CondenseTest extends RuleTestBase {
 		buildExp("                 from = ` `");
 		buildExp("                 to   = `` ).");
 		buildExp("END-OF-DEFINITION.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testUnknownStructuredTypesNotReplaced() {
+		rule.configSkipUnknownTypes.setValue(true);
+		
+		buildSrc("    TYPES: BEGIN OF ty_s_any_struc,");
+		buildSrc("             field TYPE c LENGTH 10,");
+		buildSrc("           END OF ty_s_any_struc.");
+		buildSrc("");
+		buildSrc("    DATA ls_structure   TYPE ty_s_any_struc.");
+		buildSrc("    DATA l_unknown_type TYPE if_any_interface=>ty_unknown_type.");
+		buildSrc("");
+		buildSrc("    CONDENSE ls_structure.");
+		buildSrc("    CONDENSE l_unknown_type.");
+
+		copyExpFromSrc();
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testKnownStructuredTypesKept() {
+		// expect 'CONDENSE ls_structure' to be kept even with this configuration, because its type is visible and structured
+		
+		buildSrc("    TYPES: BEGIN OF ty_s_any_struc,");
+		buildSrc("             field TYPE c LENGTH 10,");
+		buildSrc("           END OF ty_s_any_struc.");
+		buildSrc("");
+		buildSrc("    DATA ls_structure   TYPE ty_s_any_struc.");
+		buildSrc("    DATA l_unknown_type TYPE if_any_interface=>ty_unknown_type.");
+		buildSrc("");
+		buildSrc("    CONDENSE ls_structure.");
+		buildSrc("    CONDENSE l_unknown_type.");
+
+		buildExp("    TYPES: BEGIN OF ty_s_any_struc,");
+		buildExp("             field TYPE c LENGTH 10,");
+		buildExp("           END OF ty_s_any_struc.");
+		buildExp("");
+		buildExp("    DATA ls_structure   TYPE ty_s_any_struc.");
+		buildExp("    DATA l_unknown_type TYPE if_any_interface=>ty_unknown_type.");
+		buildExp("");
+		buildExp("    CONDENSE ls_structure.");
+		buildExp("    l_unknown_type = condense( l_unknown_type ).");
 
 		putAnyMethodAroundSrcAndExp();
 
