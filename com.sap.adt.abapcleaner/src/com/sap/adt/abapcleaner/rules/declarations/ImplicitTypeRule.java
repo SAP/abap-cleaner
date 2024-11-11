@@ -288,7 +288,9 @@ public class ImplicitTypeRule extends RuleForCommands {
 		if (!hasType) {
 			typeKeyword = Token.createForAbap(0, 1, "TYPE", TokenType.KEYWORD, identifier.sourceLineNum);
 			typeIdentifier = Token.createForAbap(0, 1, ABAP.DEFAULT_TYPE, TokenType.IDENTIFIER, identifier.sourceLineNum);
-			identifier.insertRightSibling(typeKeyword);
+			// in case of 'DATA lv_k(lc_text_length).' (with deactivated configReplaceParenthesisWithLength), identifier may still open a level
+			Token identifierEnd = identifier.getNextSiblingWhileLevelOpener();
+			identifierEnd.insertRightSibling(typeKeyword);
 			typeKeyword.insertRightSibling(typeIdentifier);
 			changed = true;
 		}

@@ -406,4 +406,19 @@ public class ImplicitTypeTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testReplaceTypeButNotLength() {
+		rule.configReplaceParenthesisWithLength.setValue(false);
+
+		buildSrc("    CONSTANTS lc_text_length TYPE i VALUE 10.");
+		buildSrc("    DATA lv_k(lc_text_length).");
+
+		buildExp("    CONSTANTS lc_text_length TYPE i VALUE 10.");
+		buildExp("    DATA lv_k(lc_text_length) TYPE c.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }
