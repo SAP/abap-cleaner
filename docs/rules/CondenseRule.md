@@ -18,6 +18,8 @@ This rule is part of the **essential** profile, as it is explicitly demanded by 
 * \[ \] Explicitly specify parameter del = \` \`, except for NO-GAPS
 * \[X\] Explicitly specify parameter from = \` \` for NO-GAPS
 * \[ \] Keep parameters on one line \(see rule 'Align parameters and components', option 'Keep other one-liners'\)
+* \[X\] Only replace CONDENSE for known unstructured types \(STRING, C, N, CHAR10 etc.\)
+* Warning: deactivating this option might lead to syntax errors if your code contains CONDENSE with structured types \(but at least the syntax check will immediately show this\)
 
 ## Examples
 
@@ -25,13 +27,19 @@ This rule is part of the **essential** profile, as it is explicitly demanded by 
 ```ABAP
 
   METHOD replace_condense.
+    TYPES: BEGIN OF ty_s_any_struc,
+             field TYPE c LENGTH 10,
+           END OF ty_s_any_struc.
+
     CONSTANTS lc_abc_with_gaps TYPE string VALUE `  a   b   c  `.
 
-    DATA lv_text_a   TYPE char30 VALUE lc_abc_with_gaps.
-    DATA lv_text_b   TYPE char30 VALUE lc_abc_with_gaps.
-    DATA lv_text_c   TYPE char30 VALUE lc_abc_with_gaps.
-    DATA lv_string_a TYPE string VALUE lc_abc_with_gaps.
-    DATA lv_string_b TYPE string VALUE lc_abc_with_gaps.
+    DATA lv_text_a      TYPE char30 VALUE lc_abc_with_gaps.
+    DATA lv_text_b      TYPE char30 VALUE lc_abc_with_gaps.
+    DATA lv_text_c      TYPE char30 VALUE lc_abc_with_gaps.
+    DATA lv_string_a    TYPE string VALUE lc_abc_with_gaps.
+    DATA lv_string_b    TYPE string VALUE lc_abc_with_gaps.
+    DATA ls_structure   TYPE ty_s_any_struc.
+    DATA l_unknown_type TYPE if_any_interface=>ty_unknown_type.
 
     " condense first text field to 'a b c', second one to 'abc'
     CONDENSE lv_text_a.
@@ -44,6 +52,13 @@ This rule is part of the **essential** profile, as it is explicitly demanded by 
     " condense text field with offset 5 and length 7 to `  a  b c`
     " (specifying offset and length in write positions is possible for text fields, but not for strings)
     CONDENSE lv_text_c+5(7).
+
+    " unlike CONDENSE, the string function condense( ) does not work on structured data; therefore,
+    " changing the next statements might cause syntax errors. You can activate the option
+    " 'Only replace CONDENSE for known unstructured types' to restrict this cleanup rule
+    " to cases in which ABAP cleaner can clearly determine the type (as above)
+    CONDENSE ls_structure.
+    CONDENSE l_unknown_type.
   ENDMETHOD.
 ```
 
@@ -52,13 +67,19 @@ Resulting code:
 ```ABAP
 
   METHOD replace_condense.
+    TYPES: BEGIN OF ty_s_any_struc,
+             field TYPE c LENGTH 10,
+           END OF ty_s_any_struc.
+
     CONSTANTS lc_abc_with_gaps TYPE string VALUE `  a   b   c  `.
 
-    DATA lv_text_a   TYPE char30 VALUE lc_abc_with_gaps.
-    DATA lv_text_b   TYPE char30 VALUE lc_abc_with_gaps.
-    DATA lv_text_c   TYPE char30 VALUE lc_abc_with_gaps.
-    DATA lv_string_a TYPE string VALUE lc_abc_with_gaps.
-    DATA lv_string_b TYPE string VALUE lc_abc_with_gaps.
+    DATA lv_text_a      TYPE char30 VALUE lc_abc_with_gaps.
+    DATA lv_text_b      TYPE char30 VALUE lc_abc_with_gaps.
+    DATA lv_text_c      TYPE char30 VALUE lc_abc_with_gaps.
+    DATA lv_string_a    TYPE string VALUE lc_abc_with_gaps.
+    DATA lv_string_b    TYPE string VALUE lc_abc_with_gaps.
+    DATA ls_structure   TYPE ty_s_any_struc.
+    DATA l_unknown_type TYPE if_any_interface=>ty_unknown_type.
 
     " condense first text field to 'a b c', second one to 'abc'
     lv_text_a = condense( lv_text_a ).
@@ -74,7 +95,14 @@ Resulting code:
 
     " condense text field with offset 5 and length 7 to `  a  b c`
     " (specifying offset and length in write positions is possible for text fields, but not for strings)
-    lv_text_c+5(7) = condense( lv_text_c+5(7) ).
+    CONDENSE lv_text_c+5(7).
+
+    " unlike CONDENSE, the string function condense( ) does not work on structured data; therefore,
+    " changing the next statements might cause syntax errors. You can activate the option
+    " 'Only replace CONDENSE for known unstructured types' to restrict this cleanup rule
+    " to cases in which ABAP cleaner can clearly determine the type (as above)
+    CONDENSE ls_structure.
+    CONDENSE l_unknown_type.
   ENDMETHOD.
 ```
 
