@@ -175,7 +175,11 @@ public class VariableInfo {
    }
    
    public void setTypeSource(VariableInfo typeSource) {
-   	this.typeSource = typeSource;
+   	// do not enter cases in which a VariableInfo would refer to itself as the typeSource, 
+   	// such as 'DATA: BEGIN OF ls_struct, ...' 
+   	if (typeSource != this) {
+   		this.typeSource = typeSource;
+   	}
    }
 
    public VariableInfo getTypeSource() {
