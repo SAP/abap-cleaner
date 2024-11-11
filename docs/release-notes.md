@@ -6,6 +6,16 @@ as well as bugfixes of reported issues, i.e. anything that enhances or changes t
 For a complete list of changes (including documentation, tests, refactoring etc.), please refer to 
 the list of [commits](../../../commits/main).
 
+## 2024-11-11 (version 1.21.1)
+
+**Thank you** very much, [**openPhiL**](https://github.com/openPhiL) and
+ [**ConjuringCoffee**](https://github.com/ConjuringCoffee), for your bug reports!
+
+* Fixed rule '**Replace CONDENSE with string function**' for **structured types** ([#371](../../../issues/371))
+* Fixed rule '**Simplify a chain with one element**' for **first command in code** document ([#372](../../../issues/372))
+* Fixed rule '**Align METHODS declarations**' for FINAL with **FOR EVENT** ([#373](../../../issues/373))
+* Updated known CamelCase names
+
 ## 2024-10-19 (version 1.20.0)
 
 **Great thanks** to [**ConjuringCoffee**](https://github.com/ConjuringCoffee) for the issue behind the custom view and field names!
