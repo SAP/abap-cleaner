@@ -73,6 +73,11 @@ public class CreateObjectRule extends RuleForCommands {
 			+ LINE_SEP + "        cx_message     = 1" 
 			+ LINE_SEP + "        others         = 2." 
 			+ LINE_SEP 
+			+ LINE_SEP + "    \" evaluating the target variable as an actual parameter" 
+			+ LINE_SEP + "    \" only works with CREATE OBJECT, which immediately assigns mo_target:"
+			+ LINE_SEP + "    CREATE OBJECT mo_target" 
+			+ LINE_SEP + "      EXPORTING iv_value = mo_target->gc_static_value." 
+			+ LINE_SEP 
 			+ LINE_SEP + "    \" chains can only be processed if they are first unchained" 
 			+ LINE_SEP + "    CREATE OBJECT: lx_message, lx_other_message." 
 			+ LINE_SEP 
@@ -114,6 +119,8 @@ public class CreateObjectRule extends RuleForCommands {
 	}
 	
 	private boolean executeOnUnchained(Code code, Command command, int releaseRestriction) throws UnexpectedSyntaxAfterChanges {
+		// CREATE OBJECT oref [area_handle] [parameter_list].
+		// (where 'oref' is a simple class reference variable, not an expression):
 		Token firstToken = command.getFirstToken();
 		if (!firstToken.matchesOnSiblings(false, "CREATE", "OBJECT", TokenSearch.ANY_IDENTIFIER))
 			return false;
@@ -141,6 +148,21 @@ public class CreateObjectRule extends RuleForCommands {
 		if (next.matchesOnSiblings(true, TokenSearch.ASTERISK, "EXCEPTIONS"))
 			return false;
 
+		// ignore cases in which the target variable is evaluated inside the parameter list, which could happen for an
+		// 'instance' access to a static field: 'CREATE OBJECT lo_instance EXPORTING iv_value = lo_instance->gc_static_field.'
+		// This works with CREATE OBJECT, but NOT with NEW, because NEW only assigns the target variable at the very end.
+		boolean isInOOContext = command.isInOOContext();
+		Token test = next;
+		while (test != null) {
+			Token nextCode = test.getNextCodeSibling();
+			if (nextCode != null && nextCode.textEquals("=")) {
+				// formal parameters may happen to have the same name as the receiving variable
+			} else if (isTargetVariableUsedIn(test, identifier, isInOOContext)) {
+				return false;
+			}
+			test = test.getNextCodeToken();
+		}
+		
 		identifier.copyWhitespaceFrom(firstToken);
 		command.getFirstToken().removeFromCommand(); // CREATE
 		command.getFirstToken().removeFromCommand(); // OBJECT
@@ -163,5 +185,19 @@ public class CreateObjectRule extends RuleForCommands {
 
 		command.invalidateMemoryAccessType();
 		return true;
+	}
+
+	private boolean isTargetVariableUsedIn(Token test, Token identifier, boolean isInOOContext) {
+		// match the identifier against the test Token: return true if the test Token has the same text,
+		// or if it extends the text with a field access, e.g. 'lo_instance->gc_static_field'
+		if (!test.textStartsWith(identifier.getText())) {
+			return false;
+		} else if (test.getTextLength() == identifier.getTextLength()) {
+			return true;
+		} else if (ABAP.isCharAllowedForVariableNames(test.getText(), identifier.getTextLength(), false, false, isInOOContext)) {
+			return false;
+		} else {
+			return true;
+		}
 	}
 }

@@ -496,6 +496,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		if (searchTextFont != null) {
 			searchTextFont.dispose();
 		}
+		SWTResourceManager.dispose(); // for fonts, colors, images created in .createContents()
 	}
 
 	/**
