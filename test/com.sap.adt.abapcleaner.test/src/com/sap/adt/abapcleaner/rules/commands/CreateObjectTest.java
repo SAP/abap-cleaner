@@ -331,4 +331,44 @@ class CreateObjectTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testTargetVariableAccessUnchanged() {
+		// ensure CREATE OBJECT is not change if the target variable is used for an 'instance' access to a static field
+		buildSrc("    CREATE OBJECT mo_target");
+		buildSrc("      EXPORTING iv_value = mo_target->gc_static_value.");
+
+		copyExpFromSrc();
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testNonTargetVariableAccessChanged() {
+		// ensure that the following cases are changed, because the target variable is NOT accessed:
+		
+		buildSrc("    CREATE OBJECT mo_other_target");
+		buildSrc("      EXPORTING iv_value = cl_target_class=>gc_static_value.");
+		buildSrc("");
+		buildSrc("    CREATE OBJECT lo_target");
+		buildSrc("      EXPORTING lo_target = lo_other_instance.");
+		buildSrc("");
+		buildSrc("    CREATE OBJECT mo_target");
+		buildSrc("      EXPORTING iv_value = mo_target2->gc_static_value.");
+
+		buildExp("    mo_other_target = NEW #(");
+		buildExp("        iv_value = cl_target_class=>gc_static_value ).");
+		buildExp("");
+		buildExp("    lo_target = NEW #(");
+		buildExp("        lo_target = lo_other_instance ).");
+		buildExp("");
+		buildExp("    mo_target = NEW #(");
+		buildExp("        iv_value = mo_target2->gc_static_value ).");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }
