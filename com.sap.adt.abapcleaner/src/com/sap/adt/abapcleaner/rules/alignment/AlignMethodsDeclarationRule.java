@@ -159,7 +159,7 @@ public class AlignMethodsDeclarationRule extends AlignDeclarationSectionRuleBase
 		
 		Command command = startCommand;
 		while (command != endCommand) {
-			if (!command.firstCodeTokenIsAnyKeyword("METHODS", "CLASS-METHODS")) {
+			if (skipCommand(command) || !command.firstCodeTokenIsAnyKeyword("METHODS", "CLASS-METHODS")) {
 				command = command.getNext();
 				continue;
 			}

@@ -96,7 +96,8 @@ public abstract class AlignDeclarationSectionRuleBase extends Rule {
 							if (!alignAcrossCommentLines && command.getFirstToken().isCommentLine())
 								break;
 						}
-					} while (command.getFirstToken().isCommentLine() || commandBelongsToBlock || isMatchForFurtherCommand(command, keywordOfFirstCommand, pass));
+					} while (skipCommand(command) || commandBelongsToBlock 
+							|| isMatchForFurtherCommand(command, keywordOfFirstCommand, pass));
 				}
 	
 				if (startCommandIsChain || commandCount > 0) {
@@ -109,6 +110,10 @@ public abstract class AlignDeclarationSectionRuleBase extends Rule {
 				}
 			}
 		}
+	}
+	
+	protected boolean skipCommand(Command command) {
+		return command.isCommentLine() || command.isPeriodOnly();
 	}
 
 }

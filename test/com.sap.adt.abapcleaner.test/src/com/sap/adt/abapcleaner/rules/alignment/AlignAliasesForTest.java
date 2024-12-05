@@ -180,4 +180,22 @@ class AlignAliasesForTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testMultiplePeriods() {
+		buildSrc("  ALIASES medium_method_name");
+		buildSrc("    FOR if_any_interface~medium_method_name..");
+		buildSrc("  ALIASES short_name");
+		buildSrc("    FOR if_any_interface~short_name...");
+		buildSrc("  ALIASES extra_long_method_name");
+		buildSrc("    FOR if_any_interface~extra_long_method_name.");
+
+		buildExp("  ALIASES medium_method_name     FOR if_any_interface~medium_method_name..");
+		buildExp("  ALIASES short_name             FOR if_any_interface~short_name...");
+		buildExp("  ALIASES extra_long_method_name FOR if_any_interface~extra_long_method_name.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }

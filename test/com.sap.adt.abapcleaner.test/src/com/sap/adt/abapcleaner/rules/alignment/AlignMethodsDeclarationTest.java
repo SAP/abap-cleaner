@@ -1878,4 +1878,19 @@ class AlignMethodsDeclarationTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testMultiplePeriods() {
+		buildSrc("    METHODS set_value IMPORTING !iv_new_value TYPE i...");
+		buildSrc("    METHODS get_current_value RETURNING VALUE(rv_result) TYPE i..");
+		buildSrc("    METHODS get_previous_value RETURNING VALUE(rv_result) TYPE i.");
+
+		buildExp("    METHODS set_value          IMPORTING !iv_new_value    TYPE i...");
+		buildExp("    METHODS get_current_value  RETURNING VALUE(rv_result) TYPE i..");
+		buildExp("    METHODS get_previous_value RETURNING VALUE(rv_result) TYPE i.");
+
+		putAnyClassDefAroundSrcAndExp();
+
+		testRule();
+	}
 }

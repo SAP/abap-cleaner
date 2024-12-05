@@ -159,6 +159,8 @@ public class Command {
 
 	final boolean isEmpty() { return (tokenCount == 1 && StringUtil.isNullOrEmpty(firstToken.text)); }
 
+	public final boolean isPeriodOnly() { return firstToken.isPeriod() && (firstToken.getNext() == null || firstToken.getNext().isCommentAfterCode()); }
+
 	public final boolean isQuotMarkCommentLine() { return firstToken.isQuotMarkCommentLine(); }
 
 	public final boolean isAbapDoc() { return firstToken.isAbapDocCommentLine(); }

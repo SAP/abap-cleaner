@@ -431,4 +431,24 @@ class AlignMethodsRedefinitionTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testMultiplePeriods() {
+		buildSrc("  METHODS if_any_interface~medium_method_name");
+		buildSrc("    REDEFINITION.");
+		buildSrc("* comment line");
+		buildSrc("  METHODS if_any_interface~short_name");
+		buildSrc("    REDEFINITION...");
+		buildSrc("  METHODS if_any_interface~extra_long_method_name");
+		buildSrc("    REDEFINITION..");
+
+		buildExp("  METHODS if_any_interface~medium_method_name     REDEFINITION.");
+		buildExp("* comment line");
+		buildExp("  METHODS if_any_interface~short_name             REDEFINITION...");
+		buildExp("  METHODS if_any_interface~extra_long_method_name REDEFINITION..");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }

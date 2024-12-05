@@ -57,7 +57,7 @@ public abstract class AlignMethodsWithoutParamsRuleBase extends AlignDeclaration
 					if (token == null)
 						break;
 				} else {
-					while (command.isCommentLine() && command != endCommand)
+					while (command != endCommand && skipCommand(command))
 						command = command.getNext();
 					if (command == endCommand)
 						break;
