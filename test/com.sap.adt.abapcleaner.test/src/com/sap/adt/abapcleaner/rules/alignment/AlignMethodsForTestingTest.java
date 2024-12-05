@@ -634,4 +634,21 @@ class AlignMethodsForTestingTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testMultiplePeriods() {
+		buildSrc("    METHODS any_method FOR TESTING..");
+		buildSrc("* comment line");
+		buildSrc("    METHODS other_method FOR TESTING....");
+		buildSrc("    METHODS third_method_with_long_name FOR TESTING..");
+
+		buildExp("    METHODS any_method                  FOR TESTING..");
+		buildExp("* comment line");
+		buildExp("    METHODS other_method                FOR TESTING....");
+		buildExp("    METHODS third_method_with_long_name FOR TESTING..");
+
+		putAnyClassDefAroundSrcAndExp();
+
+		testRule();
+	}
 }

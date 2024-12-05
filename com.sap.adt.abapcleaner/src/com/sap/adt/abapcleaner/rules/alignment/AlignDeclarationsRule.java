@@ -424,7 +424,7 @@ public class AlignDeclarationsRule extends AlignDeclarationSectionRuleBase {
 		Command command = startCommand;
 		String keywordOfFirstCommand = startCommand.getFirstToken().getText();
 		while (command != endCommand) {
-			if (!command.isCommentLine() && command.getFirstToken().isAnyKeyword(keywordOfFirstCommand)) {
+			if (!skipCommand(command) && command.getFirstToken().isAnyKeyword(keywordOfFirstCommand)) {
 				Token identifier = command.getFirstToken().getNextNonCommentSibling();
 				if (identifier.isChainColon()) {
 					identifier = identifier.getNextNonCommentSibling();
@@ -508,7 +508,7 @@ public class AlignDeclarationsRule extends AlignDeclarationSectionRuleBase {
 				}
 			} else {
 				// skip Commands that are whole comment lines 
-				while (command != null && command.isCommentLine() && command != endCommand)
+				while (command != null && command != endCommand && skipCommand(command))
 					command = command.getNext();
 				if (command == endCommand)
 					break;

@@ -122,7 +122,7 @@ public class AlignAliasesForRule extends AlignDeclarationSectionRuleBase {
 				if (start == null)
 					break;
 			} else {
-				while (command.isCommentLine() && command != endCommand)
+				while (command != endCommand && skipCommand(command))
 					command = command.getNext();
 				if (command == endCommand)
 					break;

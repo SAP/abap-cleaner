@@ -1805,4 +1805,23 @@ class AlignDeclarationsTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testMultiplePeriods() {
+		buildSrc("    DATA lth_any_table TYPE ty_th_hash_table_type.. \" only line with a comment");
+		buildSrc("    \" comment line");
+		buildSrc("    DATA lo_contract TYPE REF TO  cl_contract  ##NEEDED...");
+		buildSrc("    DATA ls_item_data   TYPE if_any_interface=>ty_s_item..");
+		buildSrc("    DATA lv_was_saved   TYPE abap_bool  VALUE abap_false  ##NO_TEXT....");
+
+		buildExp("    DATA lth_any_table TYPE ty_th_hash_table_type.. \" only line with a comment");
+		buildExp("    \" comment line");
+		buildExp("    DATA lo_contract   TYPE REF TO cl_contract ##NEEDED...");
+		buildExp("    DATA ls_item_data  TYPE if_any_interface=>ty_s_item..");
+		buildExp("    DATA lv_was_saved  TYPE abap_bool VALUE abap_false  ##NO_TEXT....");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }
