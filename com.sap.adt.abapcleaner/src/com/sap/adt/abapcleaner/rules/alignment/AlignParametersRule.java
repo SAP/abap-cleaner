@@ -992,14 +992,6 @@ public class AlignParametersRule extends RuleForCommands {
 				changed = true;
 			}
 
-		} else if (openingToken.getNext().isCommentAfterCode()) {
-			Token comment = openingToken.getNext();
-			comment.removeFromCommand();
-			comment.copyWhitespaceFrom(openingToken);
-			openingToken.setWhitespace(1, baseIndent);
-			openingToken.insertLeftSibling(comment);
-			changed = true;
-		
 		} else {
 			int spacesLeft = baseIndent - openingToken.getPrev().getEndIndexInLine();
 			if (spacesLeft > 0) {
