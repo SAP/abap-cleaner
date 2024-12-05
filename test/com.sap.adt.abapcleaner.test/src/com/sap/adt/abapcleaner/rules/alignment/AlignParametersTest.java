@@ -396,8 +396,9 @@ class AlignParametersTest extends RuleTestBase {
 		buildSrc("                                                                                                        qty                = <ls_new_item>-component-qty");
 		buildSrc("                                                                                                        amount             = 0 ) ).");
 
-		buildExp("    <ls_new_item>-component-any_subcomponent = VALUE #( BASE <ls_new_item>-component-any_subcomponent \" comment");
-		buildExp("                                                        ( fulfillment_number = lc_fulfill_number");
+		buildExp("    <ls_new_item>-component-any_subcomponent = VALUE #( BASE <ls_new_item>-component-any_subcomponent");
+		buildExp("                                                        ( \" comment");
+		buildExp("                                                          fulfillment_number = lc_fulfill_number");
 		buildExp("                                                          event_date         = lc_fulfill_date");
 		buildExp("                                                          qty                = <ls_new_item>-component-qty");
 		buildExp("                                                          amount             = 0 ) ).");
@@ -3228,6 +3229,20 @@ class AlignParametersTest extends RuleTestBase {
 		buildSrc("      INTO @DATA(ls_any_struc).");
 
 		copyExpFromSrc();
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testCommentAfterOpeningParens() {
+		// ensure that the comment remains inside the inner parenthesis
+		buildSrc("lt_table = VALUE #(   ( \" comment");
+		buildSrc("                   id  =  1 ) ).");
+
+		buildExp("lt_table = VALUE #( ( \" comment");
+		buildExp("                      id = 1 ) ).");
 
 		putAnyMethodAroundSrcAndExp();
 
