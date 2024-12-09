@@ -35,6 +35,7 @@ public class AlignParametersRule extends RuleForCommands {
 	public enum ContentType {
 		FUNCTIONAL_CALL_PARAMS, 
 		PROCEDURAL_CALL_PARAMS, 
+		IMPORT_OR_EXPORT,
 		TABLE_KEY, 
 		GROUP_KEY,
 		CONSTRUCTOR_EXPR,
@@ -242,6 +243,25 @@ public class AlignParametersRule extends RuleForCommands {
 				Token parentToken = firstKeyword.getPrevCodeSibling();
 				int baseIndent = determineBaseIndentForRaise(command, parentToken);
 				if (alignParams(code, command, parentToken, period, baseIndent, baseIndent, ContentType.PROCEDURAL_CALL_PARAMS)) {
+					changed = true;
+				}
+			}
+		}
+
+		// align parameters of "IMPORT cluster" and "EXPORT cluster" (as well as some obsolete forms that only differ behind the parameter list):
+		// - "IMPORT p1 = dobj1 p2 = dobj2 ... FROM medium [conversion_options]"
+		// - "IMPORT p1 TO dobj1 p2 TO dobj2 ... FROM medium [conversion_options]"
+		// - "EXPORT p1 = dobj1 p2 = dobj2 ... TO medium [COMPRESSION {ON|OFF}]."
+		// - "EXPORT p1 FROM dobj1 p2 FROM dobj2 ... TO medium [COMPRESSION {ON|OFF}]."
+		// skip cases with a keyword after IMPORT|EXPORT (e.g. IMPORT DIRECTORY INTO) as well as dynamic cases like "IMPORT (ptab)..."
+		if (firstCode.matchesOnSiblings(true, "IMPORT", TokenSearch.ANY_IDENTIFIER, "=|TO", TokenSearch.ASTERISK, "FROM")
+		 || firstCode.matchesOnSiblings(true, "EXPORT", TokenSearch.ANY_IDENTIFIER, "=|FROM", TokenSearch.ASTERISK, "TO")) {
+			Token parentToken = firstCode;
+			String endTokenText = firstCode.textEquals("IMPORT") ? "FROM" : "TO";
+			Token endToken = firstCode.getLastTokenOnSiblings(true, TokenSearch.ASTERISK, endTokenText);
+			if (endToken != null) {
+				int baseIndent = determineBaseIndentForRaise(command, parentToken);
+				if (alignParams(code, command, parentToken, endToken, baseIndent, baseIndent, ContentType.IMPORT_OR_EXPORT)) {
 					changed = true;
 				}
 			}
@@ -690,14 +710,14 @@ public class AlignParametersRule extends RuleForCommands {
 		while (token != null && token != end && token.getNext() != null) {
 			if ((token.isIdentifier() || token.isKeyword("OTHERS"))
 					&& (token.getPrevCodeSibling() == null || !token.getPrevCodeSibling().isKeyword("FOR")) // exclude conditional iteration "FOR var = rhs [THEN expr] UNTIL|WHILE ..." 
-					&& token.getNext() != null && token.getNext().isAssignmentOperator() 
+					&& token.getNext() != null && (token.getNext().isAssignmentOperator() || contentType == ContentType.IMPORT_OR_EXPORT && token.getNext().isAnyKeyword("TO", "FROM")) 
 					&& token.getNext().getNext() != null && !token.getNext().getNext().isComment()) {
 
 				// identify the parts of the assignment "parameter = term" (and possibly the keyword like "EXPORTING" preceding it)   
 				Token parameter = token;
 				Token keyword = parameter.getPrevCodeToken();
 				if (keyword != null) {
-					if (contentType == ContentType.GROUP_KEY) {
+					if (contentType == ContentType.GROUP_KEY || contentType == ContentType.IMPORT_OR_EXPORT) {
 						keyword = null; 
 					} else if (!keyword.isKeyword() || keyword != parameter.getPrevCodeSibling()) {
 						keyword = null; 
@@ -712,7 +732,10 @@ public class AlignParametersRule extends RuleForCommands {
 						keyword = null;
 					}
 				}
+				
+				// the assignment operator is usually "=", but may for "IMPORT ..." and "EXPORT ..." may as well be the keyword "TO" or "FROM"
 				Token assignmentOp = parameter.getNextCodeSibling(); // there may be a comment line between EXPORTING and the first parameter
+
 				Token exprStart = assignmentOp.getNext();
 				Term expression;
 				if (contentType == ContentType.GROUP_KEY && exprStart.matchesOnSiblings(true, "GROUP", "SIZE|INDEX")) {
@@ -789,7 +812,7 @@ public class AlignParametersRule extends RuleForCommands {
 				if (token == parentToken.getNext() || token.lineBreaks > 0) {
 					if  (token.isPseudoCommentAfterCode()) {
 						// avoid moving pseudo comments to the next line if they refer to the line of the parentToken 
-					} else if (token.isCommentAfterCode() && contentType != ContentType.CONSTRUCTOR_EXPR && contentType != ContentType.ROW_IN_VALUE_OR_NEW_CONSTRUCTOR && contentType != ContentType.GROUP_KEY) {
+					} else if (token.isCommentAfterCode() && contentType != ContentType.CONSTRUCTOR_EXPR && contentType != ContentType.ROW_IN_VALUE_OR_NEW_CONSTRUCTOR && contentType != ContentType.GROUP_KEY && contentType != ContentType.IMPORT_OR_EXPORT) {
 						// line-end comments after method calls usually do not refer to the parameters; therefore, keep them in their place, too
 					} else {
 						// store 'other line starts'; in case this is a keyword like "EXPORTING", this may be removed again later
@@ -865,7 +888,8 @@ public class AlignParametersRule extends RuleForCommands {
 		// note that continueOnSameLine may refer to the table (if it starts directly after parentToken) or to otherLineStarts
 		boolean continueOnSameLine;
 		Token firstTokenInTable = table.getFirstToken();
-		if ((contentType == ContentType.CONSTRUCTOR_EXPR) || (contentType == ContentType.ROW_IN_VALUE_OR_NEW_CONSTRUCTOR) || (contentType == ContentType.GROUP_KEY)) {
+		if (contentType == ContentType.CONSTRUCTOR_EXPR || contentType == ContentType.ROW_IN_VALUE_OR_NEW_CONSTRUCTOR 
+				|| contentType == ContentType.GROUP_KEY || contentType == ContentType.IMPORT_OR_EXPORT) {
 			continueOnSameLine = true;
 		} else if (firstTokenInTable != null && parentToken.getNext() == firstTokenInTable) {
 			continueOnSameLine = true;
