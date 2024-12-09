@@ -230,10 +230,12 @@ public class AlignParametersRule extends RuleForCommands {
 			} 
 		}
 
-		// align parameters of "RAISE [RESUMABLE] EXCEPTION TYPE cx_class ... EXPORTING ..." and "RAISE SHORTDUMP TYPE cx_class ... EXPORTING ..."; 
+		// align parameters of "RAISE [RESUMABLE] EXCEPTION TYPE cx_class ... EXPORTING ...", "RAISE SHORTDUMP TYPE cx_class ... EXPORTING ..."
+		// and "RAISE EVENT evt [EXPORTING p1 = a1 p2 = a2 ...]";
 		// also processes cases with USING MESSAGE or MESSAGE ..., but only aligns starting from the EXPORTING keyword
 		if (firstCode.matchesOnSiblings(true, "RAISE", TokenSearch.makeOptional("RESUMABLE"), "EXCEPTION", "TYPE", TokenSearch.ANY_IDENTIFIER, TokenSearch.ASTERISK, "EXPORTING")
-		 || firstCode.matchesOnSiblings(true, "RAISE", "SHORTDUMP", "TYPE", TokenSearch.ANY_IDENTIFIER, TokenSearch.ASTERISK, "EXPORTING")) {
+		 || firstCode.matchesOnSiblings(true, "RAISE", "SHORTDUMP", "TYPE", TokenSearch.ANY_IDENTIFIER, TokenSearch.ASTERISK, "EXPORTING")
+		 || firstCode.matchesOnSiblings(true, "RAISE", "EVENT", TokenSearch.ANY_IDENTIFIER, "EXPORTING")) {
 			// (see ABAP Reference: "RAISE EXCEPTION" and "RAISE SHORTDUMP")
 			Token firstKeyword = firstCode.getLastTokenOnSiblings(true, TokenSearch.ASTERISK, "EXPORTING");
 			if (firstKeyword != null) {
