@@ -21,6 +21,7 @@ class AlignClearFreeAndSortTest extends RuleTestBase {
 		rule.configDistinctLineClear.setEnumValue(DistinctLineClear.ALWAYS);
 		rule.configDistinctLineFree.setEnumValue(DistinctLineFree.ALWAYS);
 		rule.configDistinctLineSort.setEnumValue(DistinctLineSort.ALWAYS);
+		rule.configDistinctLineCatch.setEnumValue(DistinctLineCatch.ALWAYS);
 	}
 
 	@Test
@@ -185,6 +186,23 @@ class AlignClearFreeAndSortTest extends RuleTestBase {
 	}
 
 	@Test
+	void testClearUnchanged() {
+		rule.configDistinctLineClear.setEnumValue(DistinctLineClear.KEEP_AS_IS);
+
+		buildSrc("    CLEAR: mv_any_value,");
+		buildSrc("      mv_other_value,");
+		buildSrc("         ls_any_structure-any_component,");
+		buildSrc("        ls_any_structure-other_component,");
+		buildSrc("        mt_any_table, mt_other_table, mt_third_table.");
+
+		copyExpFromSrc();
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
 	void testFreeAlwaysToDistinctLine() {
 		buildSrc("    FREE: mt_any_table, mts_other_table,");
 		buildSrc("         mth_third_table.");
@@ -226,6 +244,20 @@ class AlignClearFreeAndSortTest extends RuleTestBase {
 		buildExp("          mth_third_table,");
 		buildExp("* comment");
 		buildExp("          mth_fourth_table, mts_fifth_table.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testFreeUnchanged() {
+		rule.configDistinctLineFree.setEnumValue(DistinctLineFree.KEEP_AS_IS);
+
+		buildSrc("    FREE: mt_any_table, mts_other_table,");
+		buildSrc("         mth_third_table.");
+
+		copyExpFromSrc();
 
 		putAnyMethodAroundSrcAndExp();
 
@@ -422,6 +454,197 @@ class AlignClearFreeAndSortTest extends RuleTestBase {
 		buildExp("                                      component2 DESCENDING,");
 		buildExp("          lt_fifth DESCENDING BY component1 AS TEXT");
 		buildExp("                                 component2.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testSortUnchanged() {
+		rule.configDistinctLineSort.setEnumValue(DistinctLineSort.KEEP_AS_IS);
+
+		buildSrc("    SORT mt_any_table STABLE BY comp1 comp2");
+		buildSrc("     comp3");
+		buildSrc("     comp4.");
+
+		copyExpFromSrc();
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testCatchAlwaysToDistinctLine() {
+		buildSrc("    TRY.");
+		buildSrc("        any_method( ).");
+		buildSrc("");
+		buildSrc("      CATCH   cx_any_exception  cx_other_exception");
+		buildSrc("        cx_third_exception.");
+		buildSrc("");
+		buildSrc("      CATCH cx_fourth_exception cx_fifth_exception   cx_sixth_exception cx_seventh_exception cx_eighth_exception  cx_ninth_exception INTO lx_exception.");
+		buildSrc("    ENDTRY.");
+
+		buildExp("    TRY.");
+		buildExp("        any_method( ).");
+		buildExp("");
+		buildExp("      CATCH cx_any_exception");
+		buildExp("            cx_other_exception");
+		buildExp("            cx_third_exception.");
+		buildExp("");
+		buildExp("      CATCH cx_fourth_exception");
+		buildExp("            cx_fifth_exception");
+		buildExp("            cx_sixth_exception");
+		buildExp("            cx_seventh_exception");
+		buildExp("            cx_eighth_exception");
+		buildExp("            cx_ninth_exception INTO lx_exception.");
+		buildExp("    ENDTRY.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testCatchAlwaysToDistinctLineIntoMovedUp() {
+		// ensure that with exception classes on distinct lines, "INTO oref" is moved behind the last exception class
+		buildSrc("    TRY.");
+		buildSrc("        any_method( ).");
+		buildSrc("      CATCH cx_any_exception  cx_other_exception");
+		buildSrc("        cx_third_exception");
+		buildSrc("        INTO DATA(lx_exception) ##NO_HANDLER.");
+		buildSrc("");
+		buildSrc("      CATCH cx_fourth_exception cx_fifth_exception   cx_sixth_exception");
+		buildSrc("      INTO lx_exception.");
+		buildSrc("    ENDTRY.");
+
+		buildExp("    TRY.");
+		buildExp("        any_method( ).");
+		buildExp("      CATCH cx_any_exception");
+		buildExp("            cx_other_exception");
+		buildExp("            cx_third_exception INTO DATA(lx_exception) ##NO_HANDLER.");
+		buildExp("");
+		buildExp("      CATCH cx_fourth_exception");
+		buildExp("            cx_fifth_exception");
+		buildExp("            cx_sixth_exception INTO lx_exception.");
+		buildExp("    ENDTRY.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testCatchNeverToDistinctLine() {
+		rule.configDistinctLineCatch.setEnumValue(DistinctLineCatch.NEVER);
+
+		buildSrc("    TRY.");
+		buildSrc("        any_method( ).");
+		buildSrc("");
+		buildSrc("      CATCH BEFORE UNWIND cx_any_exception  cx_other_exception");
+		buildSrc("        cx_third_exception.");
+		buildSrc("");
+		buildSrc("      CATCH cx_fourth_exception cx_fifth_exception   cx_sixth_exception cx_seventh_exception cx_eighth_exception  cx_ninth_exception INTO DATA(lx_exception).");
+		buildSrc("    ENDTRY.");
+
+		buildExp("    TRY.");
+		buildExp("        any_method( ).");
+		buildExp("");
+		buildExp("      CATCH BEFORE UNWIND cx_any_exception cx_other_exception cx_third_exception.");
+		buildExp("");
+		buildExp("      CATCH cx_fourth_exception cx_fifth_exception cx_sixth_exception cx_seventh_exception cx_eighth_exception");
+		buildExp("            cx_ninth_exception INTO DATA(lx_exception).");
+		buildExp("    ENDTRY.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testCatchNeverToDistinctLineIntoOnOwnLine() {
+		// ensure that "INTO oref" can be kept on its own line or, depending on maximum line length, moved to its own line
+
+		rule.configMaxLineLength.setValue(80);
+		rule.configDistinctLineCatch.setEnumValue(DistinctLineCatch.NEVER);
+
+		buildSrc("    TRY.");
+		buildSrc("        any_method( ).");
+		buildSrc("      CATCH cx_any_exception  cx_other_exception");
+		buildSrc("        cx_third_exception INTO DATA(lx_exception) ##NO_HANDLER.");
+		buildSrc("");
+		buildSrc("      CATCH cx_fourth_exception cx_fifth_exception   cx_sixth_exception");
+		buildSrc("      INTO lx_exception.");
+		buildSrc("        \" handle exceptions");
+		buildSrc("    ENDTRY.");
+
+		buildExp("    TRY.");
+		buildExp("        any_method( ).");
+		buildExp("      CATCH cx_any_exception cx_other_exception cx_third_exception");
+		buildExp("            INTO DATA(lx_exception) ##NO_HANDLER.");
+		buildExp("");
+		buildExp("      CATCH cx_fourth_exception cx_fifth_exception cx_sixth_exception");
+		buildExp("            INTO lx_exception.");
+		buildExp("        \" handle exceptions");
+		buildExp("    ENDTRY.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testCatchWithShortLines() {
+		rule.configMaxLineLength.setValue(80);
+		rule.configDistinctLineCatch.setEnumValue(DistinctLineCatch.NEVER);
+
+		buildSrc("    TRY.");
+		buildSrc("        any_method( ).");
+		buildSrc("");
+		buildSrc("      CATCH cx_any_exception  cx_other_exception");
+		buildSrc("        cx_third_exception INTO lx_exception.");
+		buildSrc("        \" handle exceptions");
+		buildSrc("");
+		buildSrc("      CATCH cx_fourth_exception cx_fifth_exception   cx_sixth_exception cx_seventh_exception cx_eighth_exception  cx_ninth_exception INTO lx_exception.");
+		buildSrc("        \" handle other exceptions");
+		buildSrc("    ENDTRY.");
+
+		buildExp("    TRY.");
+		buildExp("        any_method( ).");
+		buildExp("");
+		buildExp("      CATCH cx_any_exception cx_other_exception cx_third_exception");
+		buildExp("            INTO lx_exception.");
+		buildExp("        \" handle exceptions");
+		buildExp("");
+		buildExp("      CATCH cx_fourth_exception cx_fifth_exception cx_sixth_exception");
+		buildExp("            cx_seventh_exception cx_eighth_exception cx_ninth_exception");
+		buildExp("            INTO lx_exception.");
+		buildExp("        \" handle other exceptions");
+		buildExp("    ENDTRY.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testCatchUnchanged() {
+		rule.configMaxLineLength.setValue(80);
+		rule.configDistinctLineCatch.setEnumValue(DistinctLineCatch.KEEP_AS_IS);
+
+		buildSrc("    TRY.");
+		buildSrc("        any_method( ).");
+		buildSrc("");
+		buildSrc("      CATCH cx_any_exception  cx_other_exception");
+		buildSrc("        cx_third_exception INTO lx_exception.");
+		buildSrc("        \" handle exceptions");
+		buildSrc("");
+		buildSrc("      CATCH cx_fourth_exception cx_fifth_exception cx_sixth_exception cx_seventh_exception INTO lx_exception.");
+		buildSrc("        \" handle other exceptions");
+		buildSrc("    ENDTRY.");
+
+		copyExpFromSrc();
 
 		putAnyMethodAroundSrcAndExp();
 

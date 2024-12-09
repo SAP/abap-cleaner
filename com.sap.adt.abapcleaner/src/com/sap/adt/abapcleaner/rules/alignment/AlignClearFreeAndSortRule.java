@@ -29,11 +29,11 @@ public class AlignClearFreeAndSortRule extends RuleForCommands {
 	public RuleGroupID getGroupID() { return RuleGroupID.ALIGNMENT; }
 
 	@Override
-	public String getDisplayName() { return "Align CLEAR:, FREE: and SORT"; }
+	public String getDisplayName() { return "Align CLEAR:, FREE:, SORT and CATCH"; }
 
 	@Override
 	public String getDescription() {
-		return "Aligns lists of variables after CLEAR: and FREE: and lists of components after SORT ... BY.";
+		return "Aligns lists of variables after CLEAR: and FREE:, lists of components after SORT ... BY, and lists of exception classes after CATCH.";
 	}
 
 	@Override
@@ -48,7 +48,7 @@ public class AlignClearFreeAndSortRule extends RuleForCommands {
    @Override
    public String getExample() {
       return "" 
-			+ LINE_SEP + "  METHOD align_clear_free_and_sort." 
+			+ LINE_SEP + "  METHOD align_clear_free_sort_catch." 
 			+ LINE_SEP + "    CLEAR: mv_any_value," 
 			+ LINE_SEP + "      mv_other_value," 
 			+ LINE_SEP + "         ls_any_structure-any_component," 
@@ -71,19 +71,31 @@ public class AlignClearFreeAndSortRule extends RuleForCommands {
 			+ LINE_SEP + "     comp3 comp4 AS TEXT," 
 			+ LINE_SEP + "          mt_third_table BY  component1 AS TEXT" 
 			+ LINE_SEP + "      component2   component3." 
+			+ LINE_SEP 
+			+ LINE_SEP + "    TRY." 
+			+ LINE_SEP + "        any_method( )." 
+			+ LINE_SEP 
+			+ LINE_SEP + "      CATCH cx_any_exception  cx_other_exception" 
+			+ LINE_SEP + "        cx_third_exception INTO DATA(lx_exception) ##NO_HANDLER." 
+			+ LINE_SEP 
+			+ LINE_SEP + "      CATCH cx_fourth_exception cx_fifth_exception   cx_sixth_exception cx_seventh_exception cx_eighth_exception  cx_ninth_exception INTO lx_exception." 
+			+ LINE_SEP + "        \" handle exceptions" 
+			+ LINE_SEP + "    ENDTRY." 
 			+ LINE_SEP + "  ENDMETHOD.";
    }
 
 	final ConfigIntValue configMaxLineLength = new ConfigIntValue(this, "MaxLineLength", "Maximum line length", "", 80, 120, ABAP.MAX_LINE_LENGTH);
 
 	final ConfigEnumValue<DistinctLineClear> configDistinctLineClear = new ConfigEnumValue<DistinctLineClear>(this, "DistinctLineClear", "CLEAR: Use one line per variable:",
-																								new String[] { "always", "only if additions are used", "never" }, DistinctLineClear.values(), DistinctLineClear.ALWAYS);
+																								new String[] { "always", "only if additions are used", "never", "keep as is" }, DistinctLineClear.values(), DistinctLineClear.ALWAYS);
 	final ConfigEnumValue<DistinctLineFree> configDistinctLineFree = new ConfigEnumValue<DistinctLineFree>(this, "DistinctLineFree", "FREE: Use one line per variable:",
-																								new String[] { "always", "never" }, DistinctLineFree.values(), DistinctLineFree.ALWAYS);
+																								new String[] { "always", "never", "keep as is" }, DistinctLineFree.values(), DistinctLineFree.ALWAYS);
 	final ConfigEnumValue<DistinctLineSort> configDistinctLineSort = new ConfigEnumValue<DistinctLineSort>(this, "DistinctLineSort", "SORT: Use one line per variable:",
-																								new String[] { "always", "only if additions are used", "never" }, DistinctLineSort.values(), DistinctLineSort.ALWAYS);
+																								new String[] { "always", "only if additions are used", "never", "keep as is" }, DistinctLineSort.values(), DistinctLineSort.ALWAYS);
+	final ConfigEnumValue<DistinctLineCatch> configDistinctLineCatch = new ConfigEnumValue<DistinctLineCatch>(this, "DistinctLineCatch", "CATCH: Use one line per exception:",
+																								new String[] { "always", "never", "keep as is" }, DistinctLineCatch.values(), DistinctLineCatch.ALWAYS, DistinctLineCatch.KEEP_AS_IS, LocalDate.of(2024, 12, 9));
 
-	private final ConfigValue[] configValues = new ConfigValue[] { configMaxLineLength, configDistinctLineClear, configDistinctLineFree, configDistinctLineSort };
+	private final ConfigValue[] configValues = new ConfigValue[] { configMaxLineLength, configDistinctLineClear, configDistinctLineFree, configDistinctLineSort, configDistinctLineCatch };
 
 	@Override
 	public ConfigValue[] getConfigValues() { return configValues; }
@@ -96,6 +108,9 @@ public class AlignClearFreeAndSortRule extends RuleForCommands {
 	}
 	private DistinctLineSort getConfigDistinctLineSort() {
 		return DistinctLineSort.forValue(configDistinctLineSort.getValue());
+	}
+	private DistinctLineCatch getConfigDistinctLineCatch() {
+		return DistinctLineCatch.forValue(configDistinctLineCatch.getValue());
 	}
 
 	public AlignClearFreeAndSortRule(Profile profile) {
@@ -113,6 +128,7 @@ public class AlignClearFreeAndSortRule extends RuleForCommands {
 		boolean distinctLine = false;
 		ArrayList<Token> tokens = new ArrayList<>();
 
+		boolean commandChanged = false;
 		if (command.firstCodeTokenIsAnyKeyword("CLEAR", "FREE")) {
 			// CLEAR: dobj1 [ {WITH val [IN {CHARACTER|BYTE} MODE] } | {WITH NULL} ], djob2 ...
 			// FREE: dobj1, dobj2 ...
@@ -121,9 +137,14 @@ public class AlignClearFreeAndSortRule extends RuleForCommands {
 
 			if (command.firstCodeTokenIsKeyword("CLEAR")) {
 				DistinctLineClear distinctLineClear = getConfigDistinctLineClear();
+				if (distinctLineClear == DistinctLineClear.KEEP_AS_IS)
+					return false;
 				distinctLine = (distinctLineClear == DistinctLineClear.ALWAYS) || (distinctLineClear == DistinctLineClear.ONLY_WITH_ADDITIONS) && firstToken.matchesOnSiblings(true, TokenSearch.ASTERISK, "WITH"); 
 			} else {
-				distinctLine = (getConfigDistinctLineFree() == DistinctLineFree.ALWAYS); 
+				DistinctLineFree distinctLineFree = getConfigDistinctLineFree();
+				if (distinctLineFree == DistinctLineFree.KEEP_AS_IS)
+					return false;
+				distinctLine = (distinctLineFree == DistinctLineFree.ALWAYS); 
 			}
 
 			// create a list of the Tokens after the chain colon and after each comma
@@ -131,13 +152,18 @@ public class AlignClearFreeAndSortRule extends RuleForCommands {
 			while (token != null) {
 				boolean useNext = (token.isChainColon() || token.isComma());
 				token = token.getNextCodeSibling();
-				if (useNext && token != null)
+				if (useNext && token != null) {
 					tokens.add(token);
+				}
 			}
 
 		} else if (command.firstCodeTokenIsKeyword("SORT")) {
 			// SORT itab [STABLE] [ASCENDING|DESCENDING] [AS TEXT] BY { comp1 [ASCENDING|DESCENDING] [AS TEXT]} { comp2 ... }.
-			
+
+			DistinctLineSort distinctLineSort = getConfigDistinctLineSort();
+			if (distinctLineSort == DistinctLineSort.KEEP_AS_IS)
+				return false;
+
 			// create a list of all identifiers after "BY"; only 'additions' after components (not after 'itab') count! 
 			Token token = firstToken.getLastTokenOnSiblings(true, TokenSearch.ASTERISK, "BY");
 			boolean additionFound = false;
@@ -156,8 +182,30 @@ public class AlignClearFreeAndSortRule extends RuleForCommands {
 					token = token.getLastTokenOnSiblings(true, TokenSearch.ASTERISK, "BY");
 				} 
 			}
-			DistinctLineSort distinctLineSort = getConfigDistinctLineSort();
 			distinctLine = (distinctLineSort == DistinctLineSort.ALWAYS) || (distinctLineSort == DistinctLineSort.ONLY_WITH_ADDITIONS) && additionFound;
+			
+		} else if (command.firstCodeTokenIsKeyword("CATCH")) {
+			// CATCH [BEFORE UNWIND] cx_class1 cx_class2 ... [INTO oref].
+			
+			DistinctLineCatch distinctLineCatch = getConfigDistinctLineCatch();
+			if (distinctLineCatch == DistinctLineCatch.KEEP_AS_IS)
+				return false;
+			distinctLine = (distinctLineCatch == DistinctLineCatch.ALWAYS);
+
+			// create a list of the exception classes
+			Token token = firstToken.getLastTokenOnSiblings(true, "CATCH", TokenSearch.makeOptional("BEFORE"), TokenSearch.makeOptional("UNWIND"), TokenSearch.ANY_IDENTIFIER);
+			while (token != null && (token.isIdentifier() || token.isKeyword("INTO"))) {
+				// if exception classes are placed on distinct lines, keep (or move) "INTO" behind the last exception class
+				if (distinctLine && token.isKeyword("INTO") && !token.getPrev().isComment()) {
+					commandChanged |= token.setWhitespace();
+					break;
+				} 
+				tokens.add(token);
+				// if exception classes continue on the same line(s), allow "INTO oref" to be moved to the next line, if needed
+				if (token.isKeyword("INTO"))
+					break;
+				token = token.getNextCodeSibling();
+			}
 			
 		} else {
 			return false;
@@ -165,9 +213,8 @@ public class AlignClearFreeAndSortRule extends RuleForCommands {
 		
 		// anything to align?
 		if (tokens.size() < 2)
-			return false;
+			return commandChanged;
 
-		boolean commandChanged = false;
 		int maxLineLength = configMaxLineLength.getValue();
 		Token firstInstance = tokens.get(0);
 		int indent = 0; // will be determined below 
