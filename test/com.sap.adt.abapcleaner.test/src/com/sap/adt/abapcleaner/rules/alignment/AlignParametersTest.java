@@ -3248,4 +3248,41 @@ class AlignParametersTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testRaiseEventExporting() {
+		buildSrc("RAISE EVENT message");
+		buildSrc("EXPORTING");
+		buildSrc("iv_id = 'MSG_ID'");
+		buildSrc("iv_type = 'E'");
+		buildSrc("iv_number = '001'.");
+
+		buildExp("RAISE EVENT message");
+		buildExp("  EXPORTING iv_id     = 'MSG_ID'");
+		buildExp("            iv_type   = 'E'");
+		buildExp("            iv_number = '001'.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testRaiseEventContinueBehindCall() {
+		rule.configMaxParamCountBehindProceduralCall.setValue(3);
+
+		buildSrc("RAISE EVENT message");
+		buildSrc("EXPORTING");
+		buildSrc("iv_id = 'MSG_ID'");
+		buildSrc("iv_type = 'E'");
+		buildSrc("iv_number = '001'.");
+
+		buildExp("RAISE EVENT message EXPORTING iv_id     = 'MSG_ID'");
+		buildExp("                              iv_type   = 'E'");
+		buildExp("                              iv_number = '001'.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }
