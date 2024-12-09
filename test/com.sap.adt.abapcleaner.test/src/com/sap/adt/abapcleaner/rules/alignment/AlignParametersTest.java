@@ -3285,4 +3285,78 @@ class AlignParametersTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testAlignImportAndExport() {
+		buildSrc("    IMPORT");
+		buildSrc("      any_param       =    lv_any_param");
+		buildSrc("           FROM MEMORY ID 'ANY_ID'.");
+		buildSrc("");
+		buildSrc("    IMPORT any_param   =   lv_any_param FROM MEMORY ID 'ANY_ID'.");
+		buildSrc("");
+		buildSrc("    IMPORT any_param             = lv_any_param  other_param =    lv_other_param");
+		buildSrc("           third_parameter   = lv_third_parameter FROM MEMORY ID 'ANY_ID'.");
+		buildSrc("");
+		buildSrc("    IMPORT any_param  TO lv_any_param");
+		buildSrc("       other_param TO  lv_other_param");
+		buildSrc("             third_parameter TO lv_third_parameter");
+		buildSrc("           FROM MEMORY ID 'ANY_ID'.");
+		buildSrc("");
+		buildSrc("    EXPORT");
+		buildSrc("      any_param = lv_any_param");
+		buildSrc("        other_param = lv_other_param");
+		buildSrc("     third_parameter = lv_third_parameter TO INTERNAL TABLE itab.");
+		buildSrc("");
+		buildSrc("    EXPORT any_param FROM  lv_any_param");
+		buildSrc("           other_param  FROM lv_other_param");
+		buildSrc("           third_parameter FROM lv_third_parameter");
+		buildSrc("        TO SHARED MEMORY dtab(ar) ID any_id.");
+
+		buildExp("    IMPORT any_param = lv_any_param");
+		buildExp("           FROM MEMORY ID 'ANY_ID'.");
+		buildExp("");
+		buildExp("    IMPORT any_param = lv_any_param FROM MEMORY ID 'ANY_ID'.");
+		buildExp("");
+		buildExp("    IMPORT any_param       = lv_any_param");
+		buildExp("           other_param     = lv_other_param");
+		buildExp("           third_parameter = lv_third_parameter FROM MEMORY ID 'ANY_ID'.");
+		buildExp("");
+		buildExp("    IMPORT any_param       TO lv_any_param");
+		buildExp("           other_param     TO lv_other_param");
+		buildExp("           third_parameter TO lv_third_parameter");
+		buildExp("           FROM MEMORY ID 'ANY_ID'.");
+		buildExp("");
+		buildExp("    EXPORT any_param       = lv_any_param");
+		buildExp("           other_param     = lv_other_param");
+		buildExp("           third_parameter = lv_third_parameter TO INTERNAL TABLE itab.");
+		buildExp("");
+		buildExp("    EXPORT any_param       FROM lv_any_param");
+		buildExp("           other_param     FROM lv_other_param");
+		buildExp("           third_parameter FROM lv_third_parameter");
+		buildExp("        TO SHARED MEMORY dtab(ar) ID any_id.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testDoNotAlignImportExport() {
+		buildSrc("    IMPORT lv_any_param lv_other_param");
+		buildSrc("           lv_third_parameter FROM MEMORY ID 'ANY_ID'.");
+		buildSrc("");
+		buildSrc("    EXPORT lv_any_param lv_other_param");
+		buildSrc("           lv_third_parameter TO MEMORY ID 'ANY_ID' COMPRESSION ON.");
+		buildSrc("");
+		buildSrc("    IMPORT DIRECTORY INTO itab");
+		buildSrc("           FROM DATABASE dbtab(ar) ID id.");
+		buildSrc("");
+		buildSrc("    IMPORT (ptab) FROM MEMORY ID 'ANY_ID'.");
+
+		copyExpFromSrc();
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }
