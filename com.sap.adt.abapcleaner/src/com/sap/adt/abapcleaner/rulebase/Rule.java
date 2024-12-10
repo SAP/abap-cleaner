@@ -49,6 +49,20 @@ public abstract class Rule {
 	protected static Language[] ddlOrDcl =  new Language[] { Language.DDL, Language.DCL };
 	protected static Language[] ddlOnly =  new Language[] { Language.DDL };
 
+	/** the lowest value that can be configured for the 'maximum line length' in various rules for ABAP */
+   protected static final int MIN_LINE_LENGTH_ABAP = 60;
+	/** the default value for the 'maximum line length' configuration in various rules for ABAP */
+   protected static final int DEFAULT_LINE_LENGTH_ABAP = 120;
+	/** a higher default value for the 'maximum line length' configuration for ABAP */
+   protected static final int HIGHER_DEFAULT_LINE_LENGTH_ABAP = 130;
+	/** the highest default value for the 'maximum line length' configuration for ABAP */
+   protected static final int HIGHEST_DEFAULT_LINE_LENGTH_ABAP = 160;
+   
+	/** the lowest value that can be configured for the 'maximum line length' in various rules for DDL */
+   protected static final int MIN_LINE_LENGTH_DDL = 60;
+	/** the default value for the 'maximum line length' configuration in various rules for DDL */
+   protected static final int DEFAULT_LINE_LENGTH_DDL = 120;
+
 	private static final String KEY_IS_ACTIVE = "isActive";
 	private static final String KEY_SETTING_COUNT = "settingCount";
 	private static final String KEY_SETTINGS = "settings";

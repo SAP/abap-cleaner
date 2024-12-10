@@ -118,7 +118,7 @@ public class AlignSelectClausesRule extends RuleForCommands {
 			+ LINE_SEP + "  ENDMETHOD.";
    }
 
-	final ConfigIntValue configMaxLineLength = new ConfigIntValue(this, "MaxLineLength", "Maximum line length for one-liners:", "", 80, 120, ABAP.MAX_LINE_LENGTH);
+	final ConfigIntValue configMaxLineLength = new ConfigIntValue(this, "MaxLineLength", "Maximum line length for one-liners:", "", MIN_LINE_LENGTH_ABAP, DEFAULT_LINE_LENGTH_ABAP, ABAP.MAX_LINE_LENGTH);
 	final ConfigEnumValue<SelectOneLinerAction> configMainQueryOneLinerAction = new ConfigEnumValue<SelectOneLinerAction>(this, "MainQueryOneLinerAction", "Mainquery one-liners:",
 		new String[] { "create if possible", "keep existing", "always split" }, SelectOneLinerAction.values(), SelectOneLinerAction.KEEP_EXISTING);
 	final ConfigEnumValue<SelectOneLinerAction> configSubQueryOneLinerAction = new ConfigEnumValue<SelectOneLinerAction>(this, "SubQueryOneLinerAction", "Subquery one-liners:",

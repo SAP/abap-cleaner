@@ -116,7 +116,7 @@ public class AlignSelectListsRule extends RuleForCommands {
    }
 
    private final String[] layoutTexts = new String[] { "multi-line", "single line", "derive from majority", "keep as is" };
-	final ConfigIntValue configMaxLineLength = new ConfigIntValue(this, "MaxLineLength", "Maximum line length", "", 80, 120, ABAP.MAX_LINE_LENGTH);
+	final ConfigIntValue configMaxLineLength = new ConfigIntValue(this, "MaxLineLength", "Maximum line length", "", MIN_LINE_LENGTH_ABAP, DEFAULT_LINE_LENGTH_ABAP, ABAP.MAX_LINE_LENGTH);
 	final ConfigEnumValue<SelectListLayout> configComplexSelectListLayout = new ConfigEnumValue<SelectListLayout>(this, "ComplexSelectListLayout", "Select lists with complex fields:", layoutTexts, SelectListLayout.values(), SelectListLayout.MULTI_LINE);
 	final ConfigEnumValue<SelectListLayout> configSimpleSelectListLayout = new ConfigEnumValue<SelectListLayout>(this, "SimpleSelectListLayout", "Select lists with simple fields only:", layoutTexts, SelectListLayout.values(), SelectListLayout.DERIVE);
 	final ConfigEnumValue<SelectListLayout> configComplexGroupByListLayout = new ConfigEnumValue<SelectListLayout>(this, "ComplexGroupByListLayout", "GROUP BY lists with complex fields:", layoutTexts, SelectListLayout.values(), SelectListLayout.MULTI_LINE);

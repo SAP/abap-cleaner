@@ -112,7 +112,7 @@ public class DdlAnnotationLayoutRule extends RuleForDdlAnnotationScopes {
 	final ConfigBoolValue configSpaceInsideBrackets = new ConfigBoolValue(this, "SpaceInsideBrackets", "Space inside array brackets [ ... ]", true);
 
    private final ConfigInfoValue configInfoOneLiners = new ConfigInfoValue(this, "One-liners", ConfigInfoStyle.HEADING);
-   final ConfigIntValue configMaxLineLength = new ConfigIntValue(this, "MaxLineLength", "Maximum line length for one-liners", "", 80, 120, DDL.MAX_LINE_LENGTH);
+   final ConfigIntValue configMaxLineLength = new ConfigIntValue(this, "MaxLineLength", "Maximum line length for one-liners", "", MIN_LINE_LENGTH_DDL, DEFAULT_LINE_LENGTH_DDL, DDL.MAX_LINE_LENGTH);
    final ConfigIntValue configMaxOneLinerElemCountMain = new ConfigIntValue(this, "MaxOneLinerElemCountMain", "Max. number of elements for one-liners in entity annotations:", "", 1, 4, 10);
    final ConfigIntValue configMaxOneLinerElemCountList = new ConfigIntValue(this, "MaxOneLinerElemCountList", "Max. number of elements for one-liners in select lists etc.:", "", 1, 4, 10);
 
