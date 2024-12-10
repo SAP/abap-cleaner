@@ -101,7 +101,7 @@ public class AlignPerformRule extends RuleForCommands {
 				+ LINE_SEP + "ENDFORM.";
    }
 
-	final ConfigIntValue configMaxLineLength = new ConfigIntValue(this, "MaxLineLength", "Maximum line length", "", 80, 120, ABAP.MAX_LINE_LENGTH);
+	final ConfigIntValue configMaxLineLength = new ConfigIntValue(this, "MaxLineLength", "Maximum line length", "", MIN_LINE_LENGTH_ABAP, DEFAULT_LINE_LENGTH_ABAP, ABAP.MAX_LINE_LENGTH);
 	final ConfigIntValue configParamCountAfterPerform = new ConfigIntValue(this, "ParamCountAfterPerform", "Continue behind PERFORM for up to", "parameters", 0, 3, 100);
 	final ConfigBoolValue configBreakAfterAdditions = new ConfigBoolValue(this, "BreakAfterAdditions", "Always break after call if additions IN PROGRAM or IF FOUND are used", false);
 	final ConfigBoolValue configAlignWithFormName = new ConfigBoolValue(this, "AlignWithFormName", "Align TABLES / USING / CHANGING with subroutine name", false);

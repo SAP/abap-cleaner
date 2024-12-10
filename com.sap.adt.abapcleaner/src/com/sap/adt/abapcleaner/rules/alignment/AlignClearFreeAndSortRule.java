@@ -84,7 +84,7 @@ public class AlignClearFreeAndSortRule extends RuleForCommands {
 			+ LINE_SEP + "  ENDMETHOD.";
    }
 
-	final ConfigIntValue configMaxLineLength = new ConfigIntValue(this, "MaxLineLength", "Maximum line length", "", 80, 120, ABAP.MAX_LINE_LENGTH);
+	final ConfigIntValue configMaxLineLength = new ConfigIntValue(this, "MaxLineLength", "Maximum line length", "", MIN_LINE_LENGTH_ABAP, DEFAULT_LINE_LENGTH_ABAP, ABAP.MAX_LINE_LENGTH);
 
 	final ConfigEnumValue<DistinctLineClear> configDistinctLineClear = new ConfigEnumValue<DistinctLineClear>(this, "DistinctLineClear", "CLEAR: Use one line per variable:",
 																								new String[] { "always", "only if additions are used", "never", "keep as is" }, DistinctLineClear.values(), DistinctLineClear.ALWAYS);

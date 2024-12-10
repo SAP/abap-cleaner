@@ -136,7 +136,7 @@ public class ClassDefinitionRule extends RuleForCommands {
     		+ LINE_SEP + "    cl_other_local_class."; 
    }
 
-	final ConfigIntValue configMaxLineLength = new ConfigIntValue(this, "MaxLineLength", "Maximum line length", "", 80, 120, ABAP.MAX_LINE_LENGTH);
+	final ConfigIntValue configMaxLineLength = new ConfigIntValue(this, "MaxLineLength", "Maximum line length", "", MIN_LINE_LENGTH_ABAP, DEFAULT_LINE_LENGTH_ABAP, ABAP.MAX_LINE_LENGTH);
 	final ConfigEnumValue<ClassDefIndentStyle> configIndentStyle = new ConfigEnumValue<ClassDefIndentStyle>(this, "IndentStyle", "Indentation:",
 			new String[] { "2 spaces", "4 spaces", "align with class name", "align with DEFINITION keyword" }, ClassDefIndentStyle.values(), ClassDefIndentStyle.PLUS_2);
 	final ConfigEnumValue<ClassDefOneLinerAction> configOneLinerAction = new ConfigEnumValue<ClassDefOneLinerAction>(this, "OneLinerAction", "One-/Two-liners:",

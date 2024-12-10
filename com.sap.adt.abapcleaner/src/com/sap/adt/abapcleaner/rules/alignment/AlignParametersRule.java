@@ -163,8 +163,8 @@ public class AlignParametersRule extends RuleForCommands {
 			+ LINE_SEP + "  ENDMETHOD.";
    }
 
-	final ConfigIntValue configMaxLineLength = new ConfigIntValue(this, "MaxLineLength", "Maximum line length A (normal)", "", 80, 120, ABAP.MAX_LINE_LENGTH);
-	final ConfigIntValue configMaxLineLengthForSingleLine = new ConfigIntValue(this, "MaxLineLengthForSingleLine", "Maximum line length B (for tabular style)", "", 80, 160, ABAP.MAX_LINE_LENGTH);
+	final ConfigIntValue configMaxLineLength = new ConfigIntValue(this, "MaxLineLength", "Maximum line length A (normal)", "", MIN_LINE_LENGTH_ABAP, DEFAULT_LINE_LENGTH_ABAP, ABAP.MAX_LINE_LENGTH);
+	final ConfigIntValue configMaxLineLengthForSingleLine = new ConfigIntValue(this, "MaxLineLengthForSingleLine", "Maximum line length B (for tabular style)", "", MIN_LINE_LENGTH_ABAP, HIGHEST_DEFAULT_LINE_LENGTH_ABAP, ABAP.MAX_LINE_LENGTH);
 	final ConfigIntValue configMaxParamCountBehindProceduralCall = new ConfigIntValue(this, "MaxParamCountBehindProceduralCall", "Procedural call: continue behind the call for up to", "parameters", 0, 0, 100);
 	final ConfigIntValue configMaxParamCountBehindFunctionalCall = new ConfigIntValue(this, "MaxParamCountBehindFunctionalCall", "Functional call: continue behind the call for up to", "parameters", 0, 100, 100);
 	final ConfigBoolValue configPutProceduralCallKeywordsOnOwnLine = new ConfigBoolValue(this, "PutProceduralCallKeywordsOnOwnLine", "Procedural call: put keywords (EXPORTING etc.) on own line", false);

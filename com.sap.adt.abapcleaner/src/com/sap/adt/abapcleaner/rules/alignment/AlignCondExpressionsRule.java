@@ -114,7 +114,7 @@ public class AlignCondExpressionsRule extends RuleForCommands {
 			+ LINE_SEP + "  ENDMETHOD.";
    }
 
-	final ConfigIntValue configMaxLineLength = new ConfigIntValue(this, "MaxLineLength", "Maximum line length for one-liners and tabular cases:", "", 80, 120, ABAP.MAX_LINE_LENGTH);
+	final ConfigIntValue configMaxLineLength = new ConfigIntValue(this, "MaxLineLength", "Maximum line length for one-liners and tabular cases:", "", MIN_LINE_LENGTH_ABAP, DEFAULT_LINE_LENGTH_ABAP, ABAP.MAX_LINE_LENGTH);
 
 	final ConfigEnumValue<CondOneLinerStyle> configOneLinerStyle = new ConfigEnumValue<CondOneLinerStyle>(this, "OneLinerStyle", "One-liners:",
 																								new String[] { "create if possible", "keep as is", "always split to multi-line" }, CondOneLinerStyle.values(), CondOneLinerStyle.KEEP);
