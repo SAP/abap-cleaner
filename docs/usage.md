@@ -101,25 +101,30 @@ To integrate ABAP cleaner in other processes, you may call the "abap-cleaner**c*
 from the command line with the following arguments for cleaning either a single file or multiple files in a directory:
 
 ```
-Usage for single file:
+Getting help and version information:
+    .\abap-cleanerc.exe /?
+    .\abap-cleanerc.exe /man
+    .\abap-cleanerc.exe --version
+
+Cleanup of single file:
     .\abap-cleanerc.exe {--sourcefile sourcefile / --source sourcecode } [--linerange linerange]
                         [{ --profile profile / --profiledata profiledata }] [--release release]
                         [--crlf] [--targetfile targetfile [--overwrite]] [--partialresult]
                         [--stats] [--usedrules]
 
-Example for single file:
+Example for cleanup of single file:
     .\abap-cleanerc.exe --sourcefile "CL_ANY_CLASS.txt" --linerange "20-35" --profile "team profile.cfj" --release "757" --targetfile "result\CL_ANY_CLASS.txt" --overwrite --stats --usedrules
 
-Usage for multiple files:
+Cleanup of multiple files:
     .\abap-cleanerc.exe --sourcedir sourcedir [--filepattern filepattern] [--recursive]
                         [{ --profile profile / --profiledata profiledata }] [--release release]
                         [--targetdir targetdir [--overwrite]]
                         [--stats] [--usedrules]
 
-Example for multiple files:
+Example for cleanup of multiple files:
     .\abap-cleanerc.exe --sourcedir "C:\temp\source" --filepattern "*.txt" --recursive --profile "team profile.cfj" --release "757" --targetdir "C:\temp\target" --overwrite
 
-Options:
+Options for cleanup:
     --sourcefile        File name of an ABAP source file which is input to the cleanup.
     --source            ABAP source code which is input to the cleanup.
                         Please use either --sourcefile or --source or --sourcedir.

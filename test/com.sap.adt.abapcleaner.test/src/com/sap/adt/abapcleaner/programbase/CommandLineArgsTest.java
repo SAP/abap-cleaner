@@ -49,10 +49,16 @@ public class CommandLineArgsTest {
 	@Test
 	void testCreateForHelp() {
 		CommandLineArgs args = CommandLineArgs.create(persistency, new String[] { "/?" } );
-		assertTrue(args.showHelp);
+		assertEquals(CommandLineAction.SHOW_HELP, args.action);
 
 		args = CommandLineArgs.create(persistency, new String[] { "/man" } );
-		assertTrue(args.showHelp);
+		assertEquals(CommandLineAction.SHOW_HELP, args.action);
+	}
+	
+	@Test
+	void testCreateForVersion() {
+		CommandLineArgs args = CommandLineArgs.create(persistency, new String[] { "--version" } );
+		assertEquals(CommandLineAction.SHOW_VERSION, args.action);
 	}
 	
 	@Test
@@ -60,6 +66,7 @@ public class CommandLineArgsTest {
 		CommandLineArgs args = CommandLineArgs.create(persistency, new String[] {  
 				"--source", anySourceCode } );
 	
+		assertEquals(CommandLineAction.CLEANUP, args.action);
 		assertEquals(anySourceCode, args.sourceCode);
 		assertNull(args.cleanupRange);
 		assertNull(args.profileData);
@@ -72,7 +79,6 @@ public class CommandLineArgsTest {
 		assertFalse(args.showStats);
 		assertFalse(args.showUsedRules);
 		assertEquals("", args.errors);
-		assertFalse(args.showHelp);
 
 		assertFalse(args.hasErrors());
 		assertTrue(args.isInSingleSourceMode());
@@ -97,6 +103,7 @@ public class CommandLineArgsTest {
 				"--targetfile", targetPath, 
 				"--overwrite", "--partialresult", "--stats", "--usedrules"} );
 	
+		assertEquals(CommandLineAction.CLEANUP, args.action);
 		assertEquals(anySourceCode, args.sourceCode);
 		assertEquals(20, args.cleanupRange.startLine);
 		assertEquals(35, args.cleanupRange.lastLine);
@@ -111,7 +118,6 @@ public class CommandLineArgsTest {
 		assertTrue(args.showStats);
 		assertTrue(args.showUsedRules);
 		assertEquals("", args.errors);
-		assertFalse(args.showHelp);
 
 		assertFalse(args.hasErrors());
 		assertTrue(args.isInSingleSourceMode());
@@ -127,6 +133,7 @@ public class CommandLineArgsTest {
 				"--recursive",
 				"--overwrite"} );
 
+		assertEquals(CommandLineAction.CLEANUP, args.action);
 		assertEquals(1, args.sourcePaths.length);
 		assertTrue(args.overwrite);
 	}
@@ -143,6 +150,7 @@ public class CommandLineArgsTest {
 				"--recursive",
 				"--overwrite" } );
 
+		assertEquals(CommandLineAction.CLEANUP, args.action);
 		assertEquals(1, args.sourcePaths.length);
 		assertTrue(args.overwrite);
 		
@@ -157,6 +165,7 @@ public class CommandLineArgsTest {
 				"--source", anySourceCode, 
 				"--profiledata", anyProfileData } ); 
 	
+		assertEquals(CommandLineAction.CLEANUP, args.action);
 		assertEquals(anySourceCode, args.sourceCode);
 		assertEquals(anyProfileData, args.profileData);
 		assertFalse(args.hasErrors());

@@ -145,15 +145,18 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 				cleanInteractively(null, ABAP.NEWEST_RELEASE, null, persistency.getStartupPath(), false, null, null, null, false);
 
 			} else {
-				if (commandLineArgs.hasErrors()) {
+				if (commandLineArgs.action == CommandLineAction.SHOW_HELP) {
+					System.out.print(CommandLineArgs.getHelp(persistency));
+
+				} else if (commandLineArgs.action == CommandLineAction.SHOW_VERSION) {
+					System.out.print(Program.PRODUCT_NAME + " " + Program.getVersion());
+
+				} else if (commandLineArgs.hasErrors()) {
 					if (commandLineArgs.hasErrors()) {
 						System.err.println(commandLineArgs.errors);
 						System.err.println("");
 						System.err.flush();
 					}
-					System.out.print(CommandLineArgs.getHelp(persistency));
-
-				} else if (commandLineArgs.showHelp) {
 					System.out.print(CommandLineArgs.getHelp(persistency));
 
 				} else {
