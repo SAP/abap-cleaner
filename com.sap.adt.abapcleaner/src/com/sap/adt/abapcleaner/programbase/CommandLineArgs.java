@@ -7,6 +7,12 @@ import com.sap.adt.abapcleaner.parser.CleanupRange;
 public class CommandLineArgs {
 	private static final String LINE_SEP = System.lineSeparator();
 
+	// options for help or version info
+	private static final String OPT_HELP_WINDOWS = "/?";
+	private static final String OPT_HELP_LINUX = "/man";
+	private static final String OPT_VERSION = "--version";
+
+	// options for cleanup
 	private static final String OPT_SOURCE_FILE = "--sourcefile";
 	private static final String OPT_SOURCE_CODE = "--source";
 	private static final String OPT_LINE_RANGE = "--linerange";
@@ -30,8 +36,6 @@ public class CommandLineArgs {
 	private static final String[] allOptions = new String[] { OPT_SOURCE_FILE, OPT_SOURCE_CODE, OPT_LINE_RANGE, OPT_TARGET_FILE, OPT_SOURCE_DIR, OPT_RECURSIVE, OPT_TARGET_DIR, OPT_FILE_FILTER, OPT_PROFILE, OPT_PROFILE_DATA, OPT_RELEASE, OPT_CRLF, OPT_OVERWRITE, OPT_PARTIAL_RESULT, OPT_STATS, OPT_USED_RULES };
 
 	private static final String EXECUTABLE_NAME = ".\\abap-cleanerc.exe"; 
-	private static final String OPT_HELP_WINDOWS = "/?";
-	private static final String OPT_HELP_LINUX = "/man";
 	private static final char LINE_RANGE_SEP = '-';
 	private static final String LINE_RANGE_EXAMPLE = "\"20-35\"";
 
@@ -47,11 +51,20 @@ public class CommandLineArgs {
 	
 	@SuppressWarnings("unused")
 	public static CommandLineArgs create(Persistency persistency, String[] args) {
+		final String LINE_SEP = System.lineSeparator();
+
 		if (args == null || args.length == 0)
 			return null;
 
-		final String LINE_SEP = System.lineSeparator();
-		
+		// check whether help or version info is requested
+		if (args.length == 1 && (args[0].equals(OPT_HELP_WINDOWS) || args[0].equals(OPT_HELP_LINUX))) {
+			return new CommandLineArgs(CommandLineAction.SHOW_HELP);
+
+		} else if (args.length == 1 && args[0].equals(OPT_VERSION)) {
+			return new CommandLineArgs(CommandLineAction.SHOW_VERSION);
+		}
+
+		// in all other cases, cleanup is requested:
 		String sourceCode = null;
 		String targetPath = null; 
 		CleanupRange cleanupRange = null;
@@ -153,9 +166,6 @@ public class CommandLineArgs {
 			} else if (arg.equals(OPT_USED_RULES)) {
 				showUsedRules = true;
 
-			} else if (arg.equals(OPT_HELP_WINDOWS) || arg.equals(OPT_HELP_LINUX)) {
-				showHelp = true;
-
 			} else if (arg.equals(OPT_FILE_FILTER)) {
 				fileFilter = nextArg;
 
@@ -216,10 +226,22 @@ public class CommandLineArgs {
 
 		StringBuilder sb = new StringBuilder();
 
-		String usagePrefix = "    " + EXECUTABLE_NAME; 
+		String usagePrefix = "    " + EXECUTABLE_NAME;
 		String spacePrefix = StringUtil.repeatChar(' ', usagePrefix.length());
 
-		sb.append("Usage for single file:");
+		sb.append("Getting help and version information:");
+		sb.append(LINE_SEP);
+		sb.append(usagePrefix);
+		sb.append(" " + OPT_HELP_WINDOWS);
+		sb.append(LINE_SEP);
+		sb.append(usagePrefix);
+		sb.append(" " + OPT_HELP_LINUX);
+		sb.append(LINE_SEP);
+		sb.append(usagePrefix);
+		sb.append(" " + OPT_VERSION);
+		sb.append(LINE_SEP + LINE_SEP);
+
+		sb.append("Cleanup of single file:");
 		sb.append(LINE_SEP);
 		sb.append(usagePrefix);
 		sb.append(" {" + OPT_SOURCE_FILE + " sourcefile");
@@ -242,7 +264,7 @@ public class CommandLineArgs {
 		sb.append(" [" + OPT_USED_RULES + "]");
 		sb.append(LINE_SEP + LINE_SEP);
 
-		sb.append("Example for single file:");
+		sb.append("Example for cleanup of single file:");
 		sb.append(LINE_SEP);
 		sb.append(usagePrefix);
 		sb.append(" " + OPT_SOURCE_FILE + " \"CL_ANY_CLASS.txt\"");
@@ -255,7 +277,7 @@ public class CommandLineArgs {
 		sb.append(" " + OPT_USED_RULES);
 		sb.append(LINE_SEP + LINE_SEP);
 
-		sb.append("Usage for multiple files:");
+		sb.append("Cleanup of multiple files:");
 		sb.append(LINE_SEP);
 		sb.append(usagePrefix);
 		sb.append(" " + OPT_SOURCE_DIR + " sourcedir");
@@ -276,7 +298,7 @@ public class CommandLineArgs {
 		sb.append(" [" + OPT_USED_RULES + "]");
 		sb.append(LINE_SEP + LINE_SEP);
 
-		sb.append("Example for multiple files:");
+		sb.append("Example for cleanup of multiple files:");
 		sb.append(LINE_SEP);
 		sb.append(usagePrefix);
 		sb.append(" " + OPT_SOURCE_DIR + " \"C:\\temp\\source\"");
@@ -288,7 +310,7 @@ public class CommandLineArgs {
 		sb.append(" " + OPT_OVERWRITE);
 		sb.append(LINE_SEP + LINE_SEP);
 
-		sb.append("Options: ");
+		sb.append("Options for cleanup: ");
 		sb.append(LINE_SEP);
 		sb.append(getOptionHelp(OPT_SOURCE_FILE, "File name of an ABAP source file which is input to the cleanup."));
 		sb.append(getOptionHelp(OPT_SOURCE_CODE, "ABAP source code which is input to the cleanup."));
@@ -337,6 +359,7 @@ public class CommandLineArgs {
 	
 	// -------------------------------------------------------------------------
 
+	public final CommandLineAction action;
 	public final String sourceCode;
 	public final CleanupRange cleanupRange;
 	public final String targetPath; 
@@ -354,7 +377,6 @@ public class CommandLineArgs {
 	public final boolean showStats;
 	public final boolean showUsedRules;
 	public final String errors;
-	public final boolean showHelp;
 	
 	public boolean hasErrors() { return !StringUtil.isNullOrEmpty(errors); }
 	
@@ -362,7 +384,31 @@ public class CommandLineArgs {
 
 	public boolean writesResultCodeToOutput() { return isInSingleSourceMode() && StringUtil.isNullOrEmpty(targetPath); }
 	
+	private CommandLineArgs(CommandLineAction action) {
+		this.action = action;
+		
+		this.sourceCode = null;
+		this.targetPath = null;
+		this.cleanupRange = null;
+
+		this.sourcePaths = null;
+		this.sourceDir = null;
+		this.targetDir = null;
+
+		this.profileData = null;
+		this.abapRelease = null;
+		
+		this.lineSeparator = null;
+		this.overwrite = false;
+		this.partialResult = false;
+		this.showStats = false;
+		this.showUsedRules = false;
+		this.errors = null;
+	}
+	
 	private CommandLineArgs(String sourceCode, String targetPath, CleanupRange cleanupRange, String profileData, String abapRelease, String lineSeparator, boolean overwrite, boolean partialResult, boolean showStats, boolean showUsedRules, String errors, boolean showHelp) {
+		this.action = CommandLineAction.CLEANUP;
+		
 		this.sourceCode = sourceCode;
 		this.targetPath = targetPath;
 		this.cleanupRange = cleanupRange;
@@ -380,11 +426,11 @@ public class CommandLineArgs {
 		this.showStats = showStats;
 		this.showUsedRules = showUsedRules;
 		this.errors = errors;
-		this.showHelp = showHelp;
-
 	}
 
 	private CommandLineArgs(String sourceDir, String[] sourcePaths, String targetDir, String profileData, String abapRelease, String lineSeparator, boolean overwrite, boolean showStats, boolean showUsedRules, String errors, boolean showHelp) {
+		this.action = CommandLineAction.CLEANUP;
+		
 		this.sourceCode = null;
 		this.cleanupRange = null;
 		this.targetPath = null;
@@ -402,6 +448,5 @@ public class CommandLineArgs {
 		this.showStats = showStats;
 		this.showUsedRules = showUsedRules;
 		this.errors = errors;
-		this.showHelp = showHelp;
 	}
 }
