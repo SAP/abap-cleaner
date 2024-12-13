@@ -51,22 +51,40 @@ Your team may align on a common configuration and create a **team profile** from
 <table>
   <tr>
     <th width="50%">How to install, use, and configure</th>
-    <th width="50%">The open source journey of ABAP cleaner</th>
+    <th width="50%">How ABAP cleaner has evolved</th>
   </tr>
   <tr>
     <td width="50%">
       For a demo of what ABAP cleaner offers, how it is installed, used and configured, 
-      you can watch this <a href="https://www.youtube.com/watch?v=0mp0FuJV5_k">Devtoberfest session on YouTube</a>:
+      you can watch this <a href="https://www.youtube.com/watch?v=0mp0FuJV5_k">Devtoberfest 2023 session on YouTube</a>:
     </td>
+    <td width="50%">
+      In the <a href="https://youtu.be/jcux6BlkyIA?t=1193" target="_blank">Devtoberfest 2024 session</a>, 
+      Jörg-Michael shows how ABAP cleaner has evolved since its initial Open Source release 
+      (<a href="https://dam.sap.com/mac/app/p/pdf/asset/preview/wDK3Gbs?ltr=a&rc=10&doi=SAP1127022" target="_blank">slides</a>):
+    </td>
+  </tr>
+  <tr>
+    <td width="50%"><a href="https://www.youtube.com/watch?v=0mp0FuJV5_k" target="_blank"><img src="docs/images/recording_devtoberfest_2023.png" width="640"></a></td>
+    <td width="50%"><a href="https://youtu.be/jcux6BlkyIA?t=1193" target="_blank"><img src="docs/images/recording_devtoberfest_2024.png" width="640"></a></td>
+  </tr>
+  
+  <tr>
+    <th width="50%">The open source journey of ABAP cleaner</th>
+    <th width="50%"></th>
+  </tr>
+  <tr>
     <td width="50%">
       To hear about the story behind ABAP cleaner and its journey to open source, 
       watch this <a href="https://www.youtube.com/watch?v=g0kZAI6pxMc" target="_blank">webinar</a> 
       hosted by the SAP Open Source Program Office (<a href="https://d.dam.sap.com/a/m7QFgad/Open-Source%20Project%20ABAP%20Cleaner.pdf" target="_blank">slides</a>):
     </td>
+    <td width="50%">
+    </td>
   </tr>
   <tr>
-    <td width="50%"><a href="https://www.youtube.com/watch?v=0mp0FuJV5_k" target="_blank"><img src="docs/images/recording_devtoberfest.png" width="640"></a></td>
     <td width="50%"><a href="https://www.youtube.com/watch?v=g0kZAI6pxMc" target="_blank"><img src="docs/images/recording_open_source.png" width="640"></a></td>
+    <td width="50%"></td>
   </tr>
 </table>
 
