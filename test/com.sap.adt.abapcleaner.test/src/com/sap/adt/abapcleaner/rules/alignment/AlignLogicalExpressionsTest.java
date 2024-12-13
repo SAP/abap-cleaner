@@ -1188,4 +1188,90 @@ class AlignLogicalExpressionsTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testAlignOpeningParentheses() {
+		rule.configAlignElseIfWithBoolOps.setEnumValue(AlignStyle.RIGHT_ALIGN);
+
+		buildSrc("  IF  (   a   =   b )");
+		buildSrc("  AND   a = c.");
+		buildSrc("  ENDIF.");
+		buildSrc("");
+		buildSrc("  IF a = b");
+		buildSrc("  AND ( a = c ).");
+		buildSrc("  ENDIF.");
+		buildSrc("");
+		buildSrc("  IF ( a = b OR a = 1 )");
+		buildSrc("  AND a = c");
+		buildSrc("  OR ( b = c OR c = 1 ).");
+		buildSrc("  ENDIF.");
+
+		buildExp("  IF     ( a = b )");
+		buildExp("     AND a = c.");
+		buildExp("  ENDIF.");
+		buildExp("");
+		buildExp("  IF     a = b");
+		buildExp("     AND ( a = c ).");
+		buildExp("  ENDIF.");
+		buildExp("");
+		buildExp("  IF        ( a = b OR a = 1 )");
+		buildExp("        AND a = c");
+		buildExp("     OR ( b = c OR c = 1 ).");
+		buildExp("  ENDIF.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testAlignOpeningParenthesesDeep() {
+		rule.configAlignElseIfWithBoolOps.setEnumValue(AlignStyle.RIGHT_ALIGN);
+
+		buildSrc("  IF  (  (  a  =  b  OR  a  =  1  )");
+		buildSrc("  AND  a  =  c");
+		buildSrc("  OR ( b = c");
+		buildSrc("  AND ( c = 1 ) ) )");
+		buildSrc("  AND b = c.");
+		buildSrc("  ENDIF.");
+		buildSrc("");
+		buildSrc("  IF ( ( a = b OR a = 1 )");
+		buildSrc("  AND ( a = c )");
+		buildSrc("  OR ( ( b = c )");
+		buildSrc("  AND  (  c  =  1  )  )  )");
+		buildSrc("  AND ( b = c ).");
+		buildSrc("  ENDIF.");
+		buildSrc("");
+		buildSrc("  IF ( a = b");
+		buildSrc("  OR c = d )");
+		buildSrc("  AND a = c");
+		buildSrc("  OR a = d");
+		buildSrc("  AND  (  a  =  c  OR  b  =  d  ).");
+		buildSrc("  ENDIF.");
+
+		buildExp("  IF     (        ( a = b OR a = 1 )");
+		buildExp("              AND a = c");
+		buildExp("           OR (     b = c");
+		buildExp("                AND ( c = 1 ) ) )");
+		buildExp("     AND b = c.");
+		buildExp("  ENDIF.");
+		buildExp("");
+		buildExp("  IF     (        ( a = b OR a = 1 )");
+		buildExp("              AND ( a = c )");
+		buildExp("           OR (     ( b = c )");
+		buildExp("                AND ( c = 1 ) ) )");
+		buildExp("     AND ( b = c ).");
+		buildExp("  ENDIF.");
+		buildExp("");
+		buildExp("  IF        (    a = b");
+		buildExp("              OR c = d )");
+		buildExp("        AND a = c");
+		buildExp("     OR     a = d");
+		buildExp("        AND ( a = c OR b = d ).");
+		buildExp("  ENDIF.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }
