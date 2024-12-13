@@ -101,7 +101,7 @@ To integrate ABAP cleaner in other processes, you may call the "abap-cleaner**c*
 from the command line with the following arguments for cleaning either a single file or multiple files in a directory:
 
 ```
-Getting help and version information:
+Shop help or version information:
     .\abap-cleanerc.exe /?
     .\abap-cleanerc.exe /man
     .\abap-cleanerc.exe --version
@@ -142,7 +142,6 @@ Options for cleanup:
     --release           ABAP release to restrict syntax of cleanup changes, e.g. "758"
                         Without this option, the latest ABAP syntax will be allowed.
 
-    --crlf              Use CRLF = "\r\n" as line separator (default: LF = "\n").
     --targetfile        Target file name to which the cleanup result will be saved.
                         Without this option, the cleanup result will be written to the standard output.
     --targetdir         Target directory name to which the cleanup files will be saved
@@ -151,6 +150,9 @@ Options for cleanup:
                         Without this option, an error will be raised if the target file already exists.
     --partialresult     Restrict output to the cleanup result of the --linerange (if supplied).
                         Without this option, the cleanup result of whole code document will be returned.
+    --crlf              Use CRLF = "\r\n" as line separator (default: LF = "\n").
+    --simulate          Run cleanup without writing the result code to a file or to standard output.
+                        Use this option to check the potential effect of cleanup with --stats or --usedrules.
 
     --stats             Write statistical summary to standard output.
     --usedrules         Write list of used rules to standard output.
