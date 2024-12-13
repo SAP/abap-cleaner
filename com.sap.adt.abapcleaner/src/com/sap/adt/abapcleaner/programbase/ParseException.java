@@ -14,4 +14,8 @@ public class ParseException extends ExceptionBase {
 	public ParseException(Code code, int lineNum, String message) {
 		super(ExceptionSeverity.S2_STOP_TASK, code.sourceName, lineNum, "Parse error in line " + Cult.format(lineNum) + ": " + message);
 	}
+
+	public ParseException(Code code, String message, boolean skipLog) {
+		super(ExceptionSeverity.S2_STOP_TASK, code.sourceName, 0, message, skipLog);
+	}
 }

@@ -8,24 +8,41 @@ public enum Language {
 	SQL, 
 	GRAPH, 
 	LLANG,
-	OTHER;
+	OTHER,
+	NOT_SUPPORTED; // esp. RAP Behavior Definition Language (BDL)
 	
 	public static Language preview(String text) {
+		final String BDL_OR_DDL_COMMENT = "//";
+		final char[] LINE_FEED = new char[] { 10, 13 };
+		final char[] SPACE_OR_LINE_FEED = new char[] { 10, 13, ' ' };
+
+		Language bestGuess = Language.ABAP;
 		int pos = 0;
 		
-		// skip initial spaces or line feeds 
+		// skip initial spaces, line feeds and // comments 
 		while (pos < text.length()) {
-			char c = text.charAt(pos);
-			if (c == 10 || c == 13 || c == ' ') {
-				++pos;
-				continue;
+			// skip spaces or line feeds (if any)
+			pos = StringUtil.indexOfNotAnyOf(text, SPACE_OR_LINE_FEED, pos);
+			if (pos < 0)
+				return bestGuess;
+			
+			// skip "//" comments, which are used in both DDL and BDL (RAP behavior definition language)
+			if (!StringUtil.containsAnyAt(text, pos, BDL_OR_DDL_COMMENT)) 
+				break;
+			bestGuess = Language.DDL; // only used if no code is found in the document
+			pos = StringUtil.indexOfAny(text, LINE_FEED, pos);
+			if (pos < 0) {
+				return bestGuess;
 			}
-			break;
 		}
 		
 		// distinguish between (CDS) DDL and ABAP code
-		// cp. Command.getDdlOrDclEntityNameToken()
-		if (StringUtil.containsAnyAt(text, pos, 
+		if (StringUtil.containsAnyAt(text, pos, "managed", "unmanaged", "abstract;", "projection;", "interface;")) {
+			// cleanup of RAP behavior definition language (BDL) is not supported
+			return Language.NOT_SUPPORTED;
+			
+			// cp. Command.getDdlOrDclEntityNameToken()
+		} else if (StringUtil.containsAnyAt(text, pos, 
 				com.sap.adt.abapcleaner.base.DDL.ANNOTATION_SIGN_STRING, 
 				com.sap.adt.abapcleaner.base.DDL.LINE_END_COMMENT, 
 				com.sap.adt.abapcleaner.base.DDL.LINE_END_MINUS_COMMENT, 
@@ -56,7 +73,7 @@ public enum Language {
 			return Language.DCL;
 
 		} else {
-			return Language.ABAP;
+			return bestGuess;
 		}
 	}
 	

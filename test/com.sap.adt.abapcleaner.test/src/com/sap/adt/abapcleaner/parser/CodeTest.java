@@ -1157,4 +1157,40 @@ public class CodeTest extends CodeTestBase {
 				+ SEP + "/*+[internal] {" + LF + "..." + LF + "}*/", code.toString(SEP));
 	}
 
+	void testRapManagedBdef() {
+		buildSrc("managed implementation in class any_class unique;");
+
+		testParseCodeExpectingException("not supported");
+	}
+
+	void testRapUnmanagedBdef() {
+		buildSrc("");
+		buildSrc("// any comment");
+		buildSrc("unmanaged implementation in class any_class unique;");
+		buildSrc("strict;");
+
+		testParseCodeExpectingException("not supported");
+	}
+
+	void testRapAbstractBdef() {
+		buildSrc("abstract;");
+
+		testParseCodeExpectingException("not supported");
+	}
+
+	void testRapProjectionBdef() {
+		buildSrc("  // any comment");
+		buildSrc("");
+		buildSrc("  // other comment");
+		buildSrc("projection;");
+
+		testParseCodeExpectingException("not supported");
+	}
+
+	void testRapBdefInterface() {
+		buildSrc("interface;");
+		buildSrc("use draft;");
+
+		testParseCodeExpectingException("not supported");
+	}
 }
