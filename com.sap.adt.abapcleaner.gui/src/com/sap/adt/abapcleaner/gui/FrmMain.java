@@ -145,21 +145,20 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 				cleanInteractively(null, ABAP.NEWEST_RELEASE, null, persistency.getStartupPath(), false, null, null, null, false);
 
 			} else {
-				if (commandLineArgs.action == CommandLineAction.SHOW_HELP) {
+				if (commandLineArgs.hasErrors()) {
+					// wrong or inconsistent command line args
+					System.err.println(commandLineArgs.errors);
+					System.err.println("");
+					System.err.flush();
+					System.out.print(CommandLineArgs.getHelp(persistency));
+
+				} else if (commandLineArgs.action == CommandLineAction.SHOW_HELP) {
 					System.out.print(CommandLineArgs.getHelp(persistency));
 
 				} else if (commandLineArgs.action == CommandLineAction.SHOW_VERSION) {
 					System.out.print(Program.PRODUCT_NAME + " " + Program.getVersion());
 
-				} else if (commandLineArgs.hasErrors()) {
-					if (commandLineArgs.hasErrors()) {
-						System.err.println(commandLineArgs.errors);
-						System.err.println("");
-						System.err.flush();
-					}
-					System.out.print(CommandLineArgs.getHelp(persistency));
-
-				} else {
+				} else { // if (commandLineArgs.action == CommandLineAction.CLEANUP)
 					// use application args for automatic cleanup
 					cleanAutomatically(commandLineArgs, System.out);
 				}
@@ -204,7 +203,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		for (String sourcePath : commandLineArgs.sourcePaths) {
 			String sourceCode = persistency.readAllTextFromFile(sourcePath);
 
-			CleanupResult result = cleanAutomatically(sourceCode, commandLineArgs.abapRelease, commandLineArgs.cleanupRange, null, profile, commandLineArgs.showStats, commandLineArgs.lineSeparator);
+			CleanupResult result = cleanAutomatically(sourceCode, commandLineArgs.abapRelease, commandLineArgs.cleanupRange, null, profile, commandLineArgs.showStatsOrUsedRules(), commandLineArgs.lineSeparator);
 			if (result == null) {
 				out.println("Cleanup for file " + sourcePath + " cancelled.");
 				continue;
@@ -220,7 +219,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 	}
 
 	private static void cleanSingleSourceAutomatically(CommandLineArgs commandLineArgs, String sourceCode, PrintStream out, Profile profile) {
-		CleanupResult result = cleanAutomatically(commandLineArgs.sourceCode, commandLineArgs.abapRelease, commandLineArgs.cleanupRange, null, profile, commandLineArgs.showStats, commandLineArgs.lineSeparator);
+		CleanupResult result = cleanAutomatically(commandLineArgs.sourceCode, commandLineArgs.abapRelease, commandLineArgs.cleanupRange, null, profile, commandLineArgs.showStatsOrUsedRules(), commandLineArgs.lineSeparator);
 		if (result == null) {
 			out.println("Cleanup cancelled.");
 			return;
@@ -247,7 +246,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		}
 
 		// write statistics and/or used cleanup rules, if requested
-		if (commandLineArgs.showStats || commandLineArgs.showUsedRules) {
+		if (commandLineArgs.showStatsOrUsedRules()) {
 			// in case of multiple files, start with the current folder and file
 			if (!StringUtil.isNullOrEmpty(sourceFolderFile))
 				out.println(sourceFolderFile);
@@ -260,7 +259,9 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 			out.println();
 		}
 
-		if (commandLineArgs.writesResultCodeToOutput()) {
+		if (commandLineArgs.simulate) {
+			// do nothing: this option is used if only the potential cleanup result is needed, using  .showStatsOrUsedRules()
+		} else if (commandLineArgs.writesResultCodeToOutput()) {
 			out.print(output);
 		} else {
 			Persistency persistency = Persistency.get();

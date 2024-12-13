@@ -76,6 +76,7 @@ public class CommandLineArgsTest {
 		assertNull(args.targetPath); 
 		assertFalse(args.overwrite);
 		assertFalse(args.partialResult);
+		assertFalse(args.showStatsOrUsedRules());
 		assertFalse(args.showStats);
 		assertFalse(args.showUsedRules);
 		assertEquals("", args.errors);
@@ -104,20 +105,25 @@ public class CommandLineArgsTest {
 				"--overwrite", "--partialresult", "--stats", "--usedrules"} );
 	
 		assertEquals(CommandLineAction.CLEANUP, args.action);
+		assertEquals("", args.errors);
+		
 		assertEquals(anySourceCode, args.sourceCode);
 		assertEquals(20, args.cleanupRange.startLine);
 		assertEquals(35, args.cleanupRange.lastLine);
 		assertTrue(args.cleanupRange.expandRange);
+		
 		assertEquals(anyProfileData, args.profileData);
 		assertEquals("757", args.abapRelease);
 		
-		assertEquals("\r\n", args.lineSeparator);
+		assertFalse(args.simulate);
 		assertEquals(targetPath, args.targetPath); 
-		assertTrue(args.overwrite);
 		assertTrue(args.partialResult);
+		assertTrue(args.overwrite);
+		assertEquals("\r\n", args.lineSeparator);
+
+		assertTrue(args.showStatsOrUsedRules());
 		assertTrue(args.showStats);
 		assertTrue(args.showUsedRules);
-		assertEquals("", args.errors);
 
 		assertFalse(args.hasErrors());
 		assertTrue(args.isInSingleSourceMode());
@@ -135,7 +141,28 @@ public class CommandLineArgsTest {
 
 		assertEquals(CommandLineAction.CLEANUP, args.action);
 		assertEquals(1, args.sourcePaths.length);
+
+		assertFalse(args.simulate);
 		assertTrue(args.overwrite);
+	}
+
+	@Test
+	void testCreateFromSourceDirSimulate() {
+		persistency.prepareFile("src", "any_source.abap", anySourceCode);
+		
+		CommandLineArgs args = CommandLineArgs.create(persistency, new String[] {
+				"--sourcedir", "src",
+				"--simulate", "--usedrules"} );
+
+		assertEquals(CommandLineAction.CLEANUP, args.action);
+		assertEquals(1, args.sourcePaths.length);
+
+		assertTrue(args.simulate);
+		assertFalse(args.writesResultCodeToOutput());
+	
+		assertTrue(args.showStatsOrUsedRules());
+		assertFalse(args.showStats);
+		assertTrue(args.showUsedRules);
 	}
 
 	@Test
@@ -151,12 +178,14 @@ public class CommandLineArgsTest {
 				"--overwrite" } );
 
 		assertEquals(CommandLineAction.CLEANUP, args.action);
-		assertEquals(1, args.sourcePaths.length);
-		assertTrue(args.overwrite);
-		
 		assertFalse(args.hasErrors());
+
+		assertEquals(1, args.sourcePaths.length);
 		assertFalse(args.isInSingleSourceMode());
+
+		assertFalse(args.simulate);
 		assertFalse(args.writesResultCodeToOutput());
+		assertTrue(args.overwrite);
 	}
 	
 	@Test
@@ -166,9 +195,9 @@ public class CommandLineArgsTest {
 				"--profiledata", anyProfileData } ); 
 	
 		assertEquals(CommandLineAction.CLEANUP, args.action);
+		assertFalse(args.hasErrors());
 		assertEquals(anySourceCode, args.sourceCode);
 		assertEquals(anyProfileData, args.profileData);
-		assertFalse(args.hasErrors());
 	}
 	
 	@Test
@@ -355,5 +384,30 @@ public class CommandLineArgsTest {
 				"--unknownoption" } );
 
 		assertErrorsContain(args, "Unknown option");
+	}
+	
+	@Test
+	void testCreateErrorSimulateAndTargetFile() {
+		persistency.prepareFile("src", "any_source.abap", anySourceCode);
+		
+		CommandLineArgs args = CommandLineArgs.create(persistency, new String[] {
+				"--sourcefile", "src",
+				"--simulate",
+				"--targetfile", "any_target.abap", "--overwrite"} );
+
+		assertErrorsContain(args, "Invalid combination: --targetfile");
+		assertErrorsContain(args, "Invalid combination: --overwrite");
+	}
+	
+	@Test
+	void testCreateErrorSimulateAndTargetDir() {
+		persistency.prepareFile("src", "any_source.abap", anySourceCode);
+		
+		CommandLineArgs args = CommandLineArgs.create(persistency, new String[] {
+				"--sourcedir", "src",
+				"--simulate",
+				"--targetdir", "tgt"} );
+
+		assertErrorsContain(args, "Invalid combination: --targetdir");
 	}
 }
