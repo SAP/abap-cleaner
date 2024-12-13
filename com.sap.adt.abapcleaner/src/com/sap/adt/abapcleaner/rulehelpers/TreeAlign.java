@@ -49,11 +49,16 @@ public class TreeAlign {
 		}
 		
 		if (cell == null || continuesLine || cell.getFirstToken() == logicalExpression.getFirstToken()) {
-			if (curCol != null && curCol.getNext() != null && curCol.getNext().columnType == columnType) {
-				curCol = curCol.getNext();
-			} else {
+			TreeAlignColumn nextCol = (curCol == null) ? null : curCol.getNext();
+			boolean nextColHasContent = (nextCol != null && !nextCol.isEmpty());
+			boolean newCellHasContent = (cell != null);
+			if (nextCol == null || nextCol.columnType != columnType || nextCol.getOpensBracket() && (nextColHasContent != newCellHasContent)) {
+				// structural mismatch - start a new column (i.e. a new, independently aligned 'branch' of the tree)
 				curCol = new TreeAlignColumn(columnType, curCol);
 				allColumns.add(curCol);
+			} else {
+				// structural match with the next column of previous line - continue matching
+				curCol = nextCol;
 			}
 		} else {
 			// find first column with matching brackLevel and columnType
@@ -142,7 +147,7 @@ public class TreeAlign {
 		for (int i = allColumns.size() - 1; i >= 0; --i) {
 			TreeAlignColumn column = allColumns.get(i);
 			if (column.getNext() == null) {
-				while (column != null && column.getBranchCount() <= 1 && (column.getBelongsToBoolOp() || !column.isFirstNonEmptyAfterBranch())
+				while (column != null && column.getBranchCount() <= 1 && (!column.isFirstNonEmptyAfterBranch() || column.columnType == TreeAlignColumnType.BOOL_OPERATOR) 
 						&& (column.isEmpty() || column.getCellCount() == 1 || column.getClosesBracket() || column.columnType == TreeAlignColumnType.BOOL_OPERATOR)) {
 					column.doNotAlign = true;
 					column = column.prev;
