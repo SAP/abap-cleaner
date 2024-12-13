@@ -49,6 +49,7 @@ public class Tokenizer {
 	private int readPos;
 	private boolean isInMultiLineComment;
 	
+	private Language previewLanguage;
 	private Language curLanguage;
 	/** the ABAP keyword "ENDEXEC" or "ENDMETHOD" that will end the current non-ABAP section */
 	private String abapKeywordEndingNonAbapSection = null;
@@ -58,6 +59,7 @@ public class Tokenizer {
 	private int lastReportedPos;
 	private int reportSpan;
 
+	boolean isLanguageSupported() { return previewLanguage != Language.NOT_SUPPORTED; }
 	int getReadPos() { return readPos; }
 	int getLineNum() { return lineNum; }
 	Language getCurLanguage() { return curLanguage; }
@@ -68,7 +70,8 @@ public class Tokenizer {
 		this.readPos = 0;
 		this.isInMultiLineComment = false;
 		
-		this.curLanguage = Language.preview(text);
+		this.previewLanguage = Language.preview(text);
+		this.curLanguage = previewLanguage;
 		
 		this.progress = progress;
 		this.lastReportedPos = readPos;
@@ -78,7 +81,7 @@ public class Tokenizer {
 	
 	/** returns the next Token, or null if the code string is exhausted */
 	Token getNext() throws UnexpectedSyntaxException {
-		if (readPos >= text.length())
+		if (!isLanguageSupported() || readPos >= text.length())
 			return null;
 
 		// identify whitespace

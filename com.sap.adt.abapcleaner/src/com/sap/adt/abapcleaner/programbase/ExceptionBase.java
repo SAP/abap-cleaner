@@ -22,6 +22,7 @@ public abstract class ExceptionBase extends Throwable { // make this a checked e
    final LocalDateTime raiseTime;
    final String sourceName;
    final int sourceLineNum;
+   final boolean skipLog;
    
    protected ExceptionBase(ExceptionSeverity severity, String sourceName, int sourceLineNum, String message) {
       super(message);
@@ -29,14 +30,28 @@ public abstract class ExceptionBase extends Throwable { // make this a checked e
       this.severity = severity;
       this.sourceName = sourceName != null ? sourceName : "";
       this.sourceLineNum = sourceLineNum;
+      this.skipLog = false;
+   }
+
+   protected ExceptionBase(ExceptionSeverity severity, String sourceName, int sourceLineNum, String message, boolean skipLog) {
+      super(message);
+      this.raiseTime = LocalDateTime.now();
+      this.severity = severity;
+      this.sourceName = sourceName != null ? sourceName : "";
+      this.sourceLineNum = sourceLineNum;
+      this.skipLog = skipLog;
    }
 
    public final void addToLog() {
-      Program.getLog().add(this, null);
+   	if (!skipLog) {
+   		Program.getLog().add(this, null);
+   	}
    }
 
    public final void addToLog(String addMessage) {
-      Program.getLog().add(this, addMessage);
+   	if (!skipLog) {
+   		Program.getLog().add(this, addMessage);
+   	}
    }
    
    public final String getLineAndMessage(String addMessage) {

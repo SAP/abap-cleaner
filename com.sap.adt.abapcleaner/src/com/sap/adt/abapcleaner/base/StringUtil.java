@@ -330,7 +330,7 @@ public final class StringUtil {
 	}
 
 	public static int indexOfAny(String string, char[] anyOf, int startIndex) {
-		if (string == null)
+		if (string == null || startIndex < 0)
 			return -1;
 		
 		int index = startIndex;
@@ -340,6 +340,28 @@ public final class StringUtil {
 				if (c == match)
 					return index;
 			}
+			++index;
+		}
+		return -1;
+	}
+
+	/** returns the index of the first char that is NOT in the supplied list of chars */
+	public static int indexOfNotAnyOf(String string, char[] anyOf, int startIndex) {
+		if (string == null)
+			return -1;
+		
+		int index = startIndex;
+		while (index < string.length()) {
+			char c = string.charAt(index);
+			boolean isAnyOf = false;
+			for (char match : anyOf) {
+				if (c == match) {
+					isAnyOf = true;
+					break;
+				}
+			}
+			if (!isAnyOf)
+				return index;
 			++index;
 		}
 		return -1;

@@ -30,6 +30,8 @@ class Parser {
 
 	final Code parse(IProgress progress, Code code, int lineNumOffset, int surroundingTextOffset) throws ParseException {
 		Tokenizer tokenizer = new Tokenizer(text, lineNumOffset, progress);
+		if (!tokenizer.isLanguageSupported())
+			throw new ParseException(code, "This language is not supported by " + Program.PRODUCT_NAME + "!", true);
 
 		curCommand = null;
 		lastCommand = null;
