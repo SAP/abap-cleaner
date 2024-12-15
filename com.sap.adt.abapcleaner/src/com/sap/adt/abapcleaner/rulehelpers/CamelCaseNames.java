@@ -138,7 +138,7 @@ public class CamelCaseNames {
 
 		edocProcessPrefixes = initializeHashSet( new String[] { 
 				"CONL", "DELN", "ICDL", "ICML", "INCL", "INCO", "INLE", "INSB", "INVC", "INVE", "INVI", "INVL", "INVM", 
-				"INVO", "INVP", "INVR", "INVS", "INVT", "MATM", "PAYR", "RETR", "TRRE", "TXCE", "TXCV" } ); 
+				"INVO", "INVP", "INVR", "INVS", "INVT", "MATM", "PAYR", "RETR", "TRRE", "TXCE", "TXCV", "VIIL", "VIIS" } ); 
 		
 		extensionNumberPrefixes = initializeHashSet( new String[] { "1", "2", "3", "4", "5", "6", "7", "8", "9" } ); // added: "1"
 		
