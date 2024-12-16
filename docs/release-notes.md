@@ -6,7 +6,30 @@ as well as bugfixes of reported issues, i.e. anything that enhances or changes t
 For a complete list of changes (including documentation, tests, refactoring etc.), please refer to 
 the list of [commits](../../../commits/main).
 
-## 2024-11-11 (version 1.21.1)
+## 2024-12-16 (version 1.21.0)
+
+Great **thanks** to [**bnichell**](https://github.com/bnichell), [**Ronson1909**](https://github.com/Ronson1909),
+ [**vonglan**](https://github.com/vonglan), [**StefanRutzmoser**](https://github.com/StefanRutzmoser),
+ [**blackfish5**](https://github.com/blackfish5), [**ConjuringCoffee**](https://github.com/ConjuringCoffee),
+ [**frostrubin**](https://github.com/frostrubin) and [**fabianlupa**](https://github.com/fabianlupa) for inspiring these improvements and fixes!
+
+* Enhanced rule '**Align CLEAR:, FREE:, SORT and CATCH**' for **CATCH** ([#376](../../../issues/376))
+* Enhanced rule '**Align parameters and components**' for **IMPORT** ... and **EXPORT** ... ([#378](../../../issues/378))
+* Enhanced rule '**Align parameters and components**' for **RAISE EVENT** ... EXPORTING ([#377](../../../issues/377))
+* Enhanced rule '**Align parameters and components**' etc. for lower **maximum line length** ([#362](../../../issues/362))
+* Enhanced rule '**Align METHODS ... FOR TESTING**' etc. for multiple **periods** ([#379](../../../issues/379))
+* Enhanced **command line** with **--simulate** parameter ([#264](../../../issues/264))
+* Enhanced **command line** with **--version** parameter ([#339](../../../issues/339))
+* Fixed rule '**Align logical expressions**' for **parenthesis at line start** ([#384](../../../issues/384))
+* Fixed rule '**Align parameters and components**' for **comment** inside **inner parenthesis** ([#380](../../../issues/380))
+* Fixed rule '**Replace CREATE OBJECT with NEW constructor**' for **target variable usage** in parameters ([#381](../../../issues/381))
+* Fixed rule '**Make implicit type explicit**' for making TYPE explicit, but not **LENGTH** ([#375](../../../issues/375))
+* Fixed **Parser** to **exclude** processing of **RAP behavior definitions**
+* Enhanced **README** with link to **Devtoberfest 2024 session**
+* Updated **CONTRIBUTING**.md, including section on **AI-generated code**
+* Updated **known CamelCase names** for CDS views and fields
+
+## 2024-11-11 (version 1.20.1)
 
 **Thank you** very much, [**openPhiL**](https://github.com/openPhiL) and
  [**ConjuringCoffee**](https://github.com/ConjuringCoffee), for your bug reports!

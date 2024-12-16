@@ -1,8 +1,8 @@
 [<-- previous rule](AlignWithSecondWordRule.md) | [overview](../rules.md) | [next rule -->](AlignSelectClausesRule.md)
 
-# Align CLEAR:, FREE: and SORT
+# Align CLEAR:, FREE:, SORT and CATCH
 
-Aligns lists of variables after CLEAR: and FREE: and lists of components after SORT ... BY.
+Aligns lists of variables after CLEAR: and FREE:, lists of components after SORT ... BY, and lists of exception classes after CATCH.
 
 ## Options
 
@@ -10,13 +10,14 @@ Aligns lists of variables after CLEAR: and FREE: and lists of components after S
 * CLEAR: Use one line per variable: \[always\]
 * FREE: Use one line per variable: \[always\]
 * SORT: Use one line per variable: \[always\]
+* CATCH: Use one line per exception: \[always\]
 
 ## Examples
 
 
 ```ABAP
 
-  METHOD align_clear_free_and_sort.
+  METHOD align_clear_free_sort_catch.
     CLEAR: mv_any_value,
       mv_other_value,
          ls_any_structure-any_component,
@@ -39,6 +40,16 @@ Aligns lists of variables after CLEAR: and FREE: and lists of components after S
      comp3 comp4 AS TEXT,
           mt_third_table BY  component1 AS TEXT
       component2   component3.
+
+    TRY.
+        any_method( ).
+
+      CATCH cx_any_exception  cx_other_exception
+        cx_third_exception INTO DATA(lx_exception) ##NO_HANDLER.
+
+      CATCH cx_fourth_exception cx_fifth_exception   cx_sixth_exception cx_seventh_exception cx_eighth_exception  cx_ninth_exception INTO lx_exception.
+        " handle exceptions
+    ENDTRY.
   ENDMETHOD.
 ```
 
@@ -46,7 +57,7 @@ Resulting code:
 
 ```ABAP
 
-  METHOD align_clear_free_and_sort.
+  METHOD align_clear_free_sort_catch.
     CLEAR: mv_any_value,
            mv_other_value,
            ls_any_structure-any_component,
@@ -76,6 +87,22 @@ Resulting code:
           mt_third_table BY component1 AS TEXT
                             component2
                             component3.
+
+    TRY.
+        any_method( ).
+
+      CATCH cx_any_exception
+            cx_other_exception
+            cx_third_exception INTO DATA(lx_exception) ##NO_HANDLER.
+
+      CATCH cx_fourth_exception
+            cx_fifth_exception
+            cx_sixth_exception
+            cx_seventh_exception
+            cx_eighth_exception
+            cx_ninth_exception INTO lx_exception.
+        " handle exceptions
+    ENDTRY.
   ENDMETHOD.
 ```
 

@@ -43,6 +43,11 @@ This rule is part of the **essential** profile, as it is explicitly demanded by 
         cx_message     = 1
         others         = 2.
 
+    " evaluating the target variable as an actual parameter
+    " only works with CREATE OBJECT, which immediately assigns mo_target:
+    CREATE OBJECT mo_target
+      EXPORTING iv_value = mo_target->gc_static_value.
+
     " chains can only be processed if they are first unchained
     CREATE OBJECT: lx_message, lx_other_message.
 
@@ -76,6 +81,11 @@ Resulting code:
       EXCEPTIONS
         cx_message     = 1
         others         = 2.
+
+    " evaluating the target variable as an actual parameter
+    " only works with CREATE OBJECT, which immediately assigns mo_target:
+    CREATE OBJECT mo_target
+      EXPORTING iv_value = mo_target->gc_static_value.
 
     " chains can only be processed if they are first unchained
     lx_message = NEW #( ).
