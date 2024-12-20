@@ -194,6 +194,7 @@ public final class ABAP {
 				"ltrim(", "mod(", "monthname(", "occurrences_regexpr(", "replace(", "replace_regexpr(", "right(", "round(", "rpad(", "rtrim(", "substring(", "substring_regexpr(", "tims_from_timn(", "tims_is_valid(", "tims_to_timn(", "to_blob(", "to_clob(", 
 				"tstmp_add_seconds(", "tstmp_current_utctimestamp(", "tstmp_is_valid(", "tstmp_seconds_between(", "tstmp_to_dats(", "tstmp_to_dst(", "tstmp_to_tims(", "tstmpl_from_utcl(", "tstmpl_to_utcl(", "unit_conversion(", "upper(", "utcl_add_seconds(", 
 				"utcl_current(", "utcl_seconds_between(", "uuid(", "weekday(" }; 
+	public final static String[] abapSqlWinFunctions = new String[] { "AVG(", "CORR(", "CORR_SPEARMAN(", "COUNT(", "DENSE_RANK(", "FIRST_VALUE(", "LAG(", "LAST_VALUE(", "LEAD(", "MAX(", "MEDIAN(", "MIN(", "NTILE(", "RANK(", "ROW_NUMBER(", "STDDEV(", "SUM(", "VAR(" }; 
 	public final static String[] abapSqlFunctionsWithAssignments = new String[] {
 			// String Functions
 			"like_regexpr(", "locate_regexpr(", "locate_regexpr_after(", "occurrences_regexpr(", "replace_regexpr(", "substring_regexpr(",

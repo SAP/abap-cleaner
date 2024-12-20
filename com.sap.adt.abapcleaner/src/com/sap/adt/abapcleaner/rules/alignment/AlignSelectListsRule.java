@@ -433,13 +433,23 @@ public class AlignSelectListsRule extends RuleForCommands {
 		Token token = start;
 		do {
 			// determine the next field
-			Term field;
+			Term field = null;
 			if (clauseType == SelectClause.GROUP_BY && token.matchesOnSiblings(true, "GROUPING", "SETS|SETS(")) {
 				// GROUPING SETS ( ... )
 				Token closingParens = token.getLastTokenOnSiblings(true, TokenSearch.ASTERISK, ")");
 				field = Term.createForTokenRange(token, closingParens);
-			} else {
-				field = Term.createArithmetic(token);
+			} else  {
+				// identify window expressions: 'win_func OVER( [PARTITION BY sql_exp1, sql_exp2 ...] [ORDER BY ... ] )';
+				// win_func could be AVG(...), MEDIAN(...), MAX(...), MIN(...) etc.
+				if (token.getOpensLevel() && token.isAnyKeyword(ABAP.abapSqlWinFunctions)) {
+					Token overToken = token.getNextCodeSibling().getNextCodeSibling();
+					if (overToken != null && overToken.isKeyword("OVER(")) {
+						field = Term.createForTokenRange(token, overToken.getNextCodeSibling());
+					}
+				} // do NOT attach with else if!
+				if (field == null) {
+					field = Term.createArithmetic(token);
+				}
 			}
 			AlignLine line = table.addLine();
 			line.setCell(Columns.FIELD.getValue(), new AlignCellTerm(field));
@@ -456,7 +466,7 @@ public class AlignSelectListsRule extends RuleForCommands {
 			} else if (token.isAnyKeyword("ASCENDING", "DESCENDING", "NULLS")) { // [ASCENDING|DESCENDING] [{NULLS FIRST}|{NULLS LAST}],
 				Token firstInTerm = token;
 				Token lastInTerm = firstInTerm;
-				while (token.isAnyKeyword("ASCENDING", "DESCENDING", "NULLS", "FIRST", "LAST")) {
+				while (token != null && token.isAnyKeyword("ASCENDING", "DESCENDING", "NULLS", "FIRST", "LAST")) {
 					lastInTerm  = token;
 					token = token.getNextCodeSibling();
 				}

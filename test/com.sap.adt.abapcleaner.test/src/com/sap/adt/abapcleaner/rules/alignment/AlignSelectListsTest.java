@@ -848,4 +848,24 @@ class AlignSelectListsTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testSingleFieldWithWindowExpression() {
+		buildSrc("  SELECT SINGLE");
+		buildSrc("  FIRST_VALUE( any_field )");
+		buildSrc("    OVER( PARTITION BY other_field");
+		buildSrc("          ORDER BY other_field ASCENDING )");
+		buildSrc("    FROM any_table");
+		buildSrc("    INTO @DATA(lv_any_value).");
+
+		buildExp("  SELECT SINGLE FIRST_VALUE( any_field )");
+		buildExp("                  OVER( PARTITION BY other_field");
+		buildExp("                        ORDER BY other_field ASCENDING )");
+		buildExp("    FROM any_table");
+		buildExp("    INTO @DATA(lv_any_value).");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }

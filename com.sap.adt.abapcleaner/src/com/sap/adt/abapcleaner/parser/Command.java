@@ -3473,7 +3473,7 @@ public class Command {
 	}
 
 	public final boolean representsEmptyLinesAtCodeEnd() {
-		return (this == parentCode.lastCommand && firstToken == lastToken && firstToken.lineBreaks > 0 && firstToken.getTextLength() == 0);
+		return (this == parentCode.lastCommand && firstToken == lastToken && (firstToken.lineBreaks > 0 || firstToken.spacesLeft > 0) && firstToken.getTextLength() == 0);
 	}
 
 	public final boolean belongsToMacroDefinition() {
