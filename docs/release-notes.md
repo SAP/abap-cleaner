@@ -6,7 +6,7 @@ as well as bugfixes of reported issues, i.e. anything that enhances or changes t
 For a complete list of changes (including documentation, tests, refactoring etc.), please refer to 
 the list of [commits](../../../commits/main).
 
-## 2024-12-23 (version 1.12.1)
+## 2024-12-23 (version 1.21.1)
 
 **Thanks** to [**freakadunse**](https://github.com/freakadunse) for reporting the bug behind this release!
 
