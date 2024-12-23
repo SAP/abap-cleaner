@@ -6,6 +6,13 @@ as well as bugfixes of reported issues, i.e. anything that enhances or changes t
 For a complete list of changes (including documentation, tests, refactoring etc.), please refer to 
 the list of [commits](../../../commits/main).
 
+## 2024-12-23 (version 1.12.1)
+
+**Thanks** to [**freakadunse**](https://github.com/freakadunse) for reporting the bug behind this release!
+
+* Fixed rule '**Align SELECT lists**' for single field with **window expression** ([#390](../../../issues/390))
+* Updated known CamelCase names
+
 ## 2024-12-16 (version 1.21.0)
 
 Great **thanks** to [**bnichell**](https://github.com/bnichell), [**Ronson1909**](https://github.com/Ronson1909),
