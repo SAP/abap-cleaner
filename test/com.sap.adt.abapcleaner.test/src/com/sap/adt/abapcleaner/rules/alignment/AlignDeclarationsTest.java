@@ -1824,4 +1824,22 @@ class AlignDeclarationsTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testLineEndComments() {
+		// ensure that line-end comments after 'TYPE ... TABLE ...' are not aligned, but kept unchanged, because the 
+		// 'TYPE ... TABLE ...' cells use AlignCell.overrideTextWidth = 1 and thus have no influence on the width of the TYPE column
+		
+		buildSrc("    DATA: lo_any_ref TYPE REF TO cl_any_class__,");
+		buildSrc("      lt_any_table TYPE TABLE OF string,  \" comment A");
+		buildSrc("      lt_other_table TYPE STANDARD TABLE OF ty_s_any_struc. \" comment B");
+
+		buildExp("    DATA: lo_any_ref     TYPE REF TO cl_any_class__,");
+		buildExp("          lt_any_table   TYPE TABLE OF string,  \" comment A");
+		buildExp("          lt_other_table TYPE STANDARD TABLE OF ty_s_any_struc. \" comment B");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }
