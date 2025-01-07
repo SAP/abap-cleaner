@@ -71,6 +71,10 @@ public abstract class AlignCell {
 		return AbapCult.stringEquals(tokenAObject, tokenBObject, true);
 	}
 
+	final int getActualMonoLineWidth() {
+		return additionalIndent + getMaxEndIndexInAnyLine() - getStartIndexInFirstLine(); 
+	}
+	
 	final int getActualMultiLineWidth() {
 		return additionalIndent + getEndIndexInLastLine() - getStartIndexInFirstLine(); 
 	}

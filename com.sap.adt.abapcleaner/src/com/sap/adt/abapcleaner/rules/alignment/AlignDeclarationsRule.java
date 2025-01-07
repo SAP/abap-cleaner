@@ -616,11 +616,18 @@ public class AlignDeclarationsRule extends AlignDeclarationSectionRuleBase {
 		token = token.getLastTokenOnSiblings(true, TokenSearch.ASTERISK, ",|.");
 		if (token == null)
 			return null;
-		if (token.getNext() != null && token.getNext().isCommentAfterCode())
-			token = token.getNext();
+		token = skipCommentAtLineEnd(token);
 		return token;
 	}
 
+	private Token skipCommentAtLineEnd(Token token) {
+		if (token.getNext() != null && token.getNext().isCommentAfterCode()) {
+			return token.getNext();
+		} else { 
+			return token;
+		}
+	}
+	
 	private Token readDeclarationLine(AlignLine line, Token token, int additionalIndent) throws UnexpectedSyntaxException {
 		// identifier; may have the form "var(len)", therefore consider it as a Term
 		Term identifier = Term.createSimple(token);
@@ -638,6 +645,7 @@ public class AlignDeclarationsRule extends AlignDeclarationSectionRuleBase {
 		Token typeStart = token;
 		Token typeEnd = token;
 		boolean isTable = false;
+		boolean skipCommentAtLineEnd = false;
 		while (typeEnd != null && !typeEnd.isAnyKeyword("LENGTH", "DECIMALS", "VALUE", "READ-ONLY") && !typeEnd.textEqualsAny(".", ",")) {
 			if (typeEnd.isKeyword("TABLE")) 
 				isTable = true;
@@ -667,57 +675,67 @@ public class AlignDeclarationsRule extends AlignDeclarationSectionRuleBase {
 			}
 			// for TYPE ... TABLE OF ..., override text width with 1 to avoid expanding the TYPE column with this cell
 			Term typeInfo = Term.createForTokenRange(typeStart, typeLast);
-			newCell = AlignCellTerm.createSpecial(typeInfo, 0, isTable);
-			line.setCell(Columns.TYPE.getValue(), newCell );
+			boolean overrideToTextWidth1 = isTable;
+			newCell = AlignCellTerm.createSpecial(typeInfo, 0, overrideToTextWidth1);
+			if (overrideToTextWidth1) {
+				skipCommentAtLineEnd = true;
+			}
+			line.setCell(Columns.TYPE.getValue(), newCell);
 		}
 		token = typeEnd;
 
 		// the remaining components only appear in DATA and TYPES, not with FIELD-SYMBOLS
-		if (token.isCommaOrPeriod())
-			return token;
-
-		// [LENGTH <identifier>]
-		Token lengthInfoLast = token.getLastTokenOnSiblings(true, "LENGTH", TokenSearch.ANY_IDENTIFIER_OR_LITERAL);
-		if (lengthInfoLast != null) {
-			line.setCell(Columns.LENGTH.getValue(), new AlignCellTerm(Term.createForTokenRange(token, lengthInfoLast)));
-			token = lengthInfoLast.getNext();
-		}
-
-		// [DECIMALS <identifier>]
-		Token decimalsInfoLast = token.getLastTokenOnSiblings(true, "DECIMALS", TokenSearch.ANY_IDENTIFIER_OR_LITERAL);
-		if (decimalsInfoLast != null) {
-			line.setCell(Columns.DECIMALS.getValue(), new AlignCellTerm(Term.createForTokenRange(token, decimalsInfoLast)));
-			token = decimalsInfoLast.getNext();
-		}
-
-		// [VALUE <term>|{IS INITIAL}]
-		if (token.isKeyword("VALUE")) {
-			Token valueStart = token;
-			Token valueLast = token.getLastTokenOnSiblings(true, "VALUE", "IS", "INITIAL");
-			if (valueLast == null) {
-				Term valueTerm = Term.createSimple(token.getNext());
-				valueLast = valueTerm.lastToken;
+		if (!token.isCommaOrPeriod()) {
+			// [LENGTH <identifier>]
+			Token lengthInfoLast = token.getLastTokenOnSiblings(true, "LENGTH", TokenSearch.ANY_IDENTIFIER_OR_LITERAL);
+			if (lengthInfoLast != null) {
+				line.setCell(Columns.LENGTH.getValue(), new AlignCellTerm(Term.createForTokenRange(token, lengthInfoLast)));
+				token = lengthInfoLast.getNext();
 			}
-			if (valueLast == null)
+	
+			// [DECIMALS <identifier>]
+			Token decimalsInfoLast = token.getLastTokenOnSiblings(true, "DECIMALS", TokenSearch.ANY_IDENTIFIER_OR_LITERAL);
+			if (decimalsInfoLast != null) {
+				line.setCell(Columns.DECIMALS.getValue(), new AlignCellTerm(Term.createForTokenRange(token, decimalsInfoLast)));
+				token = decimalsInfoLast.getNext();
+			}
+	
+			// [VALUE <term>|{IS INITIAL}]
+			if (token.isKeyword("VALUE")) {
+				Token valueStart = token;
+				Token valueLast = token.getLastTokenOnSiblings(true, "VALUE", "IS", "INITIAL");
+				if (valueLast == null) {
+					Term valueTerm = Term.createSimple(token.getNext());
+					valueLast = valueTerm.lastToken;
+				}
+				if (valueLast == null)
+					return null;
+				AlignCell valueCell = new AlignCellTerm(Term.createForTokenRange(token, valueLast));
+				// if line length is exceeded, the VALUE section could be moved below TYPE or even below the identifier
+				line.setOverlengthLineBreakToken(valueStart, typeStart, identifier.firstToken);
+				line.setCell(Columns.VALUE.getValue(), valueCell);
+				
+				token = valueLast.getNext();
+			}
+	
+			// [READ-ONLY]
+			if (token.isKeyword("READ-ONLY")) {
+				line.setCell(Columns.READ_ONLY.getValue(), new AlignCellToken(token));
+				token = token.getNext();
+			}
+	
+			// . or , (may be preceded by a pragma)
+			token = token.getLastTokenOnSiblings(true, TokenSearch.ASTERISK, ",|.");
+			if (token == null) {
 				return null;
-			AlignCell valueCell = new AlignCellTerm(Term.createForTokenRange(token, valueLast));
-			// if line length is exceeded, the VALUE section could be moved below TYPE or even below the identifier
-			line.setOverlengthLineBreakToken(valueStart, typeStart, identifier.firstToken);
-			line.setCell(Columns.VALUE.getValue(), valueCell);
-			
-			token = valueLast.getNext();
+			}
 		}
-
-		// [READ-ONLY]
-		if (token.isKeyword("READ-ONLY")) {
-			line.setCell(Columns.READ_ONLY.getValue(), new AlignCellToken(token));
-			token = token.getNext();
-		}
-
-		// . or , (may be preceded by a pragma)
-		token = token.getLastTokenOnSiblings(true, TokenSearch.ASTERISK, ",|.");
-		if (token == null)
-			return null;
+		
+		// if this declaration line contains a 'TYPE ... TABLE ...' cell, this cell will use AlignCell.overrideTextWidth = 1 
+		// and thus have no influence on the width of the TYPE column; therefore, its line-end comment cannot be aligned with 
+		// other line-end comments and will be skipped from further processing (i.e. kept as-is)
+		if (skipCommentAtLineEnd)
+			token = skipCommentAtLineEnd(token);
 
 		return token;
 	}

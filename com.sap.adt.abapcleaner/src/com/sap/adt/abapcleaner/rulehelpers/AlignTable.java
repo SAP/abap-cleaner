@@ -316,7 +316,9 @@ public class AlignTable {
 				} else {
 					if (cell.setWhitespace(lineBreaks, spacesLeft, keepMultiline, condenseInnerSpaces, overlengthAction))
 						lineChanged = true;
-					usedWidth = keepMultiline ? cell.getActualMultiLineWidth() : cell.getMonoLineWidth(); 
+					// 'used width' gets the actual width, independent of AlignCell.overrideTextWidth 
+					// (which is e.g. used for 'TYPE ... TABLE ...' cells in AlignDeclarationsRule)
+					usedWidth = keepMultiline ? cell.getActualMultiLineWidth() : cell.getActualMonoLineWidth(); 
 				}
 				
 				if (column.getForceLineBreakAfter()) {
