@@ -21,6 +21,7 @@ public class DdlAlignDataSourcesTest extends RuleTestBase {
 		rule.configAlignAliases.setValue(true);
 		rule.configAlignOnConditions.setValue(true);
 		rule.configAlignAssociationsWithJoins.setValue(false);
+		rule.configAlignAssociationTo.setValue(true);
 		rule.configConsiderAllParamAssignLines.setValue(false);
 	}
 
@@ -826,6 +827,145 @@ public class DdlAlignDataSourcesTest extends RuleTestBase {
 		buildExp("");
 		buildExp("{");
 		buildExp("  key AnyAlias.AnyField");
+		buildExp("}");
+
+		testRule();
+	}
+
+	@Test
+	void testAlignAssociationTo() {
+		buildSrc("define view entity I_AnyView");
+		buildSrc("  as select from I_AnySource");
+		buildSrc("");
+		buildSrc("    left outer join I_OtherSource as OtherAlias on AnyAlias.AnyField = OtherAlias.AnyField");
+		buildSrc("");
+		buildSrc("  association of one to exact one I_OtherView as _Other on $projection.OtherField = _Other.OtherField");
+		buildSrc("  association to parent I_ParentView as _Parent on $projection.AnyField = _Parent.AnyField");
+		buildSrc("  association of exact one to exact one I_ThirdView as _Third on $projection.OtherField = _Third.ThirdField");
+		buildSrc("  association of one to many I_FourthView as _Fourth on $projection.FourthField = _Fourth.FourthField");
+		buildSrc("{");
+		buildSrc("  key AnyField as AnyField");
+		buildSrc("}");
+
+		buildExp("define view entity I_AnyView");
+		buildExp("  as select from    I_AnySource");
+		buildExp("");
+		buildExp("    left outer join I_OtherSource as OtherAlias on AnyAlias.AnyField = OtherAlias.AnyField");
+		buildExp("");
+		buildExp("  association of one       to exact one I_OtherView  as _Other  on $projection.OtherField = _Other.OtherField");
+		buildExp("  association              to parent    I_ParentView as _Parent on $projection.AnyField = _Parent.AnyField");
+		buildExp("  association of exact one to exact one I_ThirdView  as _Third  on $projection.OtherField = _Third.ThirdField");
+		buildExp("  association of one       to many      I_FourthView as _Fourth on $projection.FourthField = _Fourth.FourthField");
+		buildExp("{");
+		buildExp("  key AnyField as AnyField");
+		buildExp("}");
+
+		testRule();
+	}
+
+	@Test
+	void testAlignAssociationToAndJoins() {
+		rule.configAlignAssociationsWithJoins.setValue(true);
+
+		buildSrc("define view entity I_AnyView");
+		buildSrc("  as select from I_AnySource");
+		buildSrc("");
+		buildSrc("    left outer join I_OtherSource as OtherAlias on AnyAlias.AnyField = OtherAlias.AnyField");
+		buildSrc("");
+		buildSrc("  association of one to exact one I_OtherView as _Other on $projection.OtherField = _Other.OtherField");
+		buildSrc("  association to parent I_ParentView as _Parent on $projection.AnyField = _Parent.AnyField");
+		buildSrc("  association of exact one to exact one I_ThirdView as _Third on $projection.OtherField = _Third.ThirdField");
+		buildSrc("  association of one to many I_FourthView as _Fourth on $projection.FourthField = _Fourth.FourthField");
+		buildSrc("{");
+		buildSrc("  key AnyField as AnyField");
+		buildSrc("}");
+
+		buildExp("define view entity I_AnyView");
+		buildExp("  as select from                        I_AnySource");
+		buildExp("");
+		buildExp("    left outer join                     I_OtherSource as OtherAlias on AnyAlias.AnyField = OtherAlias.AnyField");
+		buildExp("");
+		buildExp("  association of one       to exact one I_OtherView   as _Other     on $projection.OtherField = _Other.OtherField");
+		buildExp("  association              to parent    I_ParentView  as _Parent    on $projection.AnyField = _Parent.AnyField");
+		buildExp("  association of exact one to exact one I_ThirdView   as _Third     on $projection.OtherField = _Third.ThirdField");
+		buildExp("  association of one       to many      I_FourthView  as _Fourth    on $projection.FourthField = _Fourth.FourthField");
+		buildExp("{");
+		buildExp("  key AnyField as AnyField");
+		buildExp("}");
+
+		testRule();
+	}
+
+	@Test
+	void testJoinPlainToColumn() {
+		// ensure that no distinct column is created for the 'to' keyword if all ASSOCIATIONs are numeric
+		// (otherwise, with configAlignAssociationsWithJoins = true, an extra gap would be created in 'join    I_OtherSource')
+		
+		rule.configAlignAssociationsWithJoins.setValue(true);
+
+		buildSrc("define view I_AnyView");
+		buildSrc("  as select from I_AnySource as AnyAlias");
+		buildSrc("");
+		buildSrc("    left outer to one join I_OtherSource as OtherAlias");
+		buildSrc("      on AnyAlias.AnyField = OtherAlias.AnyField");
+		buildSrc("");
+		buildSrc("  association [0..*] to I_FifthSource as _FifthAlias");
+		buildSrc("     on _FifthAlias.AnyField = AnyAlias.AnyField");
+		buildSrc("");
+		buildSrc("  association [0..1] to I_SixthSourceWithLongName as _SixthAlias");
+		buildSrc("     on  _SixthAlias.AnyField = AnyAlias.AnyField");
+		buildSrc("");
+		buildSrc("{");
+		buildSrc("  key AnyAlias.AnyField");
+		buildSrc("}");
+
+		buildExp("define view I_AnyView");
+		buildExp("  as select from           I_AnySource               as AnyAlias");
+		buildExp("");
+		buildExp("    left outer to one join I_OtherSource             as OtherAlias");
+		buildExp("      on AnyAlias.AnyField = OtherAlias.AnyField");
+		buildExp("");
+		buildExp("  association [0..*] to    I_FifthSource             as _FifthAlias");
+		buildExp("     on _FifthAlias.AnyField = AnyAlias.AnyField");
+		buildExp("");
+		buildExp("  association [0..1] to    I_SixthSourceWithLongName as _SixthAlias");
+		buildExp("     on  _SixthAlias.AnyField = AnyAlias.AnyField");
+		buildExp("");
+		buildExp("{");
+		buildExp("  key AnyAlias.AnyField");
+		buildExp("}");
+
+		testRule();
+	}
+
+	@Test
+	void testDoNotAlignAssociationTo() {
+		rule.configAlignAssociationTo.setValue(false);
+
+		buildSrc("define view entity I_AnyView");
+		buildSrc("  as select from I_AnySource");
+		buildSrc("");
+		buildSrc("    left outer join I_OtherSource as OtherAlias on AnyAlias.AnyField = OtherAlias.AnyField");
+		buildSrc("");
+		buildSrc("  association of one to exact one I_OtherView as _Other on $projection.OtherField = _Other.OtherField");
+		buildSrc("  association to parent I_ParentView as _Parent on $projection.AnyField = _Parent.AnyField");
+		buildSrc("  association of exact one to exact one I_ThirdView as _Third on $projection.OtherField = _Third.ThirdField");
+		buildSrc("  association of one to many I_FourthView as _Fourth on $projection.FourthField = _Fourth.FourthField");
+		buildSrc("{");
+		buildSrc("  key AnyField as AnyField");
+		buildSrc("}");
+
+		buildExp("define view entity I_AnyView");
+		buildExp("  as select from    I_AnySource");
+		buildExp("");
+		buildExp("    left outer join I_OtherSource as OtherAlias on AnyAlias.AnyField = OtherAlias.AnyField");
+		buildExp("");
+		buildExp("  association of one to exact one       I_OtherView  as _Other  on $projection.OtherField = _Other.OtherField");
+		buildExp("  association to parent                 I_ParentView as _Parent on $projection.AnyField = _Parent.AnyField");
+		buildExp("  association of exact one to exact one I_ThirdView  as _Third  on $projection.OtherField = _Third.ThirdField");
+		buildExp("  association of one to many            I_FourthView as _Fourth on $projection.FourthField = _Fourth.FourthField");
+		buildExp("{");
+		buildExp("  key AnyField as AnyField");
 		buildExp("}");
 
 		testRule();

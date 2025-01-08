@@ -3880,8 +3880,40 @@ public class Command {
 	public final Token getDdlAssociationTarget() {
 		if (!startsDdlAssociation()) 
 			return null;
-		Token toToken = firstToken.getLastTokenOnSiblings(true, TokenSearch.ASTERISK, "TO", TokenSearch.makeOptional("PARENT"));
-		return (toToken != null && toToken.isKeyword()) ? toToken.getNextCodeSibling() : null;
+		Token firstCode = getFirstCodeToken();
+		
+		// 'ASSOCIATION TO PARENT target'
+		Token parentToken = firstCode.getLastTokenOnSiblings(true, "ASSOCIATION", "TO", "PARENT");
+		if (parentToken != null)
+			return parentToken.getNextCodeSibling();
+
+		// 'ASSOCIATION [min..max] TO target'
+		// 'COMPOSITION [min..max] OF target'
+		Token lastOfSymbolicCard = firstCode.getLastTokenOnSiblings(true, "ASSOCIATION|COMPOSITION", 
+				DDL.BRACKET_OPEN_STRING, DDL.BRACKET_CLOSE_STRING, "TO|OF");
+		if (lastOfSymbolicCard != null)
+			return lastOfSymbolicCard.getNextCodeSibling();
+		
+		// 'ASSOCIATION OF {{EXACT ONE} | MANY | ONE} TO {{EXACT ONE} | MANY | ONE} target'
+		// 'COMPOSITION OF {{EXACT ONE} | MANY | ONE} TO {{EXACT ONE} | MANY | ONE} target' 
+		Token lastOfTextualCard = firstCode.getLastTokenOnSiblings(true, "ASSOCIATION|COMPOSITION", 
+				"OF", TokenSearch.makeOptional("EXACT"), "ONE|MANY",
+				"TO", TokenSearch.makeOptional("EXACT"), "ONE|MANY");
+		if (lastOfTextualCard != null)
+			return lastOfTextualCard.getNextCodeSibling();
+		
+		// 'ASSOCIATION TO target'
+		// 'COMPOSITION OF target'
+		Token lastWithoutCard = firstCode.getLastTokenOnSiblings(true, "ASSOCIATION|COMPOSITION", "TO|OF");
+		if (lastWithoutCard != null)
+			return lastWithoutCard.getNextCodeSibling();
+
+		// 'REDEFINE ASSOCIATION [source.]_ProjAssoc'
+		Token redefAssociationToken = firstCode.getLastTokenOnSiblings(true, "REDEFINE", "ASSOCIATION");
+		if (redefAssociationToken != null)
+			return redefAssociationToken.getNextCodeSibling();
+		
+		return null;
 	}
 
 	/** for a DDL select list element, returns the first of its preceding annotations (if any), or the element itself */
