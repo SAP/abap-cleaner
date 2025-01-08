@@ -12,7 +12,7 @@ permissions:
 jobs:
   # Single deploy job since we're just deploying
   release:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest, self-hosted
     steps:
       - name: Checkout
         uses: actions/checkout@v3
