@@ -105,13 +105,13 @@ public class AlignColumn {
 		isValid = true;
 	}
 
-	final int getMaxMonoLineWidthWithSpaceLeft() {
+	public final int getMaxMonoLineWidthWithSpaceLeft() {
 		if (!isValid)
 			recalculate();
 		return isEmpty() ? 0 : Math.max(minimumWidth, maxMonoLineWidth) + 1;
 	}
 
-	final int getMaxMultiLineWidthWithSpaceLeft() {
+	public final int getMaxMultiLineWidthWithSpaceLeft() {
 		if (!isValid)
 			recalculate();
 		return isEmpty() ? 0 : Math.max(minimumWidth, maxMultiLineWidth) + 1;

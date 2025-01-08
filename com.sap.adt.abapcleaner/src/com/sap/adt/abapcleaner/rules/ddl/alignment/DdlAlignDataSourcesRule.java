@@ -26,12 +26,13 @@ import com.sap.adt.abapcleaner.rules.ddl.position.DdlPositionJoinRule;
 public class DdlAlignDataSourcesRule extends RuleForDdlCommands {
 	private enum Columns {
 		KEYWORDS,
+		TO_KEYWORDS, // in ASSOCIATIONs: the keywords starting from 'TO', e.g. in: 'ASSOCIATION [1..1] TO', 'ASSOCIATION EXACT ONE TO MANY', 'ASSOCIATION TO PARENT'
 		DATA_SOURCE,
 		AS_ALIAS,
 		ON_CONDITION;
 		public int getValue() { return this.ordinal(); }
 	}
-	private static final int MAX_COLUMN_COUNT = 4;
+	private static final int MAX_COLUMN_COUNT = 5;
 
 	@Override
 	public RuleID getID() { return RuleID.DDL_ALIGN_DATA_SOURCES; }
@@ -97,11 +98,11 @@ public class DdlAlignDataSourcesRule extends RuleForDdlCommands {
 				+ LINE_SEP + "    left outer to one join I_FourthSource2( P_AnyParam   : 'any literal'"
 				+ LINE_SEP + "                                            P_OtherParam : 42 ) as FourthAlias on AnyAlias.AnyField = FourthAlias.OtherField"
 				+ LINE_SEP + ""
-				+ LINE_SEP + "  association [0..*] to I_FifthSource2 as _FifthAlias on _FifthAlias.AnyField = AnyAlias.AnyField"
+				+ LINE_SEP + "  association of one to many I_FifthSource2 as _FifthAlias on _FifthAlias.AnyField = AnyAlias.AnyField"
 				+ LINE_SEP + ""
-				+ LINE_SEP + "  association [0..1] to I_SixthSourceWithLongName2 as _SixthAlias on  _SixthAlias.AnyField   = AnyAlias.AnyField"
-				+ LINE_SEP + "                                                                  and _SixthAlias.OtherField = AnyAlias.OtherField"
-				+ LINE_SEP + "                                                                  and _SixthAlias.ThirdField = ThirdAlias.ThirdField"
+				+ LINE_SEP + "  association of exact one to one I_SixthSourceWithLongName2 as _SixthAlias on  _SixthAlias.AnyField   = AnyAlias.AnyField"
+				+ LINE_SEP + "                                                                            and _SixthAlias.OtherField = AnyAlias.OtherField"
+				+ LINE_SEP + "                                                                            and _SixthAlias.ThirdField = ThirdAlias.ThirdField"
 				+ LINE_SEP + ""
 				+ LINE_SEP + "{"
 				+ LINE_SEP + "  key AnyAlias.AnyField,"
@@ -115,9 +116,10 @@ public class DdlAlignDataSourcesRule extends RuleForDdlCommands {
 	final ConfigBoolValue configAlignAliases = new ConfigBoolValue(this, "AlignAliases", "Align aliases", true);
 	final ConfigBoolValue configAlignOnConditions = new ConfigBoolValue(this, "AlignOnConditions", "Align ON conditions that continue on the same line", true);
 	final ConfigBoolValue configAlignAssociationsWithJoins = new ConfigBoolValue(this, "AlignAssociationsWithJoins", "Align ASSOCIATIONs together with JOINs", false);
+	final ConfigBoolValue configAlignAssociationTo = new ConfigBoolValue(this, "AlignAssociationTo", "Align TO keywords in ASSOCIATIONs with textual cardinality", true, false, LocalDate.of(2025, 1, 8));
 	final ConfigBoolValue configConsiderAllParamAssignLines = new ConfigBoolValue(this, "ConsiderAllParamAssignLines", "Consider all lines of multi-line parameter assignments", false);
 
-	private final ConfigValue[] configValues = new ConfigValue[] { configAlignDataSources, configAlignAliases, configAlignOnConditions, configAlignAssociationsWithJoins, configConsiderAllParamAssignLines };
+	private final ConfigValue[] configValues = new ConfigValue[] { configAlignDataSources, configAlignAliases, configAlignOnConditions, configAlignAssociationsWithJoins, configAlignAssociationTo, configConsiderAllParamAssignLines };
 
 	@Override
 	public ConfigValue[] getConfigValues() { return configValues; }
@@ -170,6 +172,7 @@ public class DdlAlignDataSourcesRule extends RuleForDdlCommands {
 				buildTable(table, command, associationTarget, true);
 				command = command.getNextNonCommentCommand();
 			}
+			joinTrivialToColumn(table);
 			alignTable(code, table);
 			
 		} catch (UnexpectedSyntaxException e) {
@@ -186,10 +189,23 @@ public class DdlAlignDataSourcesRule extends RuleForDdlCommands {
 		Token firstInLine = dataSource.getFirstTokenInLine();
 		
 		// fill keywords cell, e.g. "AS SELECT FROM", "INNER JOIN", "ASSOCIATION [0..*] TO"
+		Token toKeyword = firstInLine.isKeyword("ASSOCIATION") ? firstInLine.getLastTokenOnSiblings(true, TokenSearch.ASTERISK, "TO") : null;
 		if (firstInLine != dataSource) {
 			Token keywordsLast = dataSource.getPrevCodeSibling();
-			Term keywordsTerm = Term.createForTokenRange(firstInLine, keywordsLast);
-			line.setCell(Columns.KEYWORDS.getValue(), new AlignCellTerm(keywordsTerm));
+			if (toKeyword != null && configAlignAssociationTo.getValue()) {
+				// create a distinct column for the keywords starting from TO, e.g.:
+			   //   association [1..*]       to           target1
+			   //   association of one       to exact one target2
+				//   association              to parent    target3
+				//   association of exact one to one       target4
+				Term keywordsTerm = Term.createForTokenRange(firstInLine, toKeyword.getPrevCodeSibling());
+				line.setCell(Columns.KEYWORDS.getValue(), new AlignCellTerm(keywordsTerm));
+				Term toTerm = Term.createForTokenRange(toKeyword, keywordsLast);
+				line.setCell(Columns.TO_KEYWORDS.getValue(), new AlignCellTerm(toTerm));
+			} else {
+				Term keywordsTerm = Term.createForTokenRange(firstInLine, keywordsLast);
+				line.setCell(Columns.KEYWORDS.getValue(), new AlignCellTerm(keywordsTerm));
+			}
 		}
 		
 		Token aliasName = dataSource.getLastTokenOnSiblings(true, TokenSearch.ASTERISK, "AS", TokenSearch.ANY_IDENTIFIER);
@@ -228,6 +244,15 @@ public class DdlAlignDataSourcesRule extends RuleForDdlCommands {
 		}
 	}
 	
+	private void joinTrivialToColumn(AlignTable table) throws UnexpectedSyntaxException {
+		// if the 'TO ...' column of all ASSOCIATIONs only consists of the 'to' keywords (i.e. if cardinality is always 
+		// specified numerically), then join the 'to' keywords into the previous column  
+		AlignColumn toColumn = table.getColumn(Columns.TO_KEYWORDS.getValue());
+		if (!toColumn.isEmpty() && toColumn.getMaxMonoLineWidthWithSpaceLeft() == " TO".length()) {
+			toColumn.joinIntoPreviousColumns(false);
+		}
+	}
+
 	private void alignTable(Code code, AlignTable table) throws UnexpectedSyntaxException {
 		AlignColumn keywordColumn = table.getColumn(Columns.KEYWORDS.getValue());
 		if (keywordColumn.isEmpty())
