@@ -31,6 +31,9 @@ public class ChainRule extends RuleForCommands {
 	}
 
 	@Override
+	public String getHintsAndRestrictions() { return "You can use the pseudo-comment \"#EC CHAIN_DECL_USAG (after the colon) to deactivate the rule for a specific declaration."; }
+
+	@Override
 	public LocalDate getDateCreated() { return LocalDate.of(2021, 1, 21); }
 
 	@Override
@@ -192,6 +195,12 @@ public class ChainRule extends RuleForCommands {
 			}
 		}
 
+		// skip the Command if it contains the pseudo-comment "#EC CHAIN_DECL_USAG, which is also respected by code pal
+		Token pseudoComment = chainSign.getLastTokenOnSiblings(false, TokenSearch.ASTERISK, ABAP.PSEUDO_COMMENT_CHAIN_DECL_USAG);
+		if (pseudoComment != null) {
+			return false;
+		}
+		
 		Command originalCommand = (command.originalCommand != null) ? command.originalCommand : command;
 		command.originalCommand = originalCommand;
 

@@ -581,8 +581,6 @@ public class Token {
 	}
 
 	public final Token getLastTokenOfSequence(boolean siblingsOnly, boolean skipCommentsAndPragmas, Token endToken, String... texts) {
-		final char space = ' ';
-
 		Token token = this;
 		Token lastToken = null;
 		boolean skipMode = false;
@@ -636,8 +634,7 @@ public class Token {
 				match = false;
 				String[] variants = StringUtil.split(text, TokenSearch.TEXT_MATCH_VARIANT_SEPARATOR, false);
 				for (String variant : variants) {
-					// text may still contain spaces for several Tokens, e.g. "TRANSPORTING NO FIELDS"
-					Token testToken = token.getLastTokenOfPlainSequence(siblingsOnly, skipCommentsAndPragmas, StringUtil.split(variant, space, false));
+					Token testToken = token.getLastTokenOfPlainSequence(siblingsOnly, skipCommentsAndPragmas, variant);
 					if (testToken != null) {
 						match = true;
 						token = testToken;
@@ -645,8 +642,7 @@ public class Token {
 					}
 				}
 			} else {
-				// text may still contain spaces for several Tokens, e.g. "TRANSPORTING NO FIELDS"
-				Token testToken = token.getLastTokenOfPlainSequence(siblingsOnly, skipCommentsAndPragmas, StringUtil.split(text, space, false));
+				Token testToken = token.getLastTokenOfPlainSequence(siblingsOnly, skipCommentsAndPragmas, text);
 				match = (testToken != null);
 				if (match) {
 					token = testToken;
@@ -714,6 +710,14 @@ public class Token {
 		return skipMode ? null : lastToken;
 	}
 
+	private Token getLastTokenOfPlainSequence(boolean siblingsOnly, boolean skipCommentsAndPragmas, String textWithSpaces) {
+		// textWithSpaces may contain spaces for several Tokens, e.g. "TRANSPORTING NO FIELDS"; 
+		// however, if it starts with a comment sign, it is treated as one text, e.g. ""#EC CHAIN_DECL_USAG" 
+		final char space = ' ';
+		String[] textBits = textWithSpaces.startsWith(ABAP.COMMENT_SIGN_STRING) ? new String[] { textWithSpaces } : StringUtil.split(textWithSpaces, space, false);
+		return getLastTokenOfPlainSequence(siblingsOnly, skipCommentsAndPragmas, textBits);
+	}
+	
 	private Token getLastTokenOfPlainSequence(boolean siblingsOnly, boolean skipCommentsAndPragmas, String[] texts) {
 		Token lastToken = null;
 		Token token = this;

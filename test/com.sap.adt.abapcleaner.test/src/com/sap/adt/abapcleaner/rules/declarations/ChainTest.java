@@ -705,4 +705,73 @@ class ChainTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testPseudoComment() {
+		// ensure that the rule can be deactivated locally by using the pseudo comment "#EC CHAIN_DECL_USAG 
+		// in recommended places (right after the chain colon) or other places 
+		
+		buildSrc("INTERFACE if_unchaining.");
+		buildSrc("  CONSTANTS: \"#EC CHAIN_DECL_USAG");
+		buildSrc("             any_constant TYPE i VALUE 1,");
+		buildSrc("             other_constant TYPE i VALUE 2.");
+		buildSrc("");
+		buildSrc("  METHODS: \"#EC CHAIN_DECL_USAG");
+		buildSrc("    any_method,");
+		buildSrc("    other_method");
+		buildSrc("      IMPORTING iv_any_parameter TYPE i.");
+		buildSrc("ENDINTERFACE.");
+		buildSrc("");
+		buildSrc("CLASS cl_unchaining DEFINITION.");
+		buildSrc("  PUBLIC SECTION.");
+		buildSrc("    CONSTANTS: any_constant TYPE i VALUE 1,  \"#EC CHAIN_DECL_USAG");
+		buildSrc("               other_constant TYPE i VALUE 2.");
+		buildSrc("");
+		buildSrc("    METHODS:");
+		buildSrc("      setup,");
+		buildSrc("      unchain.  \"#EC CHAIN_DECL_USAG");
+		buildSrc("ENDCLASS.");
+		buildSrc("");
+		buildSrc("CLASS cl_unchaining IMPLEMENTATION.");
+		buildSrc("  METHOD unchain.");
+		buildSrc("    DATA: \"#EC CHAIN_DECL_USAG");
+		buildSrc("          lth_any_hash_table TYPE ty_th_hash_table, \" comment");
+		buildSrc("          lo_contract TYPE REF TO cl_contract  ##NEEDED.");
+		buildSrc("  ENDMETHOD.");
+		buildSrc("ENDCLASS.");
+
+		copyExpFromSrc();
+
+		testRule();
+	}
+
+	@Test
+	void testWithAndWithoutPseudoComment() {
+		// ensure that the pseudo-comment #EC CHAIN_DECL_USAG in one Command 
+		// does not prevent another Command from being processed
+		buildSrc("INTERFACE if_unchaining.");
+		buildSrc("  CONSTANTS: \"#EC CHAIN_DECL_USAG");
+		buildSrc("             any_constant TYPE i VALUE 1,");
+		buildSrc("             other_constant TYPE i VALUE 2.");
+		buildSrc("");
+		buildSrc("  METHODS:");
+		buildSrc("    any_method,");
+		buildSrc("    other_method");
+		buildSrc("      IMPORTING iv_any_parameter TYPE i.");
+		buildSrc("ENDINTERFACE.");
+
+		buildExp("INTERFACE if_unchaining.");
+		buildExp("  CONSTANTS: \"#EC CHAIN_DECL_USAG");
+		buildExp("             any_constant TYPE i VALUE 1,");
+		buildExp("             other_constant TYPE i VALUE 2.");
+		buildExp("");
+		buildExp("  METHODS any_method.");
+		buildExp("  METHODS other_method");
+		buildExp("            IMPORTING iv_any_parameter TYPE i.");
+		buildExp("ENDINTERFACE.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }
