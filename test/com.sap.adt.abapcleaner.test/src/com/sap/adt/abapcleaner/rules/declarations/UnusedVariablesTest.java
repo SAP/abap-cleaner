@@ -2366,4 +2366,56 @@ class UnusedVariablesTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testSelfAssignmentWithArithExpr() {
+		buildSrc("  METHOD any_method.");
+		buildSrc("    DATA(i) = 1.");
+		buildSrc("    DO 5 TIMES.");
+		buildSrc("      i = i + 1.");
+		buildSrc("    ENDDO.");
+		buildSrc("  ENDMETHOD.");
+
+		buildExp("  METHOD any_method.");
+		buildExp("    \" TODO: variable is assigned but never used (ABAP cleaner)");
+		buildExp("    DATA(i) = 1.");
+		buildExp("    DO 5 TIMES.");
+		buildExp("      i = i + 1.");
+		buildExp("    ENDDO.");
+		buildExp("  ENDMETHOD.");
+
+		testRule();
+	}
+
+	@Test
+	void testSelfAssignmentWithFunctionalCall() {
+		// ensure that parent->get_parent( ) is NOT considered to be a 'usage in self-assignment'
+		// and that therefore, the to-do comment 'variable is assigned but never used' is NOT introduced, 
+		// since 'get_parent( )' could have side-effects and even change the program flow by throwing an exception
+		buildSrc("  METHOD any_method.");
+		buildSrc("    DATA(parent) = get_parent( ).");
+		buildSrc("    DO 5 TIMES.");
+		buildSrc("      parent = parent->get_parent( ).");
+		buildSrc("    ENDDO.");
+		buildSrc("  ENDMETHOD.");
+
+		copyExpFromSrc();
+
+		testRule();
+	}
+
+	@Test
+	void testSelfAssignmentWithCallOnAttribute() {
+		// ensure that the to-do comment 'variable is assigned but never used' is NOT introduced (see previous test)
+		buildSrc("  METHOD any_method.");
+		buildSrc("    DATA(parent) = get_parent( ).");
+		buildSrc("    DO 5 TIMES.");
+		buildSrc("      parent = parent->ref_attribute->get_parent( ).");
+		buildSrc("    ENDDO.");
+		buildSrc("  ENDMETHOD.");
+
+		copyExpFromSrc();
+
+		testRule();
+	}
 }

@@ -652,7 +652,10 @@ public abstract class RuleForDeclarations extends Rule {
 					}
 				}
 
-				boolean isUsageInSelfAssignment = !isAssignment && !isFieldSymbol && AbapCult.stringEquals(objectName, assignedToVar, true);
+				// do NOT consider a case like "lo_item = lo_item->get_parent( )" to be a 'usage in self-assignment', because 
+				// 'get_parent( )' could have side-effects and even change the program flow by throwing an exception
+				boolean isUsageInSelfAssignment = !isAssignment && !isFieldSymbol && AbapCult.stringEquals(objectName, assignedToVar, true)
+						&& !token.startsFunctionalMethodCall(false);
 				if (!isAssignment && !isUsageInSelfAssignment && readPos + 1 == tokenText.length() && token.startsFunctionalMethodCall(true)) {
 					// the functional method call "xyz(" is NOT a usage of the local variable "xyz"; however, this is only true if  
 					// readPos points to the opening parenthesis, because "lo_instance->any_method(" is a usage of "lo_instance"
