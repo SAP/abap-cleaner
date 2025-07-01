@@ -197,4 +197,58 @@ class AlignWithSecondWordTest extends RuleTestBase {
 		
 		testRule();
 	}
+
+	@Test
+	void testSubmitWithOnSameLine() {
+		// ensure that the second WITH is aligned with the first one, even if it continues after the program name
+		buildSrc("  SUBMIT any_prog WITH par1 IN it_any");
+		buildSrc("             WITH par2 EQ iv_other");
+		buildSrc("                 AND RETURN.");
+
+		buildExp("  SUBMIT any_prog WITH par1 IN it_any");
+		buildExp("                  WITH par2 EQ iv_other");
+		buildExp("         AND RETURN.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testSubmitWithSelection() {
+		// ensure that subsequent WITHs at line start are aligned with the first(!) WITH  
+		buildSrc("SUBMIT other_prog WITH SELECTION-TABLE rspar WITH par1 IN it_any");
+		buildSrc("   WITH par2 EQ iv_other");
+		buildSrc("WITH selcrit2 BETWEEN 'H' AND 'K'");
+		buildSrc("  WITH FREE SELECTIONS texpr");
+		buildSrc("                   AND RETURN.");
+
+		buildExp("SUBMIT other_prog WITH SELECTION-TABLE rspar WITH par1 IN it_any");
+		buildExp("                  WITH par2 EQ iv_other");
+		buildExp("                  WITH selcrit2 BETWEEN 'H' AND 'K'");
+		buildExp("                  WITH FREE SELECTIONS texpr");
+		buildExp("       AND RETURN.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testSubmitWithOnNextLine() {
+		// ensure that the second WITH is aligned with the first one if it starts a new line
+		buildSrc("  SUBMIT any_prog");
+		buildSrc("   WITH par1 IN it_any");
+		buildSrc("     WITH par2 EQ iv_other");
+		buildSrc("     AND RETURN.");
+
+		buildExp("  SUBMIT any_prog");
+		buildExp("         WITH par1 IN it_any");
+		buildExp("         WITH par2 EQ iv_other");
+		buildExp("         AND RETURN.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }
