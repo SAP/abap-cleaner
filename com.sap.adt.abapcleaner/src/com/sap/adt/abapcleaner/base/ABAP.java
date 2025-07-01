@@ -68,6 +68,7 @@ public final class ABAP {
    public static final String DYNAMIC_HELP_COMMENT_SIGN = COMMENT_SIGN_STRING + "!";
    public static final String PSEUDO_COMMENT_SIGN = COMMENT_SIGN_STRING + "#"; // e.g. "#EC NEEDED
    public static final String PSEUDO_COMMENT_EC_PREFIX = PSEUDO_COMMENT_SIGN + "EC "; 
+	public static final String PSEUDO_COMMENT_CHAIN_DECL_USAG = PSEUDO_COMMENT_EC_PREFIX + "CHAIN_DECL_USAG";
    public static final char LINE_COMMENT_SIGN = '*';
    public static final String LINE_COMMENT_SIGN_STRING = "*";
    public static final String PRAGMA_SIGN = "##";
