@@ -1549,7 +1549,10 @@ public class Command {
 			} 
 			
 			// check whether the select list ends
-			if (!token.isKeyword()) {
+			if (token.isPeriod()) {
+				// e.g. SELECT FROM any_table FIELDS COUNT(*).
+				break;
+			} else if (!token.isKeyword()) {
 				// list continues
 			} else if (isSelectFromFields) {
 				// the INTO clause may come earlier than specified in the ABAP reference

@@ -1981,4 +1981,12 @@ public class CommandTest {
 		assertFalse(lastCommand.lastCodeTokenIsAnyKeyword("is", "null"));
 		assertTrue(lastCommand.lastCodeTokenIsAnyKeyword("initial", "null"));
 	}
+
+	@Test
+	void testSelectWithFieldsOnly() {
+		// ensure that SELECT ... FIELDS ... is correctly parsed if FIELDS ... is the last clause and followed by the period 
+		// (cp. Command.opensSelectLoop())
+		assertTrue(buildCommand("SELECT FROM any_table FIELDS COUNT(*).").isAbap());
+	}
+	
 }
