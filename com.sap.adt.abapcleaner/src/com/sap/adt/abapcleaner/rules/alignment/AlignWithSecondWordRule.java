@@ -98,6 +98,7 @@ public class AlignWithSecondWordRule extends Rule {
 					|| firstToken.matchesOnSiblings(true, "RAISE", "SHORTDUMP", "TYPE", TokenSearch.ANY_IDENTIFIER, "EXPORTING")
 					|| firstToken.getNextSibling() != firstToken.getNext();
 			// TODO: or would it be better to use an include list?
+			boolean isSubmit = command.firstCodeTokenIsKeyword("SUBMIT");
 
 			if (!skip && firstToken.isKeyword() && firstToken.getNextSibling() != null && firstToken.getNextSibling().lineBreaks == 0) {
 				Token token = firstToken.getNextSibling();
@@ -105,17 +106,40 @@ public class AlignWithSecondWordRule extends Rule {
 
 				boolean changed = false;
 				while (token != null) {
-					if (token.isFirstTokenInLine() && token.spacesLeft != indent && token.isKeyword() && !token.isAnyKeyword("AND", "OR", "EQUIV")) {
-						command.addIndent(indent - token.spacesLeft, token.spacesLeft, token);
+					if (token.isFirstTokenInLine() && token.spacesLeft != indent && token.isKeyword() && 
+							(!token.isAnyKeyword("AND", "OR", "EQUIV") || isSubmit && token.matchesOnSiblings(true, "AND", "RETURN"))) {
+						int useIndent = indent;
+						if (isSubmit && token.isKeyword("WITH")) {
+							// for SUBMIT commands, use the indent of the 'WITH' in the previous line, which may be placed behind 'SUBMIT'  
+							useIndent = getIndentOfPreviousWithToken(token, indent);
+						}
+						command.addIndent(useIndent - token.spacesLeft, token.spacesLeft, token);
 						changed = true;
 					}
 					token = token.getNextSibling();
 				}
-				if (changed)
+				if (changed) {
 					code.addRuleUse(this, command);
+				}
 
 			}
 			command = command.getNext();
 		}
+	}
+	
+	private int getIndentOfPreviousWithToken(Token curWith, int fallbackIndent) {
+		int useIndent = fallbackIndent;
+		Token test = curWith.getPrev();
+		while (test != null) {
+			if (test.isKeyword("WITH")) {
+				// use the indent of this 'WITH' for the current 'WITH', but continue the loop in case there 
+				// is another 'WITH' earlier in the same line
+				useIndent = test.getStartIndexInLine();
+			}
+			if (test.isFirstTokenInLine())
+				break;
+			test = test.getPrev();
+		}
+		return useIndent;
 	}
 }
