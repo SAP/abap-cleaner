@@ -1842,4 +1842,20 @@ class AlignDeclarationsTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testReadOnlyAndCommentAfterPeriod() {
+		// ensure that the final comment is NOT included in the 'TYPE ...' column
+		buildSrc("  DATA lv_any TYPE i READ-ONLY.");
+		buildSrc("  DATA lv_other TYPE string READ-ONLY.");
+		buildSrc("  DATA lv_third TYPE i. \" comment at line end");
+
+		buildExp("  DATA lv_any   TYPE i      READ-ONLY.");
+		buildExp("  DATA lv_other TYPE string READ-ONLY.");
+		buildExp("  DATA lv_third TYPE i. \" comment at line end");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }

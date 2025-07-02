@@ -754,7 +754,13 @@ public class AlignDeclarationsRule extends AlignDeclarationSectionRuleBase {
 
 		double fillRatioToJustifyOwnColumn = configFillPercentageToJustifyOwnColumn.getValue() / 100.0;
 		boolean condenseSpaceBetweenCells = configCondenseInnerSpaces.getValue();
+		
+		int[] columnCellCountBeforeJoin = new int[Columns.LINE_END_COMMENT.getValue() + 1];
 
+		for (int i = Columns.LINE_END_COMMENT.getValue(); i >= Columns.TYPE.getValue(); --i) {
+			columnCellCountBeforeJoin[i] = table.getColumn(i).getCellCount();
+		}
+		
 		for (int i = Columns.LINE_END_COMMENT.getValue(); i >= Columns.TYPE.getValue(); --i) {
 			AlignColumn testColumn = table.getColumn(i);
 			if (testColumn.isEmpty())
@@ -774,12 +780,19 @@ public class AlignDeclarationsRule extends AlignDeclarationSectionRuleBase {
 				join = (i != Columns.TYPE.getValue());
 			
 			} else { // alignAction == AlignDeclarationsAction.ALIGN_NAME_TYPE_LENGTH_ETC
-				// only join if the column is sparsely filled
-				join = testColumn.getCellCount() <= 1 || testColumn.getCellCount() < (int) (table.getLineCount() * fillRatioToJustifyOwnColumn); 
+				// only join if the column is sparsely filled. This must be based on the fill state before this join loop
+				join = columnCellCountBeforeJoin[i] <= 1 || columnCellCountBeforeJoin[i] < (int) (table.getLineCount() * fillRatioToJustifyOwnColumn); 
 			}
 
 			if (join) {
-				Command[] changedCommands = testColumn.joinIntoPreviousColumns(condenseSpaceBetweenCells);
+				Command[] changedCommands;
+				if (i == Columns.LINE_END_COMMENT.getValue()) {
+					// line-end comments are placed directly behind the preceding Token (no matter which column it belongs to) 
+					// and then removed from the table, so they do not add to the width of any column
+					changedCommands = testColumn.removeFromTable(condenseSpaceBetweenCells); 
+				} else { 
+					changedCommands = testColumn.joinIntoPreviousColumns(condenseSpaceBetweenCells);
+				}
 				table.getParentCode().addRuleUses(this, changedCommands);
 			}
 		}
