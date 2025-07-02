@@ -110,7 +110,7 @@ class ConfigIntBox extends ConfigControl {
    
    private void txtValueKeyPressed(KeyEvent e) {
       int currentValue = SettingsCult.parseInt(txtValue.getText());
-      boolean controlPressed = ((e.stateMask & SWT.CONTROL) != 0);
+      boolean controlPressed = ((e.stateMask & SWT.MOD1) != 0); 
       int newValue;
       switch (e.keyCode) {
          case SWT.ARROW_DOWN:

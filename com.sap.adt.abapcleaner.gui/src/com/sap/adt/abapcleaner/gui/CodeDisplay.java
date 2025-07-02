@@ -776,8 +776,8 @@ public class CodeDisplay extends Composite {
 		if (navigator.isEmpty())
 			return false;
 
-		boolean controlPressed = ((e.stateMask & SWT.CONTROL) != 0);
-		boolean shiftPressed = ((e.stateMask & SWT.SHIFT) != 0);
+		boolean controlPressed = ((e.stateMask & SWT.MOD1) != 0); 
+		boolean shiftPressed = ((e.stateMask & SWT.MOD2) != 0);
 
 		if (e.character == '\u0006') { // Ctrl + F
 			setSearchMode(true);
@@ -1096,7 +1096,7 @@ public class CodeDisplay extends Composite {
 		if (e.button == LEFT_MOUSE_BUTTON)
 			isLeftMouseButtonDown = true;
 
-		boolean shiftPressed = ((e.stateMask & SWT.SHIFT) != 0);
+		boolean shiftPressed = ((e.stateMask & SWT.MOD2) != 0);
 		navigator.setCurLine(getLineIndexOfMousePos(e.y, displaySide), !shiftPressed);
 
 		invalidateDisplay();
