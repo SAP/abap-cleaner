@@ -174,13 +174,45 @@ public class AlignColumn {
 					Term joinedTerm = Term.createForTokenRange(destCell.getFirstToken(), cell.getLastToken());
 					AlignCellTerm alignCellTerm = AlignCellTerm.createSpecial(joinedTerm, destCell.additionalIndent, (destCell.overrideTextWidth == 1)); 
 					line.overwriteCell(i, alignCellTerm);
-					
 					parentTable.getColumn(i).invalidate();
 					break;
-				} else if (i == 0) {
-					line.setCell(0, cell);
-					parentTable.getColumn(0).invalidate();
+					
+				// If this column is filled in other lines (but not in this line), move the cell content to this column;
+				// otherwise, it would 'overstep' this column, thus confusing the order of column content. Column i might  
+				// later be joined into an even earlier column.
+				} else if (i == 0 || !this.parentTable.getColumn(i).isEmpty()) { 
+					line.setCell(i, cell);
+					parentTable.getColumn(i).invalidate();
 					break;
+				}
+			}
+		}
+		clearStats();
+		return changedCommands.toArray(new Command[0]);
+	}
+	
+	public Command[] removeFromTable(boolean condenseSpaceBetweenCells) {
+		if (index == 0)
+			throw new IllegalStateException("This method cannot be called on the first column!");
+
+		ArrayList<Command> changedCommands = new ArrayList<Command>();
+		Command lastChangedCommand = null;
+
+		for (AlignLine line : parentTable.getLines()) {
+			AlignCell cell = line.getCell(this);
+			if (cell == null)
+				continue;
+
+			line.clearCell(index);
+			
+			Token firstInCell = cell.getFirstToken();
+			if (condenseSpaceBetweenCells && !firstInCell.isFirstTokenInLine()) {
+				if (cell.setWhitespace(0, 1, true, false, null)) {
+					Command command = firstInCell.getParentCommand();
+					if (command != lastChangedCommand) {
+						changedCommands.add(command);
+						lastChangedCommand = command;
+					}
 				}
 			}
 		}
