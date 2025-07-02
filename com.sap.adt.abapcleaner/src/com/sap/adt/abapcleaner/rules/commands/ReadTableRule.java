@@ -683,6 +683,18 @@ public class ReadTableRule extends RuleForCommands {
 			finalComment.removeFromCommand(false, true);
 			finalComment.setWhitespace();
 			commandReadingSySubrc.getLastToken().insertRightSibling(finalComment);
+			
+			// ensure that the next command and the next sibling (e.g. the ENDIF) start with a line break
+			ensureLineBreak(commandReadingSySubrc.getNext());
+			if (commandReadingSySubrc.getOpensLevel()) {
+				ensureLineBreak(commandReadingSySubrc.getNextSibling());
+			}
+		}
+	}
+	
+	private void ensureLineBreak(Command command) {
+		if (command != null && command.ensureFirstTokenLineBreak()) {
+			command.getParentCode().addRuleUse(this, command);
 		}
 	}
 }

@@ -624,4 +624,23 @@ public class ReadTableTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testLineContinuesAfterIfCommand() {
+		// ensure that "rv_any_result = 'X'." is not appended after the line-end comment, but rather moved to the next line (along with ENDIF)
+		buildSrc("  METHOD any_method.");
+		buildSrc("    READ TABLE lt_any_table WITH KEY lv_any_value = iv_any_param");
+		buildSrc("                                     lv_other_value = iv_other_param TRANSPORTING NO FIELDS. \" comment");
+		buildSrc("    IF sy-subrc EQ 0. rv_any_result = 'X'. ENDIF.");
+		buildSrc("  ENDMETHOD.");
+
+		buildExp("  METHOD any_method.");
+		buildExp("    IF line_exists( lt_any_table[ lv_any_value   = iv_any_param");
+		buildExp("                                  lv_other_value = iv_other_param ] ). \" comment");
+		buildExp("      rv_any_result = 'X'.");
+		buildExp("    ENDIF.");
+		buildExp("  ENDMETHOD.");
+
+		testRule();
+	}
 }
