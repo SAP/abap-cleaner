@@ -4002,6 +4002,16 @@ public class Command {
 		return false;
 	}
 	
+	/** Ensures that the Command starts on an own line, rather than continuing after the previous Command. 
+	 * Returns true if a line break had to be added. */
+	public boolean ensureFirstTokenLineBreak() {
+		if (firstToken.lineBreaks > 0 || isFirstCommandInCode()) {
+			return false;
+		} else {
+			return firstToken.setWhitespace(1, getIndent());
+		}
+	}
+	
 	/** Returns true if the Command matches a hard-coded pattern or condition.
 	 * This method can be used during development to search for examples in all sample code files. */
 	public final boolean matchesPattern() {
@@ -4017,7 +4027,7 @@ public class Command {
 		//   return changesSyField(ABAP.SyField.SUBRC) && SyFieldAnalyzer.getSyFieldReadersFor(ABAP.SyField.SUBRC, this).size() >= 2;
 		//   - getCommandsRelatedToPatternMatch() can then return SyFieldAnalyzer.getSyFieldReadersFor(ABAP.SyField.SUBRC, this);
 
-      return false;
+      return this.firstCodeTokenIsKeyword("SUBMIT");
 	}
 	
 	public final ArrayList<Command> getCommandsRelatedToPatternMatch() {
