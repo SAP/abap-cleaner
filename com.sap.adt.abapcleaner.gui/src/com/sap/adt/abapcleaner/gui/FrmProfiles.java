@@ -50,6 +50,8 @@ import org.eclipse.swt.events.ModifyEvent;
 
 public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
    private final static boolean sortByGroup = true;
+	private static final int CONTROL_KEY = SWT.MOD1; // better macOS support than SWT.CONTROL
+	private static final int SHIFT_KEY = SWT.MOD2;
 
    private CodeDisplayColors codeDisplayColors;
    
@@ -573,8 +575,8 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 		chkRules.addKeyListener(new KeyAdapter() {
 			@Override
 			public void keyPressed(KeyEvent e) {
-				boolean shiftPressed = ((e.stateMask & SWT.SHIFT) != 0);
-				boolean controlPressed = ((e.stateMask & SWT.CONTROL) != 0);
+				boolean shiftPressed = ((e.stateMask & SHIFT_KEY) != 0);
+				boolean controlPressed = ((e.stateMask & CONTROL_KEY) != 0);
 				if (controlPressed && e.keyCode == 'c') {
 					int index = chkRules.getSelectionIndex();
 					if (index >= 0) {
@@ -823,8 +825,8 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 		btnObfuscate.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				boolean commandScope = ((e.stateMask & SWT.SHIFT) != 0);
-				boolean simplify = ((e.stateMask & SWT.CONTROL) != 0);
+				boolean commandScope = ((e.stateMask & SHIFT_KEY) != 0);
+				boolean simplify = ((e.stateMask & CONTROL_KEY) != 0);
 				Obfuscator obfuscator = Obfuscator.createFor(codeDisplay.getCodeLanguage(), commandScope, simplify, simplify, simplify, simplify, true);  
 				obfuscateExampleCode(obfuscator);
 				codeDisplay.forceFocus();
@@ -838,8 +840,8 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 		btnGenerateUnitTestClass.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				boolean showMessage = ((e.stateMask & SWT.SHIFT) == 0);
-				boolean defaultConfigOnly = ((e.stateMask & SWT.CONTROL) != 0);
+				boolean showMessage = ((e.stateMask & SHIFT_KEY) == 0);
+				boolean defaultConfigOnly = ((e.stateMask & CONTROL_KEY) != 0);
 				generateUnitTestClass(defaultConfigOnly, showMessage);
 				codeDisplay.forceFocus();
 			}
@@ -852,7 +854,7 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 		btnGenerateUnitTest.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				boolean showMessage = ((e.stateMask & SWT.SHIFT) == 0);
+				boolean showMessage = ((e.stateMask & SHIFT_KEY) == 0);
 				codeDisplay.generateUnitTest(true, showMessage);
 				codeDisplay.forceFocus();
 			}
@@ -865,8 +867,8 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 		btnGenerateExample.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				boolean showMessage = ((e.stateMask & SWT.SHIFT) == 0);
-				boolean fullStatement = ((e.stateMask & SWT.CONTROL) != 0);
+				boolean showMessage = ((e.stateMask & SHIFT_KEY) == 0);
+				boolean fullStatement = ((e.stateMask & CONTROL_KEY) != 0);
 				codeDisplay.generateExample(fullStatement, showMessage);
 				codeDisplay.forceFocus();
 			}
@@ -1783,7 +1785,7 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 		if (e.keyCode == SWT.F1) {
 			ProgramLauncher.showHelp(HelpTopic.PROFILES);
 			e.doit = false;
-		} else if (((e.stateMask & SWT.CTRL) != 0) && e.keyCode == 'v') {
+		} else if (((e.stateMask & CONTROL_KEY) != 0) && e.keyCode == 'v') {
 			exampleCodeFromClipboard();
 			e.doit = false;	
 		}

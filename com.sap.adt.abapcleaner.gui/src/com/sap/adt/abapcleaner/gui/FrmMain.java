@@ -56,6 +56,9 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 	private static final String NO_RELEASE_RESTRICTION_DISPLAY = "Latest ABAP Release";
 	private static final int WATCH_CLIPBOARD_INTERVAL_MS = 100;
 
+	private static final int CONTROL_KEY = SWT.MOD1; // better macOS support than SWT.CONTROL
+	private static final int SHIFT_KEY = SWT.MOD2;
+	
 	private CodeDisplayColors codeDisplayColors; // is set to either codeDisplayColorsADT or codeDisplayColorsStrong  
 	private CodeDisplayColors codeDisplayColorsADT;
 	private CodeDisplayColors codeDisplayColorsClassic;
@@ -623,7 +626,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 				codeDisplay.copySelectionToClipboard(DisplaySide.LEFT);
 			}
 		});
-		mmuCodeSelectionLeftToClip.setText(getMenuItemTextWithAccelerator("Selection (&Left) to Clipboard", SWT.SHIFT + SWT.CTRL + 'C'));
+		mmuCodeSelectionLeftToClip.setText(getMenuItemTextWithAccelerator("Selection (&Left) to Clipboard", SHIFT_KEY + CONTROL_KEY + 'C')); 
 
 		MenuItem mmuCodeSelectionToClip = new MenuItem(menuCode, SWT.NONE);
 		mmuCodeSelectionToClip.addSelectionListener(new SelectionAdapter() {
@@ -632,7 +635,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 				codeDisplay.copySelectionToClipboard();
 			}
 		});
-		mmuCodeSelectionToClip.setText(getMenuItemTextWithAccelerator("&Selection (Right) to Clipoard", SWT.CTRL + 'C'));
+		mmuCodeSelectionToClip.setText(getMenuItemTextWithAccelerator("&Selection (Right) to Clipoard", CONTROL_KEY + 'C')); // CONTROL + 'C'
 
 		new MenuItem(menuCode, SWT.SEPARATOR);
 
@@ -643,7 +646,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 				applyAndClose();
 			}
 		});
-		mmuCodeApplyAndClose.setText(getMenuItemTextWithAccelerator("&Apply and Close", SWT.CTRL + '\r'));
+		mmuCodeApplyAndClose.setText(getMenuItemTextWithAccelerator("&Apply and Close", CONTROL_KEY + '\r')); // CONTROL + Enter
 
 		mmuCodeCancel = new MenuItem(menuCode, SWT.NONE);
 		mmuCodeCancel.addSelectionListener(new SelectionAdapter() {
@@ -676,7 +679,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 				codeDisplay.zoomIn();
 			}
 		});
-		mmuViewZoomIn.setText(getMenuItemTextWithAccelerator("Zoom In", SWT.CTRL + '+'));
+		mmuViewZoomIn.setText(getMenuItemTextWithAccelerator("Zoom In", CONTROL_KEY + '+'));
 
 		MenuItem mmuViewZoomDefault = new MenuItem(menuView, SWT.NONE);
 		mmuViewZoomDefault.addSelectionListener(new SelectionAdapter() {
@@ -694,7 +697,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 				codeDisplay.zoomOut();
 			}
 		});
-		mmuViewZoomOut.setText(getMenuItemTextWithAccelerator("Zoom Out", SWT.CTRL + '-'));
+		mmuViewZoomOut.setText(getMenuItemTextWithAccelerator("Zoom Out", CONTROL_KEY + '-'));
 
 		new MenuItem(menuView, SWT.SEPARATOR);
 
@@ -985,7 +988,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 				openNextMatchingSampleFile(true);
 			}
 		});
-		mmuExtrasNextMatchingSample.setText(getMenuItemTextWithAccelerator("Open Next Match", SWT.SHIFT + SWT.CTRL + SWT.ARROW_RIGHT));
+		mmuExtrasNextMatchingSample.setText(getMenuItemTextWithAccelerator("Open Next Match", SHIFT_KEY + CONTROL_KEY + SWT.ARROW_RIGHT));
 
 		MenuItem mmuExtrasPrevMatchingSample = new MenuItem(menuExtras, SWT.NONE);
 		mmuExtrasPrevMatchingSample
@@ -996,7 +999,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 				openNextMatchingSampleFile(false);
 			}
 		});
-		mmuExtrasPrevMatchingSample.setText(getMenuItemTextWithAccelerator("Open Previous Match", SWT.SHIFT + SWT.CTRL + SWT.ARROW_DOWN));
+		mmuExtrasPrevMatchingSample.setText(getMenuItemTextWithAccelerator("Open Previous Match", SHIFT_KEY + CONTROL_KEY + SWT.ARROW_DOWN));
 
 		new MenuItem(menuExtras, SWT.SEPARATOR);
 
@@ -1009,7 +1012,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 				openNextPatternMatchFile(true);
 			}
 		});
-		mmuExtrasNextPatternMatch.setText(getMenuItemTextWithAccelerator("Open Next Pattern Match", SWT.CTRL + SWT.F6));
+		mmuExtrasNextPatternMatch.setText(getMenuItemTextWithAccelerator("Open Next Pattern Match", CONTROL_KEY + SWT.F6));
 
 		MenuItem mmuExtrasPrevPatternMatch = new MenuItem(menuExtras, SWT.NONE);
 		mmuExtrasPrevPatternMatch
@@ -1020,7 +1023,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 				openNextPatternMatchFile(false);
 			}
 		});
-		mmuExtrasPrevPatternMatch.setText(getMenuItemTextWithAccelerator("Open Previous Pattern Match", SWT.CTRL + SWT.F5));
+		mmuExtrasPrevPatternMatch.setText(getMenuItemTextWithAccelerator("Open Previous Pattern Match", CONTROL_KEY + SWT.F5));
 
 		MenuItem mmuExtrasPatternMatchesToClip = new MenuItem(menuExtras, SWT.CASCADE);
 		mmuExtrasPatternMatchesToClip.setText("Copy Pattern Matches to Clipboard (all Files)");
@@ -1487,7 +1490,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 						if (e.detail == SWT.CHECK) {
 							// if check state was changed, (un)block the rule and reprocess the selection
 							setBlockRule(itemIndex, !lstUsedRules.getItem(itemIndex).getChecked());
-						} else if ((e.stateMask & SWT.CONTROL) != 0) {
+						} else if ((e.stateMask & CONTROL_KEY) != 0) { 
 							// open FrmProfiles to configure this rule
 							editProfiles();
 							codeDisplay.focusDisplay();
@@ -2221,19 +2224,19 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 
 	@Override
 	public void keyPressedInCodeDisplay(KeyEvent e) {
-		boolean controlPressed = ((e.stateMask & SWT.CONTROL) != 0);
-		boolean shiftPressed = ((e.stateMask & SWT.SHIFT) != 0);
+		boolean controlPressed = ((e.stateMask & CONTROL_KEY) != 0);
+		boolean shiftPressed = ((e.stateMask & SHIFT_KEY) != 0);
 
 		if (e.keyCode == SWT.F1) {
 			ProgramLauncher.showHelp(HelpTopic.MAIN);
 			e.doit = false;
-		} else if ((!isPlugin || isReadOnly) && ((e.stateMask & SWT.CTRL) != 0) && e.keyCode == 'v') {
+		} else if ((!isPlugin || isReadOnly) && ((e.stateMask & CONTROL_KEY) != 0) && e.keyCode == 'v') {
 			codeFromClipboard(true);
 			e.doit = false;
 		} else if (isPlugin && e.keyCode == SWT.ESC) {
 			cancelAndClose();
 			e.doit = false;
-		} else if (isPlugin && ((e.stateMask & SWT.CTRL) != 0) && e.keyCode == '\r') {
+		} else if (isPlugin && ((e.stateMask & CONTROL_KEY) != 0) && e.keyCode == '\r') {
 			applyAndClose();
 			e.doit = false;
 		} else if (e.keyCode >= 'a' && e.keyCode <= 'z') {
