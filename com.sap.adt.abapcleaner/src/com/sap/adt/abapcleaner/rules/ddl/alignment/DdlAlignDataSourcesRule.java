@@ -296,7 +296,7 @@ public class DdlAlignDataSourcesRule extends RuleForDdlCommands {
 			AlignColumn dataSourceColumn = table.getColumn(columnWithDataSources.getValue());
 			for (int line = 0; line < table.getLineCount(); ++line) {
 				AlignCellTerm dataSourceCell = (AlignCellTerm)dataSourceColumn.getCellFromLine(line);
-				if (!dataSourceCell.getTerm().isOnSingleLine()) {
+				if (dataSourceCell != null && !dataSourceCell.getTerm().isOnSingleLine()) {
 					int condensedWidth = dataSourceCell.getLastToken().getEndIndexInLine() - dataSourceCell.getFirstToken().getStartIndexInLine();
 					dataSourceCell.setOverrideTextWidth(condensedWidth);
 				}

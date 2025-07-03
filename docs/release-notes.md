@@ -6,6 +6,26 @@ as well as bugfixes of reported issues, i.e. anything that enhances or changes t
 For a complete list of changes (including documentation, tests, refactoring etc.), please refer to 
 the list of [commits](../../../commits/main).
 
+## 2025-07-03 (version 1.21.2)
+
+Many **thanks** to [**mraht**](https://github.com/mraht), [**kjetil-kilhavn**](https://github.com/kjetil-kilhavn),
+ [**fabianlupa**](https://github.com/fabianlupa), [**Plabbs**](https://github.com/Plabbs), [**matthewdjb**](https://github.com/matthewdjb),
+ [**Kaszub09**](https://github.com/Kaszub09), [**D029515**](https://github.com/D029515), [**vonglan**](https://github.com/vonglan),
+ [**jrodriguez-rc**](https://github.com/jrodriguez-rc) and [**VladGhitulescu**](https://github.com/VladGhitulescu) for the reporting the bugs behind these fixes!
+
+* Enhanced rule '**Unchain into multiple statements**' to **respect pseudo-comment** "#EC CHAIN_DECL_USAG ([#401](../../../issues/401))
+* Fixed rule '**Report unused parameters**' for **EXPORT** ... TO DATA BUFFER ([#415](../../../issues/415))
+* Fixed rule '**Delete unused variables**' for usage in **functional calls** ([#398](../../../issues/398))
+* Fixed rule '**Replace READ TABLE with table expression**' for IF ... **ENDIF on same line** ([#413](../../../issues/413))
+* Fixed rule '**Align declarations**' for **READ-ONLY** and line-end **comment** ([#409](../../../issues/409))
+* Fixed rule '**Align declarations**' for **comments** after TYPE ... TABLE ([#395](../../../issues/395))
+* Fixed rule '**Align keywords with second word of first line**' for **SUBMIT ... WITH** ([#396](../../../issues/396))
+* Fixed DDL rule '**Align JOINs and ASSOCIATIONs**' for **textual cardinality** ([#394](../../../issues/394))
+* Fixed **keyboard shortcuts** with CTRL for **macOS** ([#407](../../../issues/407))
+* Fixed **Parser** for **SELECT** with **FIELDS** as final clause ([#400](../../../issues/400))
+* Updated **ABAP grammar file**
+* Updated **known CamelCase names** for CDS views and fields
+
 ## 2024-12-23 (version 1.21.1)
 
 **Thanks** to [**freakadunse**](https://github.com/freakadunse) for reporting the bug behind this release!

@@ -4,6 +4,8 @@
 
 Resolves a chain \(DATA:, FIELD-SYMBOLS:, ASSERT: etc.\) into multiple standalone statements. The chain is kept, however, for structure declarations with BEGIN OF ... END OF.
 
+You can use the pseudo-comment "\#EC CHAIN\_DECL\_USAG \(after the colon\) to deactivate the rule for a specific declaration.
+
 This rule is part of the **essential** profile, as it is explicitly demanded by the [Clean ABAP Styleguide](https://github.com/SAP/styleguides/blob/main/clean-abap/CleanABAP.md).
 
 ## References
