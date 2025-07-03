@@ -2092,6 +2092,7 @@ public class Token {
 		if (prevToken != null && prevToken.isChainColon())
 			prevToken = prevToken.getPrevCodeSibling();
 		Token prevPrevToken = (prevToken == null) ? null : prevToken.getPrevCodeSibling();
+		Token prevPrevPrevToken = (prevPrevToken == null) ? null : prevPrevToken.getPrevCodeSibling();
 		Token nextToken = getEndOfTableExpression().getNextCodeToken();
 		if (nextToken == null)
 			return MemoryAccessType.NONE;
@@ -2106,6 +2107,7 @@ public class Token {
 			// adjust previous and next Token
 			prevToken = prev.getPrevCodeToken();
 			prevPrevToken = (prevToken == null) ? null : prevToken.getPrevCodeSibling();
+			prevPrevPrevToken = (prevPrevToken == null) ? null : prevPrevToken.getPrevCodeSibling();
 			nextToken = prev.getNextSibling().getNextCodeToken();
 
 			// determine whether this is an inline declaration of a data reference
@@ -2398,7 +2400,11 @@ public class Token {
 		} else if (firstToken.matchesOnSiblings(true, "IMPORT", "DIRECTORY", "INTO") && prevToken.isAnyKeyword("INTO", "TO")) {
 			// IMPORT DIRECTORY INTO itab FROM DATABASE dbtab(ar) [TO wa] [CLIENT cl] ID id.
 			return MemoryAccessType.WRITE;
-		} 
+		} else if (firstToken.isKeyword("EXPORT") && prevPrevPrevToken != null && prevPrevPrevToken.isKeyword("TO") && 
+				(prevPrevToken.isKeyword("DATA") && prevToken.isKeyword("BUFFER") || prevPrevToken.isKeyword("INTERNAL") && prevToken.isKeyword("TABLE"))) {
+			// EXPORT parameter_list TO { DATA BUFFER xstr | INTERNAL TABLE itab | ... }
+			return MemoryAccessType.WRITE;
+		}
 
 		// Processing External Data: File Interface
 		if (firstToken.matchesOnSiblings(true, "GET", "DATASET") && prevToken.isAnyKeyword("POSITION", "ATTRIBUTES")) {
