@@ -705,4 +705,42 @@ public class UnusedParametersTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testRemoveWrongTodoComment() {
+		rule.configReturningParamScope.setEnumValue(UnusedParameterScope.ALL_METHODS);
+
+		// ensure that the wrongly inserted to-do comment on returning parameter rv_result is removed
+		// (because 'TO DATA BUFFER rv_result' is correctly identified as a write position)
+
+		buildSrc("CLASS cl_any DEFINITION.");
+		buildSrc("  PUBLIC SECTION.");
+		buildSrc("    METHODS any_method");
+		buildSrc("      IMPORTING it_messages TYPE ty_tt_messages");
+		buildSrc("      RETURNING VALUE(rv_result) TYPE xstring.");
+		buildSrc("ENDCLASS.");
+		buildSrc("");
+		buildSrc("CLASS cl_any IMPLEMENTATION.");
+		buildSrc("  METHOD any_method.");
+		buildSrc("    \" TODO: parameter RV_RESULT is never assigned (ABAP cleaner)");
+		buildSrc("");
+		buildSrc("    EXPORT messages = it_messages TO DATA BUFFER rv_result COMPRESSION ON.");
+		buildSrc("  ENDMETHOD.");
+		buildSrc("ENDCLASS.");
+
+		buildExp("CLASS cl_any DEFINITION.");
+		buildExp("  PUBLIC SECTION.");
+		buildExp("    METHODS any_method");
+		buildExp("      IMPORTING it_messages TYPE ty_tt_messages");
+		buildExp("      RETURNING VALUE(rv_result) TYPE xstring.");
+		buildExp("ENDCLASS.");
+		buildExp("");
+		buildExp("CLASS cl_any IMPLEMENTATION.");
+		buildExp("  METHOD any_method.");
+		buildExp("    EXPORT messages = it_messages TO DATA BUFFER rv_result COMPRESSION ON.");
+		buildExp("  ENDMETHOD.");
+		buildExp("ENDCLASS.");
+
+		testRule();
+	}
 }

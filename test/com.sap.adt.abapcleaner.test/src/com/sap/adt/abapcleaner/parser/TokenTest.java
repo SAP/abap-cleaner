@@ -1085,6 +1085,11 @@ public class TokenTest {
 		assertAccessType("IMPORT p1 = !dobj1 p2 = !dobj2 FROM medium.");
 		assertAccessType("IMPORT p1 TO !dobj1 p2 TO !dobj2 FROM medium.");
 		assertAccessType("IMPORT DIRECTORY INTO !itab FROM DATABASE dbtab(ar) TO !wa CLIENT ?cl ID ?id1.");
+		
+		assertAccessType("EXPORT p1 = ?dobj1 p2 = ?dobj2 TO DATA BUFFER !xstr COMPRESSION ON.");
+		assertAccessType("EXPORT p1 FROM ?dobj1 p2 FROM ?dobj2 TO INTERNAL TABLE !itab COMPRESSION OFF.");
+		assertAccessType("EXPORT (ptab) TO DATA BUFFER !xstrb.");
+		assertAccessType("EXPORT (ptab) TO INTERNAL TABLE !itab.");
 	}
 
 	@Test
