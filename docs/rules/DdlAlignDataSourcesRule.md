@@ -12,6 +12,7 @@ Whether to break ON conditions to the next line is configured in 'Break before J
 * \[X\] Align aliases
 * \[X\] Align ON conditions that continue on the same line
 * \[ \] Align ASSOCIATIONs together with JOINs
+* \[X\] Align TO keywords in ASSOCIATIONs with textual cardinality
 * \[ \] Consider all lines of multi-line parameter assignments
 
 ## Examples
@@ -62,11 +63,11 @@ union all
     left outer to one join I_FourthSource2( P_AnyParam   : 'any literal'
                                             P_OtherParam : 42 ) as FourthAlias on AnyAlias.AnyField = FourthAlias.OtherField
 
-  association [0..*] to I_FifthSource2 as _FifthAlias on _FifthAlias.AnyField = AnyAlias.AnyField
+  association of one to many I_FifthSource2 as _FifthAlias on _FifthAlias.AnyField = AnyAlias.AnyField
 
-  association [0..1] to I_SixthSourceWithLongName2 as _SixthAlias on  _SixthAlias.AnyField   = AnyAlias.AnyField
-                                                                  and _SixthAlias.OtherField = AnyAlias.OtherField
-                                                                  and _SixthAlias.ThirdField = ThirdAlias.ThirdField
+  association of exact one to one I_SixthSourceWithLongName2 as _SixthAlias on  _SixthAlias.AnyField   = AnyAlias.AnyField
+                                                                            and _SixthAlias.OtherField = AnyAlias.OtherField
+                                                                            and _SixthAlias.ThirdField = ThirdAlias.ThirdField
 
 {
   key AnyAlias.AnyField,
@@ -123,11 +124,11 @@ union all
     left outer to one join I_FourthSource2( P_AnyParam   : 'any literal'
                                             P_OtherParam : 42 ) as FourthAlias            on AnyAlias.AnyField = FourthAlias.OtherField
 
-  association [0..*] to I_FifthSource2             as _FifthAlias on _FifthAlias.AnyField = AnyAlias.AnyField
+  association of one       to many I_FifthSource2             as _FifthAlias on _FifthAlias.AnyField = AnyAlias.AnyField
 
-  association [0..1] to I_SixthSourceWithLongName2 as _SixthAlias on  _SixthAlias.AnyField   = AnyAlias.AnyField
-                                                                  and _SixthAlias.OtherField = AnyAlias.OtherField
-                                                                  and _SixthAlias.ThirdField = ThirdAlias.ThirdField
+  association of exact one to one  I_SixthSourceWithLongName2 as _SixthAlias on  _SixthAlias.AnyField   = AnyAlias.AnyField
+                                                                             and _SixthAlias.OtherField = AnyAlias.OtherField
+                                                                             and _SixthAlias.ThirdField = ThirdAlias.ThirdField
 
 {
   key AnyAlias.AnyField,
