@@ -110,23 +110,25 @@ public class CamelCaseNames {
 		entityPrefixes = initializeHashSet(entityPrefixLetters); // for "X", see below
 
 		industryPrefixes = initializeHashSet( new String[] { 
-				"CWM", "DFS", "DSD", "EWA", "ILO", "ILS", "INS", "ISU", "ODS", "OIL", "PPS", "PRA", "PSE", "PSM", "RFM", "SOM", "UTI" } );
+				"CWM", "DFS", "DSD", "EWA", "ILO", "ILS", "IMP", "INS", "ISU", "ODS", "OIL", "PPS", "PRA", "PSE", "PSM", 
+				"RFM", "SOM", "UTI" } );
 
-		countryPrefixes = initializeHashSet( new String[] { // added: "EU"
-				"AD", "AE", "AF", "AG", "AI", "AL", "AM", "AO", "AQ", "AR", "AS", "AT", "AU", "AW", "AZ", "BA", "BB", "BD", 
-				"BE", "BF", "BG", "BH", "BI", "BJ", "BM", "BN", "BO", "BQ", "BR", "BS", "BT", "BV", "BW", "BY", "BZ", "CA", 
-				"CC", "CD", "CF", "CG", "CH", "CI", "CK", "CL", "CM", "CN", "CO", "CR", "CS", "CU", "CV", "CW", "CX", "CY", 
-				"CZ", "DE", "DJ", "DK", "DM", "DO", "DZ", "EC", "EE", "EG", "EH", "ER", "ES", "ET", "EU", "FI", "FJ", "FK", "FM", 
-				"FO", "FR", "GA", "GB", "GD", "GE", "GF", "GG", "GH", "GI", "GL", "GM", "GN", "GP", "GQ", "GR", "GS", "GT", 
-				"GU", "GW", "GY", "HK", "HM", "HN", "HR", "HT", "HU", "ID", "IE", "IL", "IM", "IN", "IO", "IQ", "IR", "IS", 
-				"IT", "JE", "JM", "JO", "JP", "KE", "KG", "KH", "KI", "KM", "KN", "KP", "KR", "KW", "KY", "KZ", "LA", "LB", 
-				"LC", "LI", "LK", "LR", "LS", "LT", "LU", "LV", "LY", "MA", "MC", "MD", "MG", "MH", "MK", "ML", "MM", "MN", 
-				"MO", "MP", "MQ", "MR", "MS", "MT", "MU", "MV", "MW", "MX", "MY", "MZ", "NA", "NC", "NE", "NF", "NG", "NI", 
-				"NL", "NO", "NP", "NR", "NU", "NZ", "OM", "PA", "PE", "PF", "PG", "PH", "PK", "PL", "PM", "PN", "PR", "PS", 
-				"PT", "PW", "PY", "QA", "RE", "RO", "RS", "RU", "RW", "SA", "SB", "SC", "SD", "SE", "SG", "SH", "SI", "SJ", 
-				"SK", "SL", "SM", "SN", "SO", "SR", "SS", "ST", "SV", "SX", "SY", "SZ", "TC", "TD", "TF", "TG", "TH", "TJ", 
-				"TK", "TL", "TM", "TN", "TO", "TP", "TR", "TT", "TV", "TW", "TZ", "UA", "UG", "UM", "US", "UY", "UZ", "VA", 
-				"VC", "VE", "VG", "VI", "VN", "VU", "WF", "WS", "YE", "YT", "ZA", "ZM", "ZW", "Z0", "Z1", "Z2" } );
+		countryPrefixes = initializeHashSet( new String[] {
+				"AD", "AE", "AF", "AG", "AI", "AL", "AM", "AO", "AQ", "AR", "AS", "AT", "AU", "AW", "AZ", "BA", "BB", "BD",
+				"BE", "BF", "BG", "BH", "BI", "BJ", "BM", "BN", "BO", "BQ", "BR", "BS", "BT", "BV", "BW", "BY", "BZ", "CA",
+				"CC", "CD", "CF", "CG", "CH", "CI", "CK", "CL", "CM", "CN", "CO", "CR", "CS", "CU", "CV", "CW", "CX", "CY",
+				"CZ", "DE", "DJ", "DK", "DM", "DO", "DZ", "EC", "EE", "EG", "EH", "ER", "ES", "ET", "EU", "FI", "FJ", "FK",
+				"FM", "FO", "FR", "GA", "GB", "GD", "GE", "GF", "GG", "GH", "GI", "GL", "GM", "GN", "GP", "GQ", "GR", "GS",
+				"GT", "GU", "GW", "GY", "HK", "HM", "HN", "HR", "HT", "HU", "ID", "IE", "IL", "IM", "IN", "IO", "IQ", "IR",
+				"IS", "IT", "JE", "JM", "JO", "JP", "KE", "KG", "KH", "KI", "KM", "KN", "KP", "KR", "KW", "KY", "KZ", "LA",
+				"LB", "LC", "LI", "LK", "LR", "LS", "LT", "LU", "LV", "LY", "MA", "MC", "MD", "MG", "MH", "MK", "ML", "MM",
+				"MN", "MO", "MP", "MQ", "MR", "MS", "MT", "MU", "MV", "MW", "MX", "MY", "MZ", "NA", "NC", "NE", "NF", "NG",
+				"NI", "NL", "NO", "NP", "NR", "NU", "NZ", "OM", "PA", "PE", "PF", "PG", "PH", "PK", "PL", "PM", "PN", "PR",
+				"PS", "PT", "PW", "PY", "QA", "RE", "RO", "RS", "RU", "RW", "SA", "SB", "SC", "SD", "SE", "SG", "SH", "SI",
+				"SJ", "SK", "SL", "SM", "SN", "SO", "SR", "SS", "ST", "SV", "SX", "SY", "SZ", "TC", "TD", "TF", "TG", "TH",
+				"TJ", "TK", "TL", "TM", "TN", "TO", "TP", "TR", "TT", "TV", "TW", "TZ", "UA", "UG", "UM", "UN", "US", "UY", 
+				"UZ", "VA", "VC", "VE", "VG", "VI", "VN", "VU", "WF", "WS", "XA", "XB", "YE", "YT", "ZA", "ZM", "ZW", "Z0",
+				"Z1", "Z2" } );
 
 		productPrefixes = initializeHashSet( new String[] { 
 				"ABA", "ACM", "AIN", "ARO", "BPF", "CAI", "CBC", "CPQ", "CSL", "CTE", "EHS", "ETX", "EWM", "FCC", "FPS", 
@@ -137,8 +139,9 @@ public class CamelCaseNames {
 		extensionPrefixes = initializeHashSet( new String[] { "X" } );
 
 		edocProcessPrefixes = initializeHashSet( new String[] { 
-				"CONL", "DELN", "ICDL", "ICML", "INCL", "INCO", "INLE", "INSB", "INVC", "INVE", "INVI", "INVL", "INVM", 
-				"INVO", "INVP", "INVR", "INVS", "INVT", "MATM", "PAYR", "RETR", "TRRE", "TXCE", "TXCV", "VIIL", "VIIS" } ); 
+				"CONL", "DELN", "ICDL", "ICML", "INCL", "INCO", "INLE", "INMG", "INSB", "INVC", "INVE", "INVI", "INVL",
+				"INVM", "INVO", "INVP", "INVR", "INVS", "INVT", "MATM", "PAYR", "RETR", "TRRE", "TXCE", "TXCV", "VIIL",
+				"VIIS" } );
 		
 		extensionNumberPrefixes = initializeHashSet( new String[] { "1", "2", "3", "4", "5", "6", "7", "8", "9" } ); // added: "1"
 		
