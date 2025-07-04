@@ -3,45 +3,6 @@
   "extends": [
     "config:recommended"
   ],
-  "customManagers": [
-    {
-      "customType": "regex",
-      "managerFilePatterns": [
-        "/(^|/|\\.)pom\\.xml$/"
-      ],
-      "matchStringsStrategy": "recursive",
-      "matchStrings": [
-        "<repositories>(.|\\s)*?</repositories>",
-        "<repository>(.|\\s)*?</repository>",
-        "<url>mvn:(?<depName>.*):(?<currentValue>.*):zip</url>"
-      ],
-      "datasourceTemplate": "maven"
-    },
-    {
-      "customType": "regex",
-      "managerFilePatterns": [
-        "/.*\\.target$/"
-      ],
-      "matchStringsStrategy": "recursive",
-      "matchStrings": [
-        "<dependency>(.|\\s)*?</dependency>",
-        "<groupId>(?<groupId>.*)</groupId>(.|\\s)*?<artifactId>(?<artifactId>.*)</artifactId>(.|\\s)*?<version>(?<currentValue>.*)</version>"
-      ],
-      "depNameTemplate": "{{{ groupId }}}:{{{ artifactId }}}",
-      "datasourceTemplate": "maven"
-    },
-    {
-      "customType": "regex",
-      "managerFilePatterns": [
-        "/.*\\.target$/"
-      ],
-      "matchStringsStrategy": "any",
-      "matchStrings": [
-        "<repository\\s+location=\"mvn:(?<depName>.*):(?<currentValue>.*):zip\""
-      ],
-      "datasourceTemplate": "maven"
-    }
-  ],
   "packageRules": [
     {
       "groupName": "tycho",
@@ -51,24 +12,6 @@
       "matchPackageNames": [
         "/org\\.eclipse\\.tycho(\\..+)?:.+/"
       ]
-    },
-    {
-      "description": "Do not suggest major versions of jakarta.xml.bind-api",
-      "matchDatasources": [
-        "maven"
-      ],
-      "matchPackageNames": [
-        "jakarta.xml.bind:jakarta.xml.bind-api"
-      ],
-      "matchUpdateTypes": [
-        "major"
-      ],
-      "enabled": false
-    },
-    {
-      "description": "Disallow old wrongly versioned ant-contrib version 20020829",
-      "matchPackageNames": ["ant-contrib:ant-contrib"],
-      "allowedVersions": "!/^20020829$/"
     }
   ]
 }
