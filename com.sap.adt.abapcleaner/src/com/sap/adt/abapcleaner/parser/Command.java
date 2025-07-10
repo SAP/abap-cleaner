@@ -2207,20 +2207,20 @@ public class Command {
 		}
 		boolean isDdlOrDcl = (language == Language.DDL || language == Language.DCL);
 		String insertText = (isDdlOrDcl ? DDL.LINE_END_COMMENT : ABAP.COMMENT_SIGN_STRING) + " " + commentText.trim();
-		Token newComment = Token.create(firstInLine.lineBreaks, firstInLine.spacesLeft, insertText, firstInLine.sourceLineNum, language);
 
 		// if this Command follows another Command on the same line, put both the comment and this Command to an own line
 		if (firstInLine == firstToken && firstInLine.lineBreaks == 0 && !isFirstCommandInCode()) {
 			int indent = getIndent();
 			firstInLine.setWhitespace(1, indent);
-			newComment.setWhitespace(1, indent);
-		} else {
-			firstInLine.lineBreaks = 1;
 		}
 		
+		Token newComment;
 		if (firstInLine.getPrev() == null) {
+			// if there is ABAP Doc before this Command, move to the first ABAP Doc line to insert the comment before that
+			Command insertBeforeCommand = moveToFirstAbapDoc();
+
 			// check whether the comment was already created in a previous cleanup run, potentially checking multiple attached comments
-			Command prevCommand = prev;
+			Command prevCommand = insertBeforeCommand.prev;
 			while (prevCommand != null && prevCommand.isCommentLine()) {
 				String text = prevCommand.firstToken.text;
 				if (text.contains(insertText.trim()))
@@ -2237,6 +2237,10 @@ public class Command {
 				prevCommand = prevCommand.prev;
 			}
 
+			firstInLine = insertBeforeCommand.firstToken;
+			newComment = Token.create(firstInLine.lineBreaks, firstInLine.spacesLeft, insertText, firstInLine.sourceLineNum, language);
+			firstInLine.lineBreaks = 1;
+			
 			// fix indentation for special cases
 			if (isAsteriskCommentLine()) {
 				newComment.spacesLeft = getIndent();
@@ -2251,12 +2255,15 @@ public class Command {
 			} catch (ParseException e) {
 				throw new IntegrityBrokenException(newCommand, "error while creating a new comment above a variable declaration");
 			}
-			insertPrev(newCommand, false);
+			insertBeforeCommand.insertPrev(newCommand, false);
 			newCommand.testReferentialIntegrity(true);
 			
 		} else {
+			// if there is ABAP Doc before this line, move to the first ABAP Doc line to insert the comment before that
+			Token insertBeforeToken = moveToFirstAbapDoc(firstInLine);
+
 			// check whether the comment was already created in a previous cleanup run, potentially checking multiple attached comments
-			Token prevToken = firstInLine.getPrev();
+			Token prevToken = insertBeforeToken.getPrev();
 			while (prevToken != null && prevToken.isCommentLine()) {
 				String text = prevToken.text; 
 				if (text.contains(insertText.trim()))
@@ -2272,13 +2279,41 @@ public class Command {
 					break;
 				prevToken = prevToken.getPrev();
 			}
+
+			newComment = Token.create(insertBeforeToken.lineBreaks, insertBeforeToken.spacesLeft, insertText, insertBeforeToken.sourceLineNum, language);
+			insertBeforeToken.lineBreaks = 1;
+
 			// insert the new comment Token before the first Token in line
-			firstInLine.insertLeftSibling(newComment, false);
+			insertBeforeToken.insertLeftSibling(newComment, false);
 			testReferentialIntegrity(true);
 		}
 		return newComment;
 	}
 
+	public final Command moveToFirstAbapDoc() {
+		Command command = this;
+		if (!command.isCommentLine()) {
+			Command testCommand = command.prev;
+			while (testCommand != null && testCommand.isAbapDoc()) {
+				command = testCommand;
+				testCommand = testCommand.prev; 
+			}
+		}
+		return command;
+	}
+	
+	public final Token moveToFirstAbapDoc(Token start) {
+		Token token = start;
+		if (!token.isCommentLine()) {
+			Token testToken = token.getPrev();
+			while (testToken != null && testToken.isAbapDocCommentLine()) {
+				token = testToken;
+				testToken = testToken.getPrev(); 
+			}
+		}
+		return token;
+	}
+	
 	/**
 	 * Inserts the supplied comment text above the line of the supplied Token.
 	 * 
@@ -2296,11 +2331,13 @@ public class Command {
 		
 		if (firstInLine.getPrev() == null) {
 			// check whether the comment was already created in a previous cleanup run
-			if (prev == null || !prev.isCommentLine())
+			Command start = moveToFirstAbapDoc();
+			Command testCommand = start.prev; 
+			if (testCommand == null || !testCommand.isCommentLine())
 				return false;
-			if (prev.firstToken.textEqualsAny(commentTextsToMatch)) {
-				firstInLine.lineBreaks = prev.getFirstTokenLineBreaks();
-				prev.removeFromCode();
+			if (testCommand.firstToken.textEqualsAny(commentTextsToMatch)) {
+				start.firstToken.lineBreaks = testCommand.getFirstTokenLineBreaks();
+				testCommand.removeFromCode();
 				return true;
 			} else {
 				return false;
@@ -2308,10 +2345,15 @@ public class Command {
 			
 		} else {
 			// check whether the comment was already created in a previous cleanup run
-			if (!firstInLine.getPrev().isComment())
+			Token start = moveToFirstAbapDoc(firstInLine);
+			if (start == null)
 				return false;
-			if (firstInLine.getPrev().textEqualsAny(commentTextsToMatch)) {
-				firstInLine.getPrev().removeFromCommand();
+			Token prev = start.getPrev();
+			if (!prev.isComment())
+				return false;
+			if (prev.textEqualsAny(commentTextsToMatch)) {
+				start.lineBreaks = prev.lineBreaks;
+				prev.removeFromCommand();
 				return true;
 			} else { 
 				return false;

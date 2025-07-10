@@ -2418,4 +2418,138 @@ class UnusedVariablesTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testPutCommentAboveAbapDoc() {
+		rule.configActionForVarsNeverUsed.setEnumValue(UnusedVariableAction.ADD_TODO_COMMENT);
+
+		buildSrc("  METHOD any_method.");
+		buildSrc("    \"! Test");
+		buildSrc("    DATA lv_test TYPE i.");
+		buildSrc("  ENDMETHOD.");
+		buildSrc("");
+		buildSrc("  METHOD any_method2.");
+		buildSrc("    \" comment");
+		buildSrc("    \"! Test 1");
+		buildSrc("    \"! Test 2");
+		buildSrc("    DATA lv_test TYPE i.");
+		buildSrc("  ENDMETHOD.");
+
+		buildExp("  METHOD any_method.");
+		buildExp("    \" TODO: variable is never used (ABAP cleaner)");
+		buildExp("    \"! Test");
+		buildExp("    DATA lv_test TYPE i.");
+		buildExp("  ENDMETHOD.");
+		buildExp("");
+		buildExp("  METHOD any_method2.");
+		buildExp("    \" comment");
+		buildExp("    \" TODO: variable is never used (ABAP cleaner)");
+		buildExp("    \"! Test 1");
+		buildExp("    \"! Test 2");
+		buildExp("    DATA lv_test TYPE i.");
+		buildExp("  ENDMETHOD.");
+
+		testRule();
+	}
+
+	@Test
+	void testRemoveCommentAboveAbapDoc() {
+		rule.configActionForVarsNeverUsed.setEnumValue(UnusedVariableAction.ADD_TODO_COMMENT);
+
+		buildSrc("  METHOD other_method.");
+		buildSrc("    \" TODO: variable is never used (ABAP cleaner)");
+		buildSrc("    \"! Test 1");
+		buildSrc("    \"! Test 2");
+		buildSrc("    DATA lv_test TYPE i.");
+		buildSrc("    RETURN lv_test.");
+		buildSrc("  ENDMETHOD.");
+		buildSrc("");
+		buildSrc("  METHOD other_method2.");
+		buildSrc("    \"! Test");
+		buildSrc("    \" TODO: variable is never used (ABAP cleaner)");
+		buildSrc("    DATA lv_test TYPE i.");
+		buildSrc("    RETURN lv_test.");
+		buildSrc("  ENDMETHOD.");
+
+		buildExp("  METHOD other_method.");
+		buildExp("    \"! Test 1");
+		buildExp("    \"! Test 2");
+		buildExp("    DATA lv_test TYPE i.");
+		buildExp("    RETURN lv_test.");
+		buildExp("  ENDMETHOD.");
+		buildExp("");
+		buildExp("  METHOD other_method2.");
+		buildExp("    \"! Test");
+		buildExp("    DATA lv_test TYPE i.");
+		buildExp("    RETURN lv_test.");
+		buildExp("  ENDMETHOD.");
+
+		testRule();
+	}
+
+	@Test
+	void testPutCommentAboveAbapDocTokens() {
+		rule.configActionForVarsNeverUsed.setEnumValue(UnusedVariableAction.ADD_TODO_COMMENT);
+
+		buildSrc("  METHOD any_method.");
+		buildSrc("    DATA:");
+		buildSrc("");
+		buildSrc("      \"! Test");
+		buildSrc("      lv_test TYPE i,");
+		buildSrc("");
+		buildSrc("      \" comment");
+		buildSrc("      \"! Test 1");
+		buildSrc("      \"! Test 2");
+		buildSrc("      lv_test2 TYPE i.");
+		buildSrc("  ENDMETHOD.");
+
+		buildExp("  METHOD any_method.");
+		buildExp("    DATA:");
+		buildExp("");
+		buildExp("      \" TODO: variable is never used (ABAP cleaner)");
+		buildExp("      \"! Test");
+		buildExp("      lv_test TYPE i,");
+		buildExp("");
+		buildExp("      \" comment");
+		buildExp("      \" TODO: variable is never used (ABAP cleaner)");
+		buildExp("      \"! Test 1");
+		buildExp("      \"! Test 2");
+		buildExp("      lv_test2 TYPE i.");
+		buildExp("  ENDMETHOD.");
+
+		testRule();
+	}
+
+	@Test
+	void testRemoveCommentAboveAbapDocTokens() {
+		rule.configActionForVarsNeverUsed.setEnumValue(UnusedVariableAction.ADD_TODO_COMMENT);
+
+		buildSrc("  METHOD other_method.");
+		buildSrc("    DATA:");
+		buildSrc("");
+		buildSrc("      \" TODO: variable is never used (ABAP cleaner)");
+		buildSrc("      \"! Test 1");
+		buildSrc("      \"! Test 2");
+		buildSrc("      lv_test TYPE i,");
+		buildSrc("");
+		buildSrc("      \"! Test");
+		buildSrc("      \" TODO: variable is never used (ABAP cleaner)");
+		buildSrc("      lv_test2 TYPE i.");
+		buildSrc("    RETURN lv_test + lv_test2.");
+		buildSrc("  ENDMETHOD.");
+
+		buildExp("  METHOD other_method.");
+		buildExp("    DATA:");
+		buildExp("");
+		buildExp("      \"! Test 1");
+		buildExp("      \"! Test 2");
+		buildExp("      lv_test TYPE i,");
+		buildExp("");
+		buildExp("      \"! Test");
+		buildExp("      lv_test2 TYPE i.");
+		buildExp("    RETURN lv_test + lv_test2.");
+		buildExp("  ENDMETHOD.");
+
+		testRule();
+	}
 }
