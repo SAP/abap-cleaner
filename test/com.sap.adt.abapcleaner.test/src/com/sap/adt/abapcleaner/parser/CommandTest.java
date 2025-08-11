@@ -1812,6 +1812,12 @@ public class CommandTest {
 		assertEquals(Language.DCL, buildCommand("define role Any").getLanguage());
 		assertEquals(Language.DCL, buildCommand("define accesspolicy Any").getLanguage());
 
+		// Dynpro Flow Logic processing blocks (not supported)
+		buildCommandExpectingParseExc("process before output");
+		buildCommandExpectingParseExc("process after input");
+		buildCommandExpectingParseExc("process on help-request");
+		buildCommandExpectingParseExc("process on value-request");
+
 		assertEquals(Language.ABAP, buildCommand("\" comment").getLanguage());
 		assertEquals(Language.ABAP, buildCommand("* comment").getLanguage());
 		assertEquals(Language.ABAP, buildCommand("REPORT any_report.").getLanguage());
