@@ -26,11 +26,20 @@ public enum Language {
 			if (pos < 0)
 				return bestGuess;
 			
-			// skip "//" comments, which are used in both DDL and BDL (RAP behavior definition language)
-			if (!StringUtil.containsAnyAt(text, pos, BDL_OR_DDL_COMMENT)) 
+			if (StringUtil.containsAnyAt(text, pos, BDL_OR_DDL_COMMENT)) { 
+				// skip "//" comments, which are used in both DDL and BDL (RAP behavior definition language)
+				bestGuess = Language.DDL; // only used if no code is found in the document
+				pos = StringUtil.indexOfAny(text, LINE_FEED, pos);
+
+			} else if (bestGuess == Language.ABAP && StringUtil.containsAnyAt(text, pos, com.sap.adt.abapcleaner.base.ABAP.COMMENT_SIGN_STRING, com.sap.adt.abapcleaner.base.ABAP.LINE_COMMENT_SIGN_STRING)) {
+				// skip * and " comments in ABAP
+				pos = StringUtil.indexOfAny(text, LINE_FEED, pos);
+				
+			} else {
+				// handle non-comment content below the loop
 				break;
-			bestGuess = Language.DDL; // only used if no code is found in the document
-			pos = StringUtil.indexOfAny(text, LINE_FEED, pos);
+			}
+
 			if (pos < 0) {
 				return bestGuess;
 			}
@@ -39,6 +48,16 @@ public enum Language {
 		// distinguish between (CDS) DDL and ABAP code
 		if (StringUtil.containsAnyAt(text, pos, "managed", "unmanaged", "abstract;", "projection;", "interface;")) {
 			// cleanup of RAP behavior definition language (BDL) is not supported
+			return Language.NOT_SUPPORTED;
+			
+		} else if (StringUtil.containsAtIgnoringCase(text, pos, "process", "before", "output")
+				|| StringUtil.containsAtIgnoringCase(text, pos, "process", "after", "input")
+				|| StringUtil.containsAtIgnoringCase(text, pos, "process", "on", "help-request")
+				|| StringUtil.containsAtIgnoringCase(text, pos, "process", "on", "value-request")) {
+			// 'Statements in the Dynpro Flow Logic' (PROCESS, MODULE, FIELD, CHAIN, CALL SUBSCREEN, LOOP [WITH CONTROL]), 
+			// which appear in dynpro flow logic processing blocks are not supported,
+			// cp. https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/abenabap_dynpros_dynpro_statements.htm
+			// and https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/dynpprocess.htm
 			return Language.NOT_SUPPORTED;
 			
 			// cp. Command.getDdlOrDclEntityNameToken()

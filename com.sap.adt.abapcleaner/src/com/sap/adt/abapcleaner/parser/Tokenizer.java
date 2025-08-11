@@ -59,7 +59,7 @@ public class Tokenizer {
 	private int lastReportedPos;
 	private int reportSpan;
 
-	boolean isLanguageSupported() { return previewLanguage != Language.NOT_SUPPORTED; }
+	boolean isLanguageSupported() { return previewLanguage != Language.NOT_SUPPORTED; } // cp. Language.preview()
 	int getReadPos() { return readPos; }
 	int getLineNum() { return lineNum; }
 	Language getCurLanguage() { return curLanguage; }
