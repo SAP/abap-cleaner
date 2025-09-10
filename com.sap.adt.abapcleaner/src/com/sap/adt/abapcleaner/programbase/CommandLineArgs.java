@@ -81,6 +81,7 @@ public class CommandLineArgs {
 
 		// in all other cases, cleanup is requested:
 		// - input options (single file)
+		String sourceName = null; 
 		String sourceCode = null;
 		CleanupRange cleanupRange = null;
 		// - input options (multiple files)
@@ -126,6 +127,7 @@ public class CommandLineArgs {
 				} else if (arg.equals(OPT_SOURCE_CODE)) {
 					sourceCode = nextArg;
 				} else if (persistency.fileExists(nextArg)) {
+					sourceName = persistency.getFileNameWithoutExtension(nextArg);
 					sourceCode = persistency.readAllTextFromFile(nextArg);
 				} else {
 					errors.append("File not found: " + nextArg).append(LINE_SEP);
@@ -145,13 +147,17 @@ public class CommandLineArgs {
 				// - input options (multiple files)
 			} else if (arg.equals(OPT_SOURCE_DIR)) {
 				if (!persistency.directoryExists(nextArg)) {
-					errors.append("Source directory " + nextArg + " does not exist!");
+					errors.append("Source directory " + nextArg + " does not exist!").append(LINE_SEP);
 				} else {
 					sourceDir = persistency.getAbsolutePath(nextArg);
 				}
 
 			} else if (arg.equals(OPT_FILE_FILTER)) {
-				fileFilter = nextArg;
+				if (nextArg == null || nextArg.indexOf("*") < 0) {
+					errors.append("File pattern must contain an asterisk, e.g. " + OPT_FILE_FILTER + " \"*.abap\"").append(LINE_SEP);
+				} else {
+					fileFilter = nextArg;
+				}
 
 			} else if (arg.equals(OPT_RECURSIVE)) {
 				recursive = true;
@@ -256,7 +262,7 @@ public class CommandLineArgs {
 		
 		if (sourceCode != null) {
 			// single file
-			return new CommandLineArgs(errors.toString(), sourceCode, cleanupRange, profileData, abapRelease, 
+			return new CommandLineArgs(errors.toString(), sourceName, sourceCode, cleanupRange, profileData, abapRelease, 
 												simulate, targetPath, partialResult, overwrite, lineSeparator, showStats, showUsedRules);
 		} else {
 			// multiple files
@@ -409,6 +415,8 @@ public class CommandLineArgs {
 	public final String errors;
 
 	// - input (single file)
+	/** may be null if the code is supplied directly as a command line argument; otherwise, the file name without extension */
+	public final String sourceName;
 	public final String sourceCode;
 	public final CleanupRange cleanupRange;
 	// - input (multiple files)
@@ -443,6 +451,7 @@ public class CommandLineArgs {
 		this.action = action;
 		this.errors = null;
 		
+		this.sourceName = null;
 		this.sourceCode = null;
 		this.cleanupRange = null;
 		this.sourceDir = null;
@@ -464,7 +473,7 @@ public class CommandLineArgs {
 	
 	private CommandLineArgs(
 			String errors, 
-			String sourceCode, CleanupRange cleanupRange, 
+			String sourceName, String sourceCode, CleanupRange cleanupRange, 
 			String profileData, String abapRelease, 
 			boolean simulate, String targetPath, boolean partialResult, boolean overwrite, String lineSeparator, 
 			boolean showStats, boolean showUsedRules) {
@@ -472,6 +481,7 @@ public class CommandLineArgs {
 		this.action = CommandLineAction.CLEANUP;
 		this.errors = errors;
 		
+		this.sourceName = sourceName; 
 		this.sourceCode = sourceCode;
 		this.cleanupRange = cleanupRange;
 		this.sourceDir = null;
@@ -500,7 +510,8 @@ public class CommandLineArgs {
 
 		this.action = CommandLineAction.CLEANUP;
 		this.errors = errors;
-		
+
+		this.sourceName = null;
 		this.sourceCode = null;
 		this.cleanupRange = null;
 		this.sourceDir = sourceDir;

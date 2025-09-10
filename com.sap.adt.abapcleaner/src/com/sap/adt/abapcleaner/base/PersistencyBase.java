@@ -141,6 +141,11 @@ public class PersistencyBase {
 		return (dotPos < 0) ? fileName : fileName.substring(0, dotPos);
 	}
 
+	public final String getPathWithoutExtension(String path) {
+		String extension = getExtension(path);
+		return path.substring(0, path.length() - extension.length());
+	}
+
 	public final String getExtension(String path) {
 		String fileName = (new File(path)).toPath().getFileName().toString();
 		int dotPos = fileName.lastIndexOf('.');

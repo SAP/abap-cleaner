@@ -75,6 +75,8 @@ public abstract class AbapCleanerHandlerBase extends AbstractAdtEditorHandler {
 			if (!readOnly && !adtSourcePage.validateEdit(file)) {
 				return null;
 			}
+			// get the source page title (for a class, this does not differentiate between Global Class, Class-relevant Local Types, Test Classes etc.)
+			String sourcePageTitle = adtSourcePage.getTitle(); 
 			
 			// get the whole ABAP code in this code document 
 			IDocument document = adtSourcePage.getDocumentProvider().getDocument(adtSourcePage.getEditorInput());
@@ -104,9 +106,9 @@ public abstract class AbapCleanerHandlerBase extends AbstractAdtEditorHandler {
 	         // get ADT color settings to make code in the ABAP cleaner UI appear similar to code in ADT
 				CodeDisplayColors codeDisplayColorsADT = createCodeDisplayColors(ColorProfile.ADT); 
 				CodeDisplayColors codeDisplayColorsClassic = createCodeDisplayColors(ColorProfile.CLASSIC); 
-				result = FrmMain.cleanInteractively(oldSource, abapRelease, cleanupRange, workspaceDir, true, adtSourcePage.getTitle(), codeDisplayColorsADT, codeDisplayColorsClassic, readOnly);
+				result = FrmMain.cleanInteractively(sourcePageTitle, oldSource, abapRelease, cleanupRange, workspaceDir, true, codeDisplayColorsADT, codeDisplayColorsClassic, readOnly);
 			} else {
-				result = FrmMain.cleanAutomatically(oldSource, abapRelease, cleanupRange, workspaceDir, null, false, ABAP.LINE_SEPARATOR);
+				result = FrmMain.cleanAutomatically(sourcePageTitle, oldSource, abapRelease, cleanupRange, workspaceDir, null, false, ABAP.LINE_SEPARATOR);
 			}
 
 			if (result == null) 
