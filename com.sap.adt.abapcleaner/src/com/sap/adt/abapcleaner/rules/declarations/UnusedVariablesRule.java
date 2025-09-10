@@ -249,12 +249,13 @@ public class UnusedVariablesRule extends RuleForDeclarations {
 	}
 
 	private boolean isAttachedToDeclaration(Command command) {
-		// determine whether the comment is attached to a declaration
+		// determine whether the comment is attached to a declaration; this also includes Commands that start with an 
+		// inline declaration "DATA(...) = ..." etc.
 		Command test = command.getNext();
 		while (test != null && test.getFirstTokenLineBreaks() == 1 && test.isCommentLine()) {
 			test = test.getNext();
 		}
-		return (test != null && test.getFirstTokenLineBreaks() == 1 && test.isDeclaration());
+		return (test != null && test.getFirstTokenLineBreaks() == 1 && (test.isDeclaration() || test.firstCodeTokenOpensInlineDeclaration()));
 	}
 
 	private boolean isAttachedToDeclaration(Token token) {

@@ -228,6 +228,7 @@ public class Command {
 
 	public final boolean isEndIf() { return isLevelCloser("ENDIF"); }
 
+	/** returns true if the Command is a (non-executable) declaration; otherwise, cp. {@link #firstCodeTokenOpensInlineDeclaration()} */
 	public final boolean isDeclaration() { return firstCodeTokenIsAnyKeyword(declarationKeywords); }
 
 	public final boolean isDeclarationInclude() { return getFirstCodeToken() != null && getFirstCodeToken().matchesOnSiblings(true, "INCLUDE", "TYPE|STRUCTURE"); }
@@ -281,6 +282,11 @@ public class Command {
 	public final boolean firstCodeTokenIsAnyKeyword(String... texts) { 
 		Token token = getFirstCodeToken();
 		return (token != null && token.isAnyKeyword(texts)); 
+	}
+	
+	public final boolean firstCodeTokenOpensInlineDeclaration() { 
+		Token token = getFirstCodeToken();
+		return (token != null && token.opensInlineDeclaration()); 
 	}
 	
 	public final boolean firstCodeTokenTextEqualsAny(String... texts) { 
