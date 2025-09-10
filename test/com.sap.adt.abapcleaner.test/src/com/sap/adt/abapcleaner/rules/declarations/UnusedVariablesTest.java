@@ -2552,4 +2552,18 @@ class UnusedVariablesTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testKeepToDoForInlineDeclaration() {
+		// ensure that the rule is NOT used, i.e. that the comment is directly kept without being removed and added again
+		// (ruleStats.length == 0 will be tested for unchanged code), cp. UnusedVariablesRule.isAttachedToDeclaration(Command)
+		buildSrc("  METHOD any_method.");
+		buildSrc("    \" TODO: variable is assigned but never used (ABAP cleaner)");
+		buildSrc("    DATA(lv_value) = 1.");
+		buildSrc("  ENDMETHOD.");
+
+		copyExpFromSrc();
+
+		testRule();
+	}
 }
