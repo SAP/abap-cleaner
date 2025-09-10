@@ -24,7 +24,7 @@ jobs:
       - name: Set up Maven
         uses: stCarolas/setup-maven@d6af6abeda15e98926a57b5aa970a96bb37f97d1 # v5
         with:
-          maven-version: 3.9.8
+          maven-version: 3.9.11
       - name: Build with Maven
         run: mvn --batch-mode clean package -DskipTests
       - name: Release
