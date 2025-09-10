@@ -24,8 +24,9 @@ import java.util.*;
  * </p>
  */
 public class Command {
-	public final static String[] declarationKeywords = new String[] { "CONSTANTS", "DATA", "FIELD-SYMBOLS", "TYPES", "CLASS-DATA", "STATICS" }; // "DATA(", "FINAL(" and "FIELD-SYMBOL(" do NOT belong here
-	public final static String[] declarationKeywordsReservingMemory = new String[] { "CONSTANTS", "DATA", "FIELD-SYMBOLS", "CLASS-DATA", "STATICS" }; 
+	public final static String[] declarationKeywords = new String[] { "TYPES", "CONSTANTS", "DATA", "FIELD-SYMBOLS", "CLASS-DATA", "STATICS", "RANGES" }; // including obsolete declaration of "RANGES"; "DATA(", "FINAL(" and "FIELD-SYMBOL(" do NOT belong here
+	public final static String[] declarationKeywordsInMethodsOrForms = new String[] {"TYPES", "CONSTANTS", "DATA", "FIELD-SYMBOLS", "STATICS", "RANGES"}; // including obsolete declaration of "RANGES"
+	public final static String[] declarationKeywordsReservingMemory = new String[] { "CONSTANTS", "DATA", "FIELD-SYMBOLS", "CLASS-DATA", "STATICS", "RANGES" }; // including obsolete declaration of "RANGES" 
 	public final static String[] declarationKeywordsOnlyInClassDef = new String[] { "ALIASES", "INTERFACES", "CLASS-DATA", "CLASS-EVENTS", "CLASS-METHODS", "METHODS", "EVENTS" };
 
 	private static String getLevelOpenerKey(String text) {

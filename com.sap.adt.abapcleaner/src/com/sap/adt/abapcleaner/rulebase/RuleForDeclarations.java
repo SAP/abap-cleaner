@@ -26,7 +26,6 @@ public abstract class RuleForDeclarations extends Rule {
 		// default implementation is empty
 	}
 
-   private final static String[] declarationKeywords = new String[] {"TYPES", "CONSTANTS", "DATA", "FIELD-SYMBOLS", "STATICS"}; // "DATA(", "FINAL(" and "FIELD-SYMBOL(" do NOT belong here!
    private final static String[] typesDeclarationKeywords = new String[] {"TYPES"};
    private final static String[] constantsDeclarationKeywords = new String[] {"CONSTANTS"};
 
@@ -194,7 +193,7 @@ public abstract class RuleForDeclarations extends Rule {
 			try {
 				if (!isInMethod) {
 					// read attributes
-					if (command.firstCodeTokenIsAnyKeyword(declarationKeywords)) {
+					if (command.firstCodeTokenIsAnyKeyword(Command.declarationKeywordsInMethodsOrForms)) {
 						boolean isTypeDeclaration = command.firstCodeTokenIsAnyKeyword(typesDeclarationKeywords);
 						boolean isConstantsDeclaration = command.firstCodeTokenIsAnyKeyword(constantsDeclarationKeywords);
 						executeOnDeclarationCommand(command, null, variables, isTypeDeclaration, isConstantsDeclaration, blockInfo, variableAccessType);
@@ -202,7 +201,7 @@ public abstract class RuleForDeclarations extends Rule {
 
 				} else if (isInMethod && !skipMethod) {
 					// read local variable declarations or usage from the current Command
-					if (command.firstCodeTokenIsAnyKeyword(declarationKeywords)) {
+					if (command.firstCodeTokenIsAnyKeyword(Command.declarationKeywordsInMethodsOrForms)) {
 						boolean isTypeDeclaration = command.firstCodeTokenIsAnyKeyword(typesDeclarationKeywords);
 						boolean isConstantsDeclaration = command.firstCodeTokenIsAnyKeyword(constantsDeclarationKeywords);
 						executeOnDeclarationCommand(command, methodStart, variables, isTypeDeclaration, isConstantsDeclaration, blockInfo, VariableAccessType.LOCAL);
@@ -495,7 +494,7 @@ public abstract class RuleForDeclarations extends Rule {
 
 		// do not process this line if it is a declaration line
 		String firstWord = identification.words[0];
-		for (String declarationKeyword : declarationKeywords) {
+		for (String declarationKeyword : Command.declarationKeywordsInMethodsOrForms) {
 			if (AbapCult.stringEquals(firstWord, declarationKeyword, true))
 				return;
 		}

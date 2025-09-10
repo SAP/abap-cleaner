@@ -1640,4 +1640,31 @@ public class LocalDeclarationOrderTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testRangesUsedInData() {
+		// ensure that DATA declarations are not moved before the obsolete RANGES declaration
+		
+		buildSrc("FORM any_form.");
+		buildSrc("  RANGES lr_any FOR anytab-anycomp.");
+		buildSrc("");
+		buildSrc("  DATA ls_other LIKE LINE OF lr_any.");
+		buildSrc("  DATA ls_any   LIKE LINE OF lr_any.");
+		buildSrc("");
+		buildSrc("  DATA(ls_any_copy) = ls_any ##NEEDED.");
+		buildSrc("  DATA(ls_other_copy) = ls_other ##NEEDED.");
+		buildSrc("ENDFORM.");
+
+		buildExp("FORM any_form.");
+		buildExp("  RANGES lr_any FOR anytab-anycomp.");
+		buildExp("");
+		buildExp("  DATA ls_any   LIKE LINE OF lr_any.");
+		buildExp("  DATA ls_other LIKE LINE OF lr_any.");
+		buildExp("");
+		buildExp("  DATA(ls_any_copy) = ls_any ##NEEDED.");
+		buildExp("  DATA(ls_other_copy) = ls_other ##NEEDED.");
+		buildExp("ENDFORM.");
+
+		testRule();
+	}
 }

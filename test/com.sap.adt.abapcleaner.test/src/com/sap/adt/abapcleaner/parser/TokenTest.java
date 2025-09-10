@@ -935,6 +935,7 @@ public class TokenTest {
 		assertAccessType("DATA: !a TYPE i, !b TYPE string.");
 		assertAccessType("CONSTANTS: !a TYPE i VALUE 1, !b TYPE char3 VALUE 'abc'.");
 		assertAccessType("CLASS-DATA !a TYPE i.");
+		assertAccessType("RANGES !lr_any FOR dtab-comp OCCURS 5.");
 	}
 	
 	@Test

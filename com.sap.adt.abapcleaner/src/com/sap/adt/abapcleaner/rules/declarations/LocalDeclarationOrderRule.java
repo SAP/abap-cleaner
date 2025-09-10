@@ -32,6 +32,7 @@ public class LocalDeclarationOrderRule extends RuleForDeclarations {
 	private enum DeclarationType {
 		CONSTANTS,
 		STATICS,
+		RANGES, // obsolete declaration keyword for range tables
 		DATA,
 		FIELD_SYMBOLS,
 		ALL_BUT_CONSTANTS;
@@ -180,6 +181,7 @@ public class LocalDeclarationOrderRule extends RuleForDeclarations {
 		rearrange(DeclarationType.CONSTANTS, getConstantsOrder(), code, methodStart, localVariables, writePosOfParent, writePosOfChain);
 		if (configDistinctBlocks.getValue()) {
 			rearrange(DeclarationType.STATICS, getStaticsOrder(), code, methodStart, localVariables, writePosOfParent, writePosOfChain);
+			rearrange(DeclarationType.RANGES, getDataOrder(), code, methodStart, localVariables, writePosOfParent, writePosOfChain);
 			rearrange(DeclarationType.DATA, getDataOrder(), code, methodStart, localVariables, writePosOfParent, writePosOfChain);
 			rearrange(DeclarationType.FIELD_SYMBOLS, getFieldSymbolsOrder(), code, methodStart, localVariables, writePosOfParent, writePosOfChain);
 		} else {
@@ -260,6 +262,8 @@ public class LocalDeclarationOrderRule extends RuleForDeclarations {
 				return keyword.isKeyword("CONSTANTS");
 			case STATICS:
 				return keyword.isKeyword("STATICS");
+			case RANGES:
+				return keyword.isKeyword("RANGES");
 			case DATA:
 				return keyword.isKeyword("DATA");
 			case FIELD_SYMBOLS:
