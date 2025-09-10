@@ -145,7 +145,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 
 			if (commandLineArgs == null) {
 				// start the interactive (stand-alone) UI
-				cleanInteractively(null, ABAP.NEWEST_RELEASE, null, persistency.getStartupPath(), false, null, null, null, false);
+				cleanInteractively(null, null, ABAP.NEWEST_RELEASE, null, persistency.getStartupPath(), false, null, null, false);
 
 			} else {
 				if (commandLineArgs.hasErrors()) {
@@ -202,11 +202,14 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 	private static void cleanMultiSourceAutomatically(CommandLineArgs commandLineArgs, PrintStream out, Profile profile) {
 		Persistency persistency = Persistency.get();
 		int baseSourcePathLength = commandLineArgs.sourceDir.length();
-
+		String sourceDir = persistency.addDirSep(commandLineArgs.sourceDir);
+		
 		for (String sourcePath : commandLineArgs.sourcePaths) {
+			String sourceName = sourcePath.startsWith(sourceDir) ? persistency.getPathWithoutExtension(sourcePath.substring(sourceDir.length())) 
+					: persistency.getFileNameWithoutExtension(sourcePath);
 			String sourceCode = persistency.readAllTextFromFile(sourcePath);
 
-			CleanupResult result = cleanAutomatically(sourceCode, commandLineArgs.abapRelease, commandLineArgs.cleanupRange, null, profile, commandLineArgs.showStatsOrUsedRules(), commandLineArgs.lineSeparator);
+			CleanupResult result = cleanAutomatically(sourceName, sourceCode, commandLineArgs.abapRelease, commandLineArgs.cleanupRange, null, profile, commandLineArgs.showStatsOrUsedRules(), commandLineArgs.lineSeparator);
 			if (result == null) {
 				out.println("Cleanup for file " + sourcePath + " cancelled.");
 				continue;
@@ -222,7 +225,8 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 	}
 
 	private static void cleanSingleSourceAutomatically(CommandLineArgs commandLineArgs, String sourceCode, PrintStream out, Profile profile) {
-		CleanupResult result = cleanAutomatically(commandLineArgs.sourceCode, commandLineArgs.abapRelease, commandLineArgs.cleanupRange, null, profile, commandLineArgs.showStatsOrUsedRules(), commandLineArgs.lineSeparator);
+		CleanupResult result = cleanAutomatically(commandLineArgs.sourceName, commandLineArgs.sourceCode, commandLineArgs.abapRelease, commandLineArgs.cleanupRange, 
+				null, profile, commandLineArgs.showStatsOrUsedRules(), commandLineArgs.lineSeparator);
 		if (result == null) {
 			out.println("Cleanup cancelled.");
 			return;
@@ -278,7 +282,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		}
 	}
 
-	public static CleanupResult cleanAutomatically(String sourceCode, String abapRelease, CleanupRange cleanupRange, String workspaceDir, Profile profile, boolean provideRuleStats, String lineSeparator) {
+	public static CleanupResult cleanAutomatically(String sourceName, String sourceCode, String abapRelease, CleanupRange cleanupRange, String workspaceDir, Profile profile, boolean provideRuleStats, String lineSeparator) {
 		initialize();
 
 		MainSettings settings = new MainSettings(workspaceDir);
@@ -304,7 +308,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 			}
 		}
 		
-		BackgroundJob job = new BackgroundJob(ParseParams.createForCleanupRange("", sourceCode, abapRelease, cleanupRange, settings.getCleanupRangeExpandMode()),
+		BackgroundJob job = new BackgroundJob(ParseParams.createForCleanupRange(sourceName, sourceCode, abapRelease, cleanupRange, settings.getCleanupRangeExpandMode()),
 				CleanupParams.createForProfile(profile, false, settings.getReleaseRestriction()));
 		job.run();
 		Task result = job.getResult();
@@ -330,7 +334,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		}
 	}
 
-	public static CleanupResult cleanInteractively(String sourceCode, String abapRelease, CleanupRange cleanupRange, String workspaceDir, boolean isPlugin, String sourcePageTitle,
+	public static CleanupResult cleanInteractively(String sourceName, String sourceCode, String abapRelease, CleanupRange cleanupRange, String workspaceDir, boolean isPlugin,
 			CodeDisplayColors codeDisplayColorsADT, CodeDisplayColors codeDisplayColorsClassic, boolean isReadOnly) {
 		initialize();
 
@@ -343,7 +347,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		window.codeDisplayColorsADT = (codeDisplayColorsADT != null) ? codeDisplayColorsADT : CodeDisplayColors.createDefault(ColorProfile.ADT);
 		window.codeDisplayColorsClassic = (codeDisplayColorsClassic != null) ? codeDisplayColorsClassic : CodeDisplayColors.createDefault(ColorProfile.CLASSIC);
 		window.codeDisplayColors = window.codeDisplayColorsADT;
-		window.open(isPlugin, sourcePageTitle, sourceCode, abapRelease, cleanupRange, workspaceDir, isReadOnly);
+		window.open(isPlugin, sourceName, sourceCode, abapRelease, cleanupRange, workspaceDir, isReadOnly);
 
 		if (window.resultCode != null) {
 			return window.resultCode.toCleanupResult(ABAP.LINE_SEPARATOR);
@@ -386,7 +390,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 	/**
 	 * @wbp.parser.entryPoint
 	 */
-	public void open(boolean isPlugin, String sourcePageTitle, String sourceCode, String abapRelease, CleanupRange cleanupRange, String workspaceDir, boolean isReadOnly) {
+	public void open(boolean isPlugin, String sourceName, String sourceCode, String abapRelease, CleanupRange cleanupRange, String workspaceDir, boolean isReadOnly) {
 		this.isPlugin = isPlugin;
 		this.isReadOnly = isReadOnly;
 		settings.initialize(workspaceDir);
@@ -461,7 +465,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 
 		if (!StringUtil.isNullOrEmpty(sourceCode)) {
 			originalCleanupRange = cleanupRange;
-			if (!refreshCode(sourcePageTitle, "", sourceCode, abapRelease, false, -1, -1, -1, cleanupRange, settings.getCleanupRangeExpandMode()) && isPlugin) {
+			if (!refreshCode(sourceName, "", sourceCode, abapRelease, false, -1, -1, -1, cleanupRange, settings.getCleanupRangeExpandMode()) && isPlugin) {
 				dispose();
 				return;
 			}

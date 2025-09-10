@@ -67,6 +67,7 @@ public class CommandLineArgsTest {
 				"--source", anySourceCode } );
 	
 		assertEquals(CommandLineAction.CLEANUP, args.action);
+		assertNull(args.sourceName);
 		assertEquals(anySourceCode, args.sourceCode);
 		assertNull(args.cleanupRange);
 		assertNull(args.profileData);
@@ -107,6 +108,7 @@ public class CommandLineArgsTest {
 		assertEquals(CommandLineAction.CLEANUP, args.action);
 		assertEquals("", args.errors);
 		
+		assertEquals("any_source", args.sourceName);
 		assertEquals(anySourceCode, args.sourceCode);
 		assertEquals(20, args.cleanupRange.startLine);
 		assertEquals(35, args.cleanupRange.lastLine);
@@ -409,5 +411,19 @@ public class CommandLineArgsTest {
 				"--targetdir", "tgt"} );
 
 		assertErrorsContain(args, "Invalid combination: --targetdir");
+	}
+	
+	@Test
+	void testCreateErrorFilePatternAsteriskMissing() {
+		persistency.prepareFile("src", "any_source.abap", anySourceCode);
+		
+		CommandLineArgs args = CommandLineArgs.create(persistency, new String[] {
+				"--sourcedir", "src",
+				"--filepattern", "\".txt\"",
+				"--simulate",
+				"--targetdir", "tgt"} );
+
+		assertErrorsContain(args, "File pattern must contain an asterisk");
+		assertErrorsContain(args, "--filepattern");
 	}
 }
