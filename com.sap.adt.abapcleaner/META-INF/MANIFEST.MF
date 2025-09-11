@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: %Bundle-Name
 Bundle-SymbolicName: com.sap.adt.abapcleaner;singleton:=true
-Bundle-Version: 1.21.3
+Bundle-Version: 1.21.4.qualifier
 Bundle-Vendor: %Provider-Name
 Bundle-Localization: plugin
 Bundle-RequiredExecutionEnvironment: JavaSE-17
