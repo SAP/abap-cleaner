@@ -120,11 +120,29 @@ public class PersistencyFileAccessTest {
 		assertEquals(null, persistency.getFilesInDirectory(tempDir1, null));
 		assertEquals(2, persistency.getFilesInDirectory(tempDir1, null, true).length);
 
+		// copy file2 to file4 in the subfolder
+		String file4 = "file4.txt";
+		String path4 = persistency.combinePaths(tempDir1, file4);
+		assertTrue(persistency.copyFile(path2, path4));
+		assertTrue(persistency.fileExists(path2));
+		assertTrue(persistency.fileExists(path3));
+		assertEquals(1, persistency.getFilesInDirectory(tempDir1, null).length);
+		assertEquals(3, persistency.getFilesInDirectory(tempDir1, null, true).length);
+
+		// deliberately fail to copy file3 to (existing) file4 in the subfolder
+		assertFalse(persistency.copyFile(path3, path4));
+		assertTrue(persistency.fileExists(path3));
+		assertTrue(persistency.fileExists(path4));
+		assertEquals(1, persistency.getFilesInDirectory(tempDir1, null).length);
+		assertEquals(3, persistency.getFilesInDirectory(tempDir1, null, true).length);
+
 		// delete files
 		persistency.deleteFile(path2);
 		assertFalse(persistency.fileExists(path2));
 		persistency.deleteFile(path3);
 		assertFalse(persistency.fileExists(path3));
+		persistency.deleteFile(path4);
+		assertFalse(persistency.fileExists(path4));
 		assertEquals(null, persistency.getFilesInDirectory(tempDir1, null, true));
 		
 		// delete directories

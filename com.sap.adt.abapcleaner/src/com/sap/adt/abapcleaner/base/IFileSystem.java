@@ -9,6 +9,7 @@ public interface IFileSystem {
 	public long getLastModified(String path);
 	public boolean deleteFile(String path);
 	public boolean renameFile(String sourcePath, String destPath);
+	public boolean copyFile(String sourcePath, String destPath);
 
 	public byte[] readAllBytesFromFile(String path);
 	public boolean writeAllBytesToFile(String path, byte[] data);

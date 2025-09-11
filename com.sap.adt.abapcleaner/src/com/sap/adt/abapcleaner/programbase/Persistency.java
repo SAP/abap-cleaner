@@ -326,6 +326,22 @@ public class Persistency extends PersistencyBase {
 		return renameFile(sourcePath, destPath);
 	}
 	
+	public final boolean copyFile(String sourcePath, String destPath, boolean overwriteIfExists) {
+		if (!fileExists(sourcePath))
+			return false;
+		
+		if (fileExists(destPath)) {
+			if (!overwriteIfExists)
+				return false;
+			if (!deleteFile(destPath))
+				return false;
+		} else {
+			ensureDirectoryExistsForPath(destPath);
+		}
+		
+		return copyFile(sourcePath, destPath);
+	}
+	
 	public final String getValidPath(String fileName, boolean allowDirSep) {
 		char dirSep = getDirectorySeparatorChar();
 		String invalidChars = new String(getInvalidFileNameChars());

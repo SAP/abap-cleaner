@@ -7,9 +7,11 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
+import java.nio.file.CopyOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 
@@ -48,6 +50,17 @@ public class FileSystem implements IFileSystem {
 		try {
 			return (new File(sourcePath)).renameTo(new File(destPath));
 		} catch(SecurityException ex) {
+			return false;
+		}
+	}
+
+	@Override
+	/** expects sourcePath to exist, the directory of destPath to exist, and destPath to not exist */
+	public boolean copyFile(String sourcePath, String destPath) {
+		try {
+			Files.copy(new File(sourcePath).toPath(), new File(destPath).toPath(), StandardCopyOption.COPY_ATTRIBUTES);
+			return true;
+		} catch (IOException e) {
 			return false;
 		}
 	}
