@@ -313,6 +313,58 @@ public class PersistencyTest {
 		assertEquals("profile1.cfj", persistency.readAllTextFromFile(profileFile2Text));
 	}
 
+	@Test 
+	void testCopyFile() {
+		prepareSampleFiles();
+
+		String newDir = persistency.combinePaths(workDir, "new"); 
+		String newPath = persistency.combinePaths(newDir, "new.txt");
+		
+		// copy a file into a new directory
+		assertTrue(persistency.copyFile(profileFile2Text, newPath, false));
+
+		// ensure that the file and its content has arrived under the new path and directory
+		assertTrue(persistency.fileExists(profileFile2Text));
+		assertTrue(persistency.fileExists(newPath));
+		assertTrue(persistency.directoryExists(newDir));
+		assertEquals("profile2.cfj", persistency.readAllTextFromFile(profileFile2Text));
+		assertEquals("profile2.cfj", persistency.readAllTextFromFile(newPath));
+	}
+
+	@Test 
+	void testCopyFileToExisting() {
+		prepareSampleFiles();
+
+		String profileFile3Text = persistency.combinePaths(profilesDir, "profile3.cfj");
+		
+		// try moving a non-existing file
+		assertFalse(persistency.copyFile(profileFile3Text, profileFile2Text, false));
+		// ensure that the source file still exists and the target file still has the same content
+		assertTrue(persistency.fileExists(profileFile1Text));
+		assertEquals("profile2.cfj", persistency.readAllTextFromFile(profileFile2Text));
+
+		// try copying without allowing to overwrite
+		assertFalse(persistency.copyFile(profileFile1Text, profileFile2Text, false));
+		// ensure that the source file still exists and the target file still has the same content
+		assertTrue(persistency.fileExists(profileFile1Text));
+		assertEquals("profile2.cfj", persistency.readAllTextFromFile(profileFile2Text));
+
+		// try overwriting, but write-protect files
+		persistency.setWriteProtect(profileFile2Text, true);
+		assertFalse(persistency.copyFile(profileFile1Text, profileFile2Text, true));
+		// ensure that the source file still exists and the target file still has the same content
+		assertTrue(persistency.fileExists(profileFile1Text));
+		assertEquals("profile2.cfj", persistency.readAllTextFromFile(profileFile2Text)); 
+
+		// overwrite
+		persistency.setWriteProtect(profileFile2Text, false);
+		assertTrue(persistency.copyFile(profileFile1Text, profileFile2Text, true));
+		// ensure that the source file still exists and the target file has changed content
+		assertTrue(persistency.fileExists(profileFile1Text));
+		assertEquals("profile1.cfj", persistency.readAllTextFromFile(profileFile1Text));
+		assertEquals("profile1.cfj", persistency.readAllTextFromFile(profileFile2Text));
+	}
+
 	@Test
 	void testGetExtensionForFileType() {
 		assertEquals(".cfj", persistency.getExtension(FileType.CONFIG_TEXT));

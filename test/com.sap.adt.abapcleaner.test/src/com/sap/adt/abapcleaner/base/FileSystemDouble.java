@@ -119,8 +119,19 @@ public class FileSystemDouble implements IFileSystem {
 	public boolean renameFile(String sourcePath, String destPath) {
 		if (fileExists(sourcePath) && !fileExists(destPath)) {
 			FileInfo fileInfo = fileInfos.get(getKey(sourcePath));
-			fileInfos.put(getKey(destPath), new FileInfo(destPath, fileInfo) );
+			fileInfos.put(getKey(destPath), new FileInfo(destPath, fileInfo));
 			deleteFile(sourcePath);
+			return true;
+		} else {
+			return false;
+		}
+	}
+
+	@Override
+	public boolean copyFile(String sourcePath, String destPath) {
+		if (fileExists(sourcePath) && !fileExists(destPath)) {
+			FileInfo fileInfo = fileInfos.get(getKey(sourcePath));
+			fileInfos.put(getKey(destPath), new FileInfo(destPath, fileInfo));
 			return true;
 		} else {
 			return false;

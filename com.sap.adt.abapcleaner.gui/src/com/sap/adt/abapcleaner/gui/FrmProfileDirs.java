@@ -6,6 +6,8 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Label;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 
 import org.eclipse.swt.SWT;
@@ -113,6 +115,7 @@ public class FrmProfileDirs {
 		});
 		btnSelectOwnDir.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false, 1, 1));
 		btnSelectOwnDir.setText("Move...");
+		btnSelectOwnDir.setToolTipText("Changes the profile folder and moves (or if that fails, copies) the existing profiles to the new folder.");
 		
 		Label lblReadOnlyDirTitle = new Label(shell, SWT.NONE);
 		GridData gd_lblReadOnlyDirTitle = new GridData(SWT.LEFT, SWT.CENTER, false, false, 1, 1);
@@ -248,6 +251,7 @@ public class FrmProfileDirs {
 
    private void selectOwnDir() {
    	final String title = "Select Folder for Own Profiles";
+   	final String lineSep = System.lineSeparator();
    	final String twoLineSeps = System.lineSeparator() + System.lineSeparator();
    	
    	// prepare dialog
@@ -268,8 +272,19 @@ public class FrmProfileDirs {
 		// determine destination path
 		newDir = persistency.addDirSep(newDir);
 
+		// determine files to be moved or copied
+		ArrayList<String> oldPaths = new ArrayList<>();
+		String[] profilePaths = Profile.getLoadPaths(oldDir);
+		if (profilePaths != null && profilePaths.length > 0) {
+			oldPaths.addAll(Arrays.asList(profilePaths)); 
+		}
+		// also include .txt files such as CustomFieldNames.txt and CustomViewNames.txt (as configured in CamelCaseNameRule)
+		String[] txtFiles = persistency.getFilesInDirectory(oldDir, "*.txt");
+		if (txtFiles != null && txtFiles.length > 0) {
+			oldPaths.addAll(Arrays.asList(txtFiles)); 
+		}
+		
 		// determine files that would be overwritten when moving profiles to the new folder
-		String[] oldPaths = Profile.getLoadPaths(oldDir);
 		StringBuilder sbExisting = new StringBuilder();
 		int existingCount = 0;
 		for (String oldPath : oldPaths) {
@@ -294,21 +309,24 @@ public class FrmProfileDirs {
 			}
 		}
 		
-		// move profiles
+		// try to a) move or b) copy each profile 
 		int moveCount = 0;
-		int notMovedCount = 0;
+		int copyCount = 0;
+		int failCount = 0;
 		for (String oldPath : oldPaths) {
 			String file = persistency.getFileName(oldPath);
 			String newPath = persistency.combinePaths(newDir, file);
 			if (persistency.moveFile(oldPath, newPath, true)) {
 				++moveCount;
+			} else if (persistency.copyFile(oldPath, newPath, true)) {
+				++copyCount;
 			} else {
-				++notMovedCount;
+				++failCount;
 			}
 		} 
 
 		// if no profile could be moved, do not change the directory
-		if (moveCount == 0 && oldPaths.length > 0) {
+		if (moveCount == 0 && copyCount == 0 && oldPaths.size() > 0) {
 			Message.show("Existing profile(s) could not be moved to the new folder; keeping current folder '" + oldDir + "'.", title, shell);
 			return;	
 		}
@@ -321,10 +339,18 @@ public class FrmProfileDirs {
 		
 		// show result message
 		String result; 
-		result = "Profiles Folder was changed from '" + oldDir + "' to '" + newDir + "'." + twoLineSeps;
-		result += (moveCount == 1) ? "1 profile was moved to the new folder." : Cult.format(moveCount) + " profiles were moved to the new folder.";
-		if (notMovedCount > 0) {
-			result += twoLineSeps + Cult.format(notMovedCount) + " profile(s) kept in the old folder, as they could not be moved.";
+		result = "Profiles Folder was changed from '" + oldDir + "' to '" + newDir + "'." + lineSep;
+		if (moveCount > 0) {
+			result += lineSep + ((moveCount == 1) ? "1 file was moved to the new folder." 
+						: Cult.format(moveCount) + " files were moved to the new folder.");
+		}
+		if (copyCount > 0) {
+			result += lineSep + ((copyCount == 1) ? "1 file was copied to the new folder, as it could not be moved." 
+						: Cult.format(copyCount) + " files were copied to the new folder, as they could not be moved.");
+		}
+		if (failCount > 0) {
+			result += lineSep + ((failCount == 1) ? "1 file was kept in the old folder, as it could not be moved or copied." 
+						: Cult.format(failCount) + " files were kept in the old folder, as they could not be moved or copied.");
 		}
 		Message.show(result, title, shell);
    }

@@ -53,6 +53,11 @@ public class PersistencyBase {
 		return fileSystem.renameFile(sourcePath, destPath);
 	}
 
+	/** expects sourcePath to exist, the directory of destPath to exist, and destPath to not exist */
+	public boolean copyFile(String sourcePath, String destPath) {
+		return fileSystem.copyFile(sourcePath, destPath);
+	}
+
 	public final String readAllTextFromFile(String path) {
 		return readAllTextFromFile(path, false);
 	}
