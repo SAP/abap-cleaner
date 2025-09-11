@@ -6,6 +6,21 @@ as well as bugfixes of reported issues, i.e. anything that enhances or changes t
 For a complete list of changes (including documentation, tests, refactoring etc.), please refer to 
 the list of [commits](../../../commits/main).
 
+## 2025-09-11 (version 1.21.3)
+
+Great **thanks** to [**skateball**](https://github.com/skateball), [**ConjuringCoffee**](https://github.com/ConjuringCoffee), 
+[**fmabap**](https://github.com/fmabap) and [**LechnerClemens**](https://github.com/LechnerClemens) 
+for the pull requests and bug reports behind these fixes!
+
+* Enhanced **moving of profile folder** to alternatively **copy profiles** ([#440](../../../issues/440))
+* **CI**: Migrated from **Temurin to SapMachine** ([#397](../../../issues/397))
+* Fixed rule '**Rearrange local declarations**' for obsolete **RANGES declaration** ([#439](../../../issues/439))
+* Fixed rule '**Delete unused variables**' for variables with **ABAP Doc** ([#425](../../../issues/425))
+* Fixed rule '**Delete unused variables**' for **TODO comments** before inline declarations
+* Fixed **error log** for file names from **command line** ([#431](../../../issues/431))
+* Fixed **error message** for **dynpro flow logic processing blocks** ([#432](../../../issues/432))
+* Updated **known CamelCase names** for CDS views and fields
+
 ## 2025-07-03 (version 1.21.2)
 
 Many **thanks** to [**mraht**](https://github.com/mraht), [**kjetil-kilhavn**](https://github.com/kjetil-kilhavn),
