@@ -1,13 +1,20 @@
 package com.sap.adt.abapcleaner.gui.eclipse;
 
 import java.io.InputStream;
+import java.util.HashMap;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
 import org.eclipse.core.resources.IFile;
+import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.ResourcesPlugin;
+import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Status;
+import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.resource.ColorRegistry;
 import org.eclipse.jface.resource.JFaceResources;
@@ -52,7 +59,7 @@ public abstract class AbapCleanerHandlerBase extends AbstractAdtEditorHandler {
 
 	private boolean interactive;
 	private boolean readOnly;
-
+	
 	protected AbapCleanerHandlerBase(boolean interactive, boolean readOnly) {
 		this.interactive = interactive;
 		this.readOnly = readOnly;
@@ -91,12 +98,12 @@ public abstract class AbapCleanerHandlerBase extends AbstractAdtEditorHandler {
 			CleanupRange cleanupRange = CleanupRange.create(startLine, lastLine, expandRange); 
 
 			// get the ABAP release against which this code must compile
-         IPadFileResolver resolver = new PadFileResolver(file.getProject());
-         try (InputStream is = resolver.getPadFileContent()) {
-              // do nothing, just to load data
+         IPadFileResolver resolver = adtSourcePage.getPadFileResolver();
+         String abapRelease = resolver.getRelease(); // e.g. "757" if adtSourcePage contains ABAP code 
+         if (!ABAP.consistsOfDigitsOnly(abapRelease)) { // e.g. "abapddl_32" if adtSourcePage contains DDL
+         	abapRelease = getAbapReleaseOfProject(file.getProject());
          }
-         String abapRelease = resolver.getRelease(); // e.g. "757"
-         
+			
          // get the workspace directory
          String workspaceDir = ResourcesPlugin.getWorkspace().getRoot().getLocation().toString();
          
@@ -128,6 +135,54 @@ public abstract class AbapCleanerHandlerBase extends AbstractAdtEditorHandler {
 		return null;
 	}
 
+	private static HashMap<String, String> abapReleaseOfProjectName = new HashMap<>();
+	
+	private String getAbapReleaseOfProject(IProject project) {
+		final int TIMEOUT_MS = 5000;
+
+		// use buffered ABAP release, if available for the project name
+		String projectName = project.getName();
+		String bufferedAbapRelease = abapReleaseOfProjectName.get(projectName);
+		if (bufferedAbapRelease != null) {
+			return bufferedAbapRelease;
+		}
+
+		final AtomicReference<String> abapRelease = new AtomicReference<String>();
+		abapRelease.set(ABAP.FALLBACK_RELEASE);
+		
+		// since this method is called in the main thread, we must switch to a non-UI thread: otherwise, 
+		// PadFileResolver.getRelease(String, ABAPRndParser, boolean) will return null and itself start 
+		// a non-UI thread to retrieve the ABAP release asynchronously, so the UI is not being blocked.
+      Job job = new Job("Get ABAP Release of Project " + projectName) { //$NON-NLS-1$
+			@Override
+			protected IStatus run(IProgressMonitor monitor) {
+				try {
+					PadFileResolver resolver = new PadFileResolver(project);
+		         try (InputStream is = resolver.getPadFileContent()) {
+		              // do nothing, just to load data
+		         }
+		   		abapRelease.set(resolver.getRelease());
+					abapReleaseOfProjectName.put(projectName, abapRelease.get());
+				} catch (Exception e) {
+				}
+				return Status.OK_STATUS;
+			}
+		};
+		job.setSystem(true);
+		job.schedule();
+      
+		// for our purpose, make the main thread wait until the job is finished or the timeout is reached 
+		try {
+			if (!job.join(TIMEOUT_MS, new NullProgressMonitor())) {
+				throw new TimeoutException();
+			}
+		} catch (InterruptedException | TimeoutException e) {
+			// use the "fallback" release, thus blocking all cleanup rules that require a certain (minimum) release 
+			abapRelease.set(ABAP.FALLBACK_RELEASE);
+		}
+      return abapRelease.get();
+	}
+	
 	private CodeDisplayColors createCodeDisplayColors(ColorProfile colorProfile) {
 		final String namePrefix = "com.sap.adt.tools.abapsource.ui."; 
 
