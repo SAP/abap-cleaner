@@ -6,6 +6,12 @@ as well as bugfixes of reported issues, i.e. anything that enhances or changes t
 For a complete list of changes (including documentation, tests, refactoring etc.), please refer to 
 the list of [commits](../../../commits/main).
 
+## 2025-09-18 (version 1.21.4)
+
+**Thanks a lot**, [**sandraros**](https://github.com/sandraros) for helping to find this bug!
+
+* Fixed **retrieval of ABAP release** from backend ([#443](../../../issues/443))
+
 ## 2025-09-11 (version 1.21.3)
 
 Great **thanks** to [**skateball**](https://github.com/skateball), [**ConjuringCoffee**](https://github.com/ConjuringCoffee), 
