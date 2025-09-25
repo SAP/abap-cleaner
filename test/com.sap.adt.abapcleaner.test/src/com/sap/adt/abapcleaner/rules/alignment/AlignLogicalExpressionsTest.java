@@ -1274,4 +1274,34 @@ class AlignLogicalExpressionsTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testLikeInParentheses() {
+		// ensure that LIKE in parentheses is recognized as a comparison operator by TokenTypeRefiner.refine()
+		buildSrc("      SELECT comp1 comp2");
+		buildSrc("        INTO ( struc-comp1, struc-comp2 )");
+		buildSrc("        FROM dtab");
+		buildSrc("        WHERE any_comp = @lv_any");
+		buildSrc("        AND other_comp = 42");
+		buildSrc("            AND NOT ( third_comp LIKE 'ABC%'");
+		buildSrc("              OR third_comp LIKE 'D%'");
+		buildSrc("              OR ( fourth_comp = 'A'");
+		buildSrc("              OR fourth_comp LIKE 'BCD%' ) ).");
+		buildSrc("      ENDSELECT.");
+
+		buildExp("      SELECT comp1 comp2");
+		buildExp("        INTO ( struc-comp1, struc-comp2 )");
+		buildExp("        FROM dtab");
+		buildExp("        WHERE     any_comp   = @lv_any");
+		buildExp("          AND     other_comp = 42");
+		buildExp("          AND NOT (    third_comp LIKE 'ABC%'");
+		buildExp("                    OR third_comp LIKE 'D%'");
+		buildExp("                    OR (    fourth_comp    = 'A'");
+		buildExp("                         OR fourth_comp LIKE 'BCD%' ) ).");
+		buildExp("      ENDSELECT.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }
