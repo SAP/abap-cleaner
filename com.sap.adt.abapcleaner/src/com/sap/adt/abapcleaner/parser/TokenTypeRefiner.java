@@ -258,9 +258,21 @@ public class TokenTypeRefiner implements ITokenTypeRefiner {
 		if (command.isAbapSqlOperation()) {
 			Token token = firstCode;
 			while (token != null) {
-				if (token.isKeyword("LIKE"))
+				if (token.isKeyword("LIKE")) {
 					token.type = TokenType.COMPARISON_OP;
-				token = token.getNextCodeSibling();
+				}
+				if (token.getOpensLevel() && token.textEquals("(")) {
+					// also consider content in parentheses, e.g. "... AND ( a LIKE b OR c LIKE d ) ..."
+					token = token.getNext();
+					
+				} else if (token.getNextCodeSibling() != null) {
+					// skip content of "[ ... ]", "function( ... )", "{ ... }" etc.
+					token = token.getNextCodeSibling();
+					
+				} else {
+					// continue reading after content of parentheses, if any
+					token = token.getNext();
+				}
 			}
 		}
 	}
