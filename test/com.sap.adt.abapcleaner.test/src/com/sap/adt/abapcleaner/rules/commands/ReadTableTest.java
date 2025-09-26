@@ -643,4 +643,19 @@ public class ReadTableTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testKeepFreeKeyWithSingleDataObj() {
+		// ensure that the obsolete case of READ TABLE ... WITH KEY dobj ... (i.e. a single data object after WITH KEY) is kept,
+		// see https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/abapread_table_obsolet.htm?file=abapread_table_obsolet.htm#!ABAP_ALTERNATIVE_2@2@
+		
+		buildSrc("    READ TABLE its_any WITH KEY dobj1 BINARY SEARCH INTO ls_any.");
+		buildSrc("    CHECK sy-subrc <> 0.");
+
+		copyExpFromSrc();
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }

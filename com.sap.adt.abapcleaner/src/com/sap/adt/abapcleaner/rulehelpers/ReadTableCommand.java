@@ -257,13 +257,9 @@ public class ReadTableCommand {
 									|| keyIdentifierStart.textEquals("(") && keyIdentifierStart.hasChildren() && keyIdentifierStart.getFirstChild().isAttached() && keyIdentifierEnd.textEquals(")");  
 
 		// either the key name is provided, or the component assignments immediately start with 'comp1 = ...';
-		// note that there might be no components listed after 'WITH KEY keyname'
 		Token nextCode = keyIdentifierEnd.getNextCodeSibling();
-		if (mayBeKeyName && nextCode != null && !nextCode.textEquals("=")) { 
+		if (mayBeKeyName && nextCode != null && nextCode.isKeyword("COMPONENTS")) { 
 			keyName = Term.createForTokenRange(keyIdentifierStart, keyIdentifierEnd);
-			// if no list of component assignments follows, we are done
-			if (!nextCode.isKeyword("COMPONENTS")) 
-				return nextCode;
 			componentsKeyword = nextCode;
 			token = componentsKeyword.getNextCodeSibling();
 		}
@@ -272,7 +268,8 @@ public class ReadTableCommand {
 		Token componentStart = token;
 		Token componentLast = null;
 		if (token.textEquals("=")) {
-			// 'WITH KEY = operator1' is possible for tables that have only one anonymous component (e.g. 'STANDARD TABLE OF char30')
+			// 'WITH KEY = operator1' is an obsolete short form for WITH KEY table_line = operator1, 
+			// see https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/abapread_table_obsolet.htm?file=abapread_table_obsolet.htm#!ABAP_ALTERNATIVE_3@3@
 			Term term = Term.createArithmetic(token.getNextCodeSibling());
 			componentLast = term.lastToken;
 			token = term.getNextCodeSibling();
@@ -287,6 +284,10 @@ public class ReadTableCommand {
 		if (componentLast != null) {
 			componentAssignments = Term.createForTokenRange(componentStart, componentLast);
 			token = componentAssignments.getNextCodeSibling();
+		} else {
+			// the obsolete form 'WITH KEY dobj' will be skipped, therefore we keep componentAssignments == null
+			// see https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/abapread_table_obsolet.htm?file=abapread_table_obsolet.htm#!ABAP_ALTERNATIVE_2@2@
+			token = token.getNextCodeSibling();
 		}
 		return token;
 	}
