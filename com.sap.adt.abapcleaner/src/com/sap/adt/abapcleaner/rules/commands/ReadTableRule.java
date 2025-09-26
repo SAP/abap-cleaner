@@ -209,6 +209,13 @@ public class ReadTableRule extends RuleForCommands {
 		if (selectType == ReadTableSelectType.FREE_KEY && readTable.getKeyName() != null && resultType == ReadTableResultType.ASSIGNING_FS)
 			return false;
 
+		// exclude obsolete case of READ TABLE ... WITH KEY dobj ... (i.e. a single data object after WITH KEY), 
+		// because unlike 'WITH KEY = dobj', they cannot be replaced with 'table_line = dobj' 
+		// see https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/abapread_table_obsolet.htm?file=abapread_table_obsolet.htm#!ABAP_ALTERNATIVE_2@2@
+		// and https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/abapread_table_obsolet.htm?file=abapread_table_obsolet.htm#!ABAP_ALTERNATIVE_3@3@
+		if (selectType == ReadTableSelectType.FREE_KEY && readTable.getComponentAssignments() == null)
+			return false;
+
 		// exclude cases where SY-TFILL or SY-TLENG are evaluated, which are only filled by READ TABLE, but not by a table expression 
 		ArrayList<Command> commandsReadingSyTFill = SyFieldAnalyzer.getSyFieldReadersFor(SyField.TFILL, command);
 		if (commandsReadingSyTFill.size() > 0)
@@ -651,7 +658,8 @@ public class ReadTableRule extends RuleForCommands {
 				} 
 				Token assignmentsStart = componentAssignments.firstToken;
 				if (assignmentsStart.textEquals("=")) {
-					// in the special case of 'WITH KEY = operator1', insert a 'table_line' Token
+					// in the obsolete case of 'WITH KEY = operator1', insert a 'table_line' Token,
+					// see https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/abapread_table_obsolet.htm?file=abapread_table_obsolet.htm#!ABAP_ALTERNATIVE_3@3@
 					assignmentsStart.setWhitespace();
 					Token tableLineToken = Token.createForAbap(0, 1, "table_line", sourceLineNum);
 					writeAfter.insertNext(tableLineToken);
