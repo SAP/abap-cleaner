@@ -13,6 +13,7 @@ public enum RuleID  {
    EMPTY_LINES_OUTSIDE_METHODS,
    EMPTY_LINES_IN_CLASS_DEFINITION,
    CDS_TEST_CLASS_LINES,
+   ONE_COMMAND_PER_LINE,
    
    // Spaces 
    SPACES_IN_EMPTY_BRACKETS, // for compatibility, this old RuleID is kept, while the class was renamed from SpacesInEmptyBracketsRule to SpaceAroundTextLiteralRule
