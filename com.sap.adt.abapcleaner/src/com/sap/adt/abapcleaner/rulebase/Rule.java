@@ -41,7 +41,7 @@ import java.time.LocalDate;
 import java.util.*;
 
 public abstract class Rule {
-	public static final int RULE_COUNT = 99;
+	public static final int RULE_COUNT = 100;
 	public static final int RULE_GROUP_COUNT = 12;
 
 	protected static final String LINE_SEP = ABAP.LINE_SEPARATOR;
@@ -143,6 +143,7 @@ public abstract class Rule {
          new ExportingKeywordRule(profile),
          
          // commands
+         new ExitOutsideLoopRule(profile),
          new CheckOutsideLoopRule(profile),
          new CheckInLoopRule(profile),
          new IfBlockAtLoopEndRule(profile),

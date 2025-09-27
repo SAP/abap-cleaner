@@ -63,6 +63,7 @@ public enum RuleID  {
    
    // Commands [obsolete/outdated]
    // - CHECK, IF ... CONTINUE/RETURN
+   EXIT_OUTSIDE_LOOP,
    CHECK_OUTSIDE_LOOP,
    CHECK_IN_LOOP,
    IF_BLOCK_AT_LOOP_END,
