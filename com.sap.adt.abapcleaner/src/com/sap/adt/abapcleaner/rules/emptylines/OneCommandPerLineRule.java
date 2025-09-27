@@ -39,6 +39,9 @@ public class OneCommandPerLineRule extends RuleForCommands {
 	public RuleReference[] getReferences() { return references; }
 
 	@Override
+	public RuleID[] getDependentRules() { return new RuleID[] { RuleID.INSET } ; }
+
+	@Override
 	public boolean isEssential() { return true; }
 	
 	@Override
