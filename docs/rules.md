@@ -1,6 +1,6 @@
 # Available Cleanup Rules
 
-ABAP cleaner offers 98 cleanup rules with a total of 464 configuration options:
+ABAP cleaner offers 100 cleanup rules with a total of 468 configuration options:
 
 ## Empty Lines
 
@@ -8,6 +8,7 @@ ABAP cleaner offers 98 cleanup rules with a total of 464 configuration options:
 * [Separate methods and classes with empty lines](rules/EmptyLinesOutsideMethodsRule.md)
 * [Standardize empty lines in class definitions](rules/EmptyLinesInClassDefinitionRule.md)
 * [Standardize test classes for CDS views](rules/CdsTestClassLinesRule.md)
+* [Move commands to own lines](rules/OneCommandPerLineRule.md)
 
 ## Spaces
 
@@ -55,6 +56,7 @@ ABAP cleaner offers 98 cleanup rules with a total of 464 configuration options:
 
 ## Commands
 
+* [Replace EXIT outside loop with RETURN](rules/ExitOutsideLoopRule.md)
 * [Convert CHECK outside loop to IF NOT ... RETURN](rules/CheckOutsideLoopRule.md)
 * [Convert CHECK in loop to IF NOT ... CONTINUE](rules/CheckInLoopRule.md)
 * [Replace long IF blocks at loop end](rules/IfBlockAtLoopEndRule.md)

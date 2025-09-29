@@ -1,4 +1,4 @@
-[<-- previous rule](EmptyLinesInClassDefinitionRule.md) | [overview](../rules.md) | [next rule -->](SpaceAroundTextLiteralRule.md)
+[<-- previous rule](EmptyLinesInClassDefinitionRule.md) | [overview](../rules.md) | [next rule -->](OneCommandPerLineRule.md)
 
 # Standardize test classes for CDS views
 

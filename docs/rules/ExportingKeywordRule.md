@@ -1,4 +1,4 @@
-[<-- previous rule](ReceivingKeywordRule.md) | [overview](../rules.md) | [next rule -->](CheckOutsideLoopRule.md)
+[<-- previous rule](ReceivingKeywordRule.md) | [overview](../rules.md) | [next rule -->](ExitOutsideLoopRule.md)
 
 # Omit optional EXPORTING
 
