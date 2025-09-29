@@ -1,4 +1,4 @@
-[<-- previous rule](ExportingKeywordRule.md) | [overview](../rules.md) | [next rule -->](CheckInLoopRule.md)
+[<-- previous rule](ExitOutsideLoopRule.md) | [overview](../rules.md) | [next rule -->](CheckInLoopRule.md)
 
 # Convert CHECK outside loop to IF NOT ... RETURN
 

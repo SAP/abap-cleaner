@@ -6,6 +6,17 @@ as well as bugfixes of reported issues, i.e. anything that enhances or changes t
 For a complete list of changes (including documentation, tests, refactoring etc.), please refer to 
 the list of [commits](../../../commits/main).
 
+## 2025-09-29 (version 1.22.0)
+
+**Great thanks** to [**jan-jezek**](https://github.com/jan-jezek), [**matthewdjb**](https://github.com/matthewdjb) and
+[**fmabap**](https://github.com/fmabap) for the ideas and bug reports behind these improvements!
+
+* Added new rule '**Move commands to own lines**' ([#316](../../../issues/316))
+* Added new rule '**Replace EXIT outside loop with RETURN**' ([#277](../../../issues/277))
+* Fixed rule '**Replace READ TABLE with table expression**' for **obsolete** forms of **free key** ([#448](../../../issues/448))
+* Fixed rule '**Align logical expressions**' for SELECT with **LIKE in parentheses**
+* Updated **known CamelCase names** for CDS views and fields
+
 ## 2025-09-18 (version 1.21.4)
 
 **Thanks a lot**, [**sandraros**](https://github.com/sandraros) for helping to find this bug!
