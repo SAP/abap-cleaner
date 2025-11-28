@@ -15,7 +15,7 @@
     <module>test</module>
   </modules>
   <properties>
-    <tycho-version>5.0.0</tycho-version>
+    <tycho-version>5.0.1</tycho-version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <executionEnvironment>JavaSE-17</executionEnvironment>
     <maven.compiler.release>17</maven.compiler.release>
