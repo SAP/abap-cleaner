@@ -7,9 +7,15 @@ Eclipse (menu 'Help / Install New Software', field 'Work with'), the error "Unab
 is shown with details "PKIX path building failed: sun.security.provider.certpath.SunCertPathBuilderException: 
 unable to find valid certification path to requested target" (or similar). 
 
-**Solution**: Open the file ```eclipse.ini``` from your Eclipse installation path. 
-Right after the line ```-vmargs```, add the following two lines: 
+**Solution**: Use Eclipse 2025-12 or later.
 
+In case you still encounter issues, make sure that there are no unwanted modifications to ```eclipse.ini``` from your Eclipse installation path.
+
+The following option below ```-vmargs``` **should be set** (Eclipse 2025-12 default):
+```
+-Declipse.platform.mergeTrust=true
+```
+The following options must **not** be set anymore:
 ```
 -Djavax.net.ssl.trustStore=NONE
 -Djavax.net.ssl.trustStoreType=Windows-ROOT
@@ -20,8 +26,14 @@ Now save ```eclipse.ini```, restart Eclipse and try menu 'Help / Install New Sof
 **Explanation**: Some component in your network (antivirus, firewall, corporate proxy etc.) is hooking into encrypted 
 TLS connections. The fake certificate of this component needs to be trusted by the operating system / application.
 Typically, this is done by injecting a trusted root certificate into the Windows operating system trust store. 
-However, Eclipse, in its default configuration, does not make use of the Windows OS trust store, but uses the trust store 
-of the Java VM. The above solution makes Eclipse use the Windows OS trust store. 
+However, Eclipse, in its default configuration:
+- before Eclipse 2024-12, did not make use of the Windows OS trust store, but only used the trust store
+  of the Java VM.
+- starting with Eclipse 2024-12, used the Windows OS trust store only and not the JVM store anymore.
+  However, the OS store might not necessarily be filled properly, also resulting in problems.
+- starting with Eclipse 2025-12, combines the OS and JVM trust stores - also on macOS.
+
+For more background information, see https://eclipse.dev/eclipse/markdown/?f=news/4.38/platform.md#merging-the-jvm-and-the-operating-system-trust-stores
 
 
 ## Info "No updates found" although a newer release exists
