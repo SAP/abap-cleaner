@@ -29,8 +29,11 @@ class AlignDeclarationsTest extends RuleTestBase {
 
 		rule.configAlignStructureAction.setEnumValue(AlignDeclarationsAction.ALIGN_NAME_TYPE_LENGTH_ETC);
 		rule.configStructureAlignStyle.setEnumValue(StructureAlignStyle.PER_LEVEL);
+		rule.configAlignEnumAction.setEnumValue(AlignEnumAction.ALIGN_NAME_AND_VALUE);
+		rule.configContainingPosition.setEnumValue(ContainingPosition.BELOW_KEYWORD_PLUS_2);
 
 		rule.configFillPercentageToJustifyOwnColumn.setValue(20);
+		rule.configMaxLineLength.setValue(130);
 		rule.configCondenseInnerSpaces.setValue(true);
 	}
 	
@@ -1853,6 +1856,240 @@ class AlignDeclarationsTest extends RuleTestBase {
 		buildExp("  DATA lv_any   TYPE i      READ-ONLY.");
 		buildExp("  DATA lv_other TYPE string READ-ONLY.");
 		buildExp("  DATA lv_third TYPE i. \" comment at line end");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testGenStrucContainingUnchanged() {
+		rule.configContainingPosition.setEnumValue(ContainingPosition.UNCHANGED);
+
+		buildSrc("    TYPES gen_struc TYPE ANY");
+		buildSrc("      STRUCTURE CONTAINING %cid_ref TYPE abp_behv_cid");
+		buildSrc("      %is_draft TYPE");
+		buildSrc("     abp_behv_flag other_struc TYPE");
+		buildSrc("            ANY STRUCTURE.");
+		buildSrc("");
+		buildSrc("    TYPES: BEGIN OF s_any,");
+		buildSrc("        comp1 TYPE string, END OF s_any,");
+		buildSrc("    gen_struc2");
+		buildSrc("   TYPE ANY STRUCTURE");
+		buildSrc("              CONTAINING %cid_ref TYPE abp_behv_cid %is_draft TYPE");
+		buildSrc("     abp_behv_flag, ty_any TYPE n LENGTH 4.");
+
+		buildExp("    TYPES gen_struc TYPE ANY STRUCTURE CONTAINING %cid_ref    TYPE abp_behv_cid");
+		buildExp("                                                  %is_draft   TYPE abp_behv_flag");
+		buildExp("                                                  other_struc TYPE ANY STRUCTURE.");
+		buildExp("");
+		buildExp("    TYPES: BEGIN OF s_any,");
+		buildExp("             comp1 TYPE string,");
+		buildExp("           END OF s_any,");
+		buildExp("           gen_struc2 TYPE ANY STRUCTURE");
+		buildExp("              CONTAINING %cid_ref  TYPE abp_behv_cid");
+		buildExp("                         %is_draft TYPE abp_behv_flag,");
+		buildExp("           ty_any     TYPE n LENGTH 4.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testGenStrucContainingContinue() {
+		rule.configContainingPosition.setEnumValue(ContainingPosition.CONTINUE);
+
+		buildSrc("    TYPES gen_struc TYPE ANY");
+		buildSrc("      STRUCTURE CONTAINING %cid_ref TYPE abp_behv_cid");
+		buildSrc("      %is_draft TYPE");
+		buildSrc("     abp_behv_flag other_struc TYPE");
+		buildSrc("            ANY STRUCTURE.");
+		buildSrc("");
+		buildSrc("    TYPES: BEGIN OF s_any,");
+		buildSrc("        comp1 TYPE string, END OF s_any,");
+		buildSrc("    gen_struc2");
+		buildSrc("   TYPE ANY STRUCTURE");
+		buildSrc("              CONTAINING %cid_ref TYPE abp_behv_cid %is_draft TYPE");
+		buildSrc("     abp_behv_flag, ty_any TYPE n LENGTH 4.");
+		buildSrc("");
+		buildSrc("    TYPES gen_struc3 TYPE ANY STRUCTURE \" comment");
+		buildSrc("    CONTAINING %cid_ref TYPE abp_behv_cid %is_draft TYPE abp_behv_flag.");
+
+		buildExp("    TYPES gen_struc TYPE ANY STRUCTURE CONTAINING %cid_ref    TYPE abp_behv_cid");
+		buildExp("                                                  %is_draft   TYPE abp_behv_flag");
+		buildExp("                                                  other_struc TYPE ANY STRUCTURE.");
+		buildExp("");
+		buildExp("    TYPES: BEGIN OF s_any,");
+		buildExp("             comp1 TYPE string,");
+		buildExp("           END OF s_any,");
+		buildExp("           gen_struc2 TYPE ANY STRUCTURE CONTAINING %cid_ref  TYPE abp_behv_cid");
+		buildExp("                                                    %is_draft TYPE abp_behv_flag,");
+		buildExp("           ty_any     TYPE n LENGTH 4.");
+		buildExp("");
+		buildExp("    TYPES gen_struc3 TYPE ANY STRUCTURE \" comment");
+		buildExp("                                        CONTAINING %cid_ref  TYPE abp_behv_cid");
+		buildExp("                                                   %is_draft TYPE abp_behv_flag.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testGenStrucContainingContinueThenBreak() {
+		rule.configContainingPosition.setEnumValue(ContainingPosition.CONTINUE_AND_BREAK);
+
+		buildSrc("    TYPES gen_struc TYPE ANY");
+		buildSrc("      STRUCTURE CONTAINING %cid_ref TYPE abp_behv_cid");
+		buildSrc("      %is_draft TYPE");
+		buildSrc("     abp_behv_flag other_struc TYPE");
+		buildSrc("            ANY STRUCTURE.");
+		buildSrc("");
+		buildSrc("    TYPES: BEGIN OF s_any,");
+		buildSrc("        comp1 TYPE string, END OF s_any,");
+		buildSrc("    gen_struc2");
+		buildSrc("   TYPE ANY STRUCTURE");
+		buildSrc("              CONTAINING %cid_ref TYPE abp_behv_cid %is_draft TYPE");
+		buildSrc("     abp_behv_flag, ty_any TYPE n LENGTH 4.");
+
+		buildExp("    TYPES gen_struc TYPE ANY STRUCTURE CONTAINING");
+		buildExp("            %cid_ref    TYPE abp_behv_cid");
+		buildExp("            %is_draft   TYPE abp_behv_flag");
+		buildExp("            other_struc TYPE ANY STRUCTURE.");
+		buildExp("");
+		buildExp("    TYPES: BEGIN OF s_any,");
+		buildExp("             comp1 TYPE string,");
+		buildExp("           END OF s_any,");
+		buildExp("           gen_struc2 TYPE ANY STRUCTURE CONTAINING");
+		buildExp("             %cid_ref  TYPE abp_behv_cid");
+		buildExp("             %is_draft TYPE abp_behv_flag,");
+		buildExp("           ty_any     TYPE n LENGTH 4.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testGenStrucContainingBelowTypesKeywordPlus2() {
+		rule.configContainingPosition.setEnumValue(ContainingPosition.BELOW_KEYWORD_PLUS_2);
+
+		buildSrc("    TYPES gen_struc TYPE ANY");
+		buildSrc("      STRUCTURE CONTAINING %cid_ref TYPE abp_behv_cid");
+		buildSrc("      %is_draft TYPE");
+		buildSrc("     abp_behv_flag other_struc TYPE");
+		buildSrc("            ANY STRUCTURE.");
+
+		buildExp("    TYPES gen_struc TYPE ANY STRUCTURE");
+		buildExp("      CONTAINING %cid_ref    TYPE abp_behv_cid");
+		buildExp("                 %is_draft   TYPE abp_behv_flag");
+		buildExp("                 other_struc TYPE ANY STRUCTURE.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testGenStrucContainingBelowTypeNamePlus2() {
+		rule.configContainingPosition.setEnumValue(ContainingPosition.BELOW_IDENTIFIER_PLUS_2);
+
+		buildSrc("    TYPES gen_struc TYPE ANY");
+		buildSrc("      STRUCTURE CONTAINING %cid_ref TYPE abp_behv_cid");
+		buildSrc("      %is_draft TYPE");
+		buildSrc("     abp_behv_flag other_struc TYPE");
+		buildSrc("            ANY STRUCTURE.");
+		buildSrc("");
+		buildSrc("    TYPES: BEGIN OF s_any,");
+		buildSrc("        comp1 TYPE string, END OF s_any,");
+		buildSrc("    gen_struc2");
+		buildSrc("   TYPE ANY STRUCTURE");
+		buildSrc("              CONTAINING %cid_ref TYPE abp_behv_cid %is_draft TYPE");
+		buildSrc("     abp_behv_flag, ty_any TYPE n LENGTH 4.");
+
+		buildExp("    TYPES gen_struc TYPE ANY STRUCTURE");
+		buildExp("            CONTAINING %cid_ref    TYPE abp_behv_cid");
+		buildExp("                       %is_draft   TYPE abp_behv_flag");
+		buildExp("                       other_struc TYPE ANY STRUCTURE.");
+		buildExp("");
+		buildExp("    TYPES: BEGIN OF s_any,");
+		buildExp("             comp1 TYPE string,");
+		buildExp("           END OF s_any,");
+		buildExp("           gen_struc2 TYPE ANY STRUCTURE");
+		buildExp("             CONTAINING %cid_ref  TYPE abp_behv_cid");
+		buildExp("                        %is_draft TYPE abp_behv_flag,");
+		buildExp("           ty_any     TYPE n LENGTH 4.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testGenStrucContainingBelowTypeKeyword() {
+		rule.configContainingPosition.setEnumValue(ContainingPosition.BELOW_TYPE);
+
+		buildSrc("    TYPES gen_struc TYPE ANY");
+		buildSrc("      STRUCTURE CONTAINING %cid_ref TYPE abp_behv_cid");
+		buildSrc("      %is_draft TYPE");
+		buildSrc("     abp_behv_flag other_struc TYPE");
+		buildSrc("            ANY STRUCTURE.");
+		buildSrc("");
+		buildSrc("    TYPES: BEGIN OF s_any,");
+		buildSrc("        comp1 TYPE string, END OF s_any,");
+		buildSrc("    gen_struc2");
+		buildSrc("   TYPE ANY STRUCTURE");
+		buildSrc("              CONTAINING %cid_ref TYPE abp_behv_cid %is_draft TYPE");
+		buildSrc("     abp_behv_flag, ty_any TYPE n LENGTH 4.");
+
+		buildExp("    TYPES gen_struc TYPE ANY STRUCTURE");
+		buildExp("                    CONTAINING %cid_ref    TYPE abp_behv_cid");
+		buildExp("                               %is_draft   TYPE abp_behv_flag");
+		buildExp("                               other_struc TYPE ANY STRUCTURE.");
+		buildExp("");
+		buildExp("    TYPES: BEGIN OF s_any,");
+		buildExp("             comp1 TYPE string,");
+		buildExp("           END OF s_any,");
+		buildExp("           gen_struc2 TYPE ANY STRUCTURE");
+		buildExp("                      CONTAINING %cid_ref  TYPE abp_behv_cid");
+		buildExp("                                 %is_draft TYPE abp_behv_flag,");
+		buildExp("           ty_any     TYPE n LENGTH 4.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testGenStrucContainingBelowAnyStructure() {
+		rule.configContainingPosition.setEnumValue(ContainingPosition.BELOW_ANY_STRUCTURE);
+
+		buildSrc("    TYPES gen_struc TYPE ANY");
+		buildSrc("      STRUCTURE CONTAINING %cid_ref TYPE abp_behv_cid");
+		buildSrc("      %is_draft TYPE");
+		buildSrc("     abp_behv_flag other_struc TYPE");
+		buildSrc("            ANY STRUCTURE.");
+		buildSrc("");
+		buildSrc("    TYPES: BEGIN OF s_any,");
+		buildSrc("        comp1 TYPE string, END OF s_any,");
+		buildSrc("    gen_struc2");
+		buildSrc("   TYPE ANY STRUCTURE");
+		buildSrc("              CONTAINING %cid_ref TYPE abp_behv_cid %is_draft TYPE");
+		buildSrc("     abp_behv_flag, ty_any TYPE n LENGTH 4.");
+
+		buildExp("    TYPES gen_struc TYPE ANY STRUCTURE");
+		buildExp("                         CONTAINING %cid_ref    TYPE abp_behv_cid");
+		buildExp("                                    %is_draft   TYPE abp_behv_flag");
+		buildExp("                                    other_struc TYPE ANY STRUCTURE.");
+		buildExp("");
+		buildExp("    TYPES: BEGIN OF s_any,");
+		buildExp("             comp1 TYPE string,");
+		buildExp("           END OF s_any,");
+		buildExp("           gen_struc2 TYPE ANY STRUCTURE");
+		buildExp("                           CONTAINING %cid_ref  TYPE abp_behv_cid");
+		buildExp("                                      %is_draft TYPE abp_behv_flag,");
+		buildExp("           ty_any     TYPE n LENGTH 4.");
 
 		putAnyMethodAroundSrcAndExp();
 
