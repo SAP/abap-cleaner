@@ -20,6 +20,7 @@ If line length is exceeded, VALUE clauses can be moved to the next line, unless 
 * Action for structures \(BEGIN OF ...\): \[align name, TYPE, LENGTH, VALUE etc. if filled\]
 * Scope of nested structures: \[align outer structure independently \(like Pretty Printer\)\]
 * Action for enums \(BEGIN OF ENUM ...\): \[align name and VALUE \(like Pretty Printer\)\]
+* Position of CONTAINING for generic structures: \[below TYPES keyword \+ 2\]
 * Maximum line length \[130\] \(only used to move VALUE clauses to the next line if required\)
 * Fill Ratio to justify own column \[20\] %
 * \[X\] Condense inner spaces in non-aligned parts
@@ -93,6 +94,14 @@ If line length is exceeded, VALUE clauses can be moved to the next line, unless 
         two VALUE 2,
        three VALUE 3,
       END OF ENUM number.
+
+    " for readability, definitions of generic structures should not be part of a
+    " TYPES: chain; with that, CONTAINING can even be moved before the type name
+    TYPES gen_struc TYPE ANY
+      STRUCTURE CONTAINING %cid_ref TYPE abp_behv_cid
+      %is_draft TYPE
+     abp_behv_flag other_struc TYPE
+            ANY STRUCTURE.
 
     " if maximum line length is exceeded, VALUE clauses can be moved below TYPE or even below the name
     CONSTANTS lc_any_constant_with_long_name TYPE if_any_interface=>ty_any_type VALUE if_any_interface=>co_any_value_with_long_name.
@@ -169,6 +178,13 @@ Resulting code:
         two   VALUE 2,
         three VALUE 3,
       END OF ENUM number.
+
+    " for readability, definitions of generic structures should not be part of a
+    " TYPES: chain; with that, CONTAINING can even be moved before the type name
+    TYPES gen_struc TYPE ANY STRUCTURE
+      CONTAINING %cid_ref    TYPE abp_behv_cid
+                 %is_draft   TYPE abp_behv_flag
+                 other_struc TYPE ANY STRUCTURE.
 
     " if maximum line length is exceeded, VALUE clauses can be moved below TYPE or even below the name
     CONSTANTS lc_any_constant_with_long_name TYPE if_any_interface=>ty_any_type

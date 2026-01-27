@@ -1,6 +1,6 @@
 # Available Cleanup Rules
 
-ABAP cleaner offers 100 cleanup rules with a total of 468 configuration options:
+ABAP cleaner offers 100 cleanup rules with a total of 469 configuration options:
 
 ## Empty Lines
 

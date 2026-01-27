@@ -6,6 +6,14 @@ as well as bugfixes of reported issues, i.e. anything that enhances or changes t
 For a complete list of changes (including documentation, tests, refactoring etc.), please refer to 
 the list of [commits](../../../commits/main).
 
+## 2026-01-27 (version 1.22.1)
+
+**Thanks** a lot to our inspiring community!
+
+* Enhanced rule '**Align declarations**' for **generic structures**
+* Updated **ABAP grammar file**
+* Updated **known CamelCase names** for CDS views and fields
+
 ## 2025-09-29 (version 1.22.0)
 
 **Great thanks** to [**jan-jezek**](https://github.com/jan-jezek), [**matthewdjb**](https://github.com/matthewdjb) and
