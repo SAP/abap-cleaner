@@ -1900,6 +1900,7 @@ class AlignDeclarationsTest extends RuleTestBase {
 	void testGenStrucContainingContinue() {
 		rule.configContainingPosition.setEnumValue(ContainingPosition.CONTINUE);
 
+		// also test a line-end comment before CONTAINING
 		buildSrc("    TYPES gen_struc TYPE ANY");
 		buildSrc("      STRUCTURE CONTAINING %cid_ref TYPE abp_behv_cid");
 		buildSrc("      %is_draft TYPE");
