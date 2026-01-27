@@ -476,7 +476,7 @@ public abstract class RuleTestBase {
 				return false;
 			}
 		} catch (IntegrityBrokenException ex) {
-			fail("Error inserting stress test tokens:" + ex.getMessage() + stressTestInfo );
+			fail("Error inserting stress test tokens: " + getStressTestFailMessage(ex, stressTestInfo, code));
 		}
 		@SuppressWarnings("unused")
 		String codeBeforeCleanup = code.toString(); // for debugging
@@ -485,8 +485,9 @@ public abstract class RuleTestBase {
 		// but in any case, the result must keep referential integrity
 		try {
 			getRule().executeIfAllowedOn(code, releaseRestrictionFromUI);
-		} catch (UnexpectedSyntaxBeforeChanges | UnexpectedSyntaxAfterChanges e) {
-			fail(e.getMessage() + stressTestInfo);
+		} catch (UnexpectedSyntaxBeforeChanges | UnexpectedSyntaxAfterChanges ex) {
+			fail("Unexpected syntax executing rule '" + getRule().getDisplayName() + "': "
+					 + getStressTestFailMessage(ex, stressTestInfo, code));
 		}
 
 		// test the referential integrity of the resulting objects (Code, Command, Token etc.)
@@ -495,10 +496,16 @@ public abstract class RuleTestBase {
 			if (stressTestType != StressTestType.COLON) {
 				code.checkSyntax(true);
 			}
-		} catch (IntegrityBrokenException e1) {
-			fail("Error after executing rule '" + getRule().getDisplayName() + "': " + e1.getMessage() + stressTestInfo);
+		} catch (IntegrityBrokenException ex) {
+			fail("Error after executing rule '" + getRule().getDisplayName() + "': "
+					+ getStressTestFailMessage(ex, stressTestInfo, code));
 		} 
 		return true;
+	}
+	
+	private String getStressTestFailMessage(Throwable ex, String stressTestInfo, Code code) {
+		return ex.getMessage() + System.lineSeparator() + stressTestInfo + " resulted in:" 
+				+ System.lineSeparator() + code.toString();
 	}
 	
 	private void testDiffNavigator(Code code, DiffDoc diffDoc) {

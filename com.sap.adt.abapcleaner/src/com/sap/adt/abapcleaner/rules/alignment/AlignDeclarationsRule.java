@@ -33,6 +33,16 @@ public class AlignDeclarationsRule extends AlignDeclarationSectionRuleBase {
 
 	private static final int MAX_COLUMN_COUNT = 8;
 
+	/** for the components after TYPE ANY STRUCTURE CONTAINING */
+   private enum ComponentColumns  {
+      COMPONENT_NAME,
+      TYPE;
+
+		public int getValue() { return this.ordinal(); }
+	}
+
+	private static final int MAX_COMPONENT_COLUMN_COUNT = 2;
+
 	private final static RuleReference[] references = new RuleReference[] { 
 			new RuleReference(RuleSource.ABAP_CLEANER),
 			new RuleReference(RuleSource.ABAP_STYLE_GUIDE, "Don't align type clauses", "#dont-align-type-clauses", true) };
@@ -220,6 +230,14 @@ public class AlignDeclarationsRule extends AlignDeclarationSectionRuleBase {
 				+ LINE_SEP + "        two VALUE 2,"
 				+ LINE_SEP + "       three VALUE 3,"
 				+ LINE_SEP + "      END OF ENUM number."
+				+ LINE_SEP + ""
+				+ LINE_SEP + "    \" for readability, definitions of generic structures should not be part of a"
+				+ LINE_SEP + "    \" TYPES: chain; with that, CONTAINING can even be moved before the type name"
+				+ LINE_SEP + "    TYPES gen_struc TYPE ANY"
+				+ LINE_SEP + "      STRUCTURE CONTAINING %cid_ref TYPE abp_behv_cid"
+				+ LINE_SEP + "      %is_draft TYPE"
+				+ LINE_SEP + "     abp_behv_flag other_struc TYPE"
+				+ LINE_SEP + "            ANY STRUCTURE."
 				+ LINE_SEP 
 				+ LINE_SEP + "    \" if maximum line length is exceeded, VALUE clauses can be moved below TYPE or even below the name" 
 				+ LINE_SEP + "    CONSTANTS lc_any_constant_with_long_name TYPE if_any_interface=>ty_any_type VALUE if_any_interface=>co_any_value_with_long_name."
@@ -232,6 +250,7 @@ public class AlignDeclarationsRule extends AlignDeclarationSectionRuleBase {
    private final String[] alignNonChainsActionTexts = new String[] { "align name, TYPE, LENGTH, VALUE etc. if filled", "align name and TYPE", "align name only (like Pretty Printer)" };
    private final String[] alignStructureActionTexts = new String[] { "align name, TYPE, LENGTH, VALUE etc. if filled", "align name and TYPE (like Pretty Printer)", "align name only" };
    private final String[] alignEnumActionTexts = new String[] { "align name and VALUE (like Pretty Printer)", "align name only" };
+   private final String[] containingPositionTexts = new String[] { "keep as is", "continue after ANY STRUCTURE", "continue after ANY STRUCTURE, then break", "below TYPES keyword + 2", "below type name + 2", "below TYPE", "below ANY STRUCTURE" };
    
    private final String[] structureAlignStyleTexts = new String[] { "align outer structure with inner", "align outer structure independently (like Pretty Printer)", "align each section independently" };
    
@@ -242,11 +261,12 @@ public class AlignDeclarationsRule extends AlignDeclarationSectionRuleBase {
 	final ConfigEnumValue<AlignDeclarationsAction> configAlignStructureAction = new ConfigEnumValue<AlignDeclarationsAction>(this, "AlignStructureAction", "Action for structures (BEGIN OF ...):", alignStructureActionTexts, AlignDeclarationsAction.values(), AlignDeclarationsAction.ALIGN_NAME_TYPE_LENGTH_ETC, AlignDeclarationsAction.ALIGN_NAME_TYPE_LENGTH_ETC, LocalDate.of(2023, 6, 10) ); 
 	final ConfigEnumValue<StructureAlignStyle> configStructureAlignStyle = new ConfigEnumValue<StructureAlignStyle>(this, "StructureAlignStyle", "Scope of nested structures:", structureAlignStyleTexts, StructureAlignStyle.values(), StructureAlignStyle.PER_LEVEL, StructureAlignStyle.ACROSS_LEVELS, LocalDate.of(2023, 5, 21) ); 
 	final ConfigEnumValue<AlignEnumAction> configAlignEnumAction = new ConfigEnumValue<AlignEnumAction>(this, "AlignEnumAction", "Action for enums (BEGIN OF ENUM ...):", alignEnumActionTexts, AlignEnumAction.values(), AlignEnumAction.ALIGN_NAME_AND_VALUE, AlignEnumAction.ALIGN_NAME_ONLY, LocalDate.of(2023, 12, 30) ); 
+	final ConfigEnumValue<ContainingPosition> configContainingPosition = new ConfigEnumValue<ContainingPosition>(this, "ContainingPosition", "Position of CONTAINING for generic structures:", containingPositionTexts, ContainingPosition.values(), ContainingPosition.BELOW_KEYWORD_PLUS_2, ContainingPosition.UNCHANGED, LocalDate.of(2026, 1, 15));
 	final ConfigIntValue configFillPercentageToJustifyOwnColumn = new ConfigIntValue(this, "FillPercentageToJustifyOwnColumn", "Fill Ratio to justify own column", "%", 1, 20, 100);
 	final ConfigIntValue configMaxLineLength = new ConfigIntValue(this, "MaxLineLength", "Maximum line length", "(only used to move VALUE clauses to the next line if required)", MIN_LINE_LENGTH_ABAP, HIGHER_DEFAULT_LINE_LENGTH_ABAP, 255, 200, LocalDate.of(2023, 7, 28));
 	final ConfigBoolValue configCondenseInnerSpaces = new ConfigBoolValue(this, "CondenseInnerSpaces", "Condense inner spaces in non-aligned parts", true, true, LocalDate.of(2023, 6, 10));
 
-	private final ConfigValue[] configValues = new ConfigValue[] { configExecuteOnClassDefAndInterfaces, configAlignChainAction, configAlignNonChainsAction, configAlignAcrossEmptyLines, configAlignAcrossCommentLines, configAlignStructureAction, configStructureAlignStyle, configAlignEnumAction, configMaxLineLength, configFillPercentageToJustifyOwnColumn, configCondenseInnerSpaces };
+	private final ConfigValue[] configValues = new ConfigValue[] { configExecuteOnClassDefAndInterfaces, configAlignChainAction, configAlignNonChainsAction, configAlignAcrossEmptyLines, configAlignAcrossCommentLines, configAlignStructureAction, configStructureAlignStyle, configAlignEnumAction, configContainingPosition, configMaxLineLength, configFillPercentageToJustifyOwnColumn, configCondenseInnerSpaces };
 
 	@Override
 	public ConfigValue[] getConfigValues() { return configValues; }
@@ -385,6 +405,7 @@ public class AlignDeclarationsRule extends AlignDeclarationSectionRuleBase {
 			firstLineBreaks = 1;
 		}
 		
+		alignGenericTypeComponents(startCommand, endCommand);
 		alignInnerCommentLines(startCommand, endCommand);
 	}
 
@@ -651,20 +672,22 @@ public class AlignDeclarationsRule extends AlignDeclarationSectionRuleBase {
 				isTable = true;
 
 			// do not align table declarations with "WITH ... KEY ..." sections, because they usually should not be put on a single line; 
-			// however, do accept the short cases of "WITH EMPTY KEY" and "WITH [UNIQUE | NON-UNIQUE] DEFAULT KEY" and "WITH [UNIQUE | NON-UNIQUE] KEY comp1 [comp2 [comp3]]" 
+			// however, do accept the short cases of "WITH EMPTY KEY" and "WITH [UNIQUE | NON-UNIQUE] DEFAULT KEY" and "WITH [UNIQUE | NON-UNIQUE] KEY comp1 [comp2 [comp3]]";
+			// also, do not align component lists of generic type definitions, i.e. TYPES ... TYPE ANY STRUCTURE CONTAINING component_list
 			if (typeEnd.isKeyword("ASSOCIATION") 
 			 || typeEnd.isKeyword("WITH") 
 					&& !typeEnd.matchesOnSiblings(true, "WITH", "EMPTY", "KEY") 
 					&& !typeEnd.matchesOnSiblings(true, "WITH", TokenSearch.makeOptional("UNIQUE|NON-UNIQUE"), "DEFAULT", "KEY")
-					&& !typeEnd.matchesOnSiblings(true, "WITH", TokenSearch.makeOptional("UNIQUE|NON-UNIQUE"), "KEY", TokenSearch.ANY_IDENTIFIER, ",|.")) {
+					&& !typeEnd.matchesOnSiblings(true, "WITH", TokenSearch.makeOptional("UNIQUE|NON-UNIQUE"), "KEY", TokenSearch.ANY_IDENTIFIER, ",|.")
+			 || typeEnd.isKeyword("CONTAINING")) {
 				
 				// for more complex cases (with multiple components, multiple WITH key definitions, or ASSOCIATIONs) 
 				// only align up to (but excluding) "WITH" or "ASSOCIATION", thus leaving the WITH or ASSOCIATION section(s) unchanged 
-				// and keeping possible line breaks as well as manual alignment
+				// and keeping possible line breaks as well as manual alignment; same for the component list after TYPE ANY STRUCTURE CONTAINING
 				Term typeInfo = Term.createForTokenRange(typeStart, typeEnd.getPrev());
 				line.setCell(Columns.TYPE.getValue(), AlignCellTerm.createSpecial(typeInfo, 0, true));
 				return typeEnd.getLastTokenOnSiblings(true, TokenSearch.ASTERISK, ".|,");
-			}
+			} 
 			typeEnd = typeEnd.getNextSibling();
 		}
 		if (typeEnd != typeStart) { // enum members do not have a TYPE / LIKE section
@@ -803,6 +826,119 @@ public class AlignDeclarationsRule extends AlignDeclarationSectionRuleBase {
 		if (!lengthColumn.isEmpty() && lengthColumn.isPreviousColumnFixedWidth()) {
 			Command[] changedCommands = lengthColumn.joinIntoPreviousColumns(condenseSpaceBetweenCells);
 			table.getParentCode().addRuleUses(this, changedCommands);
+		}
+	}
+
+	/** aligns the components of TYPE ANY STRUCTURE CONTAINING ... */
+	private void alignGenericTypeComponents(Command startCommand, Command endCommand) {
+		// search for TYPES commands
+		Command command = startCommand;
+		while (command != endCommand) {
+			if (!command.firstCodeTokenIsKeyword("TYPES")) {
+				command = command.getNext();
+				continue;
+			}
+
+			// search for the next 'TYPE ANY STRUCTURE CONTAINING ...' within this TYPES command
+			Token token = command.getFirstCodeToken();
+			while (token != null) {
+				token = token.getLastTokenOnSiblings(true, TokenSearch.ASTERISK, "TYPE", "ANY", "STRUCTURE", "CONTAINING");
+				if (token == null)
+					break;
+				Token containingToken = token;
+				Token typeToken = containingToken.getPrevCodeSibling().getPrevCodeSibling().getPrevCodeSibling(); 
+				
+				// build the AlignTable ("component_name | TYPE ...") by searching for the TYPE keywords
+				AlignTable table = new AlignTable(MAX_COMPONENT_COLUMN_COUNT);
+				Token prevToken = token;
+				while (token != null) {
+					token = token.getNextCodeSibling();
+					if (token.isCommaOrPeriod()) {
+						finishLastLine(table, token);
+						break;
+					} else if (token.isKeyword("TYPE")) {
+						finishLastLine(table, prevToken);
+						// add a line and set the component name; the TYPE Term will be added once we know where it ends
+						table.addLine().setCell(ComponentColumns.COMPONENT_NAME.getValue(), new AlignCellToken(prevToken));
+					} 
+					prevToken = token;
+				}
+				
+				// align the table, based on the position of the first component name (keeping the position of CONTAINING unchanged) 
+				if (table.getLineCount() > 0) {
+					Code code = table.getParentCode();
+					
+					// move the CONTAINING keyword as configured
+					ContainingPosition containingPosition = ContainingPosition.forValue(configContainingPosition.getValue());
+					if (containingPosition != ContainingPosition.UNCHANGED) {
+						int spacesLeft = 1;
+						int lineBreaks = 0;
+						if (containingPosition == ContainingPosition.CONTINUE || containingPosition == ContainingPosition.CONTINUE_AND_BREAK) {
+							spacesLeft = 1;
+							lineBreaks = 0;
+						} else if (containingPosition == ContainingPosition.BELOW_KEYWORD_PLUS_2) {
+							spacesLeft = command.getFirstCodeToken().getStartIndexInLine() + ABAP.INDENT_STEP;
+							lineBreaks = 1;
+						} else if (containingPosition == ContainingPosition.BELOW_IDENTIFIER_PLUS_2) {
+							spacesLeft = typeToken.getPrevCodeSibling().getStartIndexInLine() + ABAP.INDENT_STEP;
+							lineBreaks = 1;
+						} else if (containingPosition == ContainingPosition.BELOW_TYPE) {
+							spacesLeft = typeToken.getStartIndexInLine();
+							lineBreaks = 1;
+						} else if (containingPosition == ContainingPosition.BELOW_ANY_STRUCTURE) {
+							spacesLeft = typeToken.getNextCodeSibling().getStartIndexInLine();
+							lineBreaks = 1;
+						}
+						boolean changed;
+						if (lineBreaks == 0 && containingToken.getPrev().isComment()) {
+							spacesLeft += containingToken.getPrevCodeToken().getEndIndexInLine();
+							changed = containingToken.setWhitespace(1, spacesLeft);
+						} else {
+							changed = containingToken.setWhitespace(lineBreaks, spacesLeft);
+						}
+						if (changed) {
+							code.addRuleUse(this, containingToken.getParentCommand());
+						}
+					}
+					
+					try {
+						// reuse configAlignStructureAction for generic types
+						if (getAlignStructureAction() == AlignDeclarationsAction.ALIGN_NAME_ONLY) {
+							table.getColumn(ComponentColumns.TYPE.getValue()).joinIntoPreviousColumns(true);
+						}
+						// align the components either below the type identifier + 2 chars, or behind the CONTAINING keyword
+						int basicIndent;
+						int firstLineBreaks;
+						if (containingPosition == ContainingPosition.CONTINUE_AND_BREAK) {
+							basicIndent = typeToken.getPrevCodeSibling().getStartIndexInLine() + ABAP.INDENT_STEP;
+							firstLineBreaks = 1;
+						} else {
+							basicIndent = containingToken.getEndIndexInLine() + 1;
+							firstLineBreaks = 0;
+						}
+						Command[] changedCommands = table.align(basicIndent, firstLineBreaks, false);
+						code.addRuleUses(this, changedCommands);
+					} catch (UnexpectedSyntaxException e) {
+					}
+				}
+				// continue searching, since TYPES: may contain multiple, comma-separated definitions of generic types
+			}
+			command = command.getNext();
+		}
+	}
+	
+	private void finishLastLine(AlignTable table, Token endToken) {
+		AlignLine line = table.getLastLine();
+		if (line == null)
+			return;
+		Token typeToken = line.getFirstToken().getNextCodeSibling();
+		Token lastToken = endToken.getPrevCodeSibling();
+		try {
+			Term typeTerm = Term.createForTokenRange(typeToken, lastToken);
+			line.setCell(ComponentColumns.TYPE.getValue(), new AlignCellTerm(typeTerm));
+		} catch (UnexpectedSyntaxException e) {
+			table.removeLastLine();
+			return;
 		}
 	}
 
