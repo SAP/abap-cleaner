@@ -425,7 +425,7 @@ public abstract class RuleForDeclarations extends Rule {
 					variables.setNeeded(varName);
 				}
 
-				// find usages of other variables or constants in LIKE ... or VALUE ... clauses
+				// find usages of other variables or constants in LIKE ... or VALUE ... clauses, or in obsolete RANGES ... FOR ...
 				token = executeOnDeclarationLine(methodStart, variables, token, isInOOContext, varInfo); 
 			}
 				
@@ -452,16 +452,20 @@ public abstract class RuleForDeclarations extends Rule {
 			token = token.getNextCodeSibling();
 		}
 		
-		// if the declaration uses "LIKE ...", count that as a usage of that variable or constant
+		// if the declaration uses "LIKE ...", count that as a usage of that variable or constant; 
+		// same for obsolete "RANGES ... FOR ..."
 		Token next = token.getNextCodeSibling();
-		if (next != null && next.isKeyword("LIKE") && next.getNextCodeSibling() != null) {
+		boolean isLikeClause = (next != null && next.isKeyword("LIKE")); 
+		boolean isRangesForClause = token.getParentCommand().firstCodeTokenIsKeyword("RANGES") && next != null && next.isKeyword("FOR");
+		if ((isLikeClause || isRangesForClause) && next.getNextCodeSibling() != null) {
 			token = next.getNextCodeSibling();
-			// skip any keywords before the identifier of the data object, e.g. LINE OF, RANGE OF, REF TO, 
+			// for LIKE ..., skip any keywords before the identifier of the data object, e.g. LINE OF, RANGE OF, REF TO, 
 			// { STANDARD | SORTED | HASHED } TABLE OF 
 			while (token.isKeyword() && token.getNextCodeSibling() != null) {
 				token = token.getNextCodeSibling();
 			}
 			// the Token may contain more than the object name, e.g. 'DATA ls_struc LIKE LINE OF lr_ref->lt_table.'
+			// or 'RANGES lr_any FOR ls_any-component.'
 			String usedObjectName = Variables.getObjectName(token.getText(), isInOOContext);
 			variables.addUsageInLikeOrValueClause(token, usedObjectName, methodStart, varInfo);
 		} 

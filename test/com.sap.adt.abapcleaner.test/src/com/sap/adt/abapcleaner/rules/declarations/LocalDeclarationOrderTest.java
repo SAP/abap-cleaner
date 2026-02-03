@@ -1667,4 +1667,48 @@ public class LocalDeclarationOrderTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testDataUsedInRanges() {
+		// ensure that the obsolete RANGES declaration is not moved before the DATA declaration 
+
+		buildSrc("FORM any_form.");
+		buildSrc("  DATA ls_any TYPE ty_s_any.");
+		buildSrc("  RANGES lr_any FOR ls_any-comp.");
+		buildSrc("");
+		buildSrc("  PERFORM other_form USING lr_any.");
+		buildSrc("ENDFORM.");
+
+		copyExpFromSrc();
+
+		testRule();
+	}
+
+	@Test
+	void testRangesUsedInDataAndDataUsedInRanges() {
+		// ensure that ls_other is not moved before lr_other, and lr_any is not moved before ls_any  
+
+		buildSrc("FORM third_form.");
+		buildSrc("  RANGES lr_other FOR anytab-anycomp.");
+		buildSrc("  DATA ls_any   TYPE ty_s_any.");
+		buildSrc("  DATA ls_other LIKE LINE OF lr_other.");
+		buildSrc("  RANGES lr_any FOR ls_any-comp.");
+		buildSrc("");
+		buildSrc("  PERFORM fourth_form USING lr_any");
+		buildSrc("                            ls_other.");
+		buildSrc("ENDFORM.");
+
+		buildExp("FORM third_form.");
+		buildExp("  RANGES lr_other FOR anytab-anycomp.");
+		buildExp("");
+		buildExp("  DATA ls_any   TYPE ty_s_any.");
+		buildExp("  DATA ls_other LIKE LINE OF lr_other.");
+		buildExp("  RANGES lr_any FOR ls_any-comp.");
+		buildExp("");
+		buildExp("  PERFORM fourth_form USING lr_any");
+		buildExp("                            ls_other.");
+		buildExp("ENDFORM.");
+
+		testRule();
+	}
 }
