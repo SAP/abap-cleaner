@@ -88,6 +88,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 	private MenuItem mmuUseAdtColors;
 	private MenuItem mmuHighlightDeclarationKeywords;
 	private MenuItem mmuHighlightWritePositions;
+	private MenuItem mmuHighlightAssignmentOperators;
 	private MenuItem mmuExtras;
 
 	private CodeDisplay codeDisplay;
@@ -742,11 +743,26 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 				boolean highlight = mmuHighlightWritePositions.getSelection();
 				if (settings != null)
 					settings.highlightWritePositions = highlight;
-				if (codeDisplay != null && !codeDisplay.isDisposed())
+				if (codeDisplay != null && !codeDisplay.isDisposed()) {
 					codeDisplay.setHighlightWritePositions(highlight);
+				}
 			}
 		});
 		mmuHighlightWritePositions.setText("Highlight &Write Positions");
+
+		mmuHighlightAssignmentOperators = new MenuItem(menuView, SWT.CHECK);
+		mmuHighlightAssignmentOperators.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				boolean highlight = mmuHighlightAssignmentOperators.getSelection();
+				if (settings != null)
+					settings.highlightAssignmentOperators = highlight;
+				if (codeDisplay != null && !codeDisplay.isDisposed()) {
+					codeDisplay.setHighlightAssignmentOperators(highlight);
+				}
+			}
+		});
+		mmuHighlightAssignmentOperators.setText("Highlight &Assignment Operators");
 
 		mmuExtras = new MenuItem(mnsMain, SWT.CASCADE);
 		mmuExtras.setText("E&xtras");
@@ -1656,10 +1672,12 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		codeDisplay.setVerticalLine(settings.showVerticalLine, settings.verticalLinePos);
 		codeDisplay.setHighlightDeclarationKeywords(settings.highlightDeclarationKeywords);
 		codeDisplay.setHighlightWritePositions(settings.highlightWritePositions);
+		codeDisplay.setHighlightAssignmentOperators(settings.highlightAssignmentOperators);
 
 		mmuUseAdtColors.setSelection(settings.colorProfile == ColorProfile.ADT);
 		mmuHighlightDeclarationKeywords.setSelection(settings.highlightDeclarationKeywords);
 		mmuHighlightWritePositions.setSelection(settings.highlightWritePositions);
+		mmuHighlightAssignmentOperators.setSelection(settings.highlightAssignmentOperators);
 
 		codeDisplayColors = (settings.colorProfile == ColorProfile.CLASSIC) ? codeDisplayColorsClassic : codeDisplayColorsADT; 
 		

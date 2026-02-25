@@ -20,6 +20,10 @@ public class TokenSearch {
 	public static final String ANY_IDENTIFIER_OR_LITERAL = "[identifier_or_literal]";
 	public static final String ANY_TERM = "[term]";
 	public static final String ANY_ARITHMETIC_EXPRESSION = "[arithmetic_expression]";
+	/** finds logical expressions, relational expressions, arithmetic expressions etc. */
+	public static final String ANY_EXPRESSION = "[expression]";
+	public static final String ASSIGNMENT_OP_EQUALS_SIGN = "[assignment_op_equals_sign]";
+	public static final String ANY_ASSIGNMENT_OPERATOR = "[assignment_operator]";
 	public static final String ANY_COMPARISON_OPERATOR = "[comparison_operator]";
 	public static final char TEXT_MATCH_VARIANT_SEPARATOR = '|';
 

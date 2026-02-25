@@ -270,13 +270,15 @@ public class ReadTableCommand {
 		if (token.textEquals("=")) {
 			// 'WITH KEY = operator1' is an obsolete short form for WITH KEY table_line = operator1, 
 			// see https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/abapread_table_obsolet.htm?file=abapread_table_obsolet.htm#!ABAP_ALTERNATIVE_3@3@
-			Term term = Term.createArithmetic(token.getNextCodeSibling());
+			Term term = Term.createForExpression(token.getNextCodeSibling());
 			componentLast = term.lastToken;
 			token = term.getNextCodeSibling();
 		} else {
-			while (token.matchesOnSiblings(true, TokenSearch.ANY_IDENTIFIER, "=") || token.matchesOnSiblings(true, "(", ")", "=")) {
-				token = token.getLastTokenOnSiblings(true, TokenSearch.ASTERISK, "=");
-				Term term = Term.createArithmetic(token.getNextCodeSibling());
+			while (token.matchesOnSiblings(true, TokenSearch.ANY_IDENTIFIER, TokenSearch.ASSIGNMENT_OP_EQUALS_SIGN) 
+					|| token.matchesOnSiblings(true, "(", ")", TokenSearch.ASSIGNMENT_OP_EQUALS_SIGN)) {
+
+				token = token.getLastTokenOnSiblings(true, TokenSearch.ASTERISK, TokenSearch.ASSIGNMENT_OP_EQUALS_SIGN);
+				Term term = Term.createForExpression(token.getNextCodeSibling());
 				componentLast = term.lastToken;
 				token = term.getNextCodeSibling();
 			}

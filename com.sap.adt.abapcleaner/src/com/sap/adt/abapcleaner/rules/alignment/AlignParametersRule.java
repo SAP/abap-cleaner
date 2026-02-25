@@ -656,7 +656,7 @@ public class AlignParametersRule extends RuleForCommands {
 			// skip the right-hand-side expression
 			if (token == null)
 				return null;
-			Term expression = Term.createArithmetic(token);
+			Term expression = Term.createForExpression(token);
 			token = expression.lastToken.getNextCodeSibling();
 		}
 		
@@ -686,9 +686,11 @@ public class AlignParametersRule extends RuleForCommands {
 		
 		// consider the special case of a functional call with only an expression, but no actual parameter specified, e.g. 
 		// any_method( VALUE #( ... ) ).
-		if (contentType == ContentType.FUNCTIONAL_CALL_PARAMS && Term.isFirstTokenAllowed(token)) {
+		Token nextCode = token.getNextCodeToken();
+		if (contentType == ContentType.FUNCTIONAL_CALL_PARAMS && Term.isFirstTokenAllowed(token) 
+				&& !(token.isIdentifier() && nextCode != null && nextCode.isAssignmentOperator())) {
 			try {
-				Term onlyExpression = Term.createArithmetic(token);
+				Term onlyExpression = Term.createForExpression(token);
 				if (onlyExpression.lastToken != null && onlyExpression.lastToken.getNextCodeToken() == end) {
 					AlignLine line = table.addLine();
 					line.setCell(Columns.EXPRESSION.getValue(), new AlignCellTerm(onlyExpression));
@@ -742,7 +744,9 @@ public class AlignParametersRule extends RuleForCommands {
 					// LOOP AT ... GROUP BY ( key1 = dobj1 key2 = dobj2 ... [gs = GROUP SIZE] [gi = GROUP INDEX] ) ...
 					expression = Term.createForTokenRange(exprStart, exprStart.getNextCodeSibling());
 				} else {
-					expression = Term.createArithmetic(assignmentOp.getNext());
+					// the righ-hand side might be an arithmetic expression, but could also be a logical expressions 
+					// (e.g. in "boolx( bool = logexpr bit = bit )"), therefore expect any type of right-hand side expression:
+					expression = Term.createForExpression(assignmentOp.getNextCodeToken()); // instead of Term.createArithmetic(assignmentOp.getNext());
 				}
 				
 				// for "RECEIVE RESULTS FROM FUNCTION func" consider the MESSAGE addition after two special exceptions, 
@@ -800,7 +804,7 @@ public class AlignParametersRule extends RuleForCommands {
 				// Note that only the second case can be mixed with other lines that contain assignments, and if alignment across
 				// table rows is activated, 'LS_STRUC' should be aligned with the component 'COMP', not with the value '1'; therefore,  
 				// the .PARAMETER column is used in all non-assignment cases, not the .EXPRESSION column 
-				Term expression = Term.createArithmetic(token);
+				Term expression = Term.createForExpression(token);
 				AlignLine line = continueLastLine ? table.getLastLine() : table.addLine();
 				line.setCell(Columns.PARAMETER.getValue(), AlignCellTerm.createSpecial(expression, 0, true));
 				continueLastLine = false;
@@ -822,6 +826,9 @@ public class AlignParametersRule extends RuleForCommands {
 				} else if (token.textEquals("(") && token.lineBreaks == 0 && token.getPrevCodeSibling() != null && token.getPrevCodeSibling().isKeyword("WHERE")) {
 					// skip this case of a logical expression in parentheses after WHERE, because it is NOT a table row:
 					// 'VALUE type( FOR ... IN ... WHERE ( log_exp ) ... ).' 
+				} else if (token.textEquals("(") && token.getParent() != null && token.getParent().textEquals("(")) {
+					// skip this case: this is too deep nesting to be the row in a VALUE or NEW constructor;   
+					// e.g. in "VALUE #( ( ( c ) = ( d ) ) )", "( d )" is NOT a row but part of the logical expression "( c ) = ( d )"
 				} else if (token.textEquals("(")) {
 					// always store the start of rows in VALUE or NEW constructors (even if they do not yet start a line) 
 					otherLineStarts.add(token); 

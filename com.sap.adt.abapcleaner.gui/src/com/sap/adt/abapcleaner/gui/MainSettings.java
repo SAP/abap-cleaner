@@ -38,6 +38,7 @@ public class MainSettings {
 	private static final String KEY_COLOR_PROFILE = "colorProfile";
 	private static final String KEY_HIGHLIGHT_DECLARATION_KEYWORDS = "highlightDeclarationKeywords";
 	private static final String KEY_HIGHLIGHT_WRITE_POS = "highlightWritePositions";
+	private static final String KEY_HIGHLIGHT_ASSIGNMENT_OPS = "highlightAssignmentOperators";
 	private static final String KEY_SHOW_VERTICAL_LINE = "showVerticalLine";
 	private static final String KEY_VERTICAL_LINE_POS = "verticalLinePos";
 	
@@ -57,6 +58,7 @@ public class MainSettings {
 	private static final String KEY_PROFILES_HIGHLIGHT_ITEM = "profilesHighlightItem";
 	private static final String KEY_PROFILES_HIGHLIGHT_DECLARATION_KEYWORDS = "profilesHighlightDeclarationKeywords";
 	private static final String KEY_PROFILES_HIGHLIGHT_WRITE_POS = "profilesHighlightWritePositions";
+	private static final String KEY_PROFILES_HIGHLIGHT_ASSIGNMENT_OPS = "profilesHighlightAssignmentOperators";
 
 	private static final String KEY_ESSENTIAL_PROFILE_CREATED = "wasEssentialProfileCreated";
 	private static final String KEY_PROFILES_DIRECTORY = "profilesDirectory";
@@ -116,6 +118,7 @@ public class MainSettings {
 	ColorProfile colorProfile;
 	boolean highlightDeclarationKeywords;
 	boolean highlightWritePositions;
+	boolean highlightAssignmentOperators;
 	boolean showVerticalLine;
 	int verticalLinePos;
 	
@@ -132,6 +135,7 @@ public class MainSettings {
 	String profilesHighlightItem;
 	boolean profilesHighlightDeclarationKeywords;
 	boolean profilesHighlightWritePositions;
+	boolean profilesHighlightAssignmentOperators;
 	
 	boolean wasEssentialProfileCreated;
 	String profilesDirectory;
@@ -208,7 +212,10 @@ public class MainSettings {
 
 		writer.write(KEY_HIGHLIGHT_DECLARATION_KEYWORDS, highlightDeclarationKeywords);
 		writer.write(KEY_PROFILES_HIGHLIGHT_DECLARATION_KEYWORDS, profilesHighlightDeclarationKeywords);
-		
+
+		writer.write(KEY_HIGHLIGHT_ASSIGNMENT_OPS, highlightAssignmentOperators);
+		writer.write(KEY_PROFILES_HIGHLIGHT_ASSIGNMENT_OPS, profilesHighlightAssignmentOperators);
+
 		writer.write(KEY_CLEANUP_RANGE_EXPAND_MODE, fallbackCleanupSettings.cleanupRangeExpandMode.getValue());
 		
 		writer.write(KEY_READ_ONLY_PROFILE_DIR_COUNT, readOnlyProfileDirs.size());
@@ -340,6 +347,17 @@ public class MainSettings {
 			highlightDeclarationKeywords = false;
 			profilesHighlightDeclarationKeywords = true;
 		}
+		
+		if (reader.getFileVersion() >= 27) {
+			highlightAssignmentOperators = reader.readBool(KEY_HIGHLIGHT_ASSIGNMENT_OPS);
+		} else {
+			highlightAssignmentOperators = false;
+		}
+		if (reader.getFileVersion() >= 28) {
+			profilesHighlightAssignmentOperators = reader.readBool(KEY_PROFILES_HIGHLIGHT_ASSIGNMENT_OPS);
+		} else {
+			profilesHighlightAssignmentOperators = false;
+		}
 
 		// cleanup range expand mode for fallbackCleanupSettings (see below)
 		CleanupRangeExpandMode cleanupRangeExpandMode;
@@ -413,6 +431,7 @@ public class MainSettings {
 		colorProfile = ColorProfile.getDefault();
 		highlightDeclarationKeywords = false;
 		highlightWritePositions = false;
+		highlightAssignmentOperators = false;
 		showVerticalLine = true;
 		verticalLinePos = 120;
 
@@ -430,6 +449,7 @@ public class MainSettings {
 		profilesHighlightItem = "";
 		profilesHighlightDeclarationKeywords = true;
 		profilesHighlightWritePositions = false;
+		profilesHighlightAssignmentOperators = false;
 		
 		wasEssentialProfileCreated = false;
 		profilesDirectory = "";

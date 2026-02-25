@@ -83,6 +83,7 @@ public class CodeDisplay extends Composite {
 	private int verticalLinePos = 120;
 	private boolean highlightDeclarationKeywords;
 	private boolean highlightWritePositions;
+	private boolean highlightAssignmentOperators;
 	
 	private boolean isLeftMouseButtonDown = false;
 
@@ -101,6 +102,8 @@ public class CodeDisplay extends Composite {
 	public final boolean getHighlightDeclarationKeywords() { return highlightDeclarationKeywords; }
 	
 	public final boolean getHighlightWritePositions() { return highlightWritePositions; }
+	
+	public final boolean getHighlightAssignmentOperators() { return highlightAssignmentOperators; }
 	
 	public final String getCodeToString() { return navigator.getCodeToString(); }
 
@@ -697,6 +700,8 @@ public class CodeDisplay extends Composite {
 				return colors.textOperator;
 			case TOKEN_OPERATOR:
 				return colors.textTokenOperator;
+			case ASSIGNMENT_OPERATOR:
+				return highlightAssignmentOperators ? colors.textIdentifierWritePos : colors.textOperator;
 			case NUMBER:
 				return colors.textNumber;
 			case STRING_LITERAL:
@@ -1256,6 +1261,11 @@ public class CodeDisplay extends Composite {
 
 	public final void setHighlightWritePositions(boolean highlightWritePositions) {
 		this.highlightWritePositions = highlightWritePositions; 
+		invalidateDisplay();
+	}
+
+	public final void setHighlightAssignmentOperators(boolean highlightAssignmentOperators) {
+		this.highlightAssignmentOperators = highlightAssignmentOperators; 
 		invalidateDisplay();
 	}
 

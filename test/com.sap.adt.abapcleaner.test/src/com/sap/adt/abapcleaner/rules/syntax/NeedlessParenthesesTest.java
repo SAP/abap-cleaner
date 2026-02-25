@@ -563,4 +563,54 @@ public class NeedlessParenthesesTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testAssignmentsOfBooleanExprs() {
+		// ensure that after an assignment, the parentheses around a comparison operator = are NOT removed
+		// since "b = c = 1" would be an assignment chain, not a logical expression.
+		buildSrc("  b = ( c = 1 ) = ( d = 1 ).");
+		buildSrc("  b = ( c = 1 AND NOT d = 1 ).");
+		buildSrc("  b = ( c < 1 AND NOT d = 1 ).");
+		buildSrc("  b = ( c < 1 AND NOT d > 1 ).");
+
+		buildExp("  b = ( c = 1 ) = ( d = 1 ).");
+		buildExp("  b = ( c = 1 AND NOT d = 1 ).");
+		buildExp("  b = ( c < 1 AND NOT d = 1 ).");
+		buildExp("  b = c < 1 AND NOT d > 1.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testValueCtorForTableOfB() {
+		// ensure that parentheses around a comparison operator = are NOT removed 
+		// (while parentheses around other comparison operators may be removed)
+		buildSrc("  DATA lt_simple_bool TYPE STANDARD TABLE OF b.");
+		buildSrc("  lt_simple_bool = VALUE #( ( true )");
+		buildSrc("                            ( false )");
+		buildSrc("                            ( b )");
+		buildSrc("                            ( ( c = 2 ) )");
+		buildSrc("                            ( ( 1 < 2 ) )"); // these inner parantheses are optional
+		buildSrc("                            ( 1 >= 2 )");
+		buildSrc("                            ( ( c = 2 ) = ( d = 4 ) )");
+		buildSrc("                            ( ( b = false ) )");
+		buildSrc("                            ( ( 'X' = abap_true ) ) ).");
+
+		buildExp("  DATA lt_simple_bool TYPE STANDARD TABLE OF b.");
+		buildExp("  lt_simple_bool = VALUE #( ( true )");
+		buildExp("                            ( false )");
+		buildExp("                            ( b )");
+		buildExp("                            ( ( c = 2 ) )");
+		buildExp("                            ( 1 < 2 )"); // this is fine
+		buildExp("                            ( 1 >= 2 )");
+		buildExp("                            ( ( c = 2 ) = ( d = 4 ) )");
+		buildExp("                            ( ( b = false ) )");
+		buildExp("                            ( ( 'X' = abap_true ) ) ).");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }

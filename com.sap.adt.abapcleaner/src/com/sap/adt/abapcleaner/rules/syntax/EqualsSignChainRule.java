@@ -76,13 +76,14 @@ public class EqualsSignChainRule extends RuleForCommands {
 
 		// find out whether the command is an assignment with "Equals Sign Chaining" and set assignmentOp to the rightmost "equals sign"
 		Token firstToken = command.getFirstToken();
-		Token assignmentOp = firstToken.getLastTokenOnSiblings(false, TokenSearch.ANY_IDENTIFIER, "=", TokenSearch.ANY_IDENTIFIER, "=");
+		Token assignmentOp = firstToken.getLastTokenOnSiblings(false, TokenSearch.ANY_IDENTIFIER, TokenSearch.ASSIGNMENT_OP_EQUALS_SIGN, 
+				TokenSearch.ANY_IDENTIFIER, TokenSearch.ASSIGNMENT_OP_EQUALS_SIGN);
 		if (assignmentOp == null)
 			return false;
 		int assignmentCount = 2;
-		while (assignmentOp.getNext().matchesOnSiblings(false, TokenSearch.ANY_IDENTIFIER, "=")) {
+		while (assignmentOp.getNext().matchesOnSiblings(false, TokenSearch.ANY_IDENTIFIER, TokenSearch.ASSIGNMENT_OP_EQUALS_SIGN)) {
 			++assignmentCount;
-			assignmentOp = assignmentOp.getNext().getLastTokenOnSiblings(false, TokenSearch.ANY_IDENTIFIER, "=");
+			assignmentOp = assignmentOp.getNext().getLastTokenOnSiblings(false, TokenSearch.ANY_IDENTIFIER, TokenSearch.ASSIGNMENT_OP_EQUALS_SIGN);
 		}
 		if (!assignmentOp.getNext().matchesOnSiblings(false, TokenSearch.ANY_ARITHMETIC_EXPRESSION, "."))
 			return false;

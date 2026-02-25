@@ -5,6 +5,7 @@ import com.sap.adt.abapcleaner.comparer.*;
 import com.sap.adt.abapcleaner.programbase.*;
 import com.sap.adt.abapcleaner.rulebase.Rule;
 import com.sap.adt.abapcleaner.rulebase.RuleID;
+import com.sap.adt.abapcleaner.rulehelpers.LogicalExpression;
 
 import java.security.InvalidParameterException;
 import java.util.*;
@@ -220,6 +221,8 @@ public class Token {
 	public final boolean endsEmbeddedExpression() { return isStringLiteral() && text.charAt(0) == ABAP.BRACE_CLOSE; }
 
 	public final boolean isAssignmentOperator() { return (type == TokenType.ASSIGNMENT_OP); }
+
+	public final boolean isAssignmentOpEqualsSign() { return (type == TokenType.ASSIGNMENT_OP && textEquals("=")); }
 
 	public final boolean isComparisonOperator() { return (type == TokenType.COMPARISON_OP); }
 
@@ -620,11 +623,16 @@ public class Token {
 			} else if (TokenSearch.ANY_IDENTIFIER_OR_LITERAL.equals(text)) {
 				match = (token.type == TokenType.IDENTIFIER || token.type == TokenType.LITERAL);
 
-			} else if (TokenSearch.ANY_COMPARISON_OPERATOR.equals(text)) {
-   			// TODO: "|| ..." is required because the differentiation between assignment and comparison operator in Command.finishBuild() / .distinguishOperators() is not yet perfect:
-				match = token.isComparisonOperator() || (token.isAssignmentOperator() && token.textEquals("=")); 
+			} else if (TokenSearch.ASSIGNMENT_OP_EQUALS_SIGN.equals(text)) {
+				match = token.isAssignmentOpEqualsSign();
 
-			} else if (TokenSearch.ANY_TERM.equals(text) || TokenSearch.ANY_ARITHMETIC_EXPRESSION.equals(text)) {
+			} else if (TokenSearch.ANY_ASSIGNMENT_OPERATOR.equals(text)) {
+				match = token.isAssignmentOperator();
+
+			} else if (TokenSearch.ANY_COMPARISON_OPERATOR.equals(text)) {
+				match = token.isComparisonOperator(); // || (token.isAssignmentOperator() && token.textEquals("=")); 
+
+			} else if (TokenSearch.ANY_TERM.equals(text) || TokenSearch.ANY_ARITHMETIC_EXPRESSION.equals(text) || TokenSearch.ANY_EXPRESSION.equals(text)) {
 				match = Term.isFirstTokenAllowed(token);
 
 			} else if (TokenSearch.ANY_NON_COMMENT.equals(text)) {
@@ -664,6 +672,14 @@ public class Token {
 					Term term;
 					try {
 						term = Term.createArithmetic(token);
+					} catch (UnexpectedSyntaxException e) {
+						return null;
+					}
+					lastToken = term.lastToken;
+				} else if (TokenSearch.ANY_EXPRESSION.equals(text)) {
+					Term term;
+					try {
+						term = Term.createForExpression(token);
 					} catch (UnexpectedSyntaxException e) {
 						return null;
 					}
@@ -1440,7 +1456,7 @@ public class Token {
 				if (isDdlOrDcl) {
 					return ColorType.DDL_KEYWORD;
 				} else {
-					return ColorType.USUAL_OPERATOR;
+					return ColorType.ASSIGNMENT_OPERATOR;
 				}
 
 			case OTHER_OP:
@@ -1976,32 +1992,44 @@ public class Token {
 		return token;
 	}
 
-	public static Token findEndOfLogicalExpression(Token firstTokenOfLogExpr) throws UnexpectedSyntaxException {
-		if (firstTokenOfLogExpr == null)
-			throw new NullPointerException("firstTokenOfLogExpr");
+	/** determines the last Token of the right-hand side expression that starts with the supplied Token */
+	public static Token findLastTokenOfExpression(Token firstToken) throws UnexpectedSyntaxException {
+		if (firstToken == null)
+			throw new NullPointerException("firstToken");
 
+		// since we do not know in advance the type of expression,
+		// - we first assume the expression is a logical expression,
+		// - which may contain relational expressions,
+		// - which may contain arithmetic expressions (as part of a predicate or comparison expression)
+		// the result may be a logical expression, a relational expression, simply an arithmetic expression etc. 
+		
 		// see https://ldcier1.wdf.sap.corp:44300/sap/public/bc/abap/docu?object=abenlogexp
-		Token token = firstTokenOfLogExpr;
+		Token token = firstToken;
 		do {
 			// skip leading NOT (multiple are possible)
 			while (token.textEndsWith("NOT")) {
 				token = token.getNextCodeSibling();
 			}
 			
-			// skip relational expression
-			token = findEndOfRelationalExpression(token);
-			
-			if (!token.isAnyKeyword("AND", "OR", "EQUIV")) 
+			// skip relational expression (or parentheses with logical expression, e.g. "NOT ( a = b )")
+			token = findLastTokenOfRelationalExpression(token);
+
+			Token nextCode = token.getNextCodeToken(); // this might be a closing ")", i.e. not necessarily a sibling
+			if (!nextCode.isAnyKeyword("AND", "OR", "EQUIV")) 
 				break;
 
 			// continue with next logical expression
-			token = token.getNextCodeSibling();
-		} while(true);
+			token = nextCode.getNextCodeSibling();
+		} while (token != null);
+		
+		// token may be the period, but is not expected to be null
+		if (token == null)
+			throw new UnexpectedSyntaxException(firstToken.parentCommand, "Unexpected end of command");
 		
 		return token;
 	}
 	
-	public static Token findEndOfRelationalExpression(Token firstTokenOfRelExpr) throws UnexpectedSyntaxException {
+	public static Token findLastTokenOfRelationalExpression(Token firstTokenOfRelExpr) throws UnexpectedSyntaxException {
 		if (firstTokenOfRelExpr == null)
 			throw new NullPointerException("firstTokenOfRelExpr");
 
@@ -2010,46 +2038,66 @@ public class Token {
 		// Predicate Functions 
 		// - for Character-Like Arguments, see https://ldcier1.wdf.sap.corp:44300/sap/public/bc/abap/docu?object=abenpredicate_functions_strgs
 		if (token.textEqualsAny("contains(", "contains_any_of(", "contains_any_not_of(", "matches(")) 
-			return token.getNextSibling().getNextCodeSibling();
+			return token.getNextSibling();
 		// - for Table-Like Arguments, see https://ldcier1.wdf.sap.corp:44300/sap/public/bc/abap/docu?object=abenpredicate_functions_tabs	
 		if (token.textEqualsAny("line_exists(")) 
-			return token.getNextSibling().getNextCodeSibling();
+			return token.getNextSibling();
 
 		// read predicative method call, operand of predicate expression, or arithmetic expression  
 		Term term1 = Term.createArithmetic(token);
-		token = term1.getNextCodeToken();
+		token = term1.lastToken;
 		
-		if (token.isKeyword("IS")) {
+		Token nextCode = token.getNextCodeToken(); // this might not be a sibling, e.g. ")"
+		if (nextCode == null) {
+			throw new UnexpectedSyntaxException(term1.getParentCommand(), "Unexpected end of command");
+		
+		} else if (nextCode.isKeyword("IS")) {
 			// Predicate Expressions, see https://ldcier1.wdf.sap.corp:44300/sap/public/bc/abap/docu?object=abenpredicate_expressions
-			token = token.getNextCodeSibling();
+			token = nextCode.getNextCodeSibling();
 			if (token.isKeyword("NOT"))
 				token = token.getNextCodeSibling();
-			if (token.isAnyKeyword("INITIAL", "BOUND", "ASSIGNED", "SUPPLIED"))
-				token = token.getNextCodeSibling();
-			else if (token.matchesOnSiblings(true, "INSTANCE", "OF")) {
+			
+			if (token.isAnyKeyword("INITIAL", "BOUND", "ASSIGNED", "SUPPLIED")) {
+				// do nothing
+			} else if (token.matchesOnSiblings(true, "INSTANCE", "OF")) {
 				token = token.getLastTokenOnSiblings(true, "INSTANCE", "OF", TokenSearch.ANY_IDENTIFIER);
-				token = token.getNextCodeSibling();
 			} else {
 				throw new UnexpectedSyntaxException(token, "predicate expression expected");
 			}
 			
-		} else if (ABAP.isComparisonOperator(token.getText(), true)) { // includes BETWEEN and IN
+		} else if (ABAP.isComparisonOperator(nextCode.getText(), true) && !isInAfterLet(nextCode)) { // includes BETWEEN and IN
 			// Comparison Expressions (rel_exp), see https://ldcier1.wdf.sap.corp:44300/sap/public/bc/abap/docu?object=abenlogexp_comp
-			boolean isTernaryOp = token.isComparisonOperator("BETWEEN");
-			Term term2 = Term.createArithmetic(token.getNextCodeSibling());
-			token = term2.getNextCodeToken();
+			boolean isTernaryOp = nextCode.isComparisonOperator("BETWEEN");
+			Term term2 = Term.createArithmetic(nextCode.getNextCodeSibling());
 			if (isTernaryOp) {
+				token = term2.getNextCodeToken(); 
 				if (!token.isKeyword("AND"))
 					throw new UnexpectedSyntaxException(token, "AND expected");
 				Term term3 = Term.createArithmetic(token.getNextCodeSibling());
-				token = term3.getNextCodeToken();
+				token = term3.lastToken;
+			} else {
+				token = term2.lastToken;
 			}
 
 		} else {
 			// assume Predicative Method Call, see https://ldcier1.wdf.sap.corp:44300/sap/public/bc/abap/docu?object=abenpredicative_method_calls
-			// - nothing to do
+			// or Boolean variable => nothing to be done
 		}
 		return token;
+	}
+
+	/** returns true if the supplied token is the 'IN' token that ends a local declaration ('LET ... IN ...' expression) 
+	 * inside a constructor expression */
+	private static boolean isInAfterLet(Token token) {
+		// check the Token with .textEquals("IN"), rather than .isKeyword("IN"), since the exact type (COMPARISON_OP or KEYWORD)
+		// may not have been determined yet:
+		if (token.textEquals("IN") && token.getParent() != null && token.getParent().startsConstructorExpression()) {
+			// check whether 'IN' is preceded by a (remote) sibling 'LET' 
+			// note, however, that the syntax 'LET b = 1 < 5 AND `a` IN lr_range IN ( ... )' is possible
+			Token letInToken = token.getParent().getFirstCodeChild().getLastTokenOnSiblings(true, TokenSearch.ASTERISK, "LET", TokenSearch.ASTERISK, "IN");
+			return (letInToken == token);
+		} 
+		return false;
 	}
 	
 	public boolean textContainsAnyLetter() {
@@ -2062,6 +2110,13 @@ public class Token {
 		return false;
 	}
 
+	public boolean hasLengthSpecified() {
+		// returns true for operands with specified (offset and) length for a substring,
+		// e.g. lv_text(3), lv_text+5(3), lv_text+5(*), lv_text+5(lv_length)
+		// however, returns false for dref->(column), dref->*+5(3), dref->*(3);
+		return this.isIdentifier() && getOpensLevel() && textEndsWith("(") && next.isAttached() && !text.contains("->");
+	}
+	
 	public final MemoryAccessType getMemoryAccessType() {
 		// lazy evaluation
 		if (memoryAccessType == MemoryAccessType.UNKNOWN)
@@ -2083,7 +2138,7 @@ public class Token {
 		// This function is ordered by sections in:
 		// https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/index.htm?file=abenabap_statements_overview.htm
 
-		if (!isIdentifier() || this.opensLevel && this.textEndsWith("("))
+		if (!isIdentifier() || this.opensLevel && this.textEndsWith("(") && !hasLengthSpecified())
 			return MemoryAccessType.NONE;
 		
 		Command command = getParentCommand();
@@ -2093,7 +2148,14 @@ public class Token {
 			prevToken = prevToken.getPrevCodeSibling();
 		Token prevPrevToken = (prevToken == null) ? null : prevToken.getPrevCodeSibling();
 		Token prevPrevPrevToken = (prevPrevToken == null) ? null : prevPrevToken.getPrevCodeSibling();
-		Token nextToken = getEndOfTableExpression().getNextCodeToken();
+		Token nextToken;
+		if (hasLengthSpecified()) {
+			// e.g. 'lv_text+5(*) = ...'
+			nextToken = nextSibling.getNextCodeToken();
+		} else {
+			// e.g. 'lt_any[ comp1 = 1 ]-comp2 = ...'
+			nextToken = getEndOfTableExpression().getNextCodeToken();
+		}
 		if (nextToken == null)
 			return MemoryAccessType.NONE;
 		if (nextToken.isChainColon())
@@ -2111,7 +2173,7 @@ public class Token {
 			nextToken = prev.getNextSibling().getNextCodeToken();
 
 			// determine whether this is an inline declaration of a data reference
-			if (nextToken != null && nextToken.matchesOnSiblings(true, "=", "REF")) {
+			if (nextToken != null && nextToken.matchesOnSiblings(true, TokenSearch.ASSIGNMENT_OP_EQUALS_SIGN, "REF")) {
 				return MemoryAccessType.ASSIGN_TO_FS_OR_DREF;
 			} else if (prevToken == null) {
 				// continue below
@@ -2634,9 +2696,8 @@ public class Token {
 		}
 		
 		boolean isSqlOperation = parentCommand.isAbapSqlOperation();
-		if (textEqualsAny("boolc(", "boolx(", "xsdbool(")) {
-			// skip built-in functions for logical expressions; also skip "boolx( bool = log_exp bit = bit )", 
-			// because parameters that expect a log_exp are not yet considered in AlignParametersRule. 
+		if (textEqualsAny(ABAP.builtInFunctionsForLogExprWithoutNamedParams)) {
+			// skip built-in functions for logical expressions, since their arguments must be handled by the AlignLogicalExpressionsRule 
 			return null;
 
 			// By contrast, NO need to skip the other ABAP.builtInFunctionsWithoutNamedParams, because they have the same 
@@ -2767,10 +2828,10 @@ public class Token {
       	} else {
       		return null;
       	}
-      } 
+      }
       
       // 2. xsdbool( ... ) and boolc( ... )
-      if (textEqualsAny("xsdbool(", "boolc(")) {
+      if (textEqualsAny(ABAP.builtInFunctionsForLogExprWithoutNamedParams)) {
       	return getNextSibling().getPrevCodeToken();
       }
       
@@ -2813,7 +2874,23 @@ public class Token {
          return getNextCodeSibling().getNextSibling();
       }
       
-      // 4. ABAP SQL conditions (sql_cond)
+      // 4. Boolean expressions at the right-hand side of (explicit or implicit) assignments, including assignments to
+      // method parameters or structure components
+      Token nextCode = getNextCodeToken();
+      if (nextCode != null && nextCode.startsRhsOfAssignment()) {
+      	try {
+				// check whether this really is a logical expression (it might as well be an identifier, a literal,
+				// a method call, an arithmetic expression etc.)
+				Token lastOfExpr = findLastTokenOfExpression(nextCode);
+				LogicalExpression logExpr = LogicalExpression.create(nextCode, lastOfExpr);
+				if (logExpr.containsBooleanOpOrComparison()) {
+					return lastOfExpr;
+				}
+			} catch (UnexpectedSyntaxException e) {
+			}
+      }
+      
+      // 5. ABAP SQL conditions (sql_cond)
       if (parentCommand.isAbapSqlOperation()) {
       	if (isKeyword("WHEN")) {
       		Token thenToken = getLastTokenOnSiblings(true, TokenSearch.ASTERISK, "THEN"); 
@@ -2875,6 +2952,61 @@ public class Token {
       	}
       }
       return null;
+	}
+
+	public boolean mayStartLhsOfAssignment() {
+		// this method is called before the distinction between "=" as assignment operator versus comparison operator is certain 
+		if (!isIdentifier() || closesLevel())
+			return false;
+		Token assignmentOp = getNextSiblingWhileLevelOpener().getNextCodeSibling();
+		return (assignmentOp != null && assignmentOp.textEquals("=")); 
+	}
+	
+	public boolean startsLhsOfAssignment() {
+		if (!isIdentifier() || closesLevel())
+			return false;
+		Token assignmentOp = getNextSiblingWhileLevelOpener().getNextCodeSibling();
+		return (assignmentOp != null && assignmentOp.isAssignmentOperator()); 
+	}
+	
+	/** returns true if this Token starts the right-hand side of an assignment; this includes both explicit cases, 
+	 * in which the Token is preceded by an assignment operator, and implicit cases of assignment to the standard parameter
+	 * or to the only component of a structure */
+	public boolean startsRhsOfAssignment() {
+		// for this Token to start the right-hand side, there must be at least one preceding code token
+		// (but not necessarily a previous sibling, see below)
+		Token prevCode = getPrevCodeToken();
+		if (prevCode == null) {
+			return false;
+		}
+		
+		// normal assignment at line start, inside a method call, inside a constructor expression etc. are preceded by 
+		// an assignment operator '=', which was distinguished from a comparison operator '='!) in Command.distinguishOperators(...)
+		if (prevCode.isAssignmentOperator()) {
+			return true;
+		} 
+		
+		// in a functional method call, this Token may start the 'right-hand side' for the implicit assignment to the   
+		// standard parameter, e.g. the Token 'a' in 'any_method( a + 5 )' or the Token '(' in 'any_method( ( a = b ) )'
+		if (prevCode == parent && prevCode.startsFunctionalMethodCall(true)) {
+			// this is also true for 'xsdbool( ... )' and 'boolc( ... )', which contain logical expressions; 
+			// therefore, the case prevCode.textEqualsAny(ABAP.builtInFunctionsForLogExpr) must not be excluded here
+			return !startsLhsOfAssignment();
+		} 
+
+		// in a VALUE constructor for tables, this Token may start the 'right-hand side' for the implicit assignment to 
+		// the only component, e.g. 
+		// - the Tokens 'a' and 'b' in 'VALUE #( ( a ) ( b + 1 ) )' for a 'TABLE OF i'
+		// - the innermost Tokens '(' in 'VALUE #( ( ( a < b ) ) ( ( a = 1 ) ) )' for a 'TABLE OF b'
+		if (prevCode != parent) {
+			return false;
+		} else if (!prevCode.textEquals("(") || prevCode.getParent() == null) {
+			return false;
+		} else if (prevCode.getParent().startsConstructorExpression()) {
+			return !startsLhsOfAssignment();
+		}
+		
+		return false;
 	}
 	
 	/**

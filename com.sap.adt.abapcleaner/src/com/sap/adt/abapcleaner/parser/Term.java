@@ -127,6 +127,16 @@ public class Term {
 		return new Term(firstToken, true);
 	}
 	
+	public static Term createForExpression(Token firstToken) throws UnexpectedSyntaxException {
+		if (firstToken == null)
+			throw new NullPointerException("firstToken");
+
+		// create a Term from any expression, including arithmetic and logical expressions:
+		// (logical expressions may directly contain arithmetic expressions, but not vice versa)
+		Token lastToken = Token.findLastTokenOfExpression(firstToken);
+		return new Term(firstToken, lastToken);
+	}
+	
 	public static Term createForTokenRange(Token firstToken, Token lastToken) throws UnexpectedSyntaxException {
 		if (firstToken == null)
 			throw new NullPointerException("firstToken");

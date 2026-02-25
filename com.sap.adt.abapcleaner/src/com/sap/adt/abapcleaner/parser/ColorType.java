@@ -16,6 +16,7 @@ public enum ColorType  {
    DDL_IDENTIFIER_DATA_ELEMENT, // the data element used in "cast(... as data_element)"
    USUAL_OPERATOR,
    TOKEN_OPERATOR,
+   ASSIGNMENT_OPERATOR, // for highlighting assignment operators, as opposed to comparison operators etc.
    NUMBER,
    STRING_LITERAL,
    COMMENT,

@@ -65,7 +65,7 @@ public class ReceivingKeywordRule extends RuleForTokens {
 
 	@Override
 	public boolean executeOn(Code code, Command command, Token token, int releaseRestriction) throws UnexpectedSyntaxBeforeChanges, UnexpectedSyntaxAfterChanges {
-		if (!token.isKeyword() || token.getParent() == null || !token.matchesOnSiblings(false, "RECEIVING", TokenSearch.ANY_IDENTIFIER, "=", TokenSearch.ANY_TERM))
+		if (!token.isKeyword() || token.getParent() == null || !token.matchesOnSiblings(false, "RECEIVING", TokenSearch.ANY_IDENTIFIER, TokenSearch.ASSIGNMENT_OP_EQUALS_SIGN, TokenSearch.ANY_TERM))
 			return false;
 
 		// ensure this is NOT a CALL METHOD command

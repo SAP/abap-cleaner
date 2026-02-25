@@ -1297,12 +1297,23 @@ public class Command {
 			// - "FOR ... IN GROUP", https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/index.htm?file=abenfor_in_group.htm
 			distinguishOperators(false, firstCode, null, "WHERE", "GROUP BY|USING KEY|TRANSPORTING|FROM");
 
-		} else if (firstCode != null && firstCode.isKeyword("SELECT")) {
-			distinguishOperators(false, firstCode, null, "WHERE", "GROUP BY|HAVING|ORDER BY|%_HINTS|UNION|INTO");
+		} else if (firstCode != null && firstCode.isAnyKeyword("SELECT", "WITH")) {
+			// while the WHERE clause could be identified with startCondition = "WHERE", endCondition = "GROUP BY|HAVING|ORDER BY|%_HINTS|UNION|INTO",
+			// the ON clauses would not covered by that; however, no assignments are to be expected in SELECT statements, 
+			// therefore we can set isComparisonPositionAtStart to true for the entire statement
+			distinguishOperators(true, firstCode, null); // 
 
 		} else if (firstCode != null && firstCode.isKeyword("WAIT")) {
          // WAIT FOR ASYNCHRONOUS TASKS [MESSAGING CHANNELS] [PUSH CHANNELS] UNTIL log_exp [UP TO sec SECONDS].
 			distinguishOperators(false, firstCode, null, "UNTIL", "UP TO");
+		
+		} else if (firstCode != null && firstCode.isKeyword("ASSERT")) {
+         // ASSERT [ [ID group [SUBKEY sub]] [FIELDS val1 val2 ...] CONDITION ] log_exp.
+			if (firstCode.matchesOnSiblings(true, TokenSearch.ASTERISK, "CONDITION")) {
+				distinguishOperators(false, firstCode, null, "CONDITION", null);
+			} else {
+				distinguishOperators(true, firstCode, null);
+			}
 		
 		} else {
 			distinguishOperators(false, firstToken, null);
@@ -1580,10 +1591,25 @@ public class Command {
 	private void distinguishOperators(boolean isComparisonPositionAtStart, Token start, Token end) {
 		distinguishOperators(isComparisonPositionAtStart, start, end, null, null);
 	}
+	private void distinguishOperators(boolean isComparisonPositionAtStart, Token start, Token end, boolean doPreCheck) {
+		if (doPreCheck && !isComparisonPositionAtStart) {
+			Token codeToken = start.isCode() ? start : start.getNextCodeSibling();
+			if (codeToken == null || codeToken.isKeyword() || codeToken.mayStartLhsOfAssignment()) {
+				// do nothing: there seems to be an assignment inside these parentheses
+			} else {
+				// assume a comparison position, because the parentheses may contain the expression  
+				// for the standard parameter or the only component (without an explicit assignment) 
+				isComparisonPositionAtStart = true;
+			}
+		}
+		distinguishOperators(isComparisonPositionAtStart, start, end, null, null);
+	}
 	private void distinguishOperators(boolean isComparisonPositionAtStart, Token start, Token end, String startCondition, String endCondition) {
 		Token token = start;
-		Token endOfLogicalExpression = null;
+		Token endOfLogExpr = null;
+		Token endOfRhsExpr = null;
 		boolean isComparisonPosition = isComparisonPositionAtStart;
+		boolean isComparisonPositionAfterRhs = isComparisonPositionAtStart;
 		
 		while (token != end) {
 			if (startCondition != null && token.matchesOnSiblings(true, startCondition)) {
@@ -1592,25 +1618,67 @@ public class Command {
 					// in case of "FOR, Conditional Iteration", the end of the logical expression after "UNTIL" or "WHILE" 
 					// cannot always be identified with the endCondition; therefore, we must additionally determine the final token
 					try {
-						endOfLogicalExpression = Token.findEndOfLogicalExpression(token.getNextCodeSibling());
+						Token lastOfExpr = Token.findLastTokenOfExpression(token.getNextCodeSibling());
+						endOfLogExpr = lastOfExpr.getNextCodeToken(); 
 					} catch (UnexpectedSyntaxException e) {
-						endOfLogicalExpression = null;
+						endOfLogExpr = null;
 					}
 				}
-			} else if (token == endOfLogicalExpression || (endCondition != null && token.matchesOnSiblings(true, endCondition))) {
+				
+			} else if (token == endOfLogExpr || (endCondition != null && token.matchesOnSiblings(true, endCondition))) {
 				isComparisonPosition = isComparisonPositionAtStart;
-				endOfLogicalExpression = null;
+				endOfLogExpr = null;
+
+			} else if (token == endOfRhsExpr) {
+				isComparisonPosition = isComparisonPositionAfterRhs;
+				endOfRhsExpr = null;
 			}
 
-			if (token.textEquals("=") && (token.isAssignmentOperator() || token.isComparisonOperator()))
-				token.type = isComparisonPosition ? TokenType.COMPARISON_OP : TokenType.ASSIGNMENT_OP;
-			else if (token.textEqualsAny("IN", "BETWEEN") && !token.isIdentifier()) // excluded cases in which the token has already been classified as an identifier
-				token.type = isComparisonPosition ? TokenType.COMPARISON_OP : TokenType.KEYWORD;
+			if (token.textEquals("=") && (token.isAssignmentOperator() || token.isComparisonOperator())) {
+				// determine whether the previous Token could be the 'recipient' of an assignment; 
+				// this may include cases like struc-comp = ..., lo_instance->attrib-comp = ..., 
+				// as well as lv_text+3(5) = ..., lv_text+3(lv_length) = ...
+				Token prev = token.getPrevCodeSibling();
+				boolean prevTokenCanReceiveAssignment = (prev != null && (!prev.textEquals(")") || prev.isAttached()));
+				
+				token.type = (isComparisonPosition || !prevTokenCanReceiveAssignment) ? TokenType.COMPARISON_OP : TokenType.ASSIGNMENT_OP;
 
+				// check whether a logical expression follows at the right-hand side of an assignment operator
+				Token nextCode = token.getNextCodeSibling();
+				if (!isComparisonPosition && nextCode != null) {
+					// in case of an assignment chain "a = b = c.", prevent "b = c" from being mistaken as a logical expression
+					// (note that as a Boolean expression, this would need to be "a = ( b = c ).")
+					boolean isAssignmentChain = !isComparisonPosition && nextCode.getParent() == null && nextCode.isIdentifier() 
+							&& nextCode.getNextSiblingWhileLevelOpener().matchesOnSiblings(true, TokenSearch.ANY_NON_COMMENT, "=");
+					if (isAssignmentChain) {
+						endOfRhsExpr = nextCode.getNextSiblingWhileLevelOpener();
+						
+					} else {
+						// for the right-hand side of an assignment, set isComparisonPosition = true  
+						try {
+							Token lastTokenOfExpr = Token.findLastTokenOfExpression(nextCode);
+							endOfRhsExpr = lastTokenOfExpr.getNextCodeToken(); 
+						} catch (UnexpectedSyntaxException e) {
+							endOfRhsExpr = null;
+						}
+						if (endOfRhsExpr != null) { // removed: ... && hasLogic 
+							// a right-hand side expression cannot contain assignments (except in inner VALUE constructors, functional calls etc.)
+							isComparisonPositionAfterRhs = isComparisonPosition;
+							isComparisonPosition = true;
+						} else {
+							endOfRhsExpr = null;
+						}
+					}
+				}
+
+			} else if (token.textEqualsAny("IN", "BETWEEN") && !token.isIdentifier()) { // excluded cases in which the token has already been classified as an identifier
+				token.type = isComparisonPosition ? TokenType.COMPARISON_OP : TokenType.KEYWORD;
+			}
+			
 			if (token.getOpensLevel()) {
 				// cp. Token.getEndOfLogicalExpression(), section 2. and 3. 
 		      Token ctorKeyword = token.getPrevCodeSibling();
-				if (token.textEqualsAny("xsdbool(", "boolc(")) { // TODO: boolx( not yet supported, that one has parameters...
+				if (token.textEqualsAny(ABAP.builtInFunctionsForLogExprWithoutNamedParams)) { // TODO: boolx( not yet supported, that one has parameters...
 					distinguishOperators(true, token.getNext(), token.getNextSibling());
 					
 				} else if (ctorKeyword != null && ctorKeyword.isKeyword("COND")) { 
@@ -1635,12 +1703,17 @@ public class Command {
 					distinguishOperators(true, token.getNext(), token.getNextSibling());
 				
 				} else if (token.textEquals("(")) {
-					// use the current value inside the parenthesis
-					distinguishOperators(isComparisonPosition, token.getNext(), token.getNextSibling()); 
+					// use the current value inside the parenthesis, except if the parent is "(", too: 
+					// this can happen for logical expressions, but not for assignments: 
+					// DATA lt_simple_bool TYPE STANDARD TABLE OF b.
+					// lt_simple_bool = VALUE #( ( ( a < 1 ) ) ( ( a = 1 ) ) ( ( a > 1 ) ) ).
+					boolean parentIsOpeningParenthesis = token.getParent() != null && token.getParent().textEquals("(");
+					distinguishOperators(isComparisonPosition || parentIsOpeningParenthesis, token.getNext(), token.getNextSibling(), true); 
 				
 				} else { 
 					// method call "identifier(" or table expression "table[" or string template "|text {" or "} text {"
-					distinguishOperators(false, token.getNext(), token.getNextSibling());
+					boolean doPreCheck = (ctorKeyword == null && token.textEndsWith("("));
+					distinguishOperators(false, token.getNext(), token.getNextSibling(), doPreCheck);
 				}
 				token = token.getNextSibling();
 			} else {
@@ -1659,6 +1732,9 @@ public class Command {
 			return false;
 		} else if (allowTableExpr && token.opensTableExpression()) {
 			token = token.getEndOfTableExpression();
+		} else if (token.hasLengthSpecified()) {
+			// e.g. 'lv_text+5(*) = ...'
+			token = token.getNextCodeSibling();
 		}
 		
 		Token nextToken = token.getNextCodeToken();

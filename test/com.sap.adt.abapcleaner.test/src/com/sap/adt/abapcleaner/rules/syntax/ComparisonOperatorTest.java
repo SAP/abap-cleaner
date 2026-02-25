@@ -178,4 +178,27 @@ class ComparisonOperatorTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testEqualsOpInAssignments() {
+		// ensure that logical expressions are NOT changed into assignment chains "a = b = c" and that in implicit 
+		// assignments of parameters and components, EQ is only changed to '=' if there are additional parentheses  
+		buildSrc("  a = b EQ c.");
+		buildSrc("  b = 5 EQ 1 EQUIV 6 EQ 1.");
+		buildSrc("  a = ( b EQ c ).");
+		buildSrc("  b = ( 5 EQ 1 ) EQUIV ( 6 EQ 1 ).");
+		buildSrc("  any_method( a EQ b )->other_method( ( a EQ b ) )->third_method( a = b ).");
+		buildSrc("  a = VALUE #( ( a EQ b ) ( c EQ d ) ( ( e EQ f ) ) ).");
+
+		buildExp("  a = b EQ c.");
+		buildExp("  b = 5 EQ 1 EQUIV 6 EQ 1.");
+		buildExp("  a = ( b = c )."); // change is fine due to additional parentheses
+		buildExp("  b = ( 5 = 1 ) EQUIV ( 6 = 1 )."); // change is fine due to additional parentheses
+		buildExp("  any_method( a EQ b )->other_method( ( a = b ) )->third_method( a = b ).");
+		buildExp("  a = VALUE #( ( a EQ b ) ( c EQ d ) ( ( e = f ) ) )."); // only the last case can be changed
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }
