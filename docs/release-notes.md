@@ -6,6 +6,17 @@ as well as bugfixes of reported issues, i.e. anything that enhances or changes t
 For a complete list of changes (including documentation, tests, refactoring etc.), please refer to 
 the list of [commits](../../../commits/main).
 
+## 2026-02-25 (version 1.23.0)
+
+**Thank you** very much [**abapstudent**](https://github.com/abapstudent) for the bug report behind the fix!
+
+* Added **support** for upcoming **built-in Boolean type** and **Boolean expressions** in all expression positions
+* Added menu '**View / Highlight Assignment Operators**'
+* Profiles editor: Added option '**Highlight: Assignment Operators**'
+* Fixed rule '**Rearrange local declarations**' for DATA used in RANGES ([#469](../../../issues/469))
+* Updated **ABAP grammar file**
+* Updated **known CamelCase names** for CDS views and fields
+
 ## 2026-01-27 (version 1.22.1)
 
 **Thanks** a lot to our inspiring community!
