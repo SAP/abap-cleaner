@@ -158,7 +158,9 @@ before and after the rule is applied (left -&gt; right code display).
 The option '**Highlight: Declarations**' displays declaration keywords such as ```DATA``` or ```FIELD-SYMBOLS``` in 
 a different color. If you activate the option '**Highlight: Write positions**', variables in write positions will be 
 highlighted in a different color, which may be helpful for looking at rules such as 'Use FINAL for immutable variables' 
-and 'Delete unused variables'.
+and 'Delete unused variables'. The option '**Highlight: Assignment Operators**' highlights operators such as ```=```, 
+```+=```, ```?=``` etc. if they assign the right-hand side expression to a variable, parameter or component (esp. in 
+contrast to ```=``` when used as a comparison operator in logical expressions). 
 
 If you would like to test the effect of the current cleanup rule and its configuration on your own code, you can copy 
 a code section into the clipboard and click the '**Paste -\>**' button. You can then change the configuration options 

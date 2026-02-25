@@ -113,7 +113,9 @@ will then be restricted to the selected types of changes.
 
 Further display options can be found in the 'View' menu: 'Zoom In', 'Zoom Default' and 'Zoom Out' for changing the 
 font size; 'Highlight Declarations' to display declaration keywords such as ```DATA``` or ```FIELD-SYMBOLS``` in a 
-different color; and 'Highlight Write Positions' to show variables in write positions in a different color.
+different color; 'Highlight Write Positions' to show variables in write positions in a different color; and 
+'Highlight Assignment Operators' to highlight assignments to variables, parameters or components (esp. in contrast 
+to the comparison operator ```=``` in logical expressions). 
 
 
 ## Incremental Search
