@@ -219,6 +219,8 @@ public final class ABAP {
    /** built-in functions that have no named parameters but instead expect one argument of a certain type 
     * (logical expression, table expression, numeric, string / byte string, table) */
    public final static String[] builtInFunctionsWithoutNamedParams = new String[] {"boolc(", "xsdbool(", "line_exists(", "line_index(", "abs(", "ceil(", "floor(", "frac(", "sign(", "trunc(", "acos(", "asin(", "atan(", "cos(", "sin(", "tan(", "cosh(", "sinh(", "tanh(", "exp(", "log(", "log10(", "sqrt(", "bit-set(", "charlen(", "dbmaxlen(", "numofchar(", "strlen(", "xstrlen(", "utclong_current(", "lines("};
+   /** built-in functions for logical expressions that have no named parameters; this excludes boolx( ... ), which has named parameters */
+   public final static String[] builtInFunctionsForLogExprWithoutNamedParams = new String[] {"boolc(", "xsdbool("}; 
    
    // Previously, ABAP.abapKeywords also contained keywords with hyphens like "MOVE-CORRESPONDING"; now, the distinct words "MOVE" and "CORRESPONDING" are used, see method isAbapUpperCaseKeyword(String).
    // Such keywords with hyphens can be found in section "ABAP Words" of the ABAP Reference (https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/index.htm?file=abenabap_words.htm): 

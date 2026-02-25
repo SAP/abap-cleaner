@@ -80,7 +80,7 @@ public class AssertEqualsSubrcRule extends AssertEqualsRuleBase {
 		// "exp = 0" can be completely removed, because 0 is the default value for exp;
 		// note however that 'exp' is NOT the preferred parameter, so assert_subrc( 0 ) would be equivalent to assert_subrc( act = 0 )!
 		// therefore we must NOT shorten assert_subrc( exp = 4 ) to assert_subrc( 4 ).
-		Token zeroToken = assertCall.getNext().getLastTokenDeep(false, TokenSearch.ASTERISK, "exp", "=", "0");
+		Token zeroToken = assertCall.getNext().getLastTokenDeep(false, TokenSearch.ASTERISK, "exp", TokenSearch.ASSIGNMENT_OP_EQUALS_SIGN, "0");
 		if (zeroToken == null)
 			return false;
 

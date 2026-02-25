@@ -3359,4 +3359,36 @@ class AlignParametersTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testAlignRowsOfTableOfB() {
+		// ensure that the rows are aligned, but "( d )" and "( c = d )" is not mistaken for a row 
+		buildSrc("  lt_simple_bool = VALUE #(  ( true )");
+		buildSrc("     ( false )");
+		buildSrc("                            ( ( c ) = ( d ) )");
+		buildSrc("                ( ( a = b ) = ( c = d ) )  ).");
+
+		buildExp("  lt_simple_bool = VALUE #( ( true )");
+		buildExp("                            ( false )");
+		buildExp("                            ( ( c ) = ( d ) )");
+		buildExp("                            ( ( a = b ) = ( c = d ) )  ).");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testAlignBoolX() {
+		// ensure the special built-in function boolx() is correctly aligned
+		buildSrc("  a = boolx( bool = b AND c < 1 OR b AND cc > 10");
+		buildSrc("         bit = lv_bit ).");
+
+		buildExp("  a = boolx( bool = b AND c < 1 OR b AND cc > 10");
+		buildExp("             bit  = lv_bit ).");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }

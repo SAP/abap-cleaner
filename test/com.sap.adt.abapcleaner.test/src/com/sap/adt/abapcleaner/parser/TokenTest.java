@@ -341,6 +341,13 @@ public class TokenTest {
 		assertNotNull(command.firstToken.getLastTokenOnSiblings(true, TokenSearch.ANY_IDENTIFIER_OR_LITERAL, "=", TokenSearch.ANY_IDENTIFIER_OR_LITERAL));
 		assertEquals(null, command.firstToken.getLastTokenOnSiblings(true, "a", TokenSearch.ANY_IDENTIFIER_OR_LITERAL));
 		
+		// search for assignment operators
+		command = buildCommand("a ?= 1 + 2.");
+		assertNotNull(command.firstToken.getLastTokenOnSiblings(true, "a", TokenSearch.ANY_ASSIGNMENT_OPERATOR));
+		assertEquals(null, command.firstToken.getLastTokenOnSiblings(true, "a", "?=", TokenSearch.ANY_ASSIGNMENT_OPERATOR));
+		command = buildCommand("IF a = 1.");
+		assertEquals(null, command.firstToken.getLastTokenOnSiblings(true, "IF", "a", TokenSearch.ANY_ASSIGNMENT_OPERATOR));
+		
 		// search for comparison operators
 		command = buildCommand("a ?= 1 + 2.");
 		assertEquals(null, command.firstToken.getLastTokenOnSiblings(true, "a", TokenSearch.ANY_COMPARISON_OPERATOR));
@@ -363,7 +370,7 @@ public class TokenTest {
 	void testRemoveFromCommandErr() {
 		// try to remove "lts_table["; expect an error
 		try {
-			buildCommand("a = lts_table[ 1 ]", 2).removeFromCommand(false);
+			buildCommand("a = lts_table[ 1 ].", 2).removeFromCommand(false);
 			fail();
 		} catch (UnexpectedSyntaxAfterChanges e) {
 			// expected case
@@ -753,10 +760,10 @@ public class TokenTest {
 	}
 	
 	@Test
-	void testFindEndOfLogExprNull() {
+	void testFindLastTokenOfLogExprNull() {
 		Token nullToken = null;
 		try {
-			Token.findEndOfLogicalExpression(nullToken);
+			Token.findLastTokenOfExpression(nullToken);
 			fail();
 		} catch (NullPointerException ex) {
 			// expected case
@@ -766,10 +773,10 @@ public class TokenTest {
 	}
 
 	@Test
-	void testFindEndOfRelExprNull() {
+	void testFindLastTokenOfRelExprNull() {
 		Token nullToken = null;
 		try {
-			Token.findEndOfRelationalExpression(nullToken);
+			Token.findLastTokenOfRelationalExpression(nullToken);
 			fail();
 		} catch (NullPointerException ex) {
 			// expected case
@@ -778,11 +785,11 @@ public class TokenTest {
 		}
 	}
 
-	void testFindEndOfLogExpr(String commandText) {
+	void testFindLastTokenOfLogExpr(String commandText) {
 		Token token = buildCommand(commandText, 1);
 		try {
-			Token endToken = Token.findEndOfLogicalExpression(token);
-			assertTrue(endToken.isPeriod());
+			Token lastToken = Token.findLastTokenOfExpression(token);
+			assertTrue(lastToken.getNextCodeToken().isPeriod());
 		} catch (UnexpectedSyntaxException e) {
 			fail();
 		}
@@ -790,23 +797,23 @@ public class TokenTest {
 	
 	@Test
 	void testFindEndOfLogExpr() {
-		testFindEndOfLogExpr("IF a < b.");
-		testFindEndOfLogExpr("IF a IS INITIAL AND NOT b IS INITIAL.");
-		testFindEndOfLogExpr("IF <a> IS ASSIGNED OR lo_any IS NOT BOUND OR iv_any IS SUPPLIED.");
-		testFindEndOfLogExpr("IF lo_obj IS INSTANCE OF cl_any AND 1 + 2 * ( 3 + 4 ) = 5.");
-		testFindEndOfLogExpr("WHILE a > b AND a LE c.");
-		testFindEndOfLogExpr("WHILE a > b AND ( b = 1 OR b = 2 ).");
-		testFindEndOfLogExpr("WHILE a BETWEEN b AND c.");
-		testFindEndOfLogExpr("WHILE a + 1 < b * ( 3 + 4 ) OR iv_any IS SUPPLIED AND c BETWEEN 3 AND 5.");
-		testFindEndOfLogExpr("WHILE line_exists( lts_table[ 1 ] ).");
-		testFindEndOfLogExpr("ASSERT matches( val = 'abcde' pcre = '[[:alpha:]]*' )."); 
-		testFindEndOfLogExpr("ASSERT a in tab1 AND b in tab2."); 
+		testFindLastTokenOfLogExpr("IF a < b.");
+		testFindLastTokenOfLogExpr("IF a IS INITIAL AND NOT b IS INITIAL.");
+		testFindLastTokenOfLogExpr("IF <a> IS ASSIGNED OR lo_any IS NOT BOUND OR iv_any IS SUPPLIED.");
+		testFindLastTokenOfLogExpr("IF lo_obj IS INSTANCE OF cl_any AND 1 + 2 * ( 3 + 4 ) = 5.");
+		testFindLastTokenOfLogExpr("WHILE a > b AND a LE c.");
+		testFindLastTokenOfLogExpr("WHILE a > b AND ( b = 1 OR b = 2 ).");
+		testFindLastTokenOfLogExpr("WHILE a BETWEEN b AND c.");
+		testFindLastTokenOfLogExpr("WHILE a + 1 < b * ( 3 + 4 ) OR iv_any IS SUPPLIED AND c BETWEEN 3 AND 5.");
+		testFindLastTokenOfLogExpr("WHILE line_exists( lts_table[ 1 ] ).");
+		testFindLastTokenOfLogExpr("ASSERT matches( val = 'abcde' pcre = '[[:alpha:]]*' )."); 
+		testFindLastTokenOfLogExpr("ASSERT a in tab1 AND b in tab2."); 
 	}
 
-	void testFindEndOfLogExprError(String commandText, String expectedMessage) {
+	void testFindLastTokenOfLogExprError(String commandText, String expectedMessage) {
 		Token token = buildCommand(commandText, 1);
 		try {
-			Token.findEndOfLogicalExpression(token);
+			Token.findLastTokenOfExpression(token);
 			fail();
 		} catch (UnexpectedSyntaxException e) {
 			assertTrue(e.getMessage().indexOf(expectedMessage) >= 0);
@@ -815,8 +822,8 @@ public class TokenTest {
 
 	@Test
 	void testFindEndOfLogExprError() {
-		testFindEndOfLogExprError("IF a IS INITIAL AND NOT b IS 5.", "predicate expression");
-		testFindEndOfLogExprError("WHILE a BETWEEN b OR c.", "AND");
+		testFindLastTokenOfLogExprError("IF a IS INITIAL AND NOT b IS 5.", "predicate expression");
+		testFindLastTokenOfLogExprError("WHILE a BETWEEN b OR c.", "AND");
 	}
 	
 	@Test
@@ -1588,7 +1595,7 @@ public class TokenTest {
 	void testInsertStressToken() throws IntegrityBrokenException {
 		// most branches are tested by CommandTest.testInsertStressTestToken()
 		
-		assertFalse(buildCommand("DATA(lv_any) = 1", 0).insertStressTestTokenAfter(StressTestType.COMMENT_LINE));
+		assertFalse(buildCommand("DATA(lv_any) = 1.", 0).insertStressTestTokenAfter(StressTestType.COMMENT_LINE));
 	}
 	
 	@Test
@@ -1915,7 +1922,7 @@ public class TokenTest {
 
 	private void assertColorType(ColorType expColorType, String tokenText) {
 		Token token = findToken(tokenText);
-		assertEquals(expColorType, token .getMainColorType());
+		assertEquals(expColorType, token.getMainColorType());
 	}
 
 	@Test 
@@ -2201,5 +2208,128 @@ public class TokenTest {
 		assertFalse(findToken("P_Any").isDdlTypeName());
 		assertFalse(findToken(":").isDdlTypeName());
 		assertTrue(findToken("any_type").isDdlTypeName());
+	}
+	
+	@Test
+	void testStartsLhsOfAssignment_TableExpr() {
+		buildCommand("itab[ comp = 1 ]-text+3(lv_length) = 'abc'.");
+		assertTrue(findToken("itab[").startsLhsOfAssignment());
+		assertTrue(findToken("comp").startsLhsOfAssignment());
+		assertFalse(findToken("=").startsLhsOfAssignment());
+		assertFalse(findToken("1").startsLhsOfAssignment());
+		assertFalse(findToken("]-text+3(").startsLhsOfAssignment());
+		assertFalse(findToken("lv_length").startsLhsOfAssignment());
+		assertFalse(findToken(")").startsLhsOfAssignment());
+		assertFalse(findToken("=").startsLhsOfAssignment());
+		assertFalse(findToken("'abc'").startsLhsOfAssignment());
+		assertFalse(findToken(".").startsLhsOfAssignment());
+	}
+	
+	@Test
+	void testStartsLhsOfAssignment_MethodChain() {
+		buildCommand("lo_instance->any_method( p1 = 1 p2 = lv_value + 3 ).");
+		assertFalse(findToken("lo_instance->any_method(").startsLhsOfAssignment());
+		assertTrue(findToken("p1").startsLhsOfAssignment());
+		assertFalse(findToken("=").startsLhsOfAssignment());
+		assertFalse(findToken("1").startsLhsOfAssignment());
+		assertTrue(findToken("p2").startsLhsOfAssignment());
+		assertFalse(findToken("lv_value").startsLhsOfAssignment());
+		assertFalse(findToken("+").startsLhsOfAssignment());
+		assertFalse(findToken("3").startsLhsOfAssignment());
+		assertFalse(findToken(")").startsLhsOfAssignment());
+		assertFalse(findToken(".").startsLhsOfAssignment());
+	}
+	
+	@Test
+	void testStartsRhsOfAssignment_TableExpr() {
+		buildCommand("itab[ comp = 1 ]-text+3(lv_length) = 'abc'.");
+		assertFalse(findToken("itab[").startsRhsOfAssignment());
+		assertFalse(findToken("comp").startsRhsOfAssignment());
+		assertFalse(findToken("=").startsRhsOfAssignment());
+		assertTrue(findToken("1").startsRhsOfAssignment());
+		assertFalse(findToken("]-text+3(").startsRhsOfAssignment());
+		assertFalse(findToken("lv_length").startsRhsOfAssignment());
+		assertFalse(findToken(")").startsRhsOfAssignment());
+		assertFalse(findToken("=").startsRhsOfAssignment());
+		assertTrue(findToken("'abc'").startsRhsOfAssignment());
+		assertFalse(findToken(".").startsRhsOfAssignment());
+	}
+	
+	@Test
+	void testStartsRhsOfAssignment_MethodChain() {
+		buildCommand("any_method( a + b )->other_method( c = d ).");
+		assertFalse(findToken("any_method(").startsRhsOfAssignment());
+		assertTrue(findToken("a").startsRhsOfAssignment());
+		assertFalse(findToken("+").startsRhsOfAssignment());
+		assertFalse(findToken("b").startsRhsOfAssignment());
+		assertFalse(findToken(")->other_method(").startsRhsOfAssignment());
+		assertFalse(findToken("c").startsRhsOfAssignment());
+		assertFalse(findToken("=").startsRhsOfAssignment());
+		assertTrue(findToken("d").startsRhsOfAssignment());
+		assertFalse(findToken(")").startsRhsOfAssignment());
+		assertFalse(findToken(".").startsRhsOfAssignment());
+	}
+	
+	@Test
+	void testStartsRhsOfAssignment_ValueCtorForTable() {
+		buildCommand("a = VALUE #( ( b = 1 c = ( d + 2 ) * 3 ) ).");
+		assertFalse(findToken("a").startsRhsOfAssignment());
+		assertFalse(findToken("=").startsRhsOfAssignment());
+		assertTrue(findToken("VALUE").startsRhsOfAssignment());
+		assertFalse(findToken("#(").startsRhsOfAssignment());
+		assertFalse(findToken("(").startsRhsOfAssignment());
+		
+		assertFalse(findToken("b").startsRhsOfAssignment());
+		assertFalse(findToken("b").getNext().startsRhsOfAssignment());
+		assertTrue(findToken("1").startsRhsOfAssignment());
+		
+		assertFalse(findToken("c").startsRhsOfAssignment());
+		assertFalse(findToken("c").getNext().startsRhsOfAssignment());
+		assertTrue(findToken("d").getPrev().startsRhsOfAssignment());
+		assertFalse(findToken("d").startsRhsOfAssignment());
+		assertFalse(findToken("+").startsRhsOfAssignment());
+		assertFalse(findToken("2").startsRhsOfAssignment());
+		assertFalse(findToken("2").getNext().startsRhsOfAssignment());
+		assertFalse(findToken("*").startsRhsOfAssignment());
+		assertFalse(findToken("3").startsRhsOfAssignment());
+
+		assertFalse(findToken(".").startsRhsOfAssignment());
+	}
+	
+	@Test
+	void testStartsRhsOfAssignment_ValueCtorForTableOfI() {
+		// test a "table of i"
+		buildCommand("a = VALUE #( ( b ) ( c + 1 ) ).");
+		assertFalse(findToken("a").startsRhsOfAssignment());
+		assertFalse(findToken("=").startsRhsOfAssignment());
+		assertTrue(findToken("VALUE").startsRhsOfAssignment());
+		assertFalse(findToken("#(").startsRhsOfAssignment());
+		
+		assertFalse(findToken("(").startsRhsOfAssignment());
+		assertTrue(findToken("b").startsRhsOfAssignment());
+		assertFalse(findToken(")").startsRhsOfAssignment());
+		
+		assertFalse(findToken("c").getPrev().startsRhsOfAssignment());
+		assertTrue(findToken("c").startsRhsOfAssignment());
+		assertFalse(findToken("+").startsRhsOfAssignment());
+		assertFalse(findToken("1").startsRhsOfAssignment());
+		assertFalse(findToken(".").startsRhsOfAssignment());
+	}
+	
+	@Test
+	void testStartsRhsOfAssignment_ValueCtorForTableOfB() {
+		// test a "table of b"
+		buildCommand("a = VALUE #( ( ( b < c ) ) ( ( d = 1 ) ) ).");
+
+		assertFalse(findToken("(").startsRhsOfAssignment());
+		assertTrue(findToken("b").getPrev().startsRhsOfAssignment());
+		assertFalse(findToken("b").startsRhsOfAssignment());
+		assertFalse(findToken("<").startsRhsOfAssignment());
+		assertFalse(findToken("c").startsRhsOfAssignment());
+		
+		assertTrue(findToken("d").getPrev().startsRhsOfAssignment());
+		assertFalse(findToken("d").startsRhsOfAssignment());
+		assertFalse(findToken("d").getNext().startsRhsOfAssignment());
+		assertFalse(findToken("1").startsRhsOfAssignment());
 	}
 }

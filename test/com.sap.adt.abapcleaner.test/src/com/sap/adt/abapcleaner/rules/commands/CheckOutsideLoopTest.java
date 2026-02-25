@@ -565,4 +565,44 @@ class CheckOutsideLoopTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testCheckWithVariablesOfTypeB() {
+		// ensure that negation of logical expressions works for Boolean variables of type B 
+		buildSrc("  METHOD any_method.");
+		buildSrc("    do_something( ).");
+		buildSrc("");
+		buildSrc("    CHECK a AND b = d.");
+		buildSrc("    CHECK NOT a OR b <> d.");
+		buildSrc("    CHECK a AND b.");
+		buildSrc("    CHECK NOT a AND NOT b.");
+		buildSrc("    CHECK c = d.");
+		buildSrc("    CHECK d.");
+		buildSrc("  ENDMETHOD.");
+
+		buildExp("  METHOD any_method.");
+		buildExp("    do_something( ).");
+		buildExp("");
+		buildExp("    IF NOT ( a AND b = d ).");
+		buildExp("      RETURN.");
+		buildExp("    ENDIF.");
+		buildExp("    IF a AND b = d.");
+		buildExp("      RETURN.");
+		buildExp("    ENDIF.");
+		buildExp("    IF NOT ( a AND b ).");
+		buildExp("      RETURN.");
+		buildExp("    ENDIF.");
+		buildExp("    IF a OR b.");
+		buildExp("      RETURN.");
+		buildExp("    ENDIF.");
+		buildExp("    IF c <> d.");
+		buildExp("      RETURN.");
+		buildExp("    ENDIF.");
+		buildExp("    IF NOT d.");
+		buildExp("      RETURN.");
+		buildExp("    ENDIF.");
+		buildExp("  ENDMETHOD.");
+
+		testRule();
+	}
 }

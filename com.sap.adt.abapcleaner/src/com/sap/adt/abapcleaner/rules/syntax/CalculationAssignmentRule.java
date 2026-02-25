@@ -99,7 +99,7 @@ public class CalculationAssignmentRule extends RuleForCommands {
 			return false;
 
 		Token firstToken = command.getFirstToken();
-		if (firstToken.matchesOnSiblings(false, TokenSearch.ANY_IDENTIFIER, "=", "-", TokenSearch.ANY_IDENTIFIER, ".")) {
+		if (firstToken.matchesOnSiblings(false, TokenSearch.ANY_IDENTIFIER, TokenSearch.ASSIGNMENT_OP_EQUALS_SIGN, "-", TokenSearch.ANY_IDENTIFIER, ".")) {
 			return convertMinusToMultiplication(code, command);
 		}
 

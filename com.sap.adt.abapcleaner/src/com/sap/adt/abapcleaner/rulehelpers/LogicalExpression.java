@@ -85,7 +85,7 @@ public class LogicalExpression {
 	public Token getLastTokenExceptClosingParenthesis() { return isInParentheses ? lastToken.getPrevCodeToken() : lastToken; }
 
 	private Token getEndTokenExceptClosingParenthesis() { return isInParentheses ? lastToken : endToken; }
-	
+
 	@Override
 	public String toString() {
 		return getDebuggingText();
@@ -223,6 +223,12 @@ public class LogicalExpression {
 		// (cp. https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/index.htm?file=abenpredicative_method_calls.htm)
 		if (start.isIdentifier() && start.textEndsWith("(") && start.getNextCodeSibling() != null && start.getNextCodeSibling().getNextCodeToken() == end) {
 			// relationalExpressionType = RelationalExpressionType.PREDICATE_FUNCTION;
+			return start;
+		}
+		
+		// determine stand-alone bool identifiers
+		if (start.isIdentifier() && start.getNextCodeSibling() == end) {
+			// relationalExpressionType = RelationalExpressionType....;
 			return start;
 		}
 		
@@ -622,11 +628,12 @@ public class LogicalExpression {
 	public boolean removeAllNeedlessParentheses(boolean removeAroundAll, boolean removeAroundRelExpr, boolean removeOrParenthesisAnd, boolean removeAroundSameOp, boolean removeAroundNot) throws IntegrityBrokenException {
 		boolean changed = false;
 		LogicalExpression logExpr = this;
+		boolean isRhsOfAssignment = firstToken.startsRhsOfAssignment();
 		Command command = firstToken.getParentCommand();
 		do {
 			Token prevToken = logExpr.firstToken.getPrev();
 			Token endToken = logExpr.endToken;
-			if (logExpr.removeFirstNeedlessParentheses(removeAroundAll, removeAroundRelExpr, removeOrParenthesisAnd, removeAroundSameOp, removeAroundNot)) {
+			if (logExpr.removeFirstNeedlessParentheses(removeAroundAll, removeAroundRelExpr, removeOrParenthesisAnd, removeAroundSameOp, removeAroundNot, isRhsOfAssignment)) {
 				changed = true;
 				Token newFirstToken = (prevToken == null) ? command.getFirstToken() : prevToken.getNext();
 				Token newLastToken = (endToken == null) ? command.getLastToken() : endToken.getPrev();
@@ -642,7 +649,9 @@ public class LogicalExpression {
 		return changed;
 	}
 	
-	private boolean removeFirstNeedlessParentheses(boolean removeAroundAll, boolean removeAroundRelExpr, boolean removeOrParenthesisAnd, boolean removeAroundSameOp, boolean removeAroundNot) throws IntegrityBrokenException {
+	private boolean removeFirstNeedlessParentheses(boolean removeAroundAll, boolean removeAroundRelExpr, boolean removeOrParenthesisAnd, 
+			boolean removeAroundSameOp, boolean removeAroundNot, boolean isRhsOfAssignment) throws IntegrityBrokenException {
+
 		boolean removeParentheses = false;
 
 		if (!isValid)
@@ -651,12 +660,15 @@ public class LogicalExpression {
 		if (isInParentheses && firstToken.textEquals("(") && lastToken.textEquals(")") && firstToken.hasChildren()) {
 			if (parentExpression == null) {
 				// 61% of all cases found in sample code: ( ... )
-				removeParentheses = removeAroundAll;
+				// in assignments, do not remove parentheses with a "=" comparison, e.g. in "a = ( b = c )."
+				removeParentheses = removeAroundAll && !(isRhsOfAssignment && containsComparisonWithEqualsSign());
 
 			} else if ((parentExpression.bindingLevel == BindingLevel.OR || parentExpression.bindingLevel == BindingLevel.AND) 
 					&& bindingLevel == BindingLevel.COMPARISON_OR_PREDICATE) {
 				// 11% of all cases found in sample code: OR/AND ( a < b ), OR/AND ( c IS INITIAL) 
-				removeParentheses = removeAroundRelExpr;
+				// in assignments, do not remove parentheses with a "=" comparison, e.g. in "a = ( b = c ) OR ( d = e ).", 
+				// the parentheses around "( b = c)" must not be removed
+				removeParentheses = removeAroundRelExpr && !(isRhsOfAssignment && containsComparisonWithEqualsSign());
 			
 			} else if (parentExpression.bindingLevel == BindingLevel.OR && bindingLevel == BindingLevel.AND) {
 				// 26% of all cases found in sample code: OR ( ... AND ... ) 
@@ -707,7 +719,7 @@ public class LogicalExpression {
 		} else {
 			// recursively call inner expressions
 			for (LogicalExpression innerExpression : innerExpressions) {
-				if (innerExpression.removeFirstNeedlessParentheses(removeAroundAll, removeAroundRelExpr, removeOrParenthesisAnd, removeAroundSameOp, removeAroundNot)) {
+				if (innerExpression.removeFirstNeedlessParentheses(removeAroundAll, removeAroundRelExpr, removeOrParenthesisAnd, removeAroundSameOp, removeAroundNot, isRhsOfAssignment)) {
 					// invalidate the whole LogicalExpression once any needless (inner) parentheses were removed (see comment above) 
 					isValid = false;
 					return true;
@@ -715,6 +727,20 @@ public class LogicalExpression {
 			}
 			return false;
 		}
+	}
+	
+	/** returns true if this LogicalExpression or any of its inner logical expressions contains a comparison that uses 
+	 * the symbolic '=' operator */
+	private boolean containsComparisonWithEqualsSign() {
+		if (bindingLevel == BindingLevel.COMPARISON_OR_PREDICATE && getOperator() != null && getOperator().textEquals("="))
+			return true;
+		
+		for (LogicalExpression innerExpression : innerExpressions) {
+			if (innerExpression.containsComparisonWithEqualsSign()) {
+				return true;
+			}
+		}
+		return false;
 	}
 	
 	public LogicalExpression findComparisonWithAny(String... tokenTexts) {
@@ -756,4 +782,16 @@ public class LogicalExpression {
 			return null;
 		}
 	}
+
+	public boolean containsBooleanOpOrComparison() { 
+		if (bindingLevel == BindingLevel.UNKNOWN) {
+			return false;
+		} else if (bindingLevel == BindingLevel.COMPARISON_OR_PREDICATE) {
+			// return false for mere predicate functions such as line_exists( )
+			return relExprType == RelationalExpressionType.COMPARISON || relExprType == RelationalExpressionType.PREDICATE_EXPRESSION;
+		} else {
+			return true;
+		}
+	}
+	
 }

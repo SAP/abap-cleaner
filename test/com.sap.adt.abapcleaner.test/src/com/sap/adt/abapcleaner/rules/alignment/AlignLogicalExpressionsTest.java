@@ -1304,4 +1304,51 @@ class AlignLogicalExpressionsTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testTableOfB() {
+		// ensure that in a 'table of B', logical expressions (whether in extra parentheses or not) are identified and aligned
+		buildSrc("  lt_table_of_b = VALUE #( ( true )");
+		buildSrc("                           ( ( a < 2 ) )");
+		buildSrc("                           ( ( b = 2");
+		buildSrc("        OR b = 3 ) )");
+		buildSrc("                           ( a < 2");
+		buildSrc("           AND b = 3");
+		buildSrc("                                    OR a > 2");
+		buildSrc("                    AND b <> 3 )");
+		buildSrc("                           ( a < 2  AND b = 3");
+		buildSrc("                                    OR a > 22 AND bb <> 3 )");
+		buildSrc("                           ( ( c = 2 ) = ( d = 4 ) ) ).");
+
+		buildExp("  lt_table_of_b = VALUE #( ( true )");
+		buildExp("                           ( ( a < 2 ) )");
+		buildExp("                           ( (    b = 2");
+		buildExp("                               OR b = 3 ) )");
+		buildExp("                           (        a  < 2");
+		buildExp("                                AND b  = 3");
+		buildExp("                             OR     a  > 2");
+		buildExp("                                AND b <> 3 )");
+		buildExp("                           (    a < 2  AND b   = 3");
+		buildExp("                             OR a > 22 AND bb <> 3 )");
+		buildExp("                           ( ( c = 2 ) = ( d = 4 ) ) ).");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testBoolX() {
+		buildSrc("  a = boolx( bool = b AND c < 1");
+		buildSrc("  OR b AND cc > 10");
+		buildSrc("             bit  = lv_bit ).");
+
+		buildExp("  a = boolx( bool =    b AND c  < 1");
+		buildExp("                    OR b AND cc > 10");
+		buildExp("             bit  = lv_bit ).");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }

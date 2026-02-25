@@ -344,7 +344,7 @@ public class ValueStatementRule extends RuleForTokens {
 			if (token.isAssignmentOperator() && token.getPrev().isIdentifier() && token.getNext() != null && !token.getNext().isComment()) {
 				Token parameter = token.getPrev();
 				Token assignmentOp = token;
-				Term expression = Term.createArithmetic(assignmentOp.getNext());
+				Term expression = Term.createForExpression(assignmentOp.getNext());
 
 				AlignLine line = table.addLine();
 				line.setCell(Columns.PARAMETER.getValue(), new AlignCellToken(parameter));

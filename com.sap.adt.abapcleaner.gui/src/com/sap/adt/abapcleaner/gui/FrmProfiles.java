@@ -115,6 +115,7 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
    private Composite composite_1;
    private Button chkHighlightDeclarationKeywords;
    private Button chkHighlightWritePositions;
+   private Button chkHighlightAssignmentOperators;
    private Button btnChangeProfilesFolder;
 
    /** encapsulates fonts and colors for highlighting rules, options and UI controls */
@@ -139,7 +140,8 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
       private final Color normalLblFilterBackground;
       private final Color normalActivateBackground;
       private final Color normalHighlightDeclarationsBackground;
-      private final Color normalHighlightWritePositionsBackground;   
+      private final Color normalHighlightWritePositionsBackground;
+      private final Color normalHighlightAssignmentOpsBackground;
       
       public Highlighter(Display display, CodeDisplayColors codeDisplayColors) {
       	this.codeDisplayColors = codeDisplayColors;
@@ -163,6 +165,7 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
          normalActivateBackground = btnActivateDefaultRules.getBackground();
          normalHighlightDeclarationsBackground = chkHighlightDeclarationKeywords.getBackground();
          normalHighlightWritePositionsBackground = chkHighlightWritePositions.getBackground();
+         normalHighlightAssignmentOpsBackground = chkHighlightAssignmentOperators.getBackground();
       }
       
       public void dispose() {
@@ -190,6 +193,7 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 	
 	      setBackground(chkHighlightDeclarationKeywords, highlightItem.highlightFeatureOf(2023, 3, 28) ? codeDisplayColors.configAddedBackground : normalHighlightDeclarationsBackground);
 	      setBackground(chkHighlightWritePositions, highlightItem.highlightFeatureOf(2023, 3, 9) ? codeDisplayColors.configAddedBackground : normalHighlightWritePositionsBackground);
+	      setBackground(chkHighlightAssignmentOperators, highlightItem.highlightFeatureOf(2026, 2, 10) ? codeDisplayColors.configAddedBackground : normalHighlightAssignmentOpsBackground);
 		}
 
 	   private void setBackground(Control control, Color color) {
@@ -290,6 +294,7 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 		codeDisplay.setFallbackKeyListener(this);
       codeDisplay.setHighlightDeclarationKeywords(settings.profilesHighlightDeclarationKeywords);
       codeDisplay.setHighlightWritePositions(settings.profilesHighlightWritePositions);
+      codeDisplay.setHighlightAssignmentOperators(settings.profilesHighlightAssignmentOperators);
 
       // clear Labels to improve display of shell before it is filled with content
       lblRuleName.setText("");
@@ -883,7 +888,7 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 		
 		Composite cpsHighlightCancelOk = new Composite(pnlRule, SWT.NONE);
 		cpsHighlightCancelOk.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
-		GridLayout gl_cpsHighlightCancelOk = new GridLayout(9, false);
+		GridLayout gl_cpsHighlightCancelOk = new GridLayout(10, false);
 		gl_cpsHighlightCancelOk.marginWidth = 0;
 		cpsHighlightCancelOk.setLayout(gl_cpsHighlightCancelOk);
 		
@@ -924,7 +929,6 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 		
 		chkHighlightWritePositions = new Button(cpsHighlightCancelOk, SWT.CHECK);
 		chkHighlightWritePositions.setToolTipText("activate this option to highlight variables and field-symbols in write positions");
-		chkHighlightWritePositions.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, true, false, 1, 1));
 		if (settings != null)
 			chkHighlightWritePositions.setSelection(settings.profilesHighlightWritePositions);
 		chkHighlightWritePositions.addSelectionListener(new SelectionAdapter() {
@@ -939,6 +943,24 @@ public class FrmProfiles implements IConfigDisplay, IFallbackKeyListener {
 			}
 		});
 		chkHighlightWritePositions.setText("&Write positions");
+		
+		chkHighlightAssignmentOperators = new Button(cpsHighlightCancelOk, SWT.CHECK);
+		chkHighlightAssignmentOperators.setToolTipText("activate this option to highlight assignment operators (esp. as opposed to '=' as a comparison operator)");
+		chkHighlightAssignmentOperators.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, true, false, 1, 1));
+		if (settings != null)
+			chkHighlightAssignmentOperators.setSelection(settings.profilesHighlightAssignmentOperators);
+		chkHighlightAssignmentOperators.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				boolean highlight = chkHighlightAssignmentOperators.getSelection();
+				if (settings != null)
+					settings.profilesHighlightAssignmentOperators = highlight; 
+				if (codeDisplay != null && !codeDisplay.isDisposed()) {
+					codeDisplay.setHighlightAssignmentOperators(highlight);
+				}
+			}
+		});
+		chkHighlightAssignmentOperators.setText("&Assignment Operators");
 		
 		// depending on OS, create buttons "Save Profiles and Exit - Cancel" (Windows) or "Cancel - Save Profiles and Exit" (macOS, Linux)
 		if (SystemInfo.putOKBeforeCancel()) {

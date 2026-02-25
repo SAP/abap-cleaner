@@ -2,6 +2,9 @@ package com.sap.adt.abapcleaner.parser;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.junit.jupiter.api.Test;
 
 import com.sap.adt.abapcleaner.base.ABAP;
@@ -1995,4 +1998,116 @@ public class CommandTest {
 		assertTrue(buildCommand("SELECT FROM any_table FIELDS COUNT(*).").isAbap());
 	}
 	
+	/** ensures that '=' operators are correctly distinguished: in the supplied code, expected assignment operators 
+	 * must be represented as '=', while expected comparison operators must be represented as '~', e.g. 'a = ( b ~ c ).' */
+	private void assertEqualsOps(String code) {
+		// determine which '=' are expected to be assignment operators or comparison operators, respectively
+		final char assignmentOp = '=';
+		final char comparisonOp = '~';
+		char[] ops = new char[] { assignmentOp, comparisonOp };
+		List<Boolean> expAssignments = new ArrayList<Boolean>();
+		int pos = -1;
+		while (pos + 1 < code.length()) {
+			pos = StringUtil.indexOfAny(code, ops, pos + 1, '\0');
+			if (pos < 0)
+				break;
+			boolean expAssignment = (code.charAt(pos) == assignmentOp);
+			expAssignments.add(expAssignment);
+		}
+		Token token = buildCommand(code.replace(comparisonOp, assignmentOp)).firstToken;
+		
+		Command command = token.getParentCommand(); 
+		for (Boolean expAssignment : expAssignments) {
+			token = token.getNext().getLastTokenDeep(true, TokenSearch.ASTERISK, "=");
+			String details = "";
+			if (expAssignment.booleanValue() != token.isAssignmentOperator())
+				details = Command.sectionToString(command.firstToken, token, false);
+			assertEquals(expAssignment.booleanValue(), token.isAssignmentOperator(), "unexpected operator type: " + details);
+		}
+	}
+	
+	@Test
+	void testDistinguishOperatorsInAssignments() {
+		// assignments
+		assertEqualsOps("a = 1.");
+		assertEqualsOps("a = b = c = 1.");
+		assertEqualsOps("a+3(*) = '1'.");
+		assertEqualsOps("DATA(/abc/d) = 1.");
+		assertEqualsOps("lo_instance->mv_value = 1.");
+		assertEqualsOps("lo_instance->(`COMPONENT_NAME`) = 1.");
+		assertEqualsOps("!ls_any-comp = !lt_other[ !idx = 1 ]-comp2.");
+		assertEqualsOps("me->mt_any[ lv_index ] = abap_true.");
+		assertEqualsOps("lt_any[ num = 1 ]-inner[ 2 ]-name = 'a'.");
+		assertEqualsOps("lv_text+5 = lv_text(3) = 'abc'.");
+		assertEqualsOps("dref->*+3(5) = a.");
+		
+		// assignments of Boolean expressions
+		assertEqualsOps("a = b = ( c ~ 1 ).");
+		assertEqualsOps("a = ( b ~ 1 ).");
+		assertEqualsOps("a = ( b ~ 1 AND NOT c ~ 1 ).");
+		assertEqualsOps("a = ( b ~ 1 ) ~ ( c ~ d ).");
+		assertEqualsOps("a = b < 5 OR c ~ 1.");
+	}
+	
+	@Test
+	void testDistinguishOperatorsInMethodCalls() {
+		assertEqualsOps("a = any_method( p1 = 5 p2 = 10 p3 = ( b < 10 AND other_method( p = 1 ) ~ 1 ) p4 = ( d ~ 1 ) ).");
+		assertEqualsOps("a = translate( val = lv_text from = `abAd` to = `ABAP` ).");
+		assertEqualsOps("CREATE OBJECT lo_any TYPE lcl_any EXPORTING io_any = me.");
+		assertEqualsOps("CALL METHOD any_method EXPORTING a = 1 b = c + 1 IMPORTING d = e TABLES t_any = lt_other RECEIVING ro_result = DATA(lo_field).");
+	}
+	
+	@Test
+	void testDistinguishOperatorsInConstructorExprs() {
+		// VALUE for structures
+		assertEqualsOps("a = VALUE #( a = 1 b = 1 ).");
+		assertEqualsOps("APPEND VALUE ty_any( a = ( b + c ) * d e = sy-index ) TO lt_any.");
+		assertEqualsOps("INSERT VALUE #( a = VALUE #( b = <ls_any>-comp c = <ls_any>-comp2 ) ) INTO TABLE lt_any.");
+
+		// VALUE for tables
+		assertEqualsOps("a = VALUE #( a = 'X' ( b = 1 ) ( b = 2 ) ).");
+		assertEqualsOps("a = VALUE #( ( a = 1 b = get_value( c = ( d ~ e ) ) ) ).");
+		assertEqualsOps("a = VALUE #( FOR <ls_any> IN lt_tab ( a = b c = <ls_any>-d ) ).");
+		assertEqualsOps("a = VALUE #( FOR i = 1 THEN i + 1 WHILE i < 10 LET j = i * 10 IN ( a = '1' b = j ) ).");
+		assertEqualsOps("t = VALUE #( LET a = 1 b = ( c ~ 1 OR d ~ 2 ) IN ( |a: { a }| ) ( |b: { b }| ) ).");
+		
+		// VALUE for tables of B
+		assertEqualsOps("a = VALUE #( ( true ) ( ( a ~ 1 OR a ~ 2 ) ) ( ( a ~ b ) ~ ( c ~ d ) ) ( ( 'X' ~ true ) ) ).");
+		
+		// NEW
+		assertEqualsOps("DATA(lo_inst) = NEW lcl_any( io_any = me io_other = mt_any[ lv_any ] ).");
+		
+		// REDUCE
+		assertEqualsOps("FINAL(lv_sum) = REDUCE i( INIT s = 0 FOR i = 1 UNTIL i ~ 10 OR i > lv_max NEXT s = s + i ).");
+		
+		// CORRESPONDING
+		assertEqualsOps("lts_any = CORRESPONDING #( lts_other MAPPING compA1 = compB1 compA2 = compB2 ).");
+	}
+	
+	@Test
+	void testDistinguishOperatorsInKeyDefs() {
+		assertEqualsOps("READ TABLE lts_any ASSIGNING FIELD-SYMBOL(<ls>) WITH KEY a = sy-index b = 1.");
+		assertEqualsOps("READ TABLE lts_any WITH TABLE KEY keyname COMPONENTS comp1 = iv_value comp2 = iv_other_value TRANSPORTING NO FIELDS.");
+		assertEqualsOps("ASSIGN lts_any[ KEY key_name COMPONENTS a = 1 b = '' ] TO FIELD-SYMBOL(<ls_any>).");
+		assertEqualsOps("assert_true( xsdbool( line_exists( lts_any[ key keyname comp1 = 1 comp2 = '' ] ) ) ).");
+	}
+	
+	@Test
+	void testDistinguishOperatorsInLogExprs() {
+		assertEqualsOps("IF ( a < b ) ~ ( c ~ get_value( d = e ) ). ENDIF.");
+		assertEqualsOps("IF a OR ( b ~ c ) OR d. ENDIF.");
+		assertEqualsOps("a = xsdbool( b ~ c ).");
+		assertEqualsOps("a = boolc( b ~ c AND ( d ~ 1 OR d ~ 2 ) ).");
+	}
+	
+	@Test
+	void testDistinguishOperatorsInMisc() {
+		assertEqualsOps("WRITE: / | { lv_value WIDTH = 20 ALIGN = RIGHT } text|.");
+	   assertEqualsOps("EXPORT its_any = lts_any TO MEMORY ID 'MEM_1' COMPRESSION OFF.");
+	   assertEqualsOps("EXPORT gts_any = lts_any gv_other = lv_other TO DATABASE indx(sc) FROM ls_meta_info ID 'ID_3'.");
+	   assertEqualsOps("IMPORT gts_any = lts_any FROM DATABASE indx(sc) TO ls_meta_info ID 'ID_1'.");
+	   assertEqualsOps("UPDATE demo_update SET col1 = @num, col2 = col2 + @diff, col3 = col3 - @diff, (token) WHERE id = @id.");
+	   assertEqualsOps("SUBMIT any_program AND RETURN WITH p_any = lv_any WITH p_other = 'abc'.");
+      assertEqualsOps("GET BADI go_badi FILTERS program_name = lv_any_name.");
+	}
 }

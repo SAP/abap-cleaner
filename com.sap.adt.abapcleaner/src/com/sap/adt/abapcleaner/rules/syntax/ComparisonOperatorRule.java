@@ -94,6 +94,7 @@ public class ComparisonOperatorRule extends RuleForTokens {
 		}
 
 		ComparisonOperatorType targetType = ComparisonOperatorType.forValue(configPreferredOperatorSet.getValue());
+		
 		String newOperator;
 		if (configReplaceObsoleteOperators.getValue() && token.isAnyComparisonOperator(obsoleteComparisonOps) && !command.isInOOContext()) {
 			newOperator = ABAP.getNonObsoleteComparisonOperator(token.getText());
@@ -103,6 +104,10 @@ public class ComparisonOperatorRule extends RuleForTokens {
 			
 		} else if (targetType == ComparisonOperatorType.SYMBOLIC && configReplaceRegularOperators.getValue() && token.isAnyComparisonOperator(textualComparisonOps)) {
 			newOperator = ABAP.getSymbolicComparisonOperator(token.getText());
+			// do NOT replace EQ with = if the '=' ends up as a sibling of an assignment operator (see examples below)
+			if (newOperator.equals("=") && isTokenSiblingOfAssignmentRhsStart(token)) {
+				return false;
+			}
 		
 		} else if (targetType == ComparisonOperatorType.TEXTUAL && configReplaceRegularOperators.getValue() && token.isAnyComparisonOperator(symbolicComparisonOps)) {
 			newOperator = ABAP.getTextualComparisonOperator(token.getText());
@@ -113,5 +118,26 @@ public class ComparisonOperatorRule extends RuleForTokens {
 		
 		token.setText(newOperator, true);
 		return true;
+	}
+	
+	private boolean isTokenSiblingOfAssignmentRhsStart(Token token) {
+		Token prev = token.getPrevCodeSibling();
+
+		while (prev != null) {
+			if (prev.isAssignmentOperator()) {
+				// if an assignment operator is a previous sibling, EQ must NOT be replaced with =, 
+				// because in "a = b EQ c.", 'b EQ C' is a logical expression, while "a = b = c." is an assignment chain; 
+				// similarly, "any_method( a = b EQ c )." must NOT be replaced with "any_method( a = b = c )."
+				return true;
+			}
+			token = prev;
+			prev = token.getPrevCodeSibling();
+		} 
+
+		// even if no assignment operator was found, the first Token might still start the 'right-hand' side of an 
+		// assignment if a functional method call has a standard parameter "any_method( a EQ b ).", 
+		// or for constructor expressions for a table of B: "VALUE #( ( a EQ b ) ( b EQ 1 ) )." 
+		// In such cases, EQ must NOT be replaced with =, because that would require additional parentheses
+		return token.startsRhsOfAssignment();
 	}
 }

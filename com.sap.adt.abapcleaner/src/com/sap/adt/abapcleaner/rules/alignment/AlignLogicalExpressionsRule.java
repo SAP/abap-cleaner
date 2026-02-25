@@ -2,6 +2,7 @@ package com.sap.adt.abapcleaner.rules.alignment;
 
 import java.time.LocalDate;
 
+import com.sap.adt.abapcleaner.base.ABAP;
 import com.sap.adt.abapcleaner.parser.*;
 import com.sap.adt.abapcleaner.programbase.*;
 import com.sap.adt.abapcleaner.rulebase.*;
@@ -197,7 +198,7 @@ public class AlignLogicalExpressionsRule extends RuleForLogicalExpressions {
 		} else if (keyword.isKeyword("WHEN")) { 
 			return AlignStyle.forValue(configAlignSqlWhenWithBoolOps.getValue());
 		
-		} else if (keyword.textEquals("xsdbool(")) {
+		} else if (keyword.textEqualsAny(ABAP.builtInFunctionsForLogExprWithoutNamedParams)) {
 			return AlignStyle.DO_NOT_ALIGN;
 		} else {
 			return AlignStyle.DO_NOT_ALIGN;

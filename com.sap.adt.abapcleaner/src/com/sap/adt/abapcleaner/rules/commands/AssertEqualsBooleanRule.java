@@ -80,13 +80,13 @@ public class AssertEqualsBooleanRule extends AssertEqualsRuleBase {
 			return false;
 
 		// if the only remaining parameter is "act = ...", then even "act =" will be removed
-		if (!assertCall.getNext().matchesDeep(false, "act", "="))
+		if (!assertCall.getNext().matchesDeep(false, "act", TokenSearch.ASSIGNMENT_OP_EQUALS_SIGN))
 			return false;
 		Token actParam = assertCall.getNext();
 		Token actAssignmentOp = actParam.getNext();
 		Term actValue;
 		try {
-			actValue = Term.createArithmetic(actAssignmentOp.getNext());
+			actValue = Term.createForExpression(actAssignmentOp.getNext());
 		} catch (UnexpectedSyntaxException ex) {
 			(new UnexpectedSyntaxBeforeChanges(this, ex)).addToLog();
 			return false;
