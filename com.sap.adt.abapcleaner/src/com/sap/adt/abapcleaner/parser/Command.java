@@ -1295,7 +1295,7 @@ public class Command {
 			// - "DELETE itab", https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/index.htm?file=abapdelete_itab.htm
 			// - "FOR, Table Iterations", https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/index.htm?file=abenfor_itab.htm
 			// - "FOR ... IN GROUP", https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/index.htm?file=abenfor_in_group.htm
-			distinguishOperators(false, firstCode, null, "WHERE", "GROUP BY|USING KEY|TRANSPORTING|FROM");
+			distinguishOperators(false, firstCode, null, "WHERE", "GROUP BY|USING KEY|TRANSPORTING|FROM", null);
 
 		} else if (firstCode != null && firstCode.isAnyKeyword("SELECT", "WITH")) {
 			// while the WHERE clause could be identified with startCondition = "WHERE", endCondition = "GROUP BY|HAVING|ORDER BY|%_HINTS|UNION|INTO",
@@ -1305,15 +1305,21 @@ public class Command {
 
 		} else if (firstCode != null && firstCode.isKeyword("WAIT")) {
          // WAIT FOR ASYNCHRONOUS TASKS [MESSAGING CHANNELS] [PUSH CHANNELS] UNTIL log_exp [UP TO sec SECONDS].
-			distinguishOperators(false, firstCode, null, "UNTIL", "UP TO");
+			distinguishOperators(false, firstCode, null, "UNTIL", "UP TO", null);
 		
 		} else if (firstCode != null && firstCode.isKeyword("ASSERT")) {
          // ASSERT [ [ID group [SUBKEY sub]] [FIELDS val1 val2 ...] CONDITION ] log_exp.
 			if (firstCode.matchesOnSiblings(true, TokenSearch.ASTERISK, "CONDITION")) {
-				distinguishOperators(false, firstCode, null, "CONDITION", null);
+				distinguishOperators(false, firstCode, null, "CONDITION", null, null);
 			} else {
 				distinguishOperators(true, firstCode, null);
 			}
+		
+		} else if (firstCode != null && firstCode.isKeyword("TYPES")) {
+			// in the definition of a mesh type, "=" is a comparison operator in the ASSOCIATION TO ... ON ... condition 
+         // TYPES BEGIN OF MESH mesh_type.
+			//   TYPES node1 ... ASSOCIATION TO node2 ON tcomp1 = scomp1 AND tcomp2 = scomp2 AND ... [USING KEY key_name] ...
+			distinguishOperators(false, firstCode, null, "ASSOCIATION", null, null);
 		
 		} else {
 			distinguishOperators(false, firstToken, null);
@@ -1589,9 +1595,9 @@ public class Command {
 	}
 
 	private void distinguishOperators(boolean isComparisonPositionAtStart, Token start, Token end) {
-		distinguishOperators(isComparisonPositionAtStart, start, end, null, null);
+		distinguishOperators(isComparisonPositionAtStart, start, end, null, null, null);
 	}
-	private void distinguishOperators(boolean isComparisonPositionAtStart, Token start, Token end, boolean doPreCheck) {
+	private void distinguishOperators(boolean isComparisonPositionAtStart, Token start, Token end, boolean doPreCheck, Token outerCtorKeyword) {
 		if (doPreCheck && !isComparisonPositionAtStart) {
 			Token codeToken = start.isCode() ? start : start.getNextCodeSibling();
 			if (codeToken == null || codeToken.isKeyword() || codeToken.mayStartLhsOfAssignment()) {
@@ -1602,9 +1608,9 @@ public class Command {
 				isComparisonPositionAtStart = true;
 			}
 		}
-		distinguishOperators(isComparisonPositionAtStart, start, end, null, null);
+		distinguishOperators(isComparisonPositionAtStart, start, end, null, null, outerCtorKeyword);
 	}
-	private void distinguishOperators(boolean isComparisonPositionAtStart, Token start, Token end, String startCondition, String endCondition) {
+	private void distinguishOperators(boolean isComparisonPositionAtStart, Token start, Token end, String startCondition, String endCondition, Token outerCtorKeyword) {
 		Token token = start;
 		Token endOfLogExpr = null;
 		Token endOfRhsExpr = null;
@@ -1683,37 +1689,44 @@ public class Command {
 					
 				} else if (ctorKeyword != null && ctorKeyword.isKeyword("COND")) { 
 					// COND type( [let_exp] WHEN log_exp THEN ... WHEN .. )
-					distinguishOperators(false, token.getNext(), token.getNextSibling(), "WHEN", "THEN");
+					distinguishOperators(false, token.getNext(), token.getNextSibling(), "WHEN", "THEN", ctorKeyword);
 				
 				} else if (ctorKeyword != null && ctorKeyword.isAnyKeyword("REDUCE", "NEW", "VALUE")) { 
 					// "FOR var = rhs [THEN expr] UNTIL|WHILE log_exp [let_exp] ...", see ABAP Reference:
 					// - "FOR, Iteration Expressions", https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/index.htm?file=abenfor.htm
 					// - "FOR, Conditional Iteration", https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/index.htm?file=abenfor_conditional.htm
-					distinguishOperators(false, token.getNext(), token.getNextSibling(), "UNTIL|WHILE", "LET|NEXT|FOR");
+					distinguishOperators(false, token.getNext(), token.getNextSibling(), "UNTIL|WHILE", "LET|NEXT|FOR", ctorKeyword);
 				
 				} else if (ctorKeyword != null && ctorKeyword.isKeyword("FILTER")) { 
 		      	// FILTER type( itab [EXCEPT] [USING KEY keyname] WHERE c1 op f1 [AND c2 op f2 [...]] ) ...
 		      	// FILTER type( itab [EXCEPT] IN ftab [USING KEY keyname] WHERE c1 op f1 [AND c2 op f2 [...]] ) ...
-					distinguishOperators(false, token.getNext(), token.getNextSibling(), "WHERE", null);
+					distinguishOperators(false, token.getNext(), token.getNextSibling(), "WHERE", null, ctorKeyword);
 				
 				} else if (ctorKeyword != null && ctorKeyword.isKeyword("WHERE")) { 
 					// "FOR ... WHERE ( log_exp )" in REDUCE|NEW|VALUE constructor expressions, see ABAP Reference:
 		         // - "FOR, Table Iterations", https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/index.htm?file=abenfor_itab.htm
 					// - "FOR, cond", https://ldcier1.wdf.sap.corp:44300/sap/public/bc/abap/docu?object=abenfor_cond
-					distinguishOperators(true, token.getNext(), token.getNextSibling());
+					distinguishOperators(true, token.getNext(), token.getNextSibling(), null, null, outerCtorKeyword);
+				
+				} else if (ctorKeyword != null && ctorKeyword.isKeyword("CORRESPONDING")) {
+					// CORRESPONDING {dtype|#}( ... MAPPING ... ) may contain nested parentheses with assignments for components of sub-structures; 
+					// therefore, pass on the ctorKeyword to identify this case for inner "(" tokens
+					distinguishOperators(false, token.getNext(), token.getNextSibling(), null, null, ctorKeyword);
 				
 				} else if (token.textEquals("(")) {
 					// use the current value inside the parenthesis, except if the parent is "(", too: 
 					// this can happen for logical expressions, but not for assignments: 
 					// DATA lt_simple_bool TYPE STANDARD TABLE OF b.
 					// lt_simple_bool = VALUE #( ( ( a < 1 ) ) ( ( a = 1 ) ) ( ( a > 1 ) ) ).
-					boolean parentIsOpeningParenthesis = token.getParent() != null && token.getParent().textEquals("(");
-					distinguishOperators(isComparisonPosition || parentIsOpeningParenthesis, token.getNext(), token.getNextSibling(), true); 
+					// exception: CORRESPONDING ...( ... MAPPING ... ( ... MAPPING ... ( ... ) ) ), where all parentheses contain assignments   
+					boolean isInCorrespondingCtor = (outerCtorKeyword != null && outerCtorKeyword.isKeyword("CORRESPONDING"));
+					boolean parentIsOpeningParenthesis = token.getParent() != null && token.getParent().textEquals("(") && !isInCorrespondingCtor;
+					distinguishOperators(isComparisonPosition || parentIsOpeningParenthesis, token.getNext(), token.getNextSibling(), true, outerCtorKeyword); 
 				
 				} else { 
 					// method call "identifier(" or table expression "table[" or string template "|text {" or "} text {"
 					boolean doPreCheck = (ctorKeyword == null && token.textEndsWith("("));
-					distinguishOperators(false, token.getNext(), token.getNextSibling(), doPreCheck);
+					distinguishOperators(false, token.getNext(), token.getNextSibling(), doPreCheck, null);
 				}
 				token = token.getNextSibling();
 			} else {
