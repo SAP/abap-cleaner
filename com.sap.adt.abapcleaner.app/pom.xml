@@ -18,6 +18,14 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xs
     <plugins>
       <plugin>
         <groupId>org.eclipse.tycho</groupId>
+        <artifactId>target-platform-configuration</artifactId>
+        <version>${tycho-version}</version>
+        <configuration>
+          <executionEnvironment>none</executionEnvironment>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.eclipse.tycho</groupId>
         <artifactId>tycho-p2-director-plugin</artifactId>
         <version>${tycho-version}</version>
         <executions>
@@ -46,5 +54,13 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xs
       </plugin>
     </plugins>
   </build>
+
+  <repositories>
+    <repository>
+      <id>justj</id>
+      <url>https://download.eclipse.org/justj/jres/21/updates/release/21.0.10</url>
+      <layout>p2</layout>
+    </repository>
+  </repositories>
 
 </project>
