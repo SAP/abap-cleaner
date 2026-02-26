@@ -12,7 +12,7 @@
     <module>com.sap.adt.abapcleaner.feature</module>
     <module>com.sap.adt.abapcleaner.gui</module>
     <module>com.sap.adt.abapcleaner.updatesite</module>
-    <module>test</module>
+    <module>test/com.sap.adt.abapcleaner.test</module>
   </modules>
   <properties>
     <tycho-version>5.0.2</tycho-version>
@@ -27,6 +27,14 @@
           <groupId>org.codehaus.mojo</groupId>
           <artifactId>build-helper-maven-plugin</artifactId>
           <version>3.6.1</version>
+        </plugin>
+        <plugin>
+          <groupId>org.eclipse.tycho</groupId>
+          <artifactId>tycho-p2-repository-plugin</artifactId>
+          <version>${tycho-version}</version>
+          <configuration>
+            <finalName>${project.artifactId}</finalName>
+          </configuration>
         </plugin>
       </plugins>
     </pluginManagement>
