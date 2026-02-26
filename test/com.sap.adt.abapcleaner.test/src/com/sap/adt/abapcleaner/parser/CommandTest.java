@@ -2082,6 +2082,7 @@ public class CommandTest {
 		
 		// CORRESPONDING
 		assertEqualsOps("lts_any = CORRESPONDING #( lts_other MAPPING compA1 = compB1 compA2 = compB2 ).");
+		assertEqualsOps("lts_any = CORRESPONDING #( lts_other MAPPING compA1 = compB1 ( compA2 = compB2 MAPPING compA3 = compB3 ( compA4 = compB4 MAPPING compA5 = compB5 ) ) ).");
 	}
 	
 	@Test
@@ -2109,5 +2110,7 @@ public class CommandTest {
 	   assertEqualsOps("UPDATE demo_update SET col1 = @num, col2 = col2 + @diff, col3 = col3 - @diff, (token) WHERE id = @id.");
 	   assertEqualsOps("SUBMIT any_program AND RETURN WITH p_any = lv_any WITH p_other = 'abc'.");
       assertEqualsOps("GET BADI go_badi FILTERS program_name = lv_any_name.");
+      assertEqualsOps("TYPES: BEGIN OF MESH t_mesh, node1 TYPE t_itab1 ASSOCIATION _node2 TO node2 ON col1 ~ col1 AND col2 ~ col2, node2 TYPE t_itab2, END OF MESH t_mesh.");
+      assertEqualsOps("TYPES node1 TYPE t_itab1 ASSOCIATION _node2 TO node2 ON col1 ~ col1 AND col2 ~ col2.");
 	}
 }
