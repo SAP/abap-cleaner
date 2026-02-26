@@ -18,11 +18,22 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xs
     <plugins>
       <plugin>
         <groupId>org.eclipse.tycho</groupId>
+        <artifactId>target-platform-configuration</artifactId>
+        <version>${tycho-version}</version>
+        <configuration>
+          <executionEnvironment>none</executionEnvironment>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.eclipse.tycho</groupId>
         <artifactId>tycho-p2-director-plugin</artifactId>
         <version>${tycho-version}</version>
         <executions>
           <execution>
             <id>materialize-products</id>
+            <!-- Bind to prepare-package (instead of the default package phase) so that the
+                 shorten-win32-jre-path antrun step below can run before archive-products. -->
+            <phase>prepare-package</phase>
             <goals>
               <goal>materialize-products</goal>
             </goals>
@@ -44,7 +55,54 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xs
           </products>
         </configuration>
       </plugin>
+
+      <!-- On Windows, the JustJ JRE is materialized under a deeply nested, versioned
+           plugins/... folder. Combined with the JRE's own internal paths this can exceed
+           the 260-char MAX_PATH limit and make the launcher fail. To avoid that, move the
+           JRE up to abapcleaner/jre and point abap-cleaner.ini at the shorter path.
+           This runs after materialize-products (prepare-package) and before
+           archive-products (package), so the fix is included in the win32 product zip. -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-antrun-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>shorten-win32-jre-path</id>
+            <phase>prepare-package</phase>
+            <goals>
+              <goal>run</goal>
+            </goals>
+            <configuration>
+              <target>
+                <property name="win32ProductDir"
+                          value="${project.build.directory}/products/com.sap.adt.abapcleaner.app/win32/win32/x86_64/abapcleaner"/>
+                <!-- Resolve the versioned JustJ JRE folder name (changes per JRE release). -->
+                <pathconvert property="win32JreSrcDir" setonempty="false">
+                  <dirset dir="${win32ProductDir}/plugins">
+                    <include name="org.eclipse.justj.openjdk.*.win32.*/jre"/>
+                  </dirset>
+                </pathconvert>
+                <!-- Move plugins/org.eclipse.justj.../jre to abapcleaner/jre. -->
+                <move file="${win32JreSrcDir}" tofile="${win32ProductDir}/jre"/>
+                <!-- Rewrite the -vm path in abap-cleaner.ini to the shortened location. -->
+                <replaceregexp file="${win32ProductDir}/abap-cleaner.ini"
+                               match="plugins/org\.eclipse\.justj[^/\r\n]*/jre/bin"
+                               replace="jre/bin"
+                               flags="g"/>
+              </target>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
   </build>
+
+  <repositories>
+    <repository>
+      <id>justj</id>
+      <url>https://download.eclipse.org/justj/jres/21/updates/release/21.0.10</url>
+      <layout>p2</layout>
+    </repository>
+  </repositories>
 
 </project>
