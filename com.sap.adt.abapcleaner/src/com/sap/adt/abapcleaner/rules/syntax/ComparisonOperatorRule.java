@@ -93,6 +93,14 @@ public class ComparisonOperatorRule extends RuleForTokens {
 			}
 		}
 
+		// do NOT change the ASSOCIATION TO ... ON ... condition in the definition of a mesh type, 
+		// where "=" is a comparison operator, but "EQ" would nevertheless be a syntax error:  
+      // TYPES BEGIN OF MESH mesh_type.
+		//   TYPES node1 ... ASSOCIATION TO node2 ON tcomp1 = scomp1 AND tcomp2 = scomp2 AND ... [USING KEY key_name] ...
+		if (command.firstCodeTokenIsKeyword("TYPES") && command.getFirstToken().matchesOnSiblings(true, TokenSearch.ASTERISK, "ASSOCIATION")) {
+			return false;
+		}
+
 		ComparisonOperatorType targetType = ComparisonOperatorType.forValue(configPreferredOperatorSet.getValue());
 		
 		String newOperator;
