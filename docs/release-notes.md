@@ -6,6 +6,14 @@ as well as bugfixes of reported issues, i.e. anything that enhances or changes t
 For a complete list of changes (including documentation, tests, refactoring etc.), please refer to 
 the list of [commits](../../../commits/main).
 
+## 2026-02-26 (version 1.24.0)
+
+* Raised **minimum required** versions to **Java 21** and **Eclipse 2024-06**
+* Removed unneeded dependencies from app
+* Improved target platform configuration to ignore local artifacts
+* Fixed rule '**Use consistent set of comparison operators**' for mesh association conditions
+* Fixed equals operator type for CORRESPONDING ... MAPPING
+
 ## 2026-02-25 (version 1.23.0)
 
 **Thank you** very much [**abapstudent**](https://github.com/abapstudent) for the bug report behind the fix!
