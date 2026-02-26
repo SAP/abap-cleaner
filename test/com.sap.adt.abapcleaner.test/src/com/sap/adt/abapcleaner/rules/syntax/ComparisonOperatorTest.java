@@ -201,4 +201,33 @@ class ComparisonOperatorTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testEqualsOpInMeshAssociationCondition() {
+		// ensure that in the ASSOCIATION TO ... ON ... condition in the definition of a mesh type, 
+		// "=" is NOT changed to "EQ", because that would be a syntax error (although "=" is a comparison operator)
+		
+		rule.configPreferredOperatorSet.setEnumValue(ComparisonOperatorType.TEXTUAL);
+
+		buildSrc("    TYPES:");
+		buildSrc("      BEGIN OF MESH t_mesh,");
+		buildSrc("        node1 TYPE t_itab1");
+		buildSrc("          ASSOCIATION _node2 TO node2 ON  col1 = col1");
+		buildSrc("                                      AND col2 = col2,");
+		buildSrc("        node2 TYPE t_itab2,");
+		buildSrc("      END OF MESH t_mesh.");
+		buildSrc("");
+		buildSrc("    TYPES BEGIN OF MESH t_mesh2.");
+		buildSrc("    TYPES   node1 TYPE t_itab1");
+		buildSrc("              ASSOCIATION _node2 TO node2 ON  col1 = col1");
+		buildSrc("                                          AND col2 = col2.");
+		buildSrc("    TYPES   node2 TYPE t_itab2.");
+		buildSrc("    TYPES END OF MESH t_mesh.");
+
+		copyExpFromSrc();
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }
