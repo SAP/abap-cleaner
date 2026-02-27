@@ -437,4 +437,21 @@ public class StringTemplateTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testSkipLiteralOperator() {
+		// ensure that cases with the literal operator & are not processed
+		rule.configStringTemplateCondition.setEnumValue(StringTemplateCondition.SHORTER);
+
+		buildSrc("    lv_text = lv_text && `abc` & `def`.");
+		buildSrc("    lv_text = `abc` & `def` && lv_text.");
+		buildSrc("    lv_text = lv_text && `abc` && `def` & `ghi`.");
+		buildSrc("    lv_text = lv_text && `abc` & `def` && `ghi`.");
+
+		copyExpFromSrc();
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }
