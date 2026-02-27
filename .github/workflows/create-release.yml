@@ -40,7 +40,7 @@ jobs:
           body: | 
             We recommend using the ABAP cleaner **plug-in for ADT** (see [installation instructions](../../blob/main/README.md)), which cleans up your code directly from within ADT, and checks for updates automatically. If you nevertheless prefer to use the **stand-alone version** of ABAP cleaner (e.g. in order to use it with SAP GUI or from the command line), please 
 
-            * make sure Java 21 or 17 (e.g. [SapMachine](https://sap.github.io/SapMachine/) or [Adoptium Temurin](https://adoptium.net/)) is installed on your system, and in the app 'Edit the system environment variables' (Windows), System variable 'Path' contains the path to the java.exe (e.g. C:\Program Files\SapMachine\JDK\17\bin)
+            * make sure Java 21 or higher (e.g. [SapMachine](https://sapmachine.io/) or [Adoptium Temurin](https://adoptium.net/)) is installed on your system, and in the app 'Edit the system environment variables' (Windows), System environment variable 'PATH' contains the path to the java.exe (e.g. C:\Program Files\SapMachine\JDK\21\bin)
             * expand "Assets" below and download the archive for your operating system
             * extract the archive
             * on macOS:
