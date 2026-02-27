@@ -6,7 +6,7 @@ as well as bugfixes of reported issues, i.e. anything that enhances or changes t
 For a complete list of changes (including documentation, tests, refactoring etc.), please refer to 
 the list of [commits](../../../commits/main).
 
-## 2026-02-26 (version 1.24.0)
+## 2026-02-27 (version 1.24.1)
 
 * Raised **minimum required** versions to **Java 21** and **Eclipse 2024-06**
 * Removed unneeded dependencies from app
