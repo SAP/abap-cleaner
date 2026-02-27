@@ -1098,4 +1098,33 @@ public class DdlAlignLogicalExpressionsTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testAlignWhereWithCardinality() {
+		buildSrc("define view entity any_view");
+		buildSrc("  as select from dtab._association[status <> 'C' and status <> 'X']");
+		buildSrc("");
+		buildSrc("{");
+		buildSrc("  key field1,");
+		buildSrc("");
+		buildSrc("      field2");
+		buildSrc("}");
+		buildSrc("");
+		buildSrc("where _association.field3 > '0'");
+		buildSrc("and _Items[to one: currency <> 'EUR'].field4   =   'any'");
+
+		buildExp("define view entity any_view");
+		buildExp("  as select from dtab._association[status <> 'C' and status <> 'X']");
+		buildExp("");
+		buildExp("{");
+		buildExp("  key field1,");
+		buildExp("");
+		buildExp("      field2");
+		buildExp("}");
+		buildExp("");
+		buildExp("where _association.field3 > '0'");
+		buildExp("  and _Items[to one: currency <> 'EUR'].field4 = 'any'");
+
+		testRule();
+	}
 }
