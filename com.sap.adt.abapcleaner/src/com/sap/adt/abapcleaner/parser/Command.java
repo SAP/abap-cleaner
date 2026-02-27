@@ -1469,6 +1469,10 @@ public class Command {
 
 		// for WITH commands, move to the main SELECT query (skipping parenthesized subquery SELECT clauses from table expression definitions)
 		if (selectToken.isKeyword("WITH")) {
+			if (selectToken.matchesOnSiblings(true, "WITH", "(", ")")) {
+				// dynamic form: opens a loop that requires ENDWITH, unless WITH is followed by '... INTO|APPENDING ... TABLE itab':
+				return !selectToken.matchesOnSiblings(true, TokenSearch.ASTERISK, "INTO|APPENDING", TokenSearch.makeOptional("CORRESPONDING FIELDS OF"), "TABLE");
+			}
 			selectToken = selectToken.getLastTokenOnSiblings(true, TokenSearch.ASTERISK, "SELECT");
 			if (selectToken == null)
 				return false;

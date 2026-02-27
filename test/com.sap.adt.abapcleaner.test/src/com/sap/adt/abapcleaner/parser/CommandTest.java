@@ -2113,4 +2113,11 @@ public class CommandTest {
       assertEqualsOps("TYPES: BEGIN OF MESH t_mesh, node1 TYPE t_itab1 ASSOCIATION _node2 TO node2 ON col1 ~ col1 AND col2 ~ col2, node2 TYPE t_itab2, END OF MESH t_mesh.");
       assertEqualsOps("TYPES node1 TYPE t_itab1 ASSOCIATION _node2 TO node2 ON col1 ~ col1 AND col2 ~ col2.");
 	}
+
+	@Test
+	void testWithLoop() {
+		assertTrue(buildCommand("WITH (dyn_string) INTO @dyn_wa. APPEND dyn_wa TO dyn_result. ENDWITH.").getOpensLevel());
+		assertTrue(buildCommand("WITH (dyn_string) APPENDING @dyn_wa. ENDWITH.").getOpensLevel());
+	}
+
 }
