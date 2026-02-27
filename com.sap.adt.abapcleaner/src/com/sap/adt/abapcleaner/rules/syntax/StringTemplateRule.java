@@ -150,6 +150,12 @@ public class StringTemplateRule extends RuleForCommands {
 		if (token.startsConstructorExpression())
 			token = token.getPrevCodeSibling();
 		
+		// combinations of & and && (such as `a` & `b` && lv_text) cannot be processed, 
+		// because a result like `a` & |b{ lv_text }| would be a syntax error
+		Token prevOp = token.getPrevCodeSibling();
+		if (prevOp != null && prevOp.textEquals("&")) 
+			return null;
+		
 		// create a list of consecutive operands and the concatenation operators between them
 		ArrayList<Term> terms = new ArrayList<>();
 		ArrayList<Token> concatOps = new ArrayList<>();
@@ -163,6 +169,12 @@ public class StringTemplateRule extends RuleForCommands {
 			terms.add(newTerm);
 			token = newTerm.getNextCodeSibling();
 			concatOps.add(token);
+			
+			// combinations of && and & (such as lv_text && `a` & `b`) cannot be processed, 
+			// because a result like |{ lv_text }a| & `b` would be a syntax error
+			if (token != null && token.textEquals("&"))
+				return null;
+			
 			if (token == null || !token.textEquals("&&"))
 				break;
 			token = token.getNextCodeSibling();
