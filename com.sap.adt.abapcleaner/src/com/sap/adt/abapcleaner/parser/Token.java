@@ -2934,7 +2934,7 @@ public class Token {
       				// end of SELECT
       			} else if (end.isAnyKeyword("FIELDS", "FOR", "WHERE", "GROUP", "HAVING", "ORDER", "INTO", "APPENDING")) {
       				// next SQL clause
-      			} else if (end.isAnyKeyword("USING", "UP", "%_HINTS", "PRIVILEGED", "OFFSET", "BYPASSING", "CONNECTION")) {
+      			} else if (end.isAnyKeyword("USING", "UP", "%_HINTS", "PRIVILEGED", "OFFSET", "BYPASSING", "CONNECTION", "OPTIONS")) {
       				// USING CLIENT / DB hints / ABAP options
       			} else if (end.isAnyKeyword("INNER", "LEFT", "RIGHT", "JOIN", "CROSS", "ON", "CLIENT")) {
       				// next join, or ON condition from surrounding join without parentheses 
@@ -3051,6 +3051,8 @@ public class Token {
 					// operand IS [NOT] NULL, operand IS [NOT] INITIAL, operand1 [NOT] LIKE operand2 [ESCAPE esc]
 				} else if (end.isAnyKeyword("CASE", "WHEN", "THEN", "ELSE", "END")) {
 					// CASE as a DDL expression at operand position
+				} else if (end.isAnyKeyword("CAST")) {
+					// cast( operand AS dtype [PRESERVING TYPE] ) - as a lhs or rhs operand
 				} else if (end.isAnyKeyword(DDL.aggregationFunctions) && isKeyword("HAVING")) { 
 					// aggregate functions are only allowed in HAVING (and WHEN ... THEN), but not in WHERE / ON / DEFAULT FILTER, 
 					// cp. https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/abencds_cond_expr_operands_v2.htm
