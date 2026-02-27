@@ -872,4 +872,43 @@ public class DdlSpacesAroundBracketsTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testWhereWithLengthAndCast() {
+		buildSrc("define view entity any_view");
+		buildSrc("  as select from dtab");
+		buildSrc("");
+		buildSrc("  association to other_dtab as _asso");
+		buildSrc("    on $projection.id = _asso.id");
+		buildSrc("");
+		buildSrc("{");
+		buildSrc("  key id,");
+		buildSrc("");
+		buildSrc("      _asso.field1");
+		buildSrc("}");
+		buildSrc("");
+		buildSrc("where _asso.field1 like    'S%'");
+		buildSrc("  and length( _asso.field1   ) = abap.int1'4'");
+		buildSrc("  and created_on between abap.dats'20200101' and abap.dats'20200401'");
+		buildSrc("  and cast(   _asso.field2 as any_type preserving type ) = abap.char'literal'");
+
+		buildExp("define view entity any_view");
+		buildExp("  as select from dtab");
+		buildExp("");
+		buildExp("  association to other_dtab as _asso");
+		buildExp("    on $projection.id = _asso.id");
+		buildExp("");
+		buildExp("{");
+		buildExp("  key id,");
+		buildExp("");
+		buildExp("      _asso.field1");
+		buildExp("}");
+		buildExp("");
+		buildExp("where _asso.field1 like    'S%'");
+		buildExp("  and length(_asso.field1) = abap.int1'4'");
+		buildExp("  and created_on between abap.dats'20200101' and abap.dats'20200401'");
+		buildExp("  and cast(_asso.field2 as any_type preserving type) = abap.char'literal'");
+
+		testRule();
+	}
 }
