@@ -1019,7 +1019,7 @@ public class Command {
 			Token valueEnd = (value == null) ? null : (value.getOpensLevel() ? value.getNextCodeSibling() : value);
 			return (valueEnd == null);
 		}
-		if (lastToken.getParent() != null)
+		if (lastToken.getParent() != null || lastToken.textEquals("["))
 			return true;
 		
 		// determine whether we are on top level of the Command hierarchy
