@@ -307,4 +307,19 @@ class SpaceBeforePeriodTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testReportWithAsteriskComment() {
+		// ensure that referential integrity is not broken although "* test" will be a child of the "REPORT ..." command,
+		// which has no sibling; also ensure that re-processing does not fail when deactivating the rule for the second line 
+		
+		buildSrc("REPORT any_report");
+		buildSrc("* test");
+		buildSrc(".");
+
+		buildExp("REPORT any_report.");
+		buildExp("* test");
+
+		testRule();
+	}
 }

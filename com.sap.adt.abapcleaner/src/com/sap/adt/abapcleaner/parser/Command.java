@@ -721,11 +721,19 @@ public class Command {
 		++parentCode.commandCount;
 
 		child.parentCode = parentCode;
+		if (parentCode.lastCommand == this) {
+			// this can happen in report sections where this.usedLevelOpener.requiresCloser == false
+			parentCode.lastCommand = child; 
+		}
+		
 		child.parent = this;
 
 		child.next = (nextSibling != null) ? nextSibling : next;
-		child.next.prev = child;
-
+		if (child.next != null) {
+			// this can happen when inserting the first line after a report section start
+			child.next.prev = child;
+		}
+		
 		child.prev = this;
 		next = child;
 

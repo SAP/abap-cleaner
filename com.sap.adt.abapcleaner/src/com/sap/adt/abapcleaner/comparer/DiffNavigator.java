@@ -148,8 +148,9 @@ public class DiffNavigator {
 		// move the start command to possibly have a parent, but no grandparent (i.e., assuming CLASS ... METHOD ..., move to METHOD level)
 		while (startCommand.getParent() != null && startCommand.getParent().getParent() != null) 
 			startCommand = startCommand.getParent();
-		// if the parent is a PUBLIC / PROTECTED / PRIVATE SECTION, move the start command there (otherwise, Command.isInClassDefinition() won't work in reprocessing)
-		while (startCommand.getParent() != null && startCommand.getParent().isDeclarationSectionStart()) 
+		// if the parent is a PUBLIC / PROTECTED / PRIVATE SECTION, move the start command there (otherwise, Command.isInClassDefinition() won't work in reprocessing);
+		// same for report sections, where the parent is level opener that does not require a closer
+		while (startCommand.getParent() != null && startCommand.getParent().isReportOrDeclarationSectionStart()) 
 			startCommand = startCommand.getParent();
 		// if the code snippet contains METHOD with no CLASS around it, move to METHOD level (= in this case, top level)
 		while (startCommand.getParent() != null && startCommand.getParent().isMethodFunctionOrFormStart()) 
