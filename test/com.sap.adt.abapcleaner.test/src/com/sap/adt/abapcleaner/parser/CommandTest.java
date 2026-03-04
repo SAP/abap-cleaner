@@ -1824,6 +1824,14 @@ public class CommandTest {
 		assertEquals(Language.ABAP, buildCommand("\" comment").getLanguage());
 		assertEquals(Language.ABAP, buildCommand("* comment").getLanguage());
 		assertEquals(Language.ABAP, buildCommand("REPORT any_report.").getLanguage());
+		
+		// RAP behavior definition language (not supported)
+		buildCommandExpectingParseExc("projection;");
+		buildCommandExpectingParseExc("projection  implementation    in  class cl_any  unique;");
+		buildCommandExpectingParseExc("abstract;");
+		buildCommandExpectingParseExc("interface;");
+		buildCommandExpectingParseExc("managed implementation in class cl_any unique;");
+		buildCommandExpectingParseExc("unmanaged with unmanaged save and cleanup with full data;");
 	}
 	
 	@Test

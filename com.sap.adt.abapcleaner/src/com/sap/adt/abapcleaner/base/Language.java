@@ -46,8 +46,11 @@ public enum Language {
 		}
 		
 		// distinguish between (CDS) DDL and ABAP code
-		if (StringUtil.containsAnyAt(text, pos, "managed", "unmanaged", "abstract;", "projection;", "interface;")) {
-			// cleanup of RAP behavior definition language (BDL) is not supported
+		if (StringUtil.containsAnyAt(text, pos, "managed", "unmanaged", "abstract;", "projection;", "interface;")
+				|| StringUtil.containsAtIgnoringCase(text, pos, "projection", "implementation")) {
+			// cleanup of RAP behavior definition language (BDL) is not supported; 
+			// projection BDEFs may continue with "projection [implementation in class ClassName unique];"
+			// cp. https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/ABENBDL_BDEF_PROJECTION_HEADER.html
 			return Language.NOT_SUPPORTED;
 			
 		} else if (StringUtil.containsAtIgnoringCase(text, pos, "process", "before", "output")

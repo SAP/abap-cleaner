@@ -731,7 +731,7 @@ public final class StringUtil {
 		
 		int pos = start;
 		for (String word : possibleWords) {
-			if (pos + word.length() < text.length()) {
+			if (pos + word.length() <= text.length()) {
 				String sectionInText = text.substring(pos, pos + word.length());
 				if (ignoreCase ? word.equalsIgnoreCase(sectionInText) : word.equals(sectionInText)) {
 					return true; 
