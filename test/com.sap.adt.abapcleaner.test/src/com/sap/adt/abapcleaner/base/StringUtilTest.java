@@ -631,6 +631,11 @@ class StringUtilTest {
 		assertTrue(StringUtil.containsAnyAt("a bc def", 2, "X", "bc", "yz"));
 		assertTrue(StringUtil.containsAnyAt("a bc def", 2, "X", "yz", "bc"));
 
+		// expect found (at the end)
+		assertTrue(StringUtil.containsAnyAt("a bc def", 5, "def", "X", "yz"));
+		assertTrue(StringUtil.containsAnyAt("a bc def", 5, "X", "def", "yz"));
+		assertTrue(StringUtil.containsAnyAt("a bc def", 5, "X", "yz", "def"));
+
 		// expect not found due to case
 		assertFalse(StringUtil.containsAnyAt("a bc def", 2, "BC", "X", "yz"));
 		assertFalse(StringUtil.containsAnyAt("a bc def", 2, "X", "Bc", "yz"));
