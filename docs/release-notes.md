@@ -6,6 +6,17 @@ as well as bugfixes of reported issues, i.e. anything that enhances or changes t
 For a complete list of changes (including documentation, tests, refactoring etc.), please refer to 
 the list of [commits](../../../commits/main).
 
+## 2026-03-04 (version 1.24.2)
+
+Many **thanks** to [**MarcSAP**](https://github.com/MarcSAP) for your bug report!
+
+* Fixed rule '**Use string templates to assemble text**' for combinations with literal operator
+* Fixed rule '**Remove space before commas and period**' for **empty REPORT**
+* Fixed **Parser** for **dynamic** form of **WITH loops**
+* Fixed **Parser** for **projection** implementation in class ([#483](../../../issues/483))
+* Fixed **Parser** for **DDL condition** with **CAST**
+* Fixed **Parser** for **DDL association** with **cardinality**
+
 ## 2026-02-27 (version 1.24.1)
 
 * Raised **minimum required** versions to **Java 21** and **Eclipse 2024-06**
