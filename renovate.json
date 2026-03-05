@@ -3,6 +3,30 @@
   "extends": [
     "config:recommended"
   ],
+  "customDatasources": {
+    "eclipse-p2-page": {
+      "format": "html"
+    }
+  },
+  "customManagers": [
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/(^|/|\\.)pom\\.xml$/"
+      ],
+      "matchStringsStrategy": "recursive",
+      "matchStrings": [
+        "<repositories>(.|\\s)*?</repositories>",
+        "<repository>(.|\\s)*?</repository>",
+        "<url>https://download.eclipse.org/justj/jres/(?<currentValueMajor>.*)/updates/release/(?<currentValue>.*)</url>"
+      ],
+      "depNameTemplate": "justj",
+      "registryUrlTemplate": "https://download.eclipse.org/justj/jres/{{ currentValueMajor }}/updates/release",
+      "versioningTemplate": "semver-coerced",
+      "datasourceTemplate": "custom.eclipse-p2-page",
+      "extractVersionTemplate": ".*/(?<version>\\d+\\.\\d+\\.\\d+)/.*$"
+    }
+  ],
   "packageRules": [
     {
       "groupName": "tycho",

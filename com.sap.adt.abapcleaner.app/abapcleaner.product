@@ -29,6 +29,7 @@
    </plugins>
 
    <features>
+      <feature id="org.eclipse.justj.openjdk.hotspot.jre.minimal.stripped"/>
       <feature id="com.sap.adt.abapcleaner.feature"/>
    </features>
 
