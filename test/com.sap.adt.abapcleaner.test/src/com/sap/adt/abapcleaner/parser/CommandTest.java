@@ -2115,7 +2115,8 @@ public class CommandTest {
 	   assertEqualsOps("EXPORT its_any = lts_any TO MEMORY ID 'MEM_1' COMPRESSION OFF.");
 	   assertEqualsOps("EXPORT gts_any = lts_any gv_other = lv_other TO DATABASE indx(sc) FROM ls_meta_info ID 'ID_3'.");
 	   assertEqualsOps("IMPORT gts_any = lts_any FROM DATABASE indx(sc) TO ls_meta_info ID 'ID_1'.");
-	   assertEqualsOps("UPDATE demo_update SET col1 = @num, col2 = col2 + @diff, col3 = col3 - @diff, (token) WHERE id = @id.");
+	   assertEqualsOps("UPDATE demo_update SET col1 = @num, col2 = col2 + @diff, col3 = col3 - @diff, (token) WHERE id ~ @id.");
+	   assertEqualsOps("UPDATE target SET comp1 = @lv_comp1, component2 = @lv_comp2 WHERE comp3 ~ @<ls_struc>-comp3  AND component4 ~ @<ls_struc>-component4.");
 	   assertEqualsOps("SUBMIT any_program AND RETURN WITH p_any = lv_any WITH p_other = 'abc'.");
       assertEqualsOps("GET BADI go_badi FILTERS program_name = lv_any_name.");
       assertEqualsOps("TYPES: BEGIN OF MESH t_mesh, node1 TYPE t_itab1 ASSOCIATION _node2 TO node2 ON col1 ~ col1 AND col2 ~ col2, node2 TYPE t_itab2, END OF MESH t_mesh.");

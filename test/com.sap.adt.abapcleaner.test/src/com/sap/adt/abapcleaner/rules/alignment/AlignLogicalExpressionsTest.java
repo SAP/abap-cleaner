@@ -1351,4 +1351,25 @@ class AlignLogicalExpressionsTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void test() {
+		buildSrc("    UPDATE target");
+		buildSrc("      SET comp1      = @lv_comp1,");
+		buildSrc("          component2 = @lv_comp2");
+		buildSrc("      WHERE comp3 =     @<ls_struc>-comp3");
+		buildSrc("      AND component4 =   @<ls_struc>-component4");
+		buildSrc("   AND c5  =  @lv_value5.");
+
+		buildExp("    UPDATE target");
+		buildExp("      SET comp1      = @lv_comp1,");
+		buildExp("          component2 = @lv_comp2");
+		buildExp("      WHERE comp3      = @<ls_struc>-comp3");
+		buildExp("        AND component4 = @<ls_struc>-component4");
+		buildExp("        AND c5         = @lv_value5.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }

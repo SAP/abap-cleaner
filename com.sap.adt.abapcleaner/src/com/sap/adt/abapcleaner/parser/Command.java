@@ -1311,6 +1311,11 @@ public class Command {
 			// therefore we can set isComparisonPositionAtStart to true for the entire statement
 			distinguishOperators(true, firstCode, null); // 
 
+		} else if (firstCode != null && firstCode.isAnyKeyword("UPDATE")) {
+			// UPDATE target {SET set_expression1, set_expression2, ... [WHERE sql_cond] [%_HINTS ...]} [OPTIONS] [CONNECTION ...].
+			// set_expression -> {col = f} | {col = col + f} | {col = col - f} | (expr_syntax) ...
+			distinguishOperators(false, firstCode, null, "WHERE", "%_HINTS|OPTIONS|CONNECTION", null);
+
 		} else if (firstCode != null && firstCode.isKeyword("WAIT")) {
          // WAIT FOR ASYNCHRONOUS TASKS [MESSAGING CHANNELS] [PUSH CHANNELS] UNTIL log_exp [UP TO sec SECONDS].
 			distinguishOperators(false, firstCode, null, "UNTIL", "UP TO", null);
