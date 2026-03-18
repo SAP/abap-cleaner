@@ -1538,7 +1538,10 @@ public class Token {
 		if (type != TokenType.KEYWORD && type != TokenType.IDENTIFIER && type != TokenType.LITERAL && type != TokenType.OTHER_OP) {
 			isSimpleCase = true;
 		} else if (isAbap) {
-			if (isAbap && type == TokenType.IDENTIFIER && text.charAt(0) == ABAP.FIELD_SYMBOL_START_SIGN) {
+			if (isAbap && type == TokenType.IDENTIFIER && text.charAt(0) == ABAP.FIELD_SYMBOL_START_SIGN 
+					&& text.charAt(text.length() - 1) == ABAP.FIELD_SYMBOL_END_SIGN) { 
+				// field symbols are 'simple', unless they are followed by a component selector and parenthesis, 
+				// as in "<ls_struc>-('COMP')"
 				isSimpleCase = true;
 			} else if (isAbap && type == TokenType.OTHER_OP && !textEndsWithAny("(", ")")) { // "ULINE AT /(20)."
 				isSimpleCase = true;
