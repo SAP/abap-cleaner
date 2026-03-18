@@ -173,15 +173,23 @@ public class AlignAssignmentsRule extends Rule {
 
 			AlignLine line = table.addLine();
 
-			Token identifier = changeCommand.getFirstToken();
-			line.setCell(Columns.IDENTIFIER.getValue(), new AlignCellToken(identifier));
+			// for the identifier, consider static cases like ls_any-comp1 and <ls_any>-comp1 as well as dynamic cases 
+			// like ls_any-('comp1'), <ls_any>-('comp1'), ls_any-(lv_comp_name) and <ls_any>-(lv_comp_name)
+			Token identifierStart = changeCommand.getFirstToken();
+			Term identifierTerm;
+			try {
+				identifierTerm = Term.createForTokenRange(identifierStart, identifierStart.getNextSiblingWhileLevelOpener());
+			} catch (UnexpectedSyntaxException ex) {
+				throw new UnexpectedSyntaxBeforeChanges(this, ex);
+			}
+			line.setCell(Columns.IDENTIFIER.getValue(), new AlignCellTerm(identifierTerm));
 
-			Token assignOp = identifier.getNext();
+			Token assignOp = identifierTerm.getNextCodeToken();
 			line.setCell(Columns.ASSIGNMENT_OP.getValue(), new AlignCellToken(assignOp));
 
 			Term restOfCommand;
 			try {
-				restOfCommand = Term.createForTokenRange(assignOp.getNext(), changeCommand.getLastToken());
+				restOfCommand = Term.createForTokenRange(assignOp.getNextCodeToken(), changeCommand.getLastToken());
 			} catch (UnexpectedSyntaxException ex) {
 				throw new UnexpectedSyntaxBeforeChanges(this, ex);
 			}

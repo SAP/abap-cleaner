@@ -196,4 +196,58 @@ class AlignAssignmentsTest extends RuleTestBase {
 		
 		testRule();
 	}
+
+	@Test
+	void testDynamicComponents() {
+		buildSrc("  ls_struc-comp = 'a'.");
+		buildSrc("  ls_struc-('COMP') = 'b'.");
+		buildSrc("  ls_struc-(lv_comp_name) = 'c'.");
+		buildSrc("");
+		buildSrc("  <ls_struc>-comp = 'd'.");
+		buildSrc("  <ls_struc>-('COMP') = 'e'.");
+		buildSrc("  <ls_struc>-(lv_comp_name) = 'f'.");
+
+		buildExp("  ls_struc-comp           = 'a'.");
+		buildExp("  ls_struc-('COMP')       = 'b'.");
+		buildExp("  ls_struc-(lv_comp_name) = 'c'.");
+		buildExp("");
+		buildExp("  <ls_struc>-comp           = 'd'.");
+		buildExp("  <ls_struc>-('COMP')       = 'e'.");
+		buildExp("  <ls_struc>-(lv_comp_name) = 'f'.");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testDynamicComponentsWithComments() {
+		buildSrc("  ls_struc-comp \" comment1");
+		buildSrc("  = 'a'.");
+		buildSrc("  ls_struc-('COMP') = \" comment2");
+		buildSrc("  'b'.");
+		buildSrc("  ls_struc-(lv_comp) = 'c'. \" comment3");
+		buildSrc("");
+		buildSrc("  <ls_struc>-comp \" comment1");
+		buildSrc("  = 'a'.");
+		buildSrc("  <ls_struc>-('COMP') = \" comment2");
+		buildSrc("  'b'.");
+		buildSrc("  <ls_struc>-(lv_comp) = 'c'. \" comment3");
+
+		buildExp("  ls_struc-comp \" comment1");
+		buildExp("                     = 'a'.");
+		buildExp("  ls_struc-('COMP')  = \" comment2");
+		buildExp("                       'b'.");
+		buildExp("  ls_struc-(lv_comp) = 'c'. \" comment3");
+		buildExp("");
+		buildExp("  <ls_struc>-comp \" comment1");
+		buildExp("                       = 'a'.");
+		buildExp("  <ls_struc>-('COMP')  = \" comment2");
+		buildExp("                         'b'.");
+		buildExp("  <ls_struc>-(lv_comp) = 'c'. \" comment3");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }
