@@ -659,9 +659,16 @@ public class LogicalExpression {
 
 		if (isInParentheses && firstToken.textEquals("(") && lastToken.textEquals(")") && firstToken.hasChildren()) {
 			if (parentExpression == null) {
-				// 61% of all cases found in sample code: ( ... )
-				// in assignments, do not remove parentheses with a "=" comparison, e.g. in "a = ( b = c )."
-				removeParentheses = removeAroundAll && !(isRhsOfAssignment && containsComparisonWithEqualsSign());
+				// 61% of all cases found in sample code: ( ... ). 
+				// Parentheses around logical expressions must be kept ...
+				// - in assignments if the parentheses contain an "=" comparison, e.g. in "a = ( b = c )."
+				// - in LET expressions, to avoid ambiguities of the "IN" keyword
+				// - in LOOP ... WHERE ..., to avoid ambiguities of the "AND" keyword
+				Command command = firstToken.getParentCommand();
+				boolean areParenthesesRequired = isRhsOfAssignment && containsComparisonWithEqualsSign() 
+						|| isRhsOfAssignment && firstToken.getParent() != null && firstToken.isSiblingInsideLetExpr()
+						|| isRhsOfAssignment && command.firstCodeTokenIsKeyword("LOOP") && firstToken.isAnySiblingAfterKeyword("WHERE");
+				removeParentheses = removeAroundAll && !areParenthesesRequired; 
 
 			} else if ((parentExpression.bindingLevel == BindingLevel.OR || parentExpression.bindingLevel == BindingLevel.AND) 
 					&& bindingLevel == BindingLevel.COMPARISON_OR_PREDICATE) {

@@ -592,7 +592,7 @@ public class NeedlessParenthesesTest extends RuleTestBase {
 		buildSrc("                            ( false )");
 		buildSrc("                            ( b )");
 		buildSrc("                            ( ( c = 2 ) )");
-		buildSrc("                            ( ( 1 < 2 ) )"); // these inner parantheses are optional
+		buildSrc("                            ( ( 1 < 2 ) )"); // these inner parentheses are optional
 		buildSrc("                            ( 1 >= 2 )");
 		buildSrc("                            ( ( c = 2 ) = ( d = 4 ) )");
 		buildSrc("                            ( ( b = false ) )");
@@ -613,4 +613,35 @@ public class NeedlessParenthesesTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testParensKeptInLetExpression() {
+		// ensure that parentheses are not removed from a LET ... IN expression to avoid ambiguous IN
+		buildSrc("  lt_text = VALUE #( LET bln1 = ( 3 > 1 )");
+		buildSrc("                         bln2 = ( 1 < 5 AND `a` IN lr_sel )");
+		buildSrc("                     IN  ( |bln1 = '{ bln1 }'| )");
+		buildSrc("                         ( |bln2 = '{ bln2 }'| ) ).");
+
+		copyExpFromSrc();
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	/**
+	@Test
+	void testParensKeptInLoopWhere() {
+		// ensure that parentheses are not removed from a LOOP ... WHERE ... expression to avoid ambiguous AND
+		buildSrc("  LOOP AT lt_any ASSIGNING FIELD-SYMBOL(<ls_any>) WHERE     bln1 = ( 1 < 5 )");
+		buildSrc("                                                        AND bln2 = ( ( 2 < 5 ) OR ( 3 < 5 ) ).");
+		buildSrc("  ENDLOOP.");
+
+		copyExpFromSrc();
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+	*/
 }

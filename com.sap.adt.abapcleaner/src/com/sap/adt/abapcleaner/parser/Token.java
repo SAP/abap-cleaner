@@ -3012,6 +3012,40 @@ public class Token {
 		return false;
 	}
 	
+	public boolean isSiblingInsideLetExpr() {
+		return isAnySiblingBetweenKeywords("LET", "IN");
+	}
+	
+	public boolean isAnySiblingBetweenKeywords(String startKeyword, String endKeyword) {
+		return isAnySiblingAfterKeyword(startKeyword, endKeyword) && isAnySiblingBeforeKeyword(endKeyword, startKeyword);
+	}
+	
+	public boolean isAnySiblingAfterKeyword(String keyword, String... stopAtKeywords) {
+		Token test = getPrevCodeSibling();
+		while (test != null) {
+			if (test.isKeyword(keyword)) {
+				return true;
+			} else if (stopAtKeywords != null && test.isAnyKeyword(stopAtKeywords)) {
+				return false;
+			}
+			test = test.getPrevCodeSibling();
+		}
+		return false;
+	}
+	
+	public boolean isAnySiblingBeforeKeyword(String keyword, String... stopAtKeywords) {
+		Token test = getNextCodeSibling();
+		while (test != null) {
+			if (test.isKeyword(keyword)) {
+				return true;
+			} else if (stopAtKeywords != null && test.isAnyKeyword(stopAtKeywords)) {
+				return false;
+			}
+			test = test.getNextCodeSibling();
+		}
+		return false;
+	}
+	
 	/**
 	 * If this Token starts a logical expression in DDL, the last code Token of the logical expression is returned; otherwise null.
 	 * @return
