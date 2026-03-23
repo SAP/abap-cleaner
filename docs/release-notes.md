@@ -6,6 +6,16 @@ as well as bugfixes of reported issues, i.e. anything that enhances or changes t
 For a complete list of changes (including documentation, tests, refactoring etc.), please refer to 
 the list of [commits](../../../commits/main).
 
+## 2026-03-23 (version 1.24.3)
+
+**Thank you** [**MDagni**](https://github.com/MDagni) and [**jrodriguez-rc**](https://github.com/jrodriguez-rc) for reporting the bugs behind this release!
+
+* Fixed rule '**Align assignments to the same object**' for **dynamic components** ([#491](../../../issues/491))
+* Fixed rule '**Align logical expressions**' for **UPDATE ... WHERE** ([#485](../../../issues/485))
+* Fixed rule '**Remove needless parentheses**' for **LET expressions**
+* Fixed **color** of **opening parenthesis** in **<fs>-(...)**
+* Updated **known CamelCase names** for CDS views and fields
+
 ## 2026-03-04 (version 1.24.2)
 
 Many **thanks** to [**MarcSAP**](https://github.com/MarcSAP) for your bug report!
