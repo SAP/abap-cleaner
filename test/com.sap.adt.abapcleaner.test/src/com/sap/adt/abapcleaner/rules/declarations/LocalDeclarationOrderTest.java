@@ -1711,4 +1711,25 @@ public class LocalDeclarationOrderTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testTableOfStrucType() {
+		// ensure that the declaration of a table type is not moved before the declaration of the structure type it depends on
+
+		buildSrc("    DATA lv_any TYPE ty_any.");
+		buildSrc("");
+		buildSrc("    TYPES: BEGIN OF ty_s_other,");
+		buildSrc("             comp LIKE lv_any,");
+		buildSrc("           END OF ty_s_other.");
+		buildSrc("");
+		buildSrc("    DATA lth_third type HASHED TABLE OF ty_s_other WITH UNIQUE KEY comp.");
+		buildSrc("");
+		buildSrc("    lth_third = VALUE #( ).");
+
+		copyExpFromSrc();
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }
