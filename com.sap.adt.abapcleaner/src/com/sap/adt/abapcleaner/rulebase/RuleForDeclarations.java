@@ -457,7 +457,8 @@ public abstract class RuleForDeclarations extends Rule {
 		Token next = token.getNextCodeSibling();
 		boolean isLikeClause = (next != null && next.isKeyword("LIKE")); 
 		boolean isRangesForClause = token.getParentCommand().firstCodeTokenIsKeyword("RANGES") && next != null && next.isKeyword("FOR");
-		if ((isLikeClause || isRangesForClause) && next.getNextCodeSibling() != null) {
+		boolean isTableDef = (next != null && next.matchesOnSiblings(true, "TYPE", TokenSearch.makeOptional("STANDARD|SORTED|HASHED"), "TABLE", "OF"));
+		if ((isLikeClause || isRangesForClause || isTableDef) && next.getNextCodeSibling() != null) {
 			token = next.getNextCodeSibling();
 			// for LIKE ..., skip any keywords before the identifier of the data object, e.g. LINE OF, RANGE OF, REF TO, 
 			// { STANDARD | SORTED | HASHED } TABLE OF 
