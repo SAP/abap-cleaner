@@ -9,14 +9,11 @@ on:
   pull_request:
     branches: [ main ]
 
+permissions:
+  contents: read
+
 jobs:
   build-and-test:
-    permissions:
-      checks: write
-      pull-requests: write
-      contents: read
-      issues: read
-      actions: read
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
