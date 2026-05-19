@@ -107,13 +107,13 @@ Shop help or version information:
     .\abap-cleanerc.exe --version
 
 Cleanup of single file:
-    .\abap-cleanerc.exe {--sourcefile sourcefile / --source sourcecode } [--linerange linerange]
+    .\abap-cleanerc.exe {--sourcefile sourcefile / --source sourcecode } [--linerange linerange [--scope scopename] ]
                         [{ --profile profile / --profiledata profiledata }] [--release release]
                         [--crlf] [--targetfile targetfile [--overwrite]] [--partialresult]
                         [--stats] [--usedrules]
 
 Example for cleanup of single file:
-    .\abap-cleanerc.exe --sourcefile "CL_ANY_CLASS.txt" --linerange "20-35" --profile "team profile.cfj" --release "757" --targetfile "result\CL_ANY_CLASS.txt" --overwrite --stats --usedrules
+    .\abap-cleanerc.exe --sourcefile "CL_ANY_CLASS.txt" --linerange "20-35" --scope method --profile "team profile.cfj" --release "757" --targetfile "result\CL_ANY_CLASS.txt" --overwrite --stats --usedrules
 
 Cleanup of multiple files:
     .\abap-cleanerc.exe --sourcedir sourcedir [--filepattern filepattern] [--recursive]
@@ -124,12 +124,15 @@ Cleanup of multiple files:
 Example for cleanup of multiple files:
     .\abap-cleanerc.exe --sourcedir "C:\temp\source" --filepattern "*.txt" --recursive --profile "team profile.cfj" --release "757" --targetdir "C:\temp\target" --overwrite
 
-Options for cleanup:
+Options for cleanup: 
     --sourcefile        File name of an ABAP source file which is input to the cleanup.
     --source            ABAP source code which is input to the cleanup.
                         Please use either --sourcefile or --source or --sourcedir.
     --linerange         Single line range for partial cleanup, e.g. "20-35"
                         Without this option, the cleanup will be applied to the whole code document.
+    --scope             Expands the line range to the supplied scope: statement (default), method, 
+                        class, document or user (setting from the UI).
+                        Without this option, the line range will only be expanded to statement scope.
 
     --sourcedir         Folder that contains ABAP source files (default file pattern is "*.abap")
     --filepattern       File pattern to look for (only relevant when --sourcedir has been supplied)
