@@ -5,6 +5,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.sap.adt.abapcleaner.base.ABAP;
+import com.sap.adt.abapcleaner.parser.CleanupRangeExpandMode;
 
 public class CommandLineArgsTest {
 	private PersistencyDouble persistency;
@@ -99,6 +100,7 @@ public class CommandLineArgsTest {
 		CommandLineArgs args = CommandLineArgs.create(persistency, new String[] {  
 				"--sourcefile", sourcePath, 
 				"--linerange", "20-35", 
+				"--scope", "method",
 				"--profile", profilePath, 
 				"--release", "757", 
 				"--crlf",
@@ -113,6 +115,7 @@ public class CommandLineArgsTest {
 		assertEquals(20, args.cleanupRange.startLine);
 		assertEquals(35, args.cleanupRange.lastLine);
 		assertTrue(args.cleanupRange.expandRange);
+		assertEquals(CleanupRangeExpandMode.FULL_METHOD, args.cleanupRangeExpandMode);
 		
 		assertEquals(anyProfileData, args.profileData);
 		assertEquals("757", args.abapRelease);
@@ -191,7 +194,7 @@ public class CommandLineArgsTest {
 	}
 	
 	@Test
-	void testCreateWithProfileDataAndLineRangeStartOnly() {
+	void testCreateWithProfileDataOnly() {
 		CommandLineArgs args = CommandLineArgs.create(persistency, new String[] {  
 				"--source", anySourceCode, 
 				"--profiledata", anyProfileData } ); 
@@ -200,6 +203,96 @@ public class CommandLineArgsTest {
 		assertFalse(args.hasErrors());
 		assertEquals(anySourceCode, args.sourceCode);
 		assertEquals(anyProfileData, args.profileData);
+	}
+	
+	@Test
+	void testCreateWithLineRangeScopeStatement() {
+		CommandLineArgs args = CommandLineArgs.create(persistency, new String[] {  
+				"--source", anySourceCode, 
+				"--linerange", "20-35",
+				"--scope", "statement" } ); 
+	
+		assertEquals(CommandLineAction.CLEANUP, args.action);
+		assertFalse(args.hasErrors());
+		assertEquals(anySourceCode, args.sourceCode);
+		assertEquals(20, args.cleanupRange.startLine);
+		assertEquals(35, args.cleanupRange.lastLine);
+		assertTrue(args.cleanupRange.expandRange);
+		assertEquals(CleanupRangeExpandMode.FULL_STATEMENT, args.cleanupRangeExpandMode);
+	}
+	
+	@Test
+	void testCreateWithLineRangeScopeClass() {
+		CommandLineArgs args = CommandLineArgs.create(persistency, new String[] {  
+				"--source", anySourceCode, 
+				"--linerange", "20-35",
+				"--scope", "class" } ); 
+	
+		assertEquals(CommandLineAction.CLEANUP, args.action);
+		assertFalse(args.hasErrors());
+		assertEquals(anySourceCode, args.sourceCode);
+		assertEquals(20, args.cleanupRange.startLine);
+		assertEquals(35, args.cleanupRange.lastLine);
+		assertTrue(args.cleanupRange.expandRange);
+		assertEquals(CleanupRangeExpandMode.FULL_CLASS, args.cleanupRangeExpandMode);
+	}
+	
+	@Test
+	void testCreateWithLineRangeScopeDocument() {
+		CommandLineArgs args = CommandLineArgs.create(persistency, new String[] {  
+				"--source", anySourceCode, 
+				"--linerange", "20-35",
+				"--scope", "document" } ); 
+	
+		assertEquals(CommandLineAction.CLEANUP, args.action);
+		assertFalse(args.hasErrors());
+		assertEquals(anySourceCode, args.sourceCode);
+		assertEquals(20, args.cleanupRange.startLine);
+		assertEquals(35, args.cleanupRange.lastLine);
+		assertTrue(args.cleanupRange.expandRange);
+		assertEquals(CleanupRangeExpandMode.FULL_DOCUMENT, args.cleanupRangeExpandMode);
+	}
+	
+	@Test
+	void testCreateWithLineRangeScopeUser() {
+		CommandLineArgs args = CommandLineArgs.create(persistency, new String[] {  
+				"--source", anySourceCode, 
+				"--linerange", "20-35",
+				"--scope", "user" } ); 
+	
+		assertEquals(CommandLineAction.CLEANUP, args.action);
+		assertFalse(args.hasErrors());
+		assertEquals(anySourceCode, args.sourceCode);
+		assertEquals(20, args.cleanupRange.startLine);
+		assertEquals(35, args.cleanupRange.lastLine);
+		assertTrue(args.cleanupRange.expandRange);
+		// CleanupRangeExpandMode does not contain a "user" value; if it is null, the user settings from the UI will be used
+		assertNull(args.cleanupRangeExpandMode);
+	}
+	
+	@Test
+	void testCreateErrorWithInvalidScope() {
+		CommandLineArgs args = CommandLineArgs.create(persistency, new String[] {  
+				"--source", anySourceCode, 
+				"--linerange", "20-35",
+				"--scope", "unknown" } ); 
+	
+		assertErrorsContain(args, "Invalid --scope");
+		assertErrorsContain(args, "statement");
+		assertErrorsContain(args, "method");
+		assertErrorsContain(args, "class");
+		assertErrorsContain(args, "document");
+		assertErrorsContain(args, "user");
+	}
+	
+	@Test
+	void testCreateErrorWithMissingScope() {
+		CommandLineArgs args = CommandLineArgs.create(persistency, new String[] {  
+				"--source", anySourceCode, 
+				"--linerange", "20-35",
+				"--scope" } ); 
+	
+		assertErrorsContain(args, "Invalid --scope");
 	}
 	
 	@Test
@@ -230,6 +323,16 @@ public class CommandLineArgsTest {
 	
 		assertNull(args.cleanupRange);
 		assertErrorsContain(args, "Expected format");
+	}
+	
+	@Test
+	void testCreateErrorWithMissingLineRange() {
+		CommandLineArgs args = CommandLineArgs.create(persistency, new String[] {  
+				"--source", anySourceCode, 
+				"--scope", "class" } );
+	
+		assertNull(args.cleanupRange);
+		assertErrorsContain(args, "Missing option");
 	}
 	
 	@Test

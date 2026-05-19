@@ -40,6 +40,7 @@ import com.sap.adt.abapcleaner.gui.CodeDisplayColors;
 import com.sap.adt.abapcleaner.gui.ColorProfile;
 import com.sap.adt.abapcleaner.gui.FrmMain;
 import com.sap.adt.abapcleaner.parser.CleanupRange;
+import com.sap.adt.abapcleaner.parser.CleanupRangeExpandMode;
 import com.sap.adt.abapcleaner.parser.CleanupResult;
 import com.sap.adt.abapcleaner.programbase.Program;
 import com.sap.adt.tools.abapsource.parser.padfileresolver.internal.PadFileResolver;
@@ -96,7 +97,8 @@ public abstract class AbapCleanerHandlerBase extends AbstractAdtEditorHandler {
 			int startLine = selection.getStartLine() + 1;
 			int lastLine = selection.getEndLine() + 1; // this value is inclusive
 			CleanupRange cleanupRange = CleanupRange.create(startLine, lastLine, expandRange); 
-
+			CleanupRangeExpandMode cleanupRangeExpandMode = null; // use user setting from the UI
+			
 			// get the ABAP release against which this code must compile
          IPadFileResolver resolver = adtSourcePage.getPadFileResolver();
          String abapRelease = resolver.getRelease(); // e.g. "757" if adtSourcePage contains ABAP code 
@@ -115,7 +117,7 @@ public abstract class AbapCleanerHandlerBase extends AbstractAdtEditorHandler {
 				CodeDisplayColors codeDisplayColorsClassic = createCodeDisplayColors(ColorProfile.CLASSIC); 
 				result = FrmMain.cleanInteractively(sourcePageTitle, oldSource, abapRelease, cleanupRange, workspaceDir, true, codeDisplayColorsADT, codeDisplayColorsClassic, readOnly);
 			} else {
-				result = FrmMain.cleanAutomatically(sourcePageTitle, oldSource, abapRelease, cleanupRange, workspaceDir, null, false, ABAP.LINE_SEPARATOR);
+				result = FrmMain.cleanAutomatically(sourcePageTitle, oldSource, abapRelease, cleanupRange, cleanupRangeExpandMode, workspaceDir, null, false, ABAP.LINE_SEPARATOR);
 			}
 
 			if (result == null) 

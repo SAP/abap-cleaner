@@ -3,6 +3,7 @@ package com.sap.adt.abapcleaner.programbase;
 import com.sap.adt.abapcleaner.base.ABAP;
 import com.sap.adt.abapcleaner.base.StringUtil;
 import com.sap.adt.abapcleaner.parser.CleanupRange;
+import com.sap.adt.abapcleaner.parser.CleanupRangeExpandMode;
 
 public class CommandLineArgs {
 	private static final String LINE_SEP = System.lineSeparator();
@@ -17,6 +18,13 @@ public class CommandLineArgs {
 	private static final String OPT_SOURCE_FILE = "--sourcefile";
 	private static final String OPT_SOURCE_CODE = "--source";
 	private static final String OPT_LINE_RANGE = "--linerange";
+	private static final String OPT_EXPAND_MODE = "--scope";
+	private static final String EXPAND_MODE_STATEMENT = "statement"; // default for CLI
+	private static final String EXPAND_MODE_METHOD = "method"; // default for UI
+	private static final String EXPAND_MODE_CLASS = "class";
+	private static final String EXPAND_MODE_DOCUMENT = "document";
+	private static final String EXPAND_MODE_USER = "user"; // use user setting from the UI
+
 	// - input (multiple files)
 	private static final String OPT_SOURCE_DIR = "--sourcedir";
 	private static final String OPT_FILE_FILTER = "--filepattern";
@@ -40,7 +48,7 @@ public class CommandLineArgs {
 	private static final String OPT_USED_RULES = "--usedrules";
 
 	private static final String[] allOptions = new String[] { 
-			OPT_SOURCE_FILE, OPT_SOURCE_CODE, OPT_LINE_RANGE, OPT_SOURCE_DIR, OPT_FILE_FILTER, OPT_RECURSIVE, 
+			OPT_SOURCE_FILE, OPT_SOURCE_CODE, OPT_LINE_RANGE, OPT_EXPAND_MODE, OPT_SOURCE_DIR, OPT_FILE_FILTER, OPT_RECURSIVE, 
 			OPT_PROFILE, OPT_PROFILE_DATA, OPT_RELEASE, 
 			OPT_TARGET_FILE, OPT_PARTIAL_RESULT, OPT_TARGET_DIR, OPT_OVERWRITE, OPT_CRLF, 
 			OPT_STATS, OPT_USED_RULES };
@@ -56,7 +64,7 @@ public class CommandLineArgs {
 	private static final int OPTIONS_LINE_PREFIX_LENGTH = 20; // must be at least the length of the longest OPT_ + 1
 
 	private static final String[] optionsRequiringNextArg = new String[] { 
-			OPT_SOURCE_FILE, OPT_SOURCE_CODE, OPT_LINE_RANGE, OPT_SOURCE_DIR, OPT_FILE_FILTER,
+			OPT_SOURCE_FILE, OPT_SOURCE_CODE, OPT_LINE_RANGE, OPT_EXPAND_MODE, OPT_SOURCE_DIR, OPT_FILE_FILTER,
 			OPT_PROFILE, OPT_PROFILE_DATA, OPT_RELEASE,
 			OPT_TARGET_FILE, OPT_TARGET_DIR };
 
@@ -84,6 +92,8 @@ public class CommandLineArgs {
 		String sourceName = null; 
 		String sourceCode = null;
 		CleanupRange cleanupRange = null;
+		CleanupRangeExpandMode expandMode = CleanupRangeExpandMode.FULL_STATEMENT;
+		boolean foundExpandModeOption = false;
 		// - input options (multiple files)
 		String sourceDir = null;
 		String[] sourcePaths = null;
@@ -120,7 +130,9 @@ public class CommandLineArgs {
 				}
 			}
 
+			// -------------------------------------
 			// - input options (single file)
+
 			if (arg.equals(OPT_SOURCE_FILE) || arg.equals(OPT_SOURCE_CODE)) {
 				if (sourceCode != null) {
 					errors.append("Source code supplied twice; please use " + OPT_SOURCE_FILE + " or " + OPT_SOURCE_CODE + " only once.").append(LINE_SEP);
@@ -141,10 +153,40 @@ public class CommandLineArgs {
 				if (startLine <= 0 || lastLine <= 0 || startLine > lastLine) {
 					errors.append("Invalid " + OPT_LINE_RANGE + ": Expected format \"m-n\" (1-based), e.g. " + LINE_RANGE_EXAMPLE).append(LINE_SEP);
 				} else {
+					// the --scope option is usually not yet known at this point, but we can simply use expandRange = true:
+					// if no --scope is supplied, the range will only be expanded to statement scope, which matches the behavior 
+					// of expandRange = false
 					cleanupRange = CleanupRange.create(startLine, lastLine, true);
 				}
 
+			} else if (arg.equals(OPT_EXPAND_MODE)) {
+				String expandModeStr = (nextArg == null) ? "" : nextArg;
+				foundExpandModeOption = true;
+
+				if (EXPAND_MODE_STATEMENT.equals(expandModeStr)) {
+					expandMode = CleanupRangeExpandMode.FULL_STATEMENT;
+					
+				} else if (EXPAND_MODE_METHOD.equals(expandModeStr)) {
+					expandMode = CleanupRangeExpandMode.FULL_METHOD;
+					
+				} else if (EXPAND_MODE_CLASS.equals(expandModeStr)) {
+					expandMode = CleanupRangeExpandMode.FULL_CLASS;
+					
+				} else if (EXPAND_MODE_DOCUMENT.equals(expandModeStr)) {
+					expandMode = CleanupRangeExpandMode.FULL_DOCUMENT;
+					
+				} else if (EXPAND_MODE_USER.equals(expandModeStr)) {
+					expandMode = null; // use user setting from the UI
+					
+				} else {
+					errors.append("Invalid " + OPT_EXPAND_MODE + ": Expected one of the following scopes: " 
+							+ EXPAND_MODE_STATEMENT + ", " + EXPAND_MODE_METHOD + ", " + EXPAND_MODE_CLASS + ", " 
+							+ EXPAND_MODE_DOCUMENT + " or " + EXPAND_MODE_USER + "").append(LINE_SEP);
+				}
+
+				// -------------------------------------
 				// - input options (multiple files)
+
 			} else if (arg.equals(OPT_SOURCE_DIR)) {
 				if (!persistency.directoryExists(nextArg)) {
 					errors.append("Source directory " + nextArg + " does not exist!").append(LINE_SEP);
@@ -162,7 +204,9 @@ public class CommandLineArgs {
 			} else if (arg.equals(OPT_RECURSIVE)) {
 				recursive = true;
 
+				// -------------------------------------
 				// - cleanup options
+
 			} else if (arg.equals(OPT_PROFILE) || arg.equals(OPT_PROFILE_DATA)) {
 				if (profileData != null) {
 					errors.append("Profile supplied twice; please use " + OPT_PROFILE + " or " + OPT_PROFILE_DATA + " only once.").append(LINE_SEP);
@@ -177,7 +221,9 @@ public class CommandLineArgs {
 			} else if (arg.equals(OPT_RELEASE)) {
 				abapRelease = nextArg;
 
+				// -------------------------------------
 				// - output options
+
 			} else if (arg.equals(OPT_SIMULATE)) {
 				simulate = true;
 
@@ -196,7 +242,9 @@ public class CommandLineArgs {
 			} else if (arg.equals(OPT_CRLF)) {
 				lineSeparator = "\r\n";
 
+				// -------------------------------------
 				// - statistics options
+
 			} else if (arg.equals(OPT_STATS)) {
 				showStats = true;
 
@@ -216,6 +264,9 @@ public class CommandLineArgs {
 		// check input options
 		if (sourceDir != null && sourceCode != null) {
 			errors.append("Source was supplied multiple times; please use " + OPT_SOURCE_FILE + " or " + OPT_SOURCE_CODE + " or " + OPT_SOURCE_DIR + " only once.").append(LINE_SEP);
+		}
+		if (foundExpandModeOption && cleanupRange == null) {
+			errors.append("Missing option: " + OPT_EXPAND_MODE + " requires " + OPT_LINE_RANGE).append(LINE_SEP);
 		}
 		
 		// check whether input options (multiple files) match cleanup and output options
@@ -262,7 +313,7 @@ public class CommandLineArgs {
 		
 		if (sourceCode != null) {
 			// single file
-			return new CommandLineArgs(errors.toString(), sourceName, sourceCode, cleanupRange, profileData, abapRelease, 
+			return new CommandLineArgs(errors.toString(), sourceName, sourceCode, cleanupRange, expandMode, profileData, abapRelease, 
 												simulate, targetPath, partialResult, overwrite, lineSeparator, showStats, showUsedRules);
 		} else {
 			// multiple files
@@ -296,7 +347,7 @@ public class CommandLineArgs {
 		sb.append(usagePrefix);
 		sb.append(" {" + OPT_SOURCE_FILE + " sourcefile");
 		sb.append(" / " + OPT_SOURCE_CODE + " sourcecode }");
-		sb.append(" [" + OPT_LINE_RANGE + " linerange]");
+		sb.append(" [" + OPT_LINE_RANGE + " linerange [" + OPT_EXPAND_MODE + " scopename] ]");
 		sb.append(LINE_SEP);
 		sb.append(spacePrefix);
 		sb.append(" [{ " + OPT_PROFILE + " profile");
@@ -318,7 +369,7 @@ public class CommandLineArgs {
 		sb.append(LINE_SEP);
 		sb.append(usagePrefix);
 		sb.append(" " + OPT_SOURCE_FILE + " \"CL_ANY_CLASS.txt\"");
-		sb.append(" " + OPT_LINE_RANGE + " " + LINE_RANGE_EXAMPLE);
+		sb.append(" " + OPT_LINE_RANGE + " " + LINE_RANGE_EXAMPLE + " " + OPT_EXPAND_MODE + " " + EXPAND_MODE_METHOD);
 		sb.append(" " + OPT_PROFILE + " \"" + "team profile" + profileExtension + "\"");
 		sb.append(" " + OPT_RELEASE + " \"757\"");
 		sb.append(" " + OPT_TARGET_FILE + " \"result\\CL_ANY_CLASS.txt\"");
@@ -367,6 +418,9 @@ public class CommandLineArgs {
 		sb.append(getOptionHelp(null, "Please use either " + OPT_SOURCE_FILE + " or " + OPT_SOURCE_CODE + " or " + OPT_SOURCE_DIR + "."));
 		sb.append(getOptionHelp(OPT_LINE_RANGE, "Single line range for partial cleanup, e.g. " + LINE_RANGE_EXAMPLE));
 		sb.append(getOptionHelp(null, "Without this option, the cleanup will be applied to the whole code document."));
+		sb.append(getOptionHelp(OPT_EXPAND_MODE, "Expands the line range to the supplied scope: " + EXPAND_MODE_STATEMENT + " (default), " + EXPAND_MODE_METHOD + ", "));
+		sb.append(getOptionHelp(null, EXPAND_MODE_CLASS + ", " + EXPAND_MODE_DOCUMENT + " or " + EXPAND_MODE_USER + " (setting from the UI)."));
+		sb.append(getOptionHelp(null, "Without this option, the line range will only be expanded to statement scope."));
 		sb.append(LINE_SEP);
 		sb.append(getOptionHelp(OPT_SOURCE_DIR, "Folder that contains ABAP source files (default file pattern is \"*.abap\")"));
 		sb.append(getOptionHelp(OPT_FILE_FILTER, "File pattern to look for (only relevant when " + OPT_SOURCE_DIR + " has been supplied)"));
@@ -419,6 +473,7 @@ public class CommandLineArgs {
 	public final String sourceName;
 	public final String sourceCode;
 	public final CleanupRange cleanupRange;
+	public final CleanupRangeExpandMode cleanupRangeExpandMode;
 	// - input (multiple files)
 	public final String sourceDir;
 	public final String[] sourcePaths;
@@ -454,6 +509,7 @@ public class CommandLineArgs {
 		this.sourceName = null;
 		this.sourceCode = null;
 		this.cleanupRange = null;
+		this.cleanupRangeExpandMode = null;
 		this.sourceDir = null;
 		this.sourcePaths = null;
 
@@ -473,7 +529,7 @@ public class CommandLineArgs {
 	
 	private CommandLineArgs(
 			String errors, 
-			String sourceName, String sourceCode, CleanupRange cleanupRange, 
+			String sourceName, String sourceCode, CleanupRange cleanupRange, CleanupRangeExpandMode cleanupRangeExpandMode, 
 			String profileData, String abapRelease, 
 			boolean simulate, String targetPath, boolean partialResult, boolean overwrite, String lineSeparator, 
 			boolean showStats, boolean showUsedRules) {
@@ -484,6 +540,7 @@ public class CommandLineArgs {
 		this.sourceName = sourceName; 
 		this.sourceCode = sourceCode;
 		this.cleanupRange = cleanupRange;
+		this.cleanupRangeExpandMode = cleanupRangeExpandMode;
 		this.sourceDir = null;
 		this.sourcePaths = null;
 
@@ -514,6 +571,7 @@ public class CommandLineArgs {
 		this.sourceName = null;
 		this.sourceCode = null;
 		this.cleanupRange = null;
+		this.cleanupRangeExpandMode = null;
 		this.sourceDir = sourceDir;
 		this.sourcePaths = sourcePaths;
 
