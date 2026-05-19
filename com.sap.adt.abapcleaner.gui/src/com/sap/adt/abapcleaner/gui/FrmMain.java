@@ -210,7 +210,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 					: persistency.getFileNameWithoutExtension(sourcePath);
 			String sourceCode = persistency.readAllTextFromFile(sourcePath);
 
-			CleanupResult result = cleanAutomatically(sourceName, sourceCode, commandLineArgs.abapRelease, commandLineArgs.cleanupRange, null, profile, commandLineArgs.showStatsOrUsedRules(), commandLineArgs.lineSeparator);
+			CleanupResult result = cleanAutomatically(sourceName, sourceCode, commandLineArgs.abapRelease, commandLineArgs.cleanupRange, commandLineArgs.cleanupRangeExpandMode, null, profile, commandLineArgs.showStatsOrUsedRules(), commandLineArgs.lineSeparator);
 			if (result == null) {
 				out.println("Cleanup for file " + sourcePath + " cancelled.");
 				continue;
@@ -227,7 +227,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 
 	private static void cleanSingleSourceAutomatically(CommandLineArgs commandLineArgs, String sourceCode, PrintStream out, Profile profile) {
 		CleanupResult result = cleanAutomatically(commandLineArgs.sourceName, commandLineArgs.sourceCode, commandLineArgs.abapRelease, commandLineArgs.cleanupRange, 
-				null, profile, commandLineArgs.showStatsOrUsedRules(), commandLineArgs.lineSeparator);
+				commandLineArgs.cleanupRangeExpandMode, null, profile, commandLineArgs.showStatsOrUsedRules(), commandLineArgs.lineSeparator);
 		if (result == null) {
 			out.println("Cleanup cancelled.");
 			return;
@@ -283,7 +283,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		}
 	}
 
-	public static CleanupResult cleanAutomatically(String sourceName, String sourceCode, String abapRelease, CleanupRange cleanupRange, String workspaceDir, Profile profile, boolean provideRuleStats, String lineSeparator) {
+	public static CleanupResult cleanAutomatically(String sourceName, String sourceCode, String abapRelease, CleanupRange cleanupRange, CleanupRangeExpandMode cleanupRangeExpandMode, String workspaceDir, Profile profile, boolean provideRuleStats, String lineSeparator) {
 		initialize();
 
 		MainSettings settings = new MainSettings(workspaceDir);
@@ -309,7 +309,10 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 			}
 		}
 		
-		BackgroundJob job = new BackgroundJob(ParseParams.createForCleanupRange(sourceName, sourceCode, abapRelease, cleanupRange, settings.getCleanupRangeExpandMode()),
+		if (cleanupRangeExpandMode == null) // use user setting from the UI
+			cleanupRangeExpandMode = settings.getCleanupRangeExpandMode();
+		
+		BackgroundJob job = new BackgroundJob(ParseParams.createForCleanupRange(sourceName, sourceCode, abapRelease, cleanupRange, cleanupRangeExpandMode),
 				CleanupParams.createForProfile(profile, false, settings.getReleaseRestriction()));
 		job.run();
 		Task result = job.getResult();
