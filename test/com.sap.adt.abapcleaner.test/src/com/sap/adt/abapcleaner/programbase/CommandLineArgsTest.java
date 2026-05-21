@@ -136,6 +136,56 @@ public class CommandLineArgsTest {
 	}
 	
 	@Test
+	void testCreateFromSourceFileInteractive() {
+		String sourcePath = persistency.getTempPath("any_source.txt");
+		String targetPath = persistency.getTempPath("any_target.txt");
+		
+		persistency.prepareFile(sourcePath, anySourceCode);
+		
+		CommandLineArgs args = CommandLineArgs.create(persistency, new String[] {  
+				"--sourcefile", sourcePath, 
+				"--linerange", "20-35", 
+				"--scope", "user",
+				"--release", "757", 
+				"--ui",
+				"--title", "any_title",
+				"--workspace", "any_workspace_dir",
+				"--darktheme",
+				"--targetfile", targetPath, 
+				"--overwrite"} );
+	
+		assertEquals(CommandLineAction.CLEANUP, args.action);
+		assertEquals("", args.errors);
+		
+		assertEquals("any_source", args.sourceName);
+		assertEquals(anySourceCode, args.sourceCode);
+		assertEquals(20, args.cleanupRange.startLine);
+		assertEquals(35, args.cleanupRange.lastLine);
+		assertTrue(args.cleanupRange.expandRange);
+		assertNull(args.cleanupRangeExpandMode); // null means that the user settings from the UI will be used
+		assertEquals("757", args.abapRelease);
+
+		assertTrue(args.interactive);
+		assertEquals("any_title", args.title);
+		assertEquals("any_workspace_dir", args.workspaceDir);
+		assertFalse(args.readOnly);
+		assertTrue(args.darkTheme);
+		
+		assertFalse(args.simulate);
+		assertEquals(targetPath, args.targetPath); 
+		assertFalse(args.partialResult);
+		assertTrue(args.overwrite);
+
+		assertFalse(args.showStatsOrUsedRules());
+		assertFalse(args.showStats);
+		assertFalse(args.showUsedRules);
+
+		assertFalse(args.hasErrors());
+		assertTrue(args.isInSingleSourceMode());
+		assertFalse(args.writesResultCodeToOutput());
+	}
+	
+	@Test
 	void testCreateFromSourceDir() {
 		persistency.prepareFile("src", "any_source.abap", anySourceCode);
 		
@@ -217,7 +267,7 @@ public class CommandLineArgsTest {
 		assertEquals(anySourceCode, args.sourceCode);
 		assertEquals(20, args.cleanupRange.startLine);
 		assertEquals(35, args.cleanupRange.lastLine);
-		assertTrue(args.cleanupRange.expandRange);
+		assertFalse(args.cleanupRange.expandRange);
 		assertEquals(CleanupRangeExpandMode.FULL_STATEMENT, args.cleanupRangeExpandMode);
 	}
 	
@@ -427,11 +477,13 @@ public class CommandLineArgsTest {
 		
 		CommandLineArgs args = CommandLineArgs.create(persistency, new String[] {
 				"--sourcedir", "src", 
-				"--linerange", "10-20", 
+				"--linerange", "10-20",
+				"--ui",
 				"--targetfile", "any_target_file.txt", 
 				"--partialresult" } );
 
 		assertErrorsContain(args, "Invalid combination: --linerange");
+		assertErrorsContain(args, "Invalid combination: --ui");
 		assertErrorsContain(args, "Invalid combination: --targetfile");
 		assertErrorsContain(args, "Invalid combination: --partialresult");
 	}
@@ -489,6 +541,105 @@ public class CommandLineArgsTest {
 				"--unknownoption" } );
 
 		assertErrorsContain(args, "Unknown option");
+	}
+	
+	@Test
+	void testCreateErrorSourceFileAndPattern() {
+		String sourcePath = persistency.getTempPath("any_source.txt");
+		persistency.prepareFile(sourcePath, anySourceCode);
+		
+		CommandLineArgs args = CommandLineArgs.create(persistency, new String[] {
+				"--sourcefile", sourcePath,
+				"--filepattern", "Z*", 
+				"--recursive"} );
+
+		assertErrorsContain(args, "Invalid combination: --filepattern");
+		assertErrorsContain(args, "Invalid combination: --recursive");
+	}
+	
+	@Test
+	void testCreateErrorSourceAndTargetDir() {
+		String sourcePath = persistency.getTempPath("any_source.txt");
+		persistency.prepareFile(sourcePath, anySourceCode);
+		
+		CommandLineArgs args = CommandLineArgs.create(persistency, new String[] {
+				"--source", anySourceCode,
+				"--targetdir", "any_dir"} );
+
+		assertErrorsContain(args, "Invalid combination: --targetdir");
+	}
+	
+	@Test
+	void testCreateErrorInteractiveWithProfile() {
+		String profilePath = persistency.getTempPath("any_profile.cfj");
+		persistency.prepareFile(profilePath, anyProfileData);
+		
+		CommandLineArgs args = CommandLineArgs.create(persistency, new String[] {
+				"--source", anySourceCode,
+				"--profile", profilePath,				
+				"--ui"} );
+
+		assertErrorsContain(args, "Invalid combination: --profile");
+	}
+	
+	@Test
+	void testCreateErrorInteractiveWithExpandRangeMethod() {
+		String profilePath = persistency.getTempPath("any_profile.cfj");
+		persistency.prepareFile(profilePath, anyProfileData);
+		
+		CommandLineArgs args = CommandLineArgs.create(persistency, new String[] {
+				"--source", anySourceCode,
+				"--linerange", "20-35",
+				"--scope", "method",
+				"--ui"} );
+
+		assertErrorsContain(args, "Invalid combination: --scope");
+	}
+	
+	@Test
+	void testCreateErrorInteractiveReadOnlyWithTargetPath() {
+		String targetPath = persistency.getTempPath("any_target.txt");
+
+		CommandLineArgs args = CommandLineArgs.create(persistency, new String[] {
+				"--source", anySourceCode,
+				"--ui", 
+				"--readonly",
+				"--targetfile", targetPath} );
+
+		assertErrorsContain(args, "Invalid combination: --targetfile");
+	}
+	
+	@Test
+	void testCreateErrorInteractiveReadOnlyWithTargetDir() {
+		CommandLineArgs args = CommandLineArgs.create(persistency, new String[] {
+				"--source", anySourceCode,
+				"--ui", 
+				"--readonly",
+				"--targetdir", "any_dir"} );
+
+		assertErrorsContain(args, "Invalid combination: --targetdir");
+	}
+	
+	@Test
+	void testCreateErrorInteractiveWithProfileData() {
+		CommandLineArgs args = CommandLineArgs.create(persistency, new String[] {
+				"--source", anySourceCode,
+				"--profiledata", anyProfileData,				
+				"--ui"} );
+
+		assertErrorsContain(args, "Invalid combination: --profiledata");
+	}
+	
+	@Test
+	void testCreateErrorInteractiveWithStats() {
+		CommandLineArgs args = CommandLineArgs.create(persistency, new String[] {
+				"--source", anySourceCode,
+				"--ui",
+				"--stats",
+				"--usedrules"} );
+
+		assertErrorsContain(args, "Invalid combination: --stats");
+		assertErrorsContain(args, "Invalid combination: --usedrules");
 	}
 	
 	@Test

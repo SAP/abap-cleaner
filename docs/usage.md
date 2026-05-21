@@ -106,23 +106,36 @@ Shop help or version information:
     .\abap-cleanerc.exe /man
     .\abap-cleanerc.exe --version
 
+
 Cleanup of single file:
     .\abap-cleanerc.exe {--sourcefile sourcefile / --source sourcecode } [--linerange linerange [--scope scopename] ]
                         [{ --profile profile / --profiledata profiledata }] [--release release]
-                        [--crlf] [--targetfile targetfile [--overwrite]] [--partialresult]
+                        [--targetfile targetfile [--overwrite]] [--partialresult] [--crlf]
                         [--stats] [--usedrules]
 
-Example for cleanup of single file:
+- Example for cleanup of single file:
     .\abap-cleanerc.exe --sourcefile "CL_ANY_CLASS.txt" --linerange "20-35" --scope method --profile "team profile.cfj" --release "757" --targetfile "result\CL_ANY_CLASS.txt" --overwrite --stats --usedrules
+
+
+Interactive cleanup (single source only; profile and user scope selected on the UI):
+    .\abap-cleanerc.exe {--sourcefile sourcefile / --source sourcecode } [--linerange linerange [--scope {statement / user}] ]
+                        [--release release]
+                        --ui [--title title] [--workspace workspace_dir] [--readonly] [--darktheme]
+                        [--targetfile targetfile [--overwrite]] [--partialresult] [--crlf]
+
+- Example for interactive cleanup of single file:
+    .\abap-cleanerc.exe --sourcefile "CL_ANY_CLASS.txt" --release "757" --ui --title "CL_ANY_CLASS" --workspace "test_ws" --readonly
+
 
 Cleanup of multiple files:
     .\abap-cleanerc.exe --sourcedir sourcedir [--filepattern filepattern] [--recursive]
                         [{ --profile profile / --profiledata profiledata }] [--release release]
-                        [--targetdir targetdir [--overwrite]]
+                        [--targetdir targetdir [--overwrite]] [--crlf]
                         [--stats] [--usedrules]
 
-Example for cleanup of multiple files:
+- Example for cleanup of multiple files:
     .\abap-cleanerc.exe --sourcedir "C:\temp\source" --filepattern "*.txt" --recursive --profile "team profile.cfj" --release "757" --targetdir "C:\temp\target" --overwrite
+
 
 Options for cleanup: 
     --sourcefile        File name of an ABAP source file which is input to the cleanup.
@@ -144,6 +157,14 @@ Options for cleanup:
                         Please use either --profile or --profiledata (or none for program defaults).
     --release           ABAP release to restrict syntax of cleanup changes, e.g. "758"
                         Without this option, the latest ABAP syntax will be allowed.
+
+    --ui                Open the UI for interactive cleanup and profile configuration
+                        (only possible for single source input).
+    --title             The source code title to be displayed on the UI.
+    --workspace         The workspace directory or ID, used to store workspace-specific settings
+                        for cleanup profile, cleanup range, release restriction.
+    --readonly          Show a read-only preview of the changes without allowing to apply them.
+    --darktheme         Show the code with dark theme colors.
 
     --targetfile        Target file name to which the cleanup result will be saved.
                         Without this option, the cleanup result will be written to the standard output.

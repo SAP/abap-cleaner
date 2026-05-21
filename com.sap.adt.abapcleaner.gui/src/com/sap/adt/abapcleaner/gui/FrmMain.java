@@ -146,28 +146,31 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 
 			if (commandLineArgs == null) {
 				// start the interactive (stand-alone) UI
-				cleanInteractively(null, null, ABAP.NEWEST_RELEASE, null, persistency.getStartupPath(), false, null, null, false);
+				cleanInteractively(null, null, ABAP.NEWEST_RELEASE, null, persistency.getStartupPath(), false, null, null, false, ABAP.LINE_SEPARATOR);
 
-			} else {
-				if (commandLineArgs.hasErrors()) {
-					// wrong or inconsistent command line args
-					System.err.println(commandLineArgs.errors);
-					System.err.println("");
-					System.err.flush();
-					System.out.print(CommandLineArgs.getHelp(persistency));
+			} else if (commandLineArgs.hasErrors()) {
+				// wrong or inconsistent command line args
+				System.err.println(commandLineArgs.errors);
+				System.err.println("");
+				System.err.flush();
+				System.out.print(CommandLineArgs.getHelp(persistency));
 
-				} else if (commandLineArgs.action == CommandLineAction.SHOW_HELP) {
-					System.out.print(CommandLineArgs.getHelp(persistency));
+			} else if (commandLineArgs.action == CommandLineAction.SHOW_HELP) {
+				System.out.print(CommandLineArgs.getHelp(persistency));
 
-				} else if (commandLineArgs.action == CommandLineAction.SHOW_VERSION) {
-					System.out.print(Program.PRODUCT_NAME + " " + Program.getVersion());
+			} else if (commandLineArgs.action == CommandLineAction.SHOW_VERSION) {
+				System.out.print(Program.PRODUCT_NAME + " " + Program.getVersion());
 
-				} else { // if (commandLineArgs.action == CommandLineAction.CLEANUP)
+			} else if (commandLineArgs.action == CommandLineAction.CLEANUP) {
+				if (commandLineArgs.interactive) {
+					// start the interactive UI with the supplied code and settings
+					cleanSingleSourceInteractively(commandLineArgs, System.out, System.err);
+				} else {
 					// use application args for automatic cleanup
-					cleanAutomatically(commandLineArgs, System.out);
+					cleanAutomatically(commandLineArgs, System.out, System.err);
 				}
 			}
-
+			
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -179,7 +182,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		}
 	}
 
-	public static void cleanAutomatically(CommandLineArgs commandLineArgs, PrintStream out) throws CommandLineException {
+	public static void cleanAutomatically(CommandLineArgs commandLineArgs, PrintStream out, PrintStream err) throws CommandLineException {
 		// create or read a profile
 		Profile profile = null;
 		if (StringUtil.isNullOrEmpty(commandLineArgs.profileData)) {
@@ -194,13 +197,13 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		}
 
 		if (commandLineArgs.isInSingleSourceMode()) {
-			cleanSingleSourceAutomatically(commandLineArgs, commandLineArgs.sourceCode, out, profile);
+			cleanSingleSourceAutomatically(commandLineArgs, out, err, profile);
 		} else {
-			cleanMultiSourceAutomatically(commandLineArgs, out, profile);
+			cleanMultiSourceAutomatically(commandLineArgs, out, err, profile);
 		}
 	}
 
-	private static void cleanMultiSourceAutomatically(CommandLineArgs commandLineArgs, PrintStream out, Profile profile) {
+	private static void cleanMultiSourceAutomatically(CommandLineArgs commandLineArgs, PrintStream out, PrintStream err, Profile profile) {
 		Persistency persistency = Persistency.get();
 		int baseSourcePathLength = commandLineArgs.sourceDir.length();
 		String sourceDir = persistency.addDirSep(commandLineArgs.sourceDir);
@@ -212,34 +215,68 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 
 			CleanupResult result = cleanAutomatically(sourceName, sourceCode, commandLineArgs.abapRelease, commandLineArgs.cleanupRange, commandLineArgs.cleanupRangeExpandMode, null, profile, commandLineArgs.showStatsOrUsedRules(), commandLineArgs.lineSeparator);
 			if (result == null) {
-				out.println("Cleanup for file " + sourcePath + " cancelled.");
+				err.println("Cleanup for file " + sourcePath + " cancelled.");
 				continue;
 			} else if (result.hasErrorMessage()) {
-				out.println("Errors during clean-up of file: " + sourcePath);
-				out.println(result.errorMessage);
+				err.println("Errors during clean-up of file: " + sourcePath);
+				err.println(result.errorMessage);
 				continue;
 			}
 
 			String sourceFolderFile = sourcePath.substring(baseSourcePathLength);
-			writeCleanUpResult(commandLineArgs, out, result, sourceFolderFile, persistency.combinePaths(commandLineArgs.targetDir, sourceFolderFile));
+			writeCleanUpResult(commandLineArgs, out, err, result, sourceFolderFile, persistency.combinePaths(commandLineArgs.targetDir, sourceFolderFile));
 		}
 	}
 
-	private static void cleanSingleSourceAutomatically(CommandLineArgs commandLineArgs, String sourceCode, PrintStream out, Profile profile) {
+	private static void cleanSingleSourceAutomatically(CommandLineArgs commandLineArgs, PrintStream out, PrintStream err, Profile profile) {
 		CleanupResult result = cleanAutomatically(commandLineArgs.sourceName, commandLineArgs.sourceCode, commandLineArgs.abapRelease, commandLineArgs.cleanupRange, 
 				commandLineArgs.cleanupRangeExpandMode, null, profile, commandLineArgs.showStatsOrUsedRules(), commandLineArgs.lineSeparator);
-		if (result == null) {
-			out.println("Cleanup cancelled.");
-			return;
-		} else if (result.hasErrorMessage()) {
-			out.println(result.errorMessage);
-			return;
-		}
-
-		writeCleanUpResult(commandLineArgs, out, result, null, commandLineArgs.targetPath);
+		
+		writeCleanUpResult(commandLineArgs, out, err, result, null, commandLineArgs.targetPath);
 	}
 
-	private static void writeCleanUpResult(CommandLineArgs commandLineArgs, PrintStream out, CleanupResult result, String sourceFolderFile, String targetPath) {
+	private static void cleanSingleSourceInteractively(CommandLineArgs commandLineArgs, PrintStream out, PrintStream err) {
+		boolean isPlugin = true; // behave like the ADT plug-in, as this call is 'plugged into' the context and parameters supplied to the console
+
+		Color colMethodBackground = commandLineArgs.darkTheme ? CodeDisplayColors.darkThemeBackgroundVsCode : new Color(255, 255, 255); 
+		CodeDisplayColors codeDisplayColorsADT = new CodeDisplayColors(ColorProfile.ADT, colMethodBackground, null, null, null, null, null); 
+		CodeDisplayColors codeDisplayColorsClassic = new CodeDisplayColors(ColorProfile.CLASSIC, colMethodBackground, null, null, null, null, null);
+
+		// currently, only code display colors are adapted to the supplied theme preference; setting the entire UI 
+		// to light or dark theme is possible with the following code, but would require registration with the 
+		// org.eclipse.ui.startup extension point to ensure that PlatformUI.getWorkbench() is available
+		/**
+      import org.eclipse.ui.PlatformUI;
+      import org.eclipse.ui.themes.IThemeManager;
+		
+		// try setting the theme according to the command line argument; if the theme is not found, continue to use the default theme
+		final String darkThemeId = "org.eclipse.e4.ui.css.theme.e4_dark";
+		final String lightThemeId = "org.eclipse.e4.ui.css.theme.e4_default";
+		IThemeManager manager = PlatformUI.getWorkbench().getThemeManager();
+		String suggestedThemeId = commandLineArgs.darkTheme ? darkThemeId : lightThemeId;  
+		if (manager.getTheme(suggestedThemeId) != null) {
+			manager.setCurrentTheme(suggestedThemeId);
+		}
+	   */
+		
+		String title = StringUtil.isNullOrEmpty(commandLineArgs.title) ? commandLineArgs.sourceName : commandLineArgs.title;
+		CleanupResult result = cleanInteractively(title, commandLineArgs.sourceCode, commandLineArgs.abapRelease, commandLineArgs.cleanupRange,
+				commandLineArgs.workspaceDir, isPlugin, codeDisplayColorsADT, codeDisplayColorsClassic, commandLineArgs.readOnly, commandLineArgs.lineSeparator);
+		
+		writeCleanUpResult(commandLineArgs, out, err, result, null, commandLineArgs.targetPath);
+	}
+	
+	private static void writeCleanUpResult(CommandLineArgs commandLineArgs, PrintStream out, PrintStream err, CleanupResult result, String sourceFolderFile, String targetPath) {
+		if (commandLineArgs.isInSingleSourceMode()) {
+			if (result == null) {
+				err.println("Cleanup cancelled.");
+				return;
+			} else if (result.hasErrorMessage()) {
+				err.println(result.errorMessage);
+				return;
+			}
+		} // otherwise, errors were already handled by the caller
+		
 		// the main output is either the whole code document or the cleanup result of the line selection
 		String output = null;
 		if (result.hasCleanedCode()) {
@@ -339,7 +376,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 	}
 
 	public static CleanupResult cleanInteractively(String sourceName, String sourceCode, String abapRelease, CleanupRange cleanupRange, String workspaceDir, boolean isPlugin,
-			CodeDisplayColors codeDisplayColorsADT, CodeDisplayColors codeDisplayColorsClassic, boolean isReadOnly) {
+			CodeDisplayColors codeDisplayColorsADT, CodeDisplayColors codeDisplayColorsClassic, boolean isReadOnly, String lineSeparator) {
 		initialize();
 
 		Persistency persistency = Persistency.get();
@@ -354,7 +391,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		window.open(isPlugin, sourceName, sourceCode, abapRelease, cleanupRange, workspaceDir, isReadOnly);
 
 		if (window.resultCode != null) {
-			return window.resultCode.toCleanupResult(ABAP.LINE_SEPARATOR);
+			return window.resultCode.toCleanupResult(lineSeparator);
 		} else if (!StringUtil.isNullOrEmpty(window.resultErrorMessage)) {
 			return CleanupResult.createError(window.resultErrorMessage);
 		} else {

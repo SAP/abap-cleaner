@@ -115,7 +115,7 @@ public abstract class AbapCleanerHandlerBase extends AbstractAdtEditorHandler {
 	         // get ADT color settings to make code in the ABAP cleaner UI appear similar to code in ADT
 				CodeDisplayColors codeDisplayColorsADT = createCodeDisplayColors(ColorProfile.ADT); 
 				CodeDisplayColors codeDisplayColorsClassic = createCodeDisplayColors(ColorProfile.CLASSIC); 
-				result = FrmMain.cleanInteractively(sourcePageTitle, oldSource, abapRelease, cleanupRange, workspaceDir, true, codeDisplayColorsADT, codeDisplayColorsClassic, readOnly);
+				result = FrmMain.cleanInteractively(sourcePageTitle, oldSource, abapRelease, cleanupRange, workspaceDir, true, codeDisplayColorsADT, codeDisplayColorsClassic, readOnly, ABAP.LINE_SEPARATOR);
 			} else {
 				result = FrmMain.cleanAutomatically(sourcePageTitle, oldSource, abapRelease, cleanupRange, cleanupRangeExpandMode, workspaceDir, null, false, ABAP.LINE_SEPARATOR);
 			}
