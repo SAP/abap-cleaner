@@ -9,6 +9,9 @@ import org.eclipse.swt.graphics.Color;
 public class CodeDisplayColors {
 	private static final boolean USE_DARK_BY_DEFAULT = false;
 	
+	public final static Color darkThemeBackgroundAdt = new Color(30, 31, 34);
+	public final static Color darkThemeBackgroundVsCode = new Color(18, 19, 20);
+	
 	// text fore colors
 	public final Color textIdentifier;
 	public final Color textIdentifierWritePos;
