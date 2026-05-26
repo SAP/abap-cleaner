@@ -9,6 +9,7 @@ import com.sap.adt.abapcleaner.parser.Code;
 import com.sap.adt.abapcleaner.parser.Command;
 import com.sap.adt.abapcleaner.parser.Term;
 import com.sap.adt.abapcleaner.parser.Token;
+import com.sap.adt.abapcleaner.parser.TokenSearch;
 import com.sap.adt.abapcleaner.programbase.IntegrityBrokenException;
 import com.sap.adt.abapcleaner.programbase.UnexpectedSyntaxAfterChanges;
 import com.sap.adt.abapcleaner.programbase.UnexpectedSyntaxException;
@@ -86,6 +87,12 @@ public class ReadTableRule extends RuleForCommands {
 			+ LINE_SEP + "    READ TABLE its_any WITH TABLE KEY seckey COMPONENTS comp1 = 1 comp2 = abap_true TRANSPORTING NO FIELDS." 
 			+ LINE_SEP + "    DATA(lv_line_index) = sy-tabix." 
 			+ LINE_SEP 
+			+ LINE_SEP + "    \" WARNING: using a table expression for the following code only works if 'comp1 = lv_value' entries always" 
+			+ LINE_SEP + "    \" exist. Otherwise, for sorted tables, READ TABLE returns the would-be position in sort order, while a" 
+			+ LINE_SEP + "    \" table expression returns 0, thus causing INSERT ... INDEX 0 to dump."
+			+ LINE_SEP + "    READ TABLE lts_other WITH KEY comp1 = lv_value TRANSPORTING NO FIELDS." 
+			+ LINE_SEP + "    INSERT ls_entry INTO lts_other INDEX sy-tabix." 
+			+ LINE_SEP 
 			+ LINE_SEP + "    \" ----------------------------------------------------------------------------------------------" 
 			+ LINE_SEP + "    \" the following variants of READ TABLE can NOT be automatically replaced with table expressions:" 
 			+ LINE_SEP 
@@ -127,9 +134,10 @@ public class ReadTableRule extends RuleForCommands {
 	final ConfigBoolValue configReplaceWithAssign = new ConfigBoolValue(this, "ReplaceWithAssign", "Replace with ASSIGN itab[ ... ]", true);
 	final ConfigBoolValue configReplaceWithLineExists = new ConfigBoolValue(this, "ReplaceWithLineExists", "Replace with line_exists( itab[ ... ] )", true);
 	final ConfigBoolValue configReplaceWithLineIndex = new ConfigBoolValue(this, "ReplaceWithLineIndex", "Replace with line_index( itab[ ... ] )", true);
+	final ConfigBoolValue configReplaceInsertIntoIndex = new ConfigBoolValue(this, "ReplaceInsertIntoIndex", "Replace 'INSERT ... INDEX sy-tabix' with line_index( ... ) - WARNING: risk of runtime errors if entries are not found in a sorted table!", false, false, LocalDate.of(2026, 5, 26));
 	final ConfigBoolValue configUseComponentsKeyword = new ConfigBoolValue(this, "UseComponentsKeyword", "Keep optional keyword COMPONENTS after KEY name", false);
 
-	private final ConfigValue[] configValues = new ConfigValue[] { configReplaceWithAssign, configReplaceWithLineExists, configReplaceWithLineIndex, configUseComponentsKeyword };
+	private final ConfigValue[] configValues = new ConfigValue[] { configReplaceWithAssign, configReplaceWithLineExists, configReplaceWithLineIndex, configReplaceInsertIntoIndex, configUseComponentsKeyword };
 
 	@Override
 	public ConfigValue[] getConfigValues() { return configValues; }
@@ -137,6 +145,15 @@ public class ReadTableRule extends RuleForCommands {
 	public ReadTableRule(Profile profile) {
 		super(profile);
 		initializeConfiguration();
+	}
+
+	@Override
+	public boolean isConfigValueEnabled(ConfigValue configValue) { 
+		if (configValue.equals(configReplaceInsertIntoIndex)) {
+			return configReplaceWithLineIndex.getValue();
+		} else {
+			return true;
+		} 
 	}
 
 	@Override
@@ -534,6 +551,15 @@ public class ReadTableRule extends RuleForCommands {
 	}
 
 	private boolean replaceWithLineIndex(ReadTableCommand readTable, Command command, Command commandReadingSyTabix) throws UnexpectedSyntaxAfterChanges {
+		// depending on configuration, do not risk replacing INSERT ... INTO ... INDEX, because in this case, a table expression 
+		// always returns 0 if no entry is found (even on sorted tables), thus causing a dump (while READ TABLE sets sy-tabix to 
+		// the would-be insert position in sort order)
+		if (commandReadingSyTabix.firstCodeTokenIsKeyword("INSERT") 
+				&& commandReadingSyTabix.getFirstCodeToken().matchesOnSiblings(true, "INSERT", TokenSearch.ASTERISK, "INTO", TokenSearch.ASTERISK, "INDEX")
+				&& !configReplaceInsertIntoIndex.getValue()) {
+			return false;
+		}
+		
 		// find the usage of SY-TABIX or SYST-TABIX inside the Command (it was already ensured that there is only one usage)
 		Token token = commandReadingSyTabix.getFirstToken();
 		Token syTabixToken = null;
