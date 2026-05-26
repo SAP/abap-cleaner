@@ -132,8 +132,8 @@ public class CamelCaseNames {
 
 		productPrefixes = initializeHashSet( new String[] { 
 				"ABA", "ACM", "AIN", "ARO", "BPF", "CAB", "CAI", "CBC", "CPQ", "CSL", "CTE", "EHS", "ETX", "EWM", "FCC", 
-				"FPS", "FSM", "GPR", "GRC", "GTS", "HCM", "IBP", "ICM", "ILM", "JIT", "LMD", "MDG", "MIG", "MKT", "PFM",
-				"PPM", "PSM", "QM", "RFM", "S4C", "SLT", "SPC", "TAS", "VMS", "WLS" } );
+				"FPS", "FSM", "GPR", "GRC", "GTS", "HCM", "IBP", "ICM", "ILM", "JIT", "LMD", "MDG", "MIG", "MKT", "OPS", 
+				"PFM", "PPM", "PSM", "QM", "RFM", "S4C", "SLT", "SPC", "TAS", "VMS", "WLS" } );
 
 		// specific for view extensions X_...
 		extensionPrefixes = initializeHashSet( new String[] { "X" } );
