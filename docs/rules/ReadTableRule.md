@@ -18,6 +18,7 @@ This rule is part of the **essential** profile, as it is explicitly demanded by 
 * \[X\] Replace with ASSIGN itab\[ ... \]
 * \[X\] Replace with line\_exists\( itab\[ ... \] \)
 * \[X\] Replace with line\_index\( itab\[ ... \] \)
+* \[ \] Replace 'INSERT ... INDEX sy-tabix' with line\_index\( ... \) - WARNING: risk of runtime errors if entries are not found in a sorted table\!
 * \[ \] Keep optional keyword COMPONENTS after KEY name
 
 ## Examples
@@ -45,6 +46,12 @@ This rule is part of the **essential** profile, as it is explicitly demanded by 
 
     READ TABLE its_any WITH TABLE KEY seckey COMPONENTS comp1 = 1 comp2 = abap_true TRANSPORTING NO FIELDS.
     DATA(lv_line_index) = sy-tabix.
+
+    " WARNING: using a table expression for the following code only works if 'comp1 = lv_value' entries always
+    " exist. Otherwise, for sorted tables, READ TABLE returns the would-be position in sort order, while a
+    " table expression returns 0, thus causing INSERT ... INDEX 0 to dump.
+    READ TABLE lts_other WITH KEY comp1 = lv_value TRANSPORTING NO FIELDS.
+    INSERT ls_entry INTO lts_other INDEX sy-tabix.
 
     " ----------------------------------------------------------------------------------------------
     " the following variants of READ TABLE can NOT be automatically replaced with table expressions:
@@ -106,6 +113,12 @@ Resulting code:
     DATA(lv_line_index) = line_index( its_any[ KEY seckey
                                                comp1 = 1
                                                comp2 = abap_true ] ).
+
+    " WARNING: using a table expression for the following code only works if 'comp1 = lv_value' entries always
+    " exist. Otherwise, for sorted tables, READ TABLE returns the would-be position in sort order, while a
+    " table expression returns 0, thus causing INSERT ... INDEX 0 to dump.
+    READ TABLE lts_other WITH KEY comp1 = lv_value TRANSPORTING NO FIELDS.
+    INSERT ls_entry INTO lts_other INDEX sy-tabix.
 
     " ----------------------------------------------------------------------------------------------
     " the following variants of READ TABLE can NOT be automatically replaced with table expressions:

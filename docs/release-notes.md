@@ -6,6 +6,18 @@ as well as bugfixes of reported issues, i.e. anything that enhances or changes t
 For a complete list of changes (including documentation, tests, refactoring etc.), please refer to 
 the list of [commits](../../../commits/main).
 
+## 2026-05-26 (version 1.25.0)
+
+Many **thanks** to [**REDDERD**](https://github.com/REDDERD) and [**xpatate2**](https://github.com/xpatate2) for the ideas and bug reports behind these improvements!
+
+* Enhanced **CLI** with **--ui** parameter to open **interactive cleanup**
+* Enhanced **CLI** with **--scope** parameter to **expand --linerange**
+* Enhanced **CLI documentation** with **--scope** parameter
+* Fixed rule '**Rearrange local declarations**' for **component LIKE** and **TABLE OF** ([#495](../../../issues/495))
+* Fixed rule '**Replace READ TABLE with table expression**' for **INSERT ... INDEX sy-tabix** ([#498](../../../issues/498))
+* Updated **ABAP grammar file**
+* Updated **known CamelCase names** for CDS views and fields
+
 ## 2026-03-23 (version 1.24.3)
 
 **Thank you** [**MDagni**](https://github.com/MDagni) and [**jrodriguez-rc**](https://github.com/jrodriguez-rc) for reporting the bugs behind this release!
