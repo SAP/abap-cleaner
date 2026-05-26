@@ -20,6 +20,7 @@ public class ReadTableTest extends RuleTestBase {
 		rule.configReplaceWithAssign.setValue(true);
 		rule.configReplaceWithLineExists.setValue(true);
 		rule.configReplaceWithLineIndex.setValue(true);
+		rule.configReplaceInsertIntoIndex.setValue(false);
 		rule.configUseComponentsKeyword.setValue(false);
 	}
 
@@ -653,6 +654,47 @@ public class ReadTableTest extends RuleTestBase {
 		buildSrc("    CHECK sy-subrc <> 0.");
 
 		copyExpFromSrc();
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testKeepInsertIntoIndexSyTabix() {
+		buildSrc("    READ TABLE lts_other WITH KEY comp1 = lv_value TRANSPORTING NO FIELDS.");
+		buildSrc("    INSERT ls_entry INTO lts_other INDEX sy-tabix.");
+
+		copyExpFromSrc();
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testKeepInsertIntoIndexSyTabix2() {
+		rule.configReplaceWithLineIndex.setValue(false);
+		rule.configReplaceInsertIntoIndex.setValue(true);
+
+		buildSrc("    READ TABLE lts_other WITH KEY comp1 = lv_value TRANSPORTING NO FIELDS.");
+		buildSrc("    INSERT ls_entry INTO lts_other INDEX sy-tabix.");
+
+		copyExpFromSrc();
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testReplaceInsertIntoIndexSyTabix() {
+		rule.configReplaceInsertIntoIndex.setValue(true);
+
+		buildSrc("    READ TABLE lts_other WITH KEY comp1 = lv_value TRANSPORTING NO FIELDS.");
+		buildSrc("    INSERT ls_entry INTO lts_other INDEX sy-tabix.");
+
+		buildExp("    INSERT ls_entry INTO lts_other INDEX line_index( lts_other[ comp1 = lv_value ] ).");
 
 		putAnyMethodAroundSrcAndExp();
 
