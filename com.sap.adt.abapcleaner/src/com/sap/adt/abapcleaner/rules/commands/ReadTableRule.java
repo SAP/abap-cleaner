@@ -134,7 +134,7 @@ public class ReadTableRule extends RuleForCommands {
 	final ConfigBoolValue configReplaceWithAssign = new ConfigBoolValue(this, "ReplaceWithAssign", "Replace with ASSIGN itab[ ... ]", true);
 	final ConfigBoolValue configReplaceWithLineExists = new ConfigBoolValue(this, "ReplaceWithLineExists", "Replace with line_exists( itab[ ... ] )", true);
 	final ConfigBoolValue configReplaceWithLineIndex = new ConfigBoolValue(this, "ReplaceWithLineIndex", "Replace with line_index( itab[ ... ] )", true);
-	final ConfigBoolValue configReplaceInsertIntoIndex = new ConfigBoolValue(this, "ReplaceInsertIntoIndex", "Replace 'INSERT ... INDEX sy-tabix' with line_index( ... ) - WARNING: risk of runtime errors if entries are not found in a sorted table!", false, false, LocalDate.of(2026, 5, 26));
+	final ConfigBoolValue configReplaceInsertIntoIndex = new ConfigBoolValue(this, "ReplaceInsertIntoIndex", "Replace 'INSERT ... INDEX sy-tabix' with line_index( ... ) - WARNING: risk of runtime errors if entries are not found in a sorted table!", false, false, LocalDate.of(2026, 5, 25));
 	final ConfigBoolValue configUseComponentsKeyword = new ConfigBoolValue(this, "UseComponentsKeyword", "Keep optional keyword COMPONENTS after KEY name", false);
 
 	private final ConfigValue[] configValues = new ConfigValue[] { configReplaceWithAssign, configReplaceWithLineExists, configReplaceWithLineIndex, configReplaceInsertIntoIndex, configUseComponentsKeyword };
