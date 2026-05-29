@@ -33,12 +33,14 @@ public class CommandLineArgs {
 	// - cleanup
 	private static final String OPT_PROFILE = "--profile";
 	private static final String OPT_PROFILE_DATA = "--profiledata";
+	private static final String OPT_PROFILE_NAME = "--profilename";
+	private static final String OPT_LAST_PROFILE = "--last-profile";
 	private static final String OPT_RELEASE = "--release";
+	private static final String OPT_WORKSPACE = "--workspace";
 
 	// - interactive cleanup (single source only, no profile or cleanup range allowed)
 	private static final String OPT_INTERACTIVE = "--ui";
 	private static final String OPT_TITLE = "--title";
-	private static final String OPT_WORKSPACE = "--workspace";
 	private static final String OPT_READ_ONLY = "--readonly";
 	private static final String OPT_DARK_THEME = "--darktheme";
 	
@@ -56,8 +58,8 @@ public class CommandLineArgs {
 
 	private static final String[] allOptions = new String[] { 
 			OPT_SOURCE_FILE, OPT_SOURCE_CODE, OPT_LINE_RANGE, OPT_EXPAND_MODE, OPT_SOURCE_DIR, OPT_FILE_FILTER, OPT_RECURSIVE, 
-			OPT_PROFILE, OPT_PROFILE_DATA, OPT_RELEASE, 
-			OPT_INTERACTIVE, OPT_TITLE, OPT_WORKSPACE, OPT_READ_ONLY, OPT_DARK_THEME,
+			OPT_PROFILE, OPT_PROFILE_DATA, OPT_PROFILE_NAME, OPT_LAST_PROFILE, OPT_RELEASE, OPT_WORKSPACE, 
+			OPT_INTERACTIVE, OPT_TITLE, OPT_READ_ONLY, OPT_DARK_THEME,
 			OPT_TARGET_FILE, OPT_PARTIAL_RESULT, OPT_TARGET_DIR, OPT_OVERWRITE, OPT_CRLF, 
 			OPT_STATS, OPT_USED_RULES };
 
@@ -73,8 +75,8 @@ public class CommandLineArgs {
 
 	private static final String[] optionsRequiringNextArg = new String[] { 
 			OPT_SOURCE_FILE, OPT_SOURCE_CODE, OPT_LINE_RANGE, OPT_EXPAND_MODE, OPT_SOURCE_DIR, OPT_FILE_FILTER,
-			OPT_PROFILE, OPT_PROFILE_DATA, OPT_RELEASE,
-			OPT_TITLE, OPT_WORKSPACE,
+			OPT_PROFILE, OPT_PROFILE_DATA, OPT_PROFILE_NAME, OPT_RELEASE, OPT_WORKSPACE,
+			OPT_TITLE,
 			OPT_TARGET_FILE, OPT_TARGET_DIR };
 
 	public static String[] getAllOptions() { return allOptions; }
@@ -113,13 +115,16 @@ public class CommandLineArgs {
 		
 		// - cleanup options
 		String profileData = null;
+		String profileName = null;
+		boolean lastProfile = false;
 		String abapRelease = null;
-		boolean foundProfileDataOption = false; // true if OPT_PROFILE_DATA was found (otherwise, OPT_PROFILE)
+		boolean foundProfileOption = false; // true if OPT_PROFILE, OPT_PROFILE_DATA, OPT_PROFILE_NAME or OPT_LAST_PROFILE was found
+		String usedProfileArg = null;
+		String workspaceDir = null;
 
 		// - interactive cleanup options
 		boolean interactive = false;
 		String title = ""; // will be set to sourceName for interactive cleanup if not supplied via --title
-		String workspaceDir = null;
 		boolean readOnly = false;
 		boolean darkTheme = false;
 
@@ -228,20 +233,33 @@ public class CommandLineArgs {
 				// -------------------------------------
 				// - cleanup options
 
-			} else if (arg.equals(OPT_PROFILE) || arg.equals(OPT_PROFILE_DATA)) {
-				if (profileData != null) {
-					errors.append("Profile supplied twice; please use " + OPT_PROFILE + " or " + OPT_PROFILE_DATA + " only once.").append(LINE_SEP);
+			} else if (arg.equals(OPT_PROFILE) || arg.equals(OPT_PROFILE_DATA) || arg.equals(OPT_PROFILE_NAME) || arg.equals(OPT_LAST_PROFILE)) {
+				if (foundProfileOption) {
+					errors.append("Multiple profile arguments supplied; please use " + OPT_PROFILE + ", " + OPT_PROFILE_DATA + ", " 
+							+ OPT_PROFILE_NAME + " or " + OPT_LAST_PROFILE + " only once.").append(LINE_SEP);
+				} else if (arg.equals(OPT_PROFILE)) {
+					if (persistency.fileExists(nextArg)) {
+						profileData = persistency.readAllTextFromFile(nextArg);
+					} else {
+						errors.append("File not found: " + nextArg).append(LINE_SEP);
+					}
 				} else if (arg.equals(OPT_PROFILE_DATA)) {
-					foundProfileDataOption = true;
 					profileData = nextArg;
-				} else if (persistency.fileExists(nextArg)) {
-					profileData = persistency.readAllTextFromFile(nextArg);
-				} else {
-					errors.append("File not found: " + nextArg).append(LINE_SEP);
+				} else if (arg.equals(OPT_PROFILE_NAME)) {
+					// at this point, it is not possible to validate whether the supplied profile name actually exists; 
+					// if it doesn't, we will use program defaults as the fallback
+					profileName = nextArg;
+				} else if (arg.equals(OPT_LAST_PROFILE)) {
+					lastProfile = true;
 				}
+				foundProfileOption = true;
+				usedProfileArg = arg;
 
 			} else if (arg.equals(OPT_RELEASE)) {
 				abapRelease = nextArg;
+
+			} else if (arg.equals(OPT_WORKSPACE)) {
+				workspaceDir = nextArgNonNull;
 
 				// -------------------------------------
 				// - interactive cleanup options
@@ -251,9 +269,6 @@ public class CommandLineArgs {
 
 			} else if (arg.equals(OPT_TITLE)) {
 				title = nextArgNonNull;
-
-			} else if (arg.equals(OPT_WORKSPACE)) {
-				workspaceDir = nextArgNonNull;
 
 			} else if (arg.equals(OPT_READ_ONLY)) {
 				readOnly = true;
@@ -359,10 +374,9 @@ public class CommandLineArgs {
 			if (cleanupRange != null && foundExpandModeOption && expandMode != null && expandMode != CleanupRangeExpandMode.FULL_STATEMENT) {
 				errors.append(String.format(INVALID_OPTION_COMBO_FORMAT, OPT_EXPAND_MODE + " " + expandModeArg, OPT_INTERACTIVE)).append(LINE_SEP);
 			}
-			// for interactive cleanup, the cleanup profile must not be supplied, as the UI has its own (workspace-specific) settings for it 
-			if (profileData != null) {
-				String option = foundProfileDataOption ? OPT_PROFILE_DATA : OPT_PROFILE;
-				errors.append(String.format(INVALID_OPTION_COMBO_FORMAT, option, OPT_INTERACTIVE)).append(LINE_SEP);
+			// for interactive cleanup, the cleanup profile must not be supplied, as the UI has its own (workspace-specific) settings for it
+			if (foundProfileOption) {
+				errors.append(String.format(INVALID_OPTION_COMBO_FORMAT, usedProfileArg, OPT_INTERACTIVE)).append(LINE_SEP);
 			}
 			if (readOnly) {
 				// read-only preview on the UI cannot be selected together with options that specify a target for the cleanup result (even with simulation)
@@ -408,12 +422,14 @@ public class CommandLineArgs {
 		
 		if (sourceCode != null) {
 			// single file (including for interactive cleanup; restrictions for combinations of parameters were checked above)
-			return new CommandLineArgs(errors.toString(), sourceName, sourceCode, cleanupRange, expandMode, profileData, abapRelease, 
-												interactive, title, workspaceDir, readOnly, darkTheme,
+			return new CommandLineArgs(errors.toString(), sourceName, sourceCode, cleanupRange, expandMode, 
+												profileData, profileName, lastProfile, abapRelease, workspaceDir, 
+												interactive, title, readOnly, darkTheme,
 												simulate, targetPath, partialResult, overwrite, lineSeparator, showStats, showUsedRules);
 		} else {
 			// multiple files
-			return new CommandLineArgs(errors.toString(), sourceDir, sourcePaths, profileData, abapRelease, 
+			return new CommandLineArgs(errors.toString(), sourceDir, sourcePaths, 
+												profileData, profileName, lastProfile, abapRelease, workspaceDir, 
 												simulate, targetDir, overwrite, lineSeparator, showStats, showUsedRules);
 		}
 	}
@@ -438,20 +454,23 @@ public class CommandLineArgs {
 		sb.append(" " + OPT_VERSION);
 		sb.append(LINE_SEP + LINE_SEP + LINE_SEP);
 
-		sb.append("Cleanup of single file:");
+		sb.append("Cleanup of single source:");
 		sb.append(LINE_SEP);
 		sb.append(usagePrefix);
-		sb.append(" {" + OPT_SOURCE_FILE + " sourcefile");
-		sb.append(" / " + OPT_SOURCE_CODE + " sourcecode }");
-		sb.append(" [" + OPT_LINE_RANGE + " linerange [" + OPT_EXPAND_MODE + " scopename] ]");
+		sb.append(" {" + OPT_SOURCE_FILE + " <path>");
+		sb.append(" | " + OPT_SOURCE_CODE + " <code>}");
+		sb.append(" [" + OPT_LINE_RANGE + " <numrange> [" + OPT_EXPAND_MODE + " <scopename>] ]");
 		sb.append(LINE_SEP);
 		sb.append(spacePrefix);
-		sb.append(" [{ " + OPT_PROFILE + " profile");
-		sb.append(" / " + OPT_PROFILE_DATA + " profiledata }]");
-		sb.append(" [" + OPT_RELEASE + " release]");
+		sb.append(" [{ " + OPT_PROFILE + " <path>");
+		sb.append(" | " + OPT_PROFILE_DATA + " <json>");
+		sb.append(" | " + OPT_PROFILE_NAME + " <name>");
+		sb.append(" | " + OPT_LAST_PROFILE + " }]");
+		sb.append(" [" + OPT_RELEASE + " <num>]");
+		sb.append(" [" + OPT_WORKSPACE + " <dir>]");
 		sb.append(LINE_SEP);
 		sb.append(spacePrefix);
-		sb.append(" [" + OPT_TARGET_FILE + " targetfile");
+		sb.append(" [" + OPT_TARGET_FILE + " <path>");
 		sb.append(" [" + OPT_OVERWRITE + "]]");
 		sb.append(" [" + OPT_PARTIAL_RESULT + "]");
 		sb.append(" [" + OPT_CRLF + "]");
@@ -461,12 +480,12 @@ public class CommandLineArgs {
 		sb.append(" [" + OPT_USED_RULES + "]");
 		sb.append(LINE_SEP + LINE_SEP);
 
-		sb.append("- Example for cleanup of single file:");
+		sb.append("- Example for cleanup of single source:");
 		sb.append(LINE_SEP);
 		sb.append(usagePrefix);
 		sb.append(" " + OPT_SOURCE_FILE + " \"CL_ANY_CLASS.txt\"");
 		sb.append(" " + OPT_LINE_RANGE + " " + LINE_RANGE_EXAMPLE + " " + OPT_EXPAND_MODE + " " + EXPAND_MODE_METHOD);
-		sb.append(" " + OPT_PROFILE + " \"" + "team profile" + profileExtension + "\"");
+		sb.append(" " + OPT_PROFILE_NAME + " \"team A: profile\"");
 		sb.append(" " + OPT_RELEASE + " \"757\"");
 		sb.append(" " + OPT_TARGET_FILE + " \"result\\CL_ANY_CLASS.txt\"");
 		sb.append(" " + OPT_OVERWRITE);
@@ -474,26 +493,26 @@ public class CommandLineArgs {
 		sb.append(" " + OPT_USED_RULES);
 		sb.append(LINE_SEP + LINE_SEP + LINE_SEP);
 
-		sb.append("Interactive cleanup (single source only; profile and user scope selected on the UI):");
+		sb.append("Interactive cleanup (single source only; profile and user scope only selected on the UI):");
 		sb.append(LINE_SEP);
 		sb.append(usagePrefix);
-		sb.append(" {" + OPT_SOURCE_FILE + " sourcefile");
-		sb.append(" / " + OPT_SOURCE_CODE + " sourcecode }");
-		sb.append(" [" + OPT_LINE_RANGE + " linerange");
-		sb.append(" [" + OPT_EXPAND_MODE + " {" + EXPAND_MODE_STATEMENT + " / " + EXPAND_MODE_USER + "}] ]");
+		sb.append(" {" + OPT_SOURCE_FILE + " <path>");
+		sb.append(" | " + OPT_SOURCE_CODE + " <code>}");
+		sb.append(" [" + OPT_LINE_RANGE + " <numrange>");
+		sb.append(" [" + OPT_EXPAND_MODE + " {" + EXPAND_MODE_STATEMENT + " | " + EXPAND_MODE_USER + "}] ]");
 		sb.append(LINE_SEP);
 		sb.append(spacePrefix);
-		sb.append(" [" + OPT_RELEASE + " release]");
+		sb.append(" [" + OPT_RELEASE + " <num>]");
+		sb.append(" [" + OPT_WORKSPACE + " <dir>]");
 		sb.append(LINE_SEP);
 		sb.append(spacePrefix);
 		sb.append(" " + OPT_INTERACTIVE);
-		sb.append(" [" + OPT_TITLE + " title]");
-		sb.append(" [" + OPT_WORKSPACE + " workspace_dir]");
+		sb.append(" [" + OPT_TITLE + " <text>]");
 		sb.append(" [" + OPT_READ_ONLY + "]");
 		sb.append(" [" + OPT_DARK_THEME + "]");
 		sb.append(LINE_SEP);
 		sb.append(spacePrefix);
-		sb.append(" [" + OPT_TARGET_FILE + " targetfile");
+		sb.append(" [" + OPT_TARGET_FILE + " <path>");
 		sb.append(" [" + OPT_OVERWRITE + "]]");
 		sb.append(" [" + OPT_PARTIAL_RESULT + "]");
 		sb.append(" [" + OPT_CRLF + "]");
@@ -513,17 +532,20 @@ public class CommandLineArgs {
 		sb.append("Cleanup of multiple files:");
 		sb.append(LINE_SEP);
 		sb.append(usagePrefix);
-		sb.append(" " + OPT_SOURCE_DIR + " sourcedir");
-		sb.append(" [" + OPT_FILE_FILTER + " filepattern]");
+		sb.append(" " + OPT_SOURCE_DIR + " <path>");
+		sb.append(" [" + OPT_FILE_FILTER + " <pattern>]");
 		sb.append(" [" + OPT_RECURSIVE + "]");
 		sb.append(LINE_SEP);
 		sb.append(spacePrefix);
-		sb.append(" [{ " + OPT_PROFILE + " profile");
-		sb.append(" / " + OPT_PROFILE_DATA + " profiledata }]");
-		sb.append(" [" + OPT_RELEASE + " release]");
+		sb.append(" [{ " + OPT_PROFILE + " <path>");
+		sb.append(" | " + OPT_PROFILE_DATA + " <json>");
+		sb.append(" | " + OPT_PROFILE_NAME + " <name>");
+		sb.append(" | " + OPT_LAST_PROFILE + " }]");
+		sb.append(" [" + OPT_RELEASE + " <num>]");
+		sb.append(" [" + OPT_WORKSPACE + " <dir>]");
 		sb.append(LINE_SEP);
 		sb.append(spacePrefix);
-		sb.append(" [" + OPT_TARGET_DIR + " targetdir");
+		sb.append(" [" + OPT_TARGET_DIR + " <path>");
 		sb.append(" [" + OPT_OVERWRITE + "]]");
 		sb.append(" [" + OPT_CRLF + "]");
 		sb.append(LINE_SEP);
@@ -538,13 +560,13 @@ public class CommandLineArgs {
 		sb.append(" " + OPT_SOURCE_DIR + " \"C:\\temp\\source\"");
 		sb.append(" " + OPT_FILE_FILTER + " \"*.txt\"");
 		sb.append(" " + OPT_RECURSIVE);
-		sb.append(" " + OPT_PROFILE + " \"" + "team profile" + profileExtension + "\"");
+		sb.append(" " + OPT_PROFILE + " \"" + "C:\\temp\\profile" + profileExtension + "\"");
 		sb.append(" " + OPT_RELEASE + " \"757\"");
 		sb.append(" " + OPT_TARGET_DIR + " \"C:\\temp\\target\"");
 		sb.append(" " + OPT_OVERWRITE);
 		sb.append(LINE_SEP + LINE_SEP + LINE_SEP);
 
-		sb.append("Options for cleanup: ");
+		sb.append("Options for cleanup:");
 		sb.append(LINE_SEP);
 		sb.append(getOptionHelp(OPT_SOURCE_FILE, "File name of an ABAP source file which is input to the cleanup."));
 		sb.append(getOptionHelp(OPT_SOURCE_CODE, "ABAP source code which is input to the cleanup."));
@@ -559,18 +581,23 @@ public class CommandLineArgs {
 		sb.append(getOptionHelp(OPT_FILE_FILTER, "File pattern to look for (only relevant when " + OPT_SOURCE_DIR + " has been supplied)"));
 		sb.append(getOptionHelp(OPT_RECURSIVE, "Searches provided source directory recursively for ABAP files"));
 		sb.append(LINE_SEP);
-		sb.append(getOptionHelp(OPT_PROFILE, "File name of the cleanup profile to be used (extension " + profileExtension + ")."));
-		sb.append(getOptionHelp(null, "From the UI, you may use button 'Export...' from the profiles editor to create the file."));
-		sb.append(getOptionHelp(OPT_PROFILE_DATA, "Content of the cleanup profile to be used."));
-		sb.append(getOptionHelp(null, "Please use either " + OPT_PROFILE + " or " + OPT_PROFILE_DATA + " (or none for program defaults)."));
-		sb.append(getOptionHelp(OPT_RELEASE, "ABAP release to restrict syntax of cleanup changes, e.g. \"758\""));
+		sb.append(getOptionHelp(OPT_PROFILE, "File name of the cleanup profile to be used (extension " + profileExtension + "). From the UI,"));
+		sb.append(getOptionHelp(null, "you may use button 'Export...' from the profiles editor to create the file."));
+		sb.append(getOptionHelp(OPT_PROFILE_DATA, "JSON-like content of the cleanup profile to be used."));
+		sb.append(getOptionHelp(OPT_PROFILE_NAME, "Name of the cleanup profile to be used, as displayed on the UI."));
+		sb.append(getOptionHelp(null, "This includes synchronized team profiles such as \"team A: profile\"."));
+		sb.append(getOptionHelp(OPT_LAST_PROFILE, "Use the cleanup profile that was last selected on the UI on this machine."));
+		sb.append(getOptionHelp(null, "Please provide only one profile option (or none for program defaults)."));
+		sb.append(LINE_SEP);
+		sb.append(getOptionHelp(OPT_RELEASE, "ABAP release to restrict syntax of cleanup changes, e.g. \"758\"."));
 		sb.append(getOptionHelp(null, "Without this option, the latest ABAP syntax will be allowed."));
+		sb.append(getOptionHelp(OPT_WORKSPACE, "The workspace directory or ID, used to retrieve workspace-specific settings"));
+		sb.append(getOptionHelp(null, "for the last cleanup profile to be used (" + OPT_LAST_PROFILE + "), for expanding the"));
+		sb.append(getOptionHelp(null, "line range (" + OPT_EXPAND_MODE + " " + EXPAND_MODE_USER + ") and additional release restrictions (from the UI)."));
 		sb.append(LINE_SEP);
 		sb.append(getOptionHelp(OPT_INTERACTIVE, "Open the UI for interactive cleanup and profile configuration"));
 		sb.append(getOptionHelp(null, "(only possible for single source input)."));
 		sb.append(getOptionHelp(OPT_TITLE, "The source code title to be displayed on the UI."));
-		sb.append(getOptionHelp(OPT_WORKSPACE, "The workspace directory or ID, used to store workspace-specific settings"));
-		sb.append(getOptionHelp(null, "for cleanup profile, cleanup range, release restriction."));
 		sb.append(getOptionHelp(OPT_READ_ONLY, "Show a read-only preview of the changes without allowing to apply them."));
 		sb.append(getOptionHelp(OPT_DARK_THEME, "Show the code with dark theme colors."));
 		sb.append(LINE_SEP);
@@ -621,16 +648,18 @@ public class CommandLineArgs {
 
 	// - cleanup
 	public final String profileData;
+	public final String profileName;
+	public final boolean lastProfile;
 	public final String abapRelease;
+	/** workspace directory, used as a key for making main window settings (profile, cleanup range, release restriction) 
+	 * workspace-specific, cp. MainSettings.CleanupSettings */
+	public final String workspaceDir;
 
 	// - interactive cleanup (single source only)
 	/** whether to open the interactive UI with the supplied source code */
 	public final boolean interactive;
 	/** source code title to be displayed on the UI */
 	public final String title;
-	/** workspace directory, used as a key for making main window settings (profile, cleanup range, release restriction) 
-	 * workspace-specific, cp. MainSettings.CleanupSettings */
-	public final String workspaceDir;
 	/** true for read-only preview of changes */
 	public final boolean readOnly;
 	/** true to show the UI with dark theme colors */
@@ -655,6 +684,12 @@ public class CommandLineArgs {
 	public boolean writesResultCodeToOutput() { return !simulate && isInSingleSourceMode() && StringUtil.isNullOrEmpty(targetPath); }
 
 	public boolean showStatsOrUsedRules() { return showStats || showUsedRules; }
+
+	// profile options were checked to be mutually exclusive
+	public boolean hasAnyProfileOption() { return hasProfileData() || hasProfileName() || useLastProfile(); }
+	public boolean hasProfileData() { return profileData != null; }
+	public boolean hasProfileName() { return profileName != null; }
+	public boolean useLastProfile() { return lastProfile; }
 	
 	/** constructor for non-cleanup actions (SHOW_HELP, SHOW_VERSION) */
 	private CommandLineArgs(CommandLineAction action) {
@@ -669,11 +704,13 @@ public class CommandLineArgs {
 		this.sourcePaths = null;
 
 		this.profileData = null;
+		this.profileName = null;
+		this.lastProfile = false;
 		this.abapRelease = null;
+		this.workspaceDir = null;
 
 		this.interactive = false;
 		this.title = null;
-		this.workspaceDir = null;
 		this.readOnly = false;
 		this.darkTheme = false;
 		
@@ -692,8 +729,8 @@ public class CommandLineArgs {
 	private CommandLineArgs(
 			String errors, 
 			String sourceName, String sourceCode, CleanupRange cleanupRange, CleanupRangeExpandMode cleanupRangeExpandMode, 
-			String profileData, String abapRelease, 
-			boolean interactive, String title, String workspaceDir, boolean readOnly, boolean darkTheme,
+			String profileData, String profileName, boolean lastProfile, String abapRelease, String workspaceDir, 
+			boolean interactive, String title, boolean readOnly, boolean darkTheme,
 			boolean simulate, String targetPath, boolean partialResult, boolean overwrite, String lineSeparator, 
 			boolean showStats, boolean showUsedRules) {
 
@@ -709,11 +746,13 @@ public class CommandLineArgs {
 		this.sourcePaths = null;
 
 		this.profileData = profileData;
+		this.profileName = profileName;
+		this.lastProfile = lastProfile;
 		this.abapRelease = abapRelease;
+		this.workspaceDir = workspaceDir;
 
 		this.interactive = interactive;
 		this.title = title;
-		this.workspaceDir = workspaceDir;
 		this.readOnly = readOnly;
 		this.darkTheme = darkTheme;
 		
@@ -732,7 +771,7 @@ public class CommandLineArgs {
 	private CommandLineArgs(
 			String errors,
 			String sourceDir, String[] sourcePaths,
-			String profileData, String abapRelease, 
+			String profileData, String profileName, boolean lastProfile, String abapRelease, String workspaceDir,
 			boolean simulate, String targetDir, boolean overwrite, String lineSeparator, 
 			boolean showStats, boolean showUsedRules) {
 
@@ -748,11 +787,13 @@ public class CommandLineArgs {
 		this.sourcePaths = sourcePaths;
 
 		this.profileData = profileData;
+		this.profileName = profileName;
+		this.lastProfile = lastProfile;
 		this.abapRelease = abapRelease;
+		this.workspaceDir = null;
 
 		this.interactive = false;
 		this.title = null;
-		this.workspaceDir = null;
 		this.readOnly = false;
 		this.darkTheme = false;
 		

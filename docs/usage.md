@@ -107,37 +107,37 @@ Shop help or version information:
     .\abap-cleanerc.exe --version
 
 
-Cleanup of single file:
-    .\abap-cleanerc.exe {--sourcefile sourcefile / --source sourcecode } [--linerange linerange [--scope scopename] ]
-                        [{ --profile profile / --profiledata profiledata }] [--release release]
-                        [--targetfile targetfile [--overwrite]] [--partialresult] [--crlf]
+Cleanup of single source:
+    .\abap-cleanerc.exe {--sourcefile <path> | --source <code>} [--linerange <numrange> [--scope <scopename>] ]
+                        [{ --profile <path> | --profiledata <json> | --profilename <name> | --last-profile }] [--release <num>] [--workspace <dir>]
+                        [--targetfile <path> [--overwrite]] [--partialresult] [--crlf]
                         [--stats] [--usedrules]
 
-- Example for cleanup of single file:
-    .\abap-cleanerc.exe --sourcefile "CL_ANY_CLASS.txt" --linerange "20-35" --scope method --profile "team profile.cfj" --release "757" --targetfile "result\CL_ANY_CLASS.txt" --overwrite --stats --usedrules
+- Example for cleanup of single source:
+    .\abap-cleanerc.exe --sourcefile "CL_ANY_CLASS.txt" --linerange "20-35" --scope method --profilename "team A: profile" --release "757" --targetfile "result\CL_ANY_CLASS.txt" --overwrite --stats --usedrules
 
 
-Interactive cleanup (single source only; profile and user scope selected on the UI):
-    .\abap-cleanerc.exe {--sourcefile sourcefile / --source sourcecode } [--linerange linerange [--scope {statement / user}] ]
-                        [--release release]
-                        --ui [--title title] [--workspace workspace_dir] [--readonly] [--darktheme]
-                        [--targetfile targetfile [--overwrite]] [--partialresult] [--crlf]
+Interactive cleanup (single source only; profile and user scope only selected on the UI):
+    .\abap-cleanerc.exe {--sourcefile <path> | --source <code>} [--linerange <numrange> [--scope {statement | user}] ]
+                        [--release <num>] [--workspace <dir>]
+                        --ui [--title <text>] [--readonly] [--darktheme]
+                        [--targetfile <path> [--overwrite]] [--partialresult] [--crlf]
 
 - Example for interactive cleanup of single file:
     .\abap-cleanerc.exe --sourcefile "CL_ANY_CLASS.txt" --release "757" --ui --title "CL_ANY_CLASS" --workspace "test_ws" --readonly
 
 
 Cleanup of multiple files:
-    .\abap-cleanerc.exe --sourcedir sourcedir [--filepattern filepattern] [--recursive]
-                        [{ --profile profile / --profiledata profiledata }] [--release release]
-                        [--targetdir targetdir [--overwrite]] [--crlf]
+    .\abap-cleanerc.exe --sourcedir <path> [--filepattern <pattern>] [--recursive]
+                        [{ --profile <path> | --profiledata <json> | --profilename <name> | --last-profile }] [--release <num>] [--workspace <dir>]
+                        [--targetdir <path> [--overwrite]] [--crlf]
                         [--stats] [--usedrules]
 
 - Example for cleanup of multiple files:
-    .\abap-cleanerc.exe --sourcedir "C:\temp\source" --filepattern "*.txt" --recursive --profile "team profile.cfj" --release "757" --targetdir "C:\temp\target" --overwrite
+    .\abap-cleanerc.exe --sourcedir "C:\temp\source" --filepattern "*.txt" --recursive --profile "C:\temp\profile.cfj" --release "757" --targetdir "C:\temp\target" --overwrite
 
 
-Options for cleanup: 
+Options for cleanup:
     --sourcefile        File name of an ABAP source file which is input to the cleanup.
     --source            ABAP source code which is input to the cleanup.
                         Please use either --sourcefile or --source or --sourcedir.
@@ -151,18 +151,23 @@ Options for cleanup:
     --filepattern       File pattern to look for (only relevant when --sourcedir has been supplied)
     --recursive         Searches provided source directory recursively for ABAP files
 
-    --profile           File name of the cleanup profile to be used (extension .cfj).
-                        From the UI, you may use button 'Export...' from the profiles editor to create the file.
-    --profiledata       Content of the cleanup profile to be used.
-                        Please use either --profile or --profiledata (or none for program defaults).
-    --release           ABAP release to restrict syntax of cleanup changes, e.g. "758"
+    --profile           File name of the cleanup profile to be used (extension .cfj). From the UI,
+                        you may use button 'Export...' from the profiles editor to create the file.
+    --profiledata       JSON-like content of the cleanup profile to be used.
+    --profilename       Name of the cleanup profile to be used, as displayed on the UI.
+                        This includes synchronized team profiles such as 'team A: profile'.
+    --last-profile      Use the cleanup profile that was last selected on the UI on this machine.
+                        Please provide only one profile option (or none for program defaults).
+
+    --release           ABAP release to restrict syntax of cleanup changes, e.g. "758".
                         Without this option, the latest ABAP syntax will be allowed.
+    --workspace         The workspace directory or ID, used to retrieve workspace-specific settings
+                        for the last cleanup profile to be used (--last-profile), for expanding the
+                        line range (--scope user) and additional release restrictions (from the UI).
 
     --ui                Open the UI for interactive cleanup and profile configuration
                         (only possible for single source input).
     --title             The source code title to be displayed on the UI.
-    --workspace         The workspace directory or ID, used to store workspace-specific settings
-                        for cleanup profile, cleanup range, release restriction.
     --readonly          Show a read-only preview of the changes without allowing to apply them.
     --darktheme         Show the code with dark theme colors.
 

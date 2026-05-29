@@ -117,7 +117,7 @@ public abstract class AbapCleanerHandlerBase extends AbstractAdtEditorHandler {
 				CodeDisplayColors codeDisplayColorsClassic = createCodeDisplayColors(ColorProfile.CLASSIC); 
 				result = FrmMain.cleanInteractively(sourcePageTitle, oldSource, abapRelease, cleanupRange, workspaceDir, true, codeDisplayColorsADT, codeDisplayColorsClassic, readOnly, ABAP.LINE_SEPARATOR);
 			} else {
-				result = FrmMain.cleanAutomatically(sourcePageTitle, oldSource, abapRelease, cleanupRange, cleanupRangeExpandMode, workspaceDir, null, false, ABAP.LINE_SEPARATOR);
+				result = FrmMain.cleanAutomatically(sourcePageTitle, oldSource, abapRelease, cleanupRange, cleanupRangeExpandMode, workspaceDir, null, null, false, ABAP.LINE_SEPARATOR);
 			}
 
 			if (result == null) 
