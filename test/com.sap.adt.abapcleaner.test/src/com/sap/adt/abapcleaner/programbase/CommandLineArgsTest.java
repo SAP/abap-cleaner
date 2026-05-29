@@ -12,6 +12,7 @@ public class CommandLineArgsTest {
 	
 	private final String anySourceCode = "CLASS any_class IMPLEMENTATION." + System.lineSeparator() + "ENDCLASS.";
 	private final String anyProfileData = "{}";
+	private final String anyProfileName = "dummy_profile";
 	
 	private void assertErrorsContain(CommandLineArgs args, String text) {
 		assertTrue(args.hasErrors());
@@ -71,7 +72,13 @@ public class CommandLineArgsTest {
 		assertNull(args.sourceName);
 		assertEquals(anySourceCode, args.sourceCode);
 		assertNull(args.cleanupRange);
+		
+		assertFalse(args.hasAnyProfileOption());
+		assertFalse(args.hasProfileData());
+		assertFalse(args.hasProfileName());
+		assertFalse(args.useLastProfile());
 		assertNull(args.profileData);
+		assertNull(args.profileName);
 		assertNull(args.abapRelease);
 
 		assertEquals(ABAP.LINE_SEP_FOR_COMMAND_LINE, args.lineSeparator);
@@ -117,7 +124,12 @@ public class CommandLineArgsTest {
 		assertTrue(args.cleanupRange.expandRange);
 		assertEquals(CleanupRangeExpandMode.FULL_METHOD, args.cleanupRangeExpandMode);
 		
+		assertTrue(args.hasAnyProfileOption());
+		assertTrue(args.hasProfileData());
+		assertFalse(args.hasProfileName());
+		assertFalse(args.useLastProfile());
 		assertEquals(anyProfileData, args.profileData);
+		assertNull(args.profileName);
 		assertEquals("757", args.abapRelease);
 		
 		assertFalse(args.simulate);
@@ -147,9 +159,9 @@ public class CommandLineArgsTest {
 				"--linerange", "20-35", 
 				"--scope", "user",
 				"--release", "757", 
+				"--workspace", "any_workspace_dir",
 				"--ui",
 				"--title", "any_title",
-				"--workspace", "any_workspace_dir",
 				"--darktheme",
 				"--targetfile", targetPath, 
 				"--overwrite"} );
@@ -164,7 +176,14 @@ public class CommandLineArgsTest {
 		assertTrue(args.cleanupRange.expandRange);
 		assertNull(args.cleanupRangeExpandMode); // null means that the user settings from the UI will be used
 		assertEquals("757", args.abapRelease);
-
+		
+		assertFalse(args.hasAnyProfileOption());
+		assertFalse(args.hasProfileData());
+		assertFalse(args.hasProfileName());
+		assertFalse(args.useLastProfile());
+		assertNull(args.profileData);
+		assertNull(args.profileName);
+		
 		assertTrue(args.interactive);
 		assertEquals("any_title", args.title);
 		assertEquals("any_workspace_dir", args.workspaceDir);
@@ -192,10 +211,16 @@ public class CommandLineArgsTest {
 		CommandLineArgs args = CommandLineArgs.create(persistency, new String[] {
 				"--sourcedir", "src",
 				"--recursive",
+				"--last-profile",
 				"--overwrite"} );
 
 		assertEquals(CommandLineAction.CLEANUP, args.action);
 		assertEquals(1, args.sourcePaths.length);
+		
+		assertTrue(args.hasAnyProfileOption());
+		assertFalse(args.hasProfileData());
+		assertFalse(args.hasProfileName());
+		assertTrue(args.useLastProfile());
 
 		assertFalse(args.simulate);
 		assertTrue(args.overwrite);
@@ -207,11 +232,18 @@ public class CommandLineArgsTest {
 		
 		CommandLineArgs args = CommandLineArgs.create(persistency, new String[] {
 				"--sourcedir", "src",
+				"--profilename", anyProfileName,
 				"--simulate", "--usedrules"} );
 
 		assertEquals(CommandLineAction.CLEANUP, args.action);
 		assertEquals(1, args.sourcePaths.length);
-
+		
+		assertTrue(args.hasAnyProfileOption());
+		assertFalse(args.hasProfileData());
+		assertTrue(args.hasProfileName());
+		assertFalse(args.useLastProfile());
+		assertEquals(anyProfileName, args.profileName);
+		
 		assertTrue(args.simulate);
 		assertFalse(args.writesResultCodeToOutput());
 	
@@ -489,7 +521,7 @@ public class CommandLineArgsTest {
 	}
 	
 	@Test
-	void testCreateErrorWithTwoProfiles() {
+	void testCreateErrorWithProfilePathAndData() {
 		String sourcePath = persistency.getTempPath("any_source.txt");
 		String profilePath = persistency.getTempPath("any_profile.cfj");
 		persistency.prepareFile(sourcePath, anySourceCode);
@@ -500,7 +532,35 @@ public class CommandLineArgsTest {
 				"--profile", profilePath, 
 				"--profiledata", anyProfileData } );
 
-		assertErrorsContain(args, "Profile supplied twice");
+		assertErrorsContain(args, "Multiple profile arguments supplied");
+	}
+	
+	@Test
+	void testCreateErrorWithProfileDataAndName() {
+		String sourcePath = persistency.getTempPath("any_source.txt");
+		persistency.prepareFile(sourcePath, anySourceCode);
+
+		CommandLineArgs args = CommandLineArgs.create(persistency, new String[] {  
+				"--source", anySourceCode,
+				"--profiledata", anyProfileData,
+				"--profilename", anyProfileName } );
+
+		assertErrorsContain(args, "Multiple profile arguments supplied");
+	}
+	
+	@Test
+	void testCreateErrorWithProfilePathAndLastProfile() {
+		String sourcePath = persistency.getTempPath("any_source.txt");
+		String profilePath = persistency.getTempPath("any_profile.cfj");
+		persistency.prepareFile(sourcePath, anySourceCode);
+		persistency.prepareFile(profilePath, anyProfileData);
+
+		CommandLineArgs args = CommandLineArgs.create(persistency, new String[] {  
+				"--source", anySourceCode,
+				"--profile", profilePath,
+				"--last-profile" } );
+
+		assertErrorsContain(args, "Multiple profile arguments supplied");
 	}
 	
 	@Test

@@ -183,18 +183,20 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 	}
 
 	public static void cleanAutomatically(CommandLineArgs commandLineArgs, PrintStream out, PrintStream err) throws CommandLineException {
-		// create or read a profile
 		Profile profile = null;
-		if (StringUtil.isNullOrEmpty(commandLineArgs.profileData)) {
+		if (!commandLineArgs.hasAnyProfileOption()) {
+			// if no profile option was specified, use the program defaults (NOT the profile named 'default', which might be changed)
 			profile = Profile.createDefault();
-		} else {
+
+		} else if (commandLineArgs.profileData != null) {
+			// if a profile path was supplied (and its contents read), or profile data was supplied directly use this data
 			try (ISettingsReader reader = TextSettingsReader.createFromString(commandLineArgs.profileData, Program.TECHNICAL_VERSION)) {
 				profile = Profile.createFromSettings(reader, "");
 			} catch (IOException ex) {
 				out.println(ex.getMessage());
 				return;
 			}
-		}
+		} // otherwise, leave profile null for now, as commandLineArgs.profileName (or otherwise, the last profile) will be used
 
 		if (commandLineArgs.isInSingleSourceMode()) {
 			cleanSingleSourceAutomatically(commandLineArgs, out, err, profile);
@@ -213,7 +215,9 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 					: persistency.getFileNameWithoutExtension(sourcePath);
 			String sourceCode = persistency.readAllTextFromFile(sourcePath);
 
-			CleanupResult result = cleanAutomatically(sourceName, sourceCode, commandLineArgs.abapRelease, commandLineArgs.cleanupRange, commandLineArgs.cleanupRangeExpandMode, null, profile, commandLineArgs.showStatsOrUsedRules(), commandLineArgs.lineSeparator);
+			CleanupResult result = cleanAutomatically(sourceName, sourceCode, commandLineArgs.abapRelease, 
+												commandLineArgs.cleanupRange, commandLineArgs.cleanupRangeExpandMode, commandLineArgs.workspaceDir, 
+												profile, commandLineArgs.profileName, commandLineArgs.showStatsOrUsedRules(), commandLineArgs.lineSeparator);
 			if (result == null) {
 				err.println("Cleanup for file " + sourcePath + " cancelled.");
 				continue;
@@ -229,8 +233,9 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 	}
 
 	private static void cleanSingleSourceAutomatically(CommandLineArgs commandLineArgs, PrintStream out, PrintStream err, Profile profile) {
-		CleanupResult result = cleanAutomatically(commandLineArgs.sourceName, commandLineArgs.sourceCode, commandLineArgs.abapRelease, commandLineArgs.cleanupRange, 
-				commandLineArgs.cleanupRangeExpandMode, null, profile, commandLineArgs.showStatsOrUsedRules(), commandLineArgs.lineSeparator);
+		CleanupResult result = cleanAutomatically(commandLineArgs.sourceName, commandLineArgs.sourceCode, commandLineArgs.abapRelease, 
+											commandLineArgs.cleanupRange, commandLineArgs.cleanupRangeExpandMode, commandLineArgs.workspaceDir, 
+											profile, commandLineArgs.profileName, commandLineArgs.showStatsOrUsedRules(), commandLineArgs.lineSeparator);
 		
 		writeCleanUpResult(commandLineArgs, out, err, result, null, commandLineArgs.targetPath);
 	}
@@ -320,25 +325,34 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		}
 	}
 
-	public static CleanupResult cleanAutomatically(String sourceName, String sourceCode, String abapRelease, CleanupRange cleanupRange, CleanupRangeExpandMode cleanupRangeExpandMode, String workspaceDir, Profile profile, boolean provideRuleStats, String lineSeparator) {
+	/** Either uses the supplied profile instance, or (if null) the profile with the supplied profileName, 
+	 * or (if null or not available) the profile that was last selected on the UI, 
+	 * or (if not available) returns with an error, but changes 'last profile' settings to work when called the next time */
+	public static CleanupResult cleanAutomatically(String sourceName, String sourceCode, String abapRelease, 
+				CleanupRange cleanupRange, CleanupRangeExpandMode cleanupRangeExpandMode, String workspaceDir,
+				Profile profile, String profileName, boolean provideRuleStats, String lineSeparator) {
+
 		initialize();
 
 		MainSettings settings = new MainSettings(workspaceDir);
 		settings.initialize(workspaceDir);
 		settings.load();
 
-		if (profile == null) {
+		if (profile == null) { // use profileName or otherwise lastProfile
+			boolean useLastProfile = (profileName == null);
 			StringBuilder errorMessages = new StringBuilder();
-			profile = getMostRecentlyUsedProfile(settings, errorMessages);
-			// if the profile was not found, notify the caller that a fallback profile will be used for the next attempt;
+			String findProfileName = useLastProfile ? settings.getLastProfileName() : profileName; 	
+			profile = getProfileByName(settings, errorMessages, findProfileName);
+			// if the 'last profile' was requested but not found, notify the caller that a fallback profile will be used for the next attempt;
 			// if no profile exists at all, this fallback will be Profile.DEFAULT_NAME, with which the message will not come up again
-			String lastProfileName = settings.getLastProfileName();
-			if (!StringUtil.isNullOrEmpty(lastProfileName) && !lastProfileName.equals(profile.name)) {
-				String oldProfileName = lastProfileName;
+			if (!StringUtil.isNullOrEmpty(findProfileName) && !findProfileName.equals(profile.name)) {
 				String fallbackProfileName = profile.name;
 				settings.setLastProfileName(fallbackProfileName);
 				settings.save();
-				String warning = "Cleanup cancelled: Profile '" + oldProfileName + "' was not found anymore. For the next attempt, profile '" + fallbackProfileName + "' will be used.";
+				String warning = "Cleanup cancelled: Profile '" + findProfileName + "' was not found anymore.";
+				if (useLastProfile) {
+					warning += " For the next attempt, profile '" + fallbackProfileName + "' will be used.";
+				}
 				if (errorMessages.length() > 0) {
 					warning += System.lineSeparator() + System.lineSeparator() + errorMessages.toString();
 				}
@@ -399,13 +413,12 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		}
 	}
 
-	/** returns the profile that was last used, or a fallback profile from the available profiles, or a newly created default profile */
-	private static Profile getMostRecentlyUsedProfile(MainSettings settings, StringBuilder errorMessages) {
-		// find the profile that was last used according to the settings
+	/** returns the profile with the supplied name, or a fallback profile from the available profiles, or a newly created default profile */
+	private static Profile getProfileByName(MainSettings settings, StringBuilder errorMessages, String findProfileName) {
+		// find the profile with the supplied name - e.g., the profile returned by settings.getLastProfileName()
 		ArrayList<Profile> profiles = Profile.loadProfiles(settings.profilesDirectory, settings.readOnlyProfileDirs, errorMessages);
-		String lastProfileName = settings.getLastProfileName();
 		for (Profile profile : profiles) {
-			if (profile.toString().equals(lastProfileName)) {
+			if (profile.toString().equals(findProfileName)) {
 				return profile;
 			}
 		}
