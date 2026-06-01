@@ -6,6 +6,13 @@ as well as bugfixes of reported issues, i.e. anything that enhances or changes t
 For a complete list of changes (including documentation, tests, refactoring etc.), please refer to 
 the list of [commits](../../../commits/main).
 
+## 2026-06-01 (version 1.26.0)
+
+**Thank you** very much [**VladGhitulescu**](https://github.com/VladGhitulescu) for the bug report!
+
+* Enhanced **CLI** with parameters **--profilename** and **--last-profile** to access profiles from the UI
+* Fixed rule '**Rearrange local declarations**' for **TYPES** with **structure and table** ([#516](../../../issues/516))
+
 ## 2026-05-26 (version 1.25.0)
 
 Many **thanks** to [**REDDERD**](https://github.com/REDDERD) and [**xpatate2**](https://github.com/xpatate2) for the ideas and bug reports behind these improvements!
