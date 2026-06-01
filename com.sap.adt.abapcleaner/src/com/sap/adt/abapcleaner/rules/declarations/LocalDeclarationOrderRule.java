@@ -529,6 +529,17 @@ public class LocalDeclarationOrderRule extends RuleForDeclarations {
 					}
 					commandBefore = commandBefore.getPrev();
 				}
+				// also include the declarations inside the section itself, in case there is a valid reference within the section
+				// (e.g. TYPES: BEGIN OF ty_ts_struc, ..., END OF ty_ts_struc, lt_tt TYPE STANDARD TABLE OF ty_ts_struc.)
+				Command commandInSection = section.firstCommand;
+				while (commandInSection != null) {
+					if (commandInSection.isDeclaration()) {
+						declarationsBefore.add(commandInSection);
+					}
+					if (commandInSection == section.lastCommand)
+						break;
+					commandInSection = commandInSection.getNext();
+				}
 			}
 			if (!declarationsBefore.contains(testLocal.getTypeSource().declarationToken.getParentCommand())) {
 				return false;

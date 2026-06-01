@@ -455,10 +455,11 @@ public abstract class RuleForDeclarations extends Rule {
 		// if the declaration uses "LIKE ...", count that as a usage of that variable or constant; 
 		// same for obsolete "RANGES ... FOR ..."
 		Token next = token.getNextCodeSibling();
+		boolean isTypeClause = (next != null && next.isKeyword("TYPE")); // might refer to another TYPES declaration, e.g. the structure of a table type
 		boolean isLikeClause = (next != null && next.isKeyword("LIKE")); 
 		boolean isRangesForClause = token.getParentCommand().firstCodeTokenIsKeyword("RANGES") && next != null && next.isKeyword("FOR");
 		boolean isTableDef = (next != null && next.matchesOnSiblings(true, "TYPE", TokenSearch.makeOptional("STANDARD|SORTED|HASHED"), "TABLE", "OF"));
-		if ((isLikeClause || isRangesForClause || isTableDef) && next.getNextCodeSibling() != null) {
+		if ((isTypeClause || isLikeClause || isRangesForClause || isTableDef) && next.getNextCodeSibling() != null) {
 			token = next.getNextCodeSibling();
 			// for LIKE ..., skip any keywords before the identifier of the data object, e.g. LINE OF, RANGE OF, REF TO, 
 			// { STANDARD | SORTED | HASHED } TABLE OF 

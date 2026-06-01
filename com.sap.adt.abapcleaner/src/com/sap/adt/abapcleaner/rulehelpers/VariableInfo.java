@@ -223,6 +223,13 @@ public class VariableInfo {
    	Token token = varInfo.declarationToken; 
    	if (token == null) // pro forma
    		return TriState.UNKNOWN;
+
+   	// check for 'BEGIN OF' declaration, which is a structured type 
+   	Token prevCode = token.getPrevCodeSibling();
+   	Token prevPrevCode = (prevCode == null) ? null : prevCode.getPrevCodeSibling();
+   	if (prevPrevCode != null && prevPrevCode.isKeyword("BEGIN") && prevCode.isKeyword("OF")) {
+   		return TriState.FALSE; // e.g. 'DATA: BEGIN OF ls_struct
+		}
    	
    	// move to the 'TYPE' or 'LIKE' keyword in 'lv_var TYPE ...' or 'VALUE(rv_var) TYPE ...'
    	token = token.getNext().textEquals(")") ? token.getNext().getNextCodeSibling() : token.getNextCodeSibling();

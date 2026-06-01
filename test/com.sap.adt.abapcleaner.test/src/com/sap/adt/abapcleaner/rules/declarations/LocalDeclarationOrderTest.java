@@ -1732,4 +1732,42 @@ public class LocalDeclarationOrderTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testTypesStrucAndTable() {
+		buildSrc("    TYPES: BEGIN OF ty_s_any,");
+		buildSrc("             comp TYPE i,");
+		buildSrc("           END OF ty_s_any.");
+		buildSrc("    TYPES ty_tt_any TYPE STANDARD TABLE OF ty_s_any WITH DEFAULT KEY.");
+		buildSrc("");
+		buildSrc("    DATA lt_any TYPE ty_tt_any.");
+		buildSrc("");
+		buildSrc("    RETURN lines( lt_any ).");
+
+		copyExpFromSrc();
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testTypesStrucAndTableUsingData() {
+		buildSrc("    DATA lv_any TYPE i.");
+		buildSrc("");
+		buildSrc("    TYPES: BEGIN OF ty_s_any,");
+		buildSrc("             comp LIKE lv_any,");
+		buildSrc("           END OF ty_s_any.");
+		buildSrc("    TYPES ty_tt_any TYPE STANDARD TABLE OF ty_s_any WITH DEFAULT KEY.");
+		buildSrc("");
+		buildSrc("    DATA lt_any TYPE ty_tt_any.");
+		buildSrc("");
+		buildSrc("    RETURN lines( lt_any ).");
+
+		copyExpFromSrc();
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }
