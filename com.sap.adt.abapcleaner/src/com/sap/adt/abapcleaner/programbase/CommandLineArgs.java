@@ -442,7 +442,7 @@ public class CommandLineArgs {
 		String usagePrefix = "    " + EXECUTABLE_NAME;
 		String spacePrefix = StringUtil.repeatChar(' ', usagePrefix.length());
 
-		sb.append("Shop help or version information:");
+		sb.append("Show help or version information:");
 		sb.append(LINE_SEP);
 		sb.append(usagePrefix);
 		sb.append(" " + OPT_HELP_WINDOWS);

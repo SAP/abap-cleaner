@@ -101,7 +101,7 @@ To integrate ABAP cleaner in other processes, you may call the "abap-cleaner**c*
 from the command line with the following arguments for cleaning either a single file or multiple files in a directory:
 
 ```
-Shop help or version information:
+Show help or version information:
     .\abap-cleanerc.exe /?
     .\abap-cleanerc.exe /man
     .\abap-cleanerc.exe --version
