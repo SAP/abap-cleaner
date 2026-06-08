@@ -6,6 +6,10 @@ as well as bugfixes of reported issues, i.e. anything that enhances or changes t
 For a complete list of changes (including documentation, tests, refactoring etc.), please refer to 
 the list of [commits](../../../commits/main).
 
+## 2026-06-08 (version 1.27.0)
+
+* Enhanced **CLI** with parameter **--daemonize** to make the program run as a **background process**
+
 ## 2026-06-01 (version 1.26.0)
 
 **Thank you** very much [**VladGhitulescu**](https://github.com/VladGhitulescu) for the bug report!
