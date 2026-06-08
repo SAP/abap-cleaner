@@ -56,12 +56,23 @@ public class CommandLineArgs {
 	private static final String OPT_STATS = "--stats";
 	private static final String OPT_USED_RULES = "--usedrules";
 
+	// options for starting and using a daemon (cp. DaemonManager)
+	private static final String OPT_DAEMONIZE = "--daemonize";
+	private static final String OPT_IDLE_TIMEOUT = "--idle-timeout";
+	public static final String OPT_DAEMON_PING = "--ping";
+	public static final String OPT_DAEMON_STATUS = "--status";
+   public static final String OPT_DAEMON_REQUEST_ID = "--request-id";
+	public static final String OPT_DAEMON_KEEPALIVE = "--keep-alive";
+	public static final String OPT_DAEMON_STOP = "--stop";
+	public static final String DAEMON_RESPONSE_END_MARKER = "<<<END>>>";
+
 	private static final String[] allOptions = new String[] { 
 			OPT_SOURCE_FILE, OPT_SOURCE_CODE, OPT_LINE_RANGE, OPT_EXPAND_MODE, OPT_SOURCE_DIR, OPT_FILE_FILTER, OPT_RECURSIVE, 
 			OPT_PROFILE, OPT_PROFILE_DATA, OPT_PROFILE_NAME, OPT_LAST_PROFILE, OPT_RELEASE, OPT_WORKSPACE, 
 			OPT_INTERACTIVE, OPT_TITLE, OPT_READ_ONLY, OPT_DARK_THEME,
 			OPT_TARGET_FILE, OPT_PARTIAL_RESULT, OPT_TARGET_DIR, OPT_OVERWRITE, OPT_CRLF, 
-			OPT_STATS, OPT_USED_RULES };
+			OPT_STATS, OPT_USED_RULES, 
+			OPT_DAEMONIZE, OPT_IDLE_TIMEOUT, OPT_DAEMON_PING, OPT_DAEMON_STATUS, OPT_DAEMON_REQUEST_ID, OPT_DAEMON_KEEPALIVE, OPT_DAEMON_STOP };
 
 	private static final String EXECUTABLE_NAME = ".\\abap-cleanerc.exe"; 
 	private static final char LINE_RANGE_SEP = '-';
@@ -77,12 +88,18 @@ public class CommandLineArgs {
 			OPT_SOURCE_FILE, OPT_SOURCE_CODE, OPT_LINE_RANGE, OPT_EXPAND_MODE, OPT_SOURCE_DIR, OPT_FILE_FILTER,
 			OPT_PROFILE, OPT_PROFILE_DATA, OPT_PROFILE_NAME, OPT_RELEASE, OPT_WORKSPACE,
 			OPT_TITLE,
-			OPT_TARGET_FILE, OPT_TARGET_DIR };
+			OPT_TARGET_FILE, OPT_TARGET_DIR, 
+			OPT_IDLE_TIMEOUT, OPT_DAEMON_REQUEST_ID };
 
 	public static String[] getAllOptions() { return allOptions; }
 	
 	@SuppressWarnings("unused")
 	public static CommandLineArgs create(Persistency persistency, String[] args) {
+		return create(persistency, args, false);
+	}
+
+	@SuppressWarnings("unused")
+	public static CommandLineArgs create(Persistency persistency, String[] args, boolean fromDaemon) {
 		final String LINE_SEP = System.lineSeparator();
 
 		if (args == null || args.length == 0)
@@ -90,12 +107,24 @@ public class CommandLineArgs {
 
 		StringBuilder errors = new StringBuilder();
 
-		// check whether help or version info is requested
+		// check whether help, version info or daemonization is requested
+		// (further deamon-specific commands are checked and handled in DaemonManager)
 		if (args.length == 1 && (args[0].equals(OPT_HELP_WINDOWS) || args[0].equals(OPT_HELP_LINUX))) {
-			return new CommandLineArgs(CommandLineAction.SHOW_HELP);
+			return new CommandLineArgs(CommandLineAction.SHOW_HELP, 0, errors.toString(), fromDaemon);
 
 		} else if (args.length == 1 && args[0].equals(OPT_VERSION)) {
-			return new CommandLineArgs(CommandLineAction.SHOW_VERSION);
+			return new CommandLineArgs(CommandLineAction.SHOW_VERSION, 0, errors.toString(), fromDaemon);
+			
+		} else if ((args.length == 1 || args.length == 3) && args[0].equals(OPT_DAEMONIZE)) {
+			int idleTimeout_s = 0;
+			if (args.length == 3) {
+				if (args[1].equals(OPT_IDLE_TIMEOUT)) {
+					idleTimeout_s = Integer.parseInt(args[2]);
+				} else {
+					errors.append("Unexpected option: " + args[1] + ", expected " + OPT_IDLE_TIMEOUT).append(LINE_SEP);
+				}
+			}
+			return new CommandLineArgs(CommandLineAction.DAEMONIZE, idleTimeout_s, errors.toString(), fromDaemon);
 		}
 
 		// in all other cases, cleanup is requested:
@@ -422,13 +451,13 @@ public class CommandLineArgs {
 		
 		if (sourceCode != null) {
 			// single file (including for interactive cleanup; restrictions for combinations of parameters were checked above)
-			return new CommandLineArgs(errors.toString(), sourceName, sourceCode, cleanupRange, expandMode, 
+			return new CommandLineArgs(errors.toString(), fromDaemon, sourceName, sourceCode, cleanupRange, expandMode, 
 												profileData, profileName, lastProfile, abapRelease, workspaceDir, 
 												interactive, title, readOnly, darkTheme,
 												simulate, targetPath, partialResult, overwrite, lineSeparator, showStats, showUsedRules);
 		} else {
 			// multiple files
-			return new CommandLineArgs(errors.toString(), sourceDir, sourcePaths, 
+			return new CommandLineArgs(errors.toString(), fromDaemon, sourceDir, sourcePaths, 
 												profileData, profileName, lastProfile, abapRelease, workspaceDir, 
 												simulate, targetDir, overwrite, lineSeparator, showStats, showUsedRules);
 		}
@@ -440,6 +469,7 @@ public class CommandLineArgs {
 		StringBuilder sb = new StringBuilder();
 
 		String usagePrefix = "    " + EXECUTABLE_NAME;
+		String socketWritePrefix = "    socket.write:";
 		String spacePrefix = StringUtil.repeatChar(' ', usagePrefix.length());
 
 		sb.append("Show help or version information:");
@@ -615,6 +645,83 @@ public class CommandLineArgs {
 		sb.append(LINE_SEP);
 		sb.append(getOptionHelp(OPT_STATS, "Write statistical summary to standard output."));
 		sb.append(getOptionHelp(OPT_USED_RULES, "Write list of used rules to standard output."));
+		sb.append(LINE_SEP + LINE_SEP);
+
+		sb.append("Starting and using a daemon:");
+		sb.append(LINE_SEP);
+		sb.append(usagePrefix);
+		sb.append(" " + OPT_DAEMONIZE);
+		sb.append(" [" + OPT_IDLE_TIMEOUT + " <seconds>]");
+		sb.append(LINE_SEP);
+		sb.append(socketWritePrefix);
+		sb.append(" " + OPT_DAEMON_PING);
+		sb.append(" [" + OPT_DAEMON_REQUEST_ID + " <id>]");
+		sb.append(LINE_SEP);
+		sb.append(socketWritePrefix);
+		sb.append(" " + OPT_DAEMON_STATUS);
+		sb.append(" [" + OPT_DAEMON_REQUEST_ID + " <id>]");
+		sb.append(LINE_SEP);
+		sb.append(socketWritePrefix);
+		sb.append(" " + OPT_SOURCE_FILE + " ...");
+		sb.append(" [" + OPT_DAEMON_REQUEST_ID + " <id>]");
+		sb.append(LINE_SEP);
+		sb.append(socketWritePrefix);
+		sb.append(" " + OPT_DAEMON_KEEPALIVE);
+		sb.append(" [" + OPT_DAEMON_REQUEST_ID + " <id>]");
+		sb.append(LINE_SEP);
+		sb.append(socketWritePrefix);
+		sb.append(" " + OPT_DAEMON_STOP);
+		sb.append(" [" + OPT_DAEMON_REQUEST_ID + " <id>]");
+		sb.append(LINE_SEP + LINE_SEP);
+
+		sb.append("- Example for starting and using a daemon:");
+		sb.append(LINE_SEP);
+		sb.append(usagePrefix);
+		sb.append(" " + OPT_DAEMONIZE);
+		sb.append(" " + OPT_IDLE_TIMEOUT + " 600");
+		sb.append(LINE_SEP);
+		sb.append(socketWritePrefix);
+		sb.append(" " + OPT_DAEMON_PING);
+		sb.append(" " + OPT_DAEMON_REQUEST_ID + " 1");
+		sb.append(LINE_SEP);
+		sb.append(socketWritePrefix);
+		sb.append(" " + OPT_DAEMON_STATUS);
+		sb.append(" " + OPT_DAEMON_REQUEST_ID + " 2");
+		sb.append(LINE_SEP);
+		sb.append(socketWritePrefix);
+		sb.append(" " + OPT_SOURCE_FILE + " \"CL_ANY_CLASS.txt\"");
+		sb.append(" " + OPT_TARGET_FILE + " \"result\\CL_ANY_CLASS.txt\"");
+		sb.append(" " + OPT_OVERWRITE);
+		sb.append(" " + OPT_DAEMON_REQUEST_ID + " 3");
+		sb.append(LINE_SEP);
+		sb.append(socketWritePrefix);
+		sb.append(" " + OPT_DAEMON_KEEPALIVE);
+		sb.append(" " + OPT_DAEMON_REQUEST_ID + " 4");
+		sb.append(LINE_SEP);
+		sb.append(socketWritePrefix);
+		sb.append(" " + OPT_DAEMON_STOP);
+		sb.append(" " + OPT_DAEMON_REQUEST_ID + " 5");
+		sb.append(LINE_SEP + LINE_SEP + LINE_SEP);
+
+		sb.append("Options for starting and using a daemon:");
+		sb.append(LINE_SEP);
+		sb.append(getOptionHelp(OPT_DAEMONIZE, "Makes the program run as a daemon process in the background. Returns"));
+		sb.append(getOptionHelp(null, "the localhost port number to which the daemon is listening for commands."));
+		sb.append(getOptionHelp(OPT_IDLE_TIMEOUT, "Specifies the idle timeout in seconds after which the daemon will"));
+		sb.append(getOptionHelp(null, "automatically stop if no command is received. Use 0 for no idle timeout."));
+		sb.append(LINE_SEP);
+		sb.append(getOptionHelp(OPT_DAEMON_PING, "Pings the daemon; returns 'pong' via the socket's output stream.*"));
+		sb.append(getOptionHelp(OPT_DAEMON_STATUS, "Returns the start time, idle time, and idle timeout of the daemon.*"));
+		sb.append(getOptionHelp(OPT_SOURCE_FILE, "All cleanup commands work as described above. Responses are written"));
+		sb.append(getOptionHelp(null, "to the client socket's output stream.*"));
+		sb.append(getOptionHelp(OPT_DAEMON_KEEPALIVE, "Resets the idle timer of the daemon; returns 'OK: ...'.*"));
+		sb.append(getOptionHelp(OPT_DAEMON_STOP, "Stops the daemon; returns 'OK: ...'.*"));
+		sb.append(LINE_SEP);
+		sb.append(getOptionHelp(OPT_DAEMON_REQUEST_ID, "A unique identifier that will be added at the end of the daemon's"));
+		sb.append(getOptionHelp(null, "response to allow the client to map the response to the command.*"));
+		sb.append(LINE_SEP);
+		sb.append("    * All responses end with an extra line that contains '" + DAEMON_RESPONSE_END_MARKER + "' and the request <id>" + LINE_SEP);
+		sb.append("      (if supplied), e.g. '"  + DAEMON_RESPONSE_END_MARKER + " 42'." + LINE_SEP);
 
 		return sb.toString();
 	}
@@ -634,7 +741,9 @@ public class CommandLineArgs {
 	// -------------------------------------------------------------------------
 
 	public final CommandLineAction action;
+	public final int daemonIdleTimeOut_s; // only relevant for DAEMONIZE action, otherwise 0
 	public final String errors;
+	public final boolean fromDaemon;
 
 	// - input (single file)
 	/** may be null if the code is supplied directly as a command line argument; otherwise, the file name without extension */
@@ -692,9 +801,12 @@ public class CommandLineArgs {
 	public boolean useLastProfile() { return lastProfile; }
 	
 	/** constructor for non-cleanup actions (SHOW_HELP, SHOW_VERSION) */
-	private CommandLineArgs(CommandLineAction action) {
+	private CommandLineArgs(CommandLineAction action, int timeOut_s, String errors, boolean fromDaemon) {
+
 		this.action = action;
-		this.errors = null;
+		this.daemonIdleTimeOut_s = timeOut_s;
+		this.errors = errors;
+		this.fromDaemon = fromDaemon;
 		
 		this.sourceName = null;
 		this.sourceCode = null;
@@ -727,7 +839,7 @@ public class CommandLineArgs {
 	
 	/** constructor for cleanup of a single file (or a line range within it), possibly opening the UI for interactive cleanup */
 	private CommandLineArgs(
-			String errors, 
+			String errors, boolean fromDaemon,
 			String sourceName, String sourceCode, CleanupRange cleanupRange, CleanupRangeExpandMode cleanupRangeExpandMode, 
 			String profileData, String profileName, boolean lastProfile, String abapRelease, String workspaceDir, 
 			boolean interactive, String title, boolean readOnly, boolean darkTheme,
@@ -735,7 +847,9 @@ public class CommandLineArgs {
 			boolean showStats, boolean showUsedRules) {
 
 		this.action = CommandLineAction.CLEANUP;
+		this.daemonIdleTimeOut_s = 0;
 		this.errors = errors;
+		this.fromDaemon = fromDaemon;
 		
 		this.sourceName = sourceName; 
 		this.sourceCode = sourceCode;
@@ -769,14 +883,16 @@ public class CommandLineArgs {
 
 	/** constructor for cleanup of a multiple files (always entirely and without UI) */
 	private CommandLineArgs(
-			String errors,
+			String errors, boolean fromDaemon,
 			String sourceDir, String[] sourcePaths,
 			String profileData, String profileName, boolean lastProfile, String abapRelease, String workspaceDir,
 			boolean simulate, String targetDir, boolean overwrite, String lineSeparator, 
 			boolean showStats, boolean showUsedRules) {
 
 		this.action = CommandLineAction.CLEANUP;
+		this.daemonIdleTimeOut_s = 0;
 		this.errors = errors;
+		this.fromDaemon = fromDaemon;
 
 		this.sourceName = null;
 		this.sourceCode = null;

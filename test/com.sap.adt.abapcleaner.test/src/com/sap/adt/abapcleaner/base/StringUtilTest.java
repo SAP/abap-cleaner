@@ -691,4 +691,24 @@ class StringUtilTest {
 		assertEquals(null, StringUtil.getLastCharAsString(""));
 		assertEquals(null, StringUtil.getLastCharAsString(null));
 	}
+
+	void testSplitArgs(String command, String... expResults) {
+		String[] actResults = StringUtil.splitArgs(command);
+		assertStringArrayEquals(expResults, actResults);
+	}
+
+	@Test
+	void testSplitArgsNull() {
+		assertNull(StringUtil.splitArgs(null));
+		assertEquals(0, StringUtil.splitArgs("").length);
+	}
+
+	@Test
+	void testSplitArgs() {
+		testSplitArgs("abc", "abc");
+		testSplitArgs("abc def", "abc", "def");
+		testSplitArgs("  abc   def  ", "abc", "def");
+		testSplitArgs("abc \"de f\" ghi", "abc", "de f", "ghi");
+		testSplitArgs("abc \"de \\\"f\\\"\" ghi", "abc", "de \"f\"", "ghi");	
+	}
 }
