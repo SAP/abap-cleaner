@@ -3,6 +3,7 @@ package com.sap.adt.abapcleaner.programbase;
 public enum CommandLineAction {
 	SHOW_HELP,
 	SHOW_VERSION,
+	DAEMONIZE,
 	CLEANUP;
 	
    public static final int SIZE = java.lang.Integer.SIZE;

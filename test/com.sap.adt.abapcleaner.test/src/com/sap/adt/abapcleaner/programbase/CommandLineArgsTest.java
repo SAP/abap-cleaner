@@ -740,4 +740,44 @@ public class CommandLineArgsTest {
 		assertErrorsContain(args, "File pattern must contain an asterisk");
 		assertErrorsContain(args, "--filepattern");
 	}
+
+	@Test
+	void testDaemonize() {
+		CommandLineArgs args = CommandLineArgs.create(persistency, new String[] {
+				"--daemonize"} );
+
+		assertEquals(CommandLineAction.DAEMONIZE, args.action);
+		assertEquals(0, args.daemonIdleTimeOut_s);
+
+		assertEquals("", args.errors);
+		assertFalse(args.hasErrors());
+		assertFalse(args.fromDaemon);
+		assertNull(args.sourceName);
+	}
+
+	@Test
+	void testDaemonizeWithIdleTimeout() {
+		CommandLineArgs args = CommandLineArgs.create(persistency, new String[] {
+				"--daemonize",
+				"--idle-timeout", "60"} );
+
+		assertEquals(CommandLineAction.DAEMONIZE, args.action);
+		assertEquals(60, args.daemonIdleTimeOut_s);
+
+		assertEquals("", args.errors);
+		assertFalse(args.hasErrors());
+		assertFalse(args.fromDaemon);
+		assertNull(args.sourceName);
+	}
+
+	@Test
+	void testDaemonizeWithInvalidOption() {
+		CommandLineArgs args = CommandLineArgs.create(persistency, new String[] {
+				"--daemonize",
+				"--idletimeout", "60"} );
+
+		assertTrue(args.hasErrors());
+		assertErrorsContain(args, "Unexpected option");
+		assertErrorsContain(args, "--idle-timeout");
+	}
 }

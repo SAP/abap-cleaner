@@ -129,12 +129,18 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 
 	private int suspendItemCheck;
 
+   private static final DaemonManager daemonManager = new DaemonManager();
+
 	/**
 	 * Launch the application.
 	 * 
 	 * @param args
 	 */
 	public static void main(String[] args) {
+		handleCLI(args, false, System.out, System.err);
+	}
+
+	public static void handleCLI(String[] args, boolean fromDaemon, PrintStream out, PrintStream err) {
 		try {
 			initialize();
 
@@ -142,7 +148,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 			Persistency persistency = Persistency.get();
 			if (args == null || args.length == 0)
 				args = Platform.getApplicationArgs();
-			CommandLineArgs commandLineArgs = CommandLineArgs.create(persistency, args);
+			CommandLineArgs commandLineArgs = CommandLineArgs.create(persistency, args, fromDaemon);
 
 			if (commandLineArgs == null) {
 				// start the interactive (stand-alone) UI
@@ -150,24 +156,35 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 
 			} else if (commandLineArgs.hasErrors()) {
 				// wrong or inconsistent command line args
-				System.err.println(commandLineArgs.errors);
-				System.err.println("");
-				System.err.flush();
-				System.out.print(CommandLineArgs.getHelp(persistency));
+				err.println(commandLineArgs.errors);
+				err.println("");
+				err.flush();
+				out.println(CommandLineArgs.getHelp(persistency));
 
 			} else if (commandLineArgs.action == CommandLineAction.SHOW_HELP) {
-				System.out.print(CommandLineArgs.getHelp(persistency));
+				out.println(CommandLineArgs.getHelp(persistency));
 
 			} else if (commandLineArgs.action == CommandLineAction.SHOW_VERSION) {
-				System.out.print(Program.PRODUCT_NAME + " " + Program.getVersion());
+				out.println(Program.PRODUCT_NAME + " " + Program.getVersion());
+
+			} else if (commandLineArgs.action == CommandLineAction.DAEMONIZE) {
+				if (fromDaemon) {
+					err.println("Error: Already running in daemon mode. Cannot start another daemon.");
+				} else {
+	            // start the daemon and keep the application alive while the daemon is running
+	            daemonManager.startDaemon(out, commandLineArgs.daemonIdleTimeOut_s);
+	            while (daemonManager.isRunning()) {
+	                Thread.sleep(1000);
+	            }
+				}
 
 			} else if (commandLineArgs.action == CommandLineAction.CLEANUP) {
 				if (commandLineArgs.interactive) {
 					// start the interactive UI with the supplied code and settings
-					cleanSingleSourceInteractively(commandLineArgs, System.out, System.err);
+					cleanSingleSourceInteractively(commandLineArgs, out, err);
 				} else {
 					// use application args for automatic cleanup
-					cleanAutomatically(commandLineArgs, System.out, System.err);
+					cleanAutomatically(commandLineArgs, out, err);
 				}
 			}
 			
@@ -175,7 +192,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 			e.printStackTrace();
 		}
 	}
-
+	
 	private static void initialize() {
 		if (!Program.wasInitialized()) {
 			Program.initialize(null, "");
@@ -274,7 +291,10 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 	private static void writeCleanUpResult(CommandLineArgs commandLineArgs, PrintStream out, PrintStream err, CleanupResult result, String sourceFolderFile, String targetPath) {
 		if (commandLineArgs.isInSingleSourceMode()) {
 			if (result == null) {
-				err.println("Cleanup cancelled.");
+				// from read-only preview, result == null is expected
+				if (!commandLineArgs.interactive || !commandLineArgs.readOnly) {
+					err.println("Cleanup cancelled.");
+				}
 				return;
 			} else if (result.hasErrorMessage()) {
 				err.println(result.errorMessage);
@@ -313,6 +333,9 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 			// do nothing: this option is used if only the potential cleanup result is needed, using  .showStatsOrUsedRules()
 		} else if (commandLineArgs.writesResultCodeToOutput()) {
 			out.print(output);
+			if (commandLineArgs.fromDaemon) {
+				out.println(); // ensure a final line separator, otherwise the daemon client may miss the stop mark
+			}
 		} else {
 			Persistency persistency = Persistency.get();
 			if (commandLineArgs.overwrite || !persistency.fileExists(targetPath)) {
@@ -354,7 +377,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 					warning += " For the next attempt, profile '" + fallbackProfileName + "' will be used.";
 				}
 				if (errorMessages.length() > 0) {
-					warning += System.lineSeparator() + System.lineSeparator() + errorMessages.toString();
+					warning += lineSeparator + lineSeparator + errorMessages.toString();
 				}
 				return CleanupResult.createError(warning);
 			}
@@ -375,7 +398,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 				StringBuilder stats = new StringBuilder();
 				RuleStats[] ruleStats = result.getResultingDiffDoc().getRuleStats(profile);
 				for (RuleStats ruleStat : ruleStats) {
-					stats.append(ruleStat.toConsoleOutput()).append(System.lineSeparator());
+					stats.append(ruleStat.toConsoleOutput()).append(lineSeparator);
 				}
 				cleanupResult.setStats(result, stats.toString());
 			}
@@ -1935,7 +1958,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		}
 	}
 
-	private CleanupParams getCleanupParamsForStressTest() { // TODO Auto-generated method stub
+	private CleanupParams getCleanupParamsForStressTest() {
 		// if a profile is named "stress test", use that profile, otherwise the current profile
 		Profile useProfile = curProfile;
 		for (Profile profile : profiles) {

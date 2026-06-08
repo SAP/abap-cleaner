@@ -828,4 +828,50 @@ public final class StringUtil {
 		}
 		return text;
 	}
+
+
+   public static String[] splitArgs(String command) {
+   	if (command == null)
+   		return null;
+
+		List<String> args = new ArrayList<>();
+		StringBuilder current = new StringBuilder();
+		boolean inQuotes = false;
+		boolean escape = false;
+
+		for (int i = 0; i < command.length(); i++) {
+			char c = command.charAt(i);
+
+			if (escape) {
+				// handle escaped characters inside quotes
+				current.append(c);
+				escape = false;
+
+			} else if (c == '\\' && inQuotes) {
+				// next character is escaped
+				escape = true;
+
+			} else if (c == '"') {
+				// toggle quoted mode (consume the quote character itself)
+				inQuotes = !inQuotes;
+
+			} else if (c == ' ' && !inQuotes) {
+				// space outside quotes = argument boundary
+				if (!current.isEmpty()) {
+					args.add(current.toString());
+					current.setLength(0);
+				}
+
+			} else {
+				current.append(c);
+			}
+		}
+
+		// add the last argument if present
+		if (!current.isEmpty()) {
+			args.add(current.toString());
+		}
+
+		return args.toArray(new String[0]);
+	}
 }

@@ -155,7 +155,7 @@ Options for cleanup:
                         you may use button 'Export...' from the profiles editor to create the file.
     --profiledata       JSON-like content of the cleanup profile to be used.
     --profilename       Name of the cleanup profile to be used, as displayed on the UI.
-                        This includes synchronized team profiles such as 'team A: profile'.
+                        This includes synchronized team profiles such as "team A: profile".
     --last-profile      Use the cleanup profile that was last selected on the UI on this machine.
                         Please provide only one profile option (or none for program defaults).
 
@@ -185,6 +185,43 @@ Options for cleanup:
 
     --stats             Write statistical summary to standard output.
     --usedrules         Write list of used rules to standard output.
+
+
+Starting and using a daemon:
+    .\abap-cleanerc.exe --daemonize [--idle-timeout <seconds>]
+    socket.write: --ping [--request-id <id>]
+    socket.write: --status [--request-id <id>]
+    socket.write: --sourcefile ... [--request-id <id>]
+    socket.write: --keep-alive [--request-id <id>]
+    socket.write: --stop [--request-id <id>]
+
+- Example for starting and using a daemon:
+    .\abap-cleanerc.exe --daemonize --idle-timeout 600
+    socket.write: --ping --request-id 1
+    socket.write: --status --request-id 2
+    socket.write: --sourcefile "CL_ANY_CLASS.txt" --targetfile "result\CL_ANY_CLASS.txt" --overwrite --request-id 3
+    socket.write: --keep-alive --request-id 4
+    socket.write: --stop --request-id 5
+
+
+Options for starting and using a daemon:
+    --daemonize         Makes the program run as a daemon process in the background. Returns
+                        the localhost port number to which the daemon is listening for commands.
+    --idle-timeout      Specifies the idle timeout in seconds after which the daemon will
+                        automatically stop if no command is received. Use 0 for no idle timeout.
+
+    --ping              Pings the daemon; returns 'pong' via the socket's output stream.*
+    --status            Returns the start time, idle time, and idle timeout of the daemon.*
+    --sourcefile        All cleanup commands work as described above. Responses are written
+                        to the client socket's output stream.*
+    --keep-alive        Resets the idle timer of the daemon; returns 'OK: ...'.*
+    --stop              Stops the daemon; returns 'OK: ...'.*
+
+    --request-id        A unique identifier that will be added at the end of the daemon's
+                        response to allow the client to map the response to the command.*
+
+    * All responses end with an extra line that contains '<<<END>>>' and the request <id>
+      (if supplied), e.g. '<<<END>>> 42'.
 ```
 
 ### GitHub Actions workflow usage 
