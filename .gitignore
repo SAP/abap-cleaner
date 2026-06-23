@@ -5,3 +5,6 @@ target/
 bin/
 workspace/
 *.log
+
+# Mac files
+.DS_Store

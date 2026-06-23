@@ -30,7 +30,7 @@ public class DaemonManager {
 	 * (esp. interactive cleanup) are still being processed
 	 */
 	private int activeHandlerCount = 0;
-
+	
 	/**
 	 * called when --daemonize is sent via CLI (see {@link CommandLineArgs})
 	 */
@@ -105,7 +105,6 @@ public class DaemonManager {
 			printErr("ERROR: null command");
 			return;
 		}
-		updateLastCommandTime();
 
 		String[] args = StringUtil.splitArgs(command);
 		
@@ -135,6 +134,7 @@ public class DaemonManager {
 		String response = null;
 		switch (onlyArg) {
 			case CommandLineArgs.OPT_DAEMON_PING:
+				updateLastCommandTime();
 				response = "pong";
 				break;
 
@@ -147,23 +147,26 @@ public class DaemonManager {
 				break;
 				
 			case CommandLineArgs.OPT_DAEMON_KEEPALIVE:
+				updateLastCommandTime();
 				String idleInfo = (idleTimeOut_s > 0) ? " (idle timeout: " + idleTimeOut_s + " seconds)" : " (no idle timeout)";
 				response = "OK: idle timer reset" + idleInfo;
 				break;
 
 			case CommandLineArgs.OPT_DAEMON_STOP:
+				updateLastCommandTime();
 				stopDaemon();
 				response = "OK: stopped daemon";
 				break;
 
 			default: // treat as a CLI command
+				updateLastCommandTime();
 				FrmMain.handleCLI(args, true, out, System.err);
 				// a final out.println(); should already be ensured by FrmMain.handleCLI()
 				response = null;
+				updateLastCommandTime(); // again, esp. for interactive cleanup, which might have taken a long time
 				break;
 		}
 		printResponse(response, out, requestId);
-		updateLastCommandTime();
 
 		// for testing: 
 		// printInfo("Processed " + requestIdInfo + ": " + command);
@@ -174,8 +177,8 @@ public class DaemonManager {
 	}
 
 	/** returns true while the daemon is running; checks for idle timeout */
-	public boolean isRunning() {
-		if (running && idleTimeOut_s > 0 && activeHandlerCount == 0) {
+	public boolean isRunning(boolean checkIdleTimeout) {
+		if (running && checkIdleTimeout && idleTimeOut_s > 0 && activeHandlerCount == 0) {
 			// check for timeout - isRunning() is regularly polled by FrmMain.handleCLI() while the daemon is running
 			LocalDateTime now = LocalDateTime.now();
 			if (lastCommandTime.plusSeconds(idleTimeOut_s).isBefore(now)) {

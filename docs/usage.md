@@ -1,14 +1,15 @@
 # How to use ABAP cleaner
 
-## Cleaning code from ADT with the ABAP cleaner plug-in 
+## Cleaning code from ADT with the ABAP cleaner plug-in
 
 ### Automated cleanup 
 
 To clean ABAP code **automatically** with a single keystroke, 
 
-1. **Select** any amount of **ABAP code** in the current code editor in ADT - 
+1. **Select** any amount of **ABAP code** in the current code editor in ADT for Eclipse or VS Code - 
    or alternatively, do NOT select any code to apply cleanup to the current method or declaration section. 
-2. **Press *Ctrl + 4*** or select menu 'Source Code / Clean Up With **Automated** ABAP Cleaner'. 
+2. **Press *Ctrl + 4*** or select menu 'Source Code / Clean Up With **Automated** ABAP Cleaner' (Eclipse) 
+   or command 'ABAP cleaner: Format Selection' (VS Code). 
    The cleanup will be done automatically, using the profile and cleanup range that was last selected 
    when you used the interactive ABAP cleaner UI (see below). 
 
@@ -18,13 +19,18 @@ If you clean a selection of code, ABAP cleaner will expand your selection to who
 With the plug-in, you are not required to select complete code blocks 
 (e.g., you may select an ```IF``` without its corresponding ```ENDIF```). 
 
+In **VS Code**, you may alternatively use command 'Format Selection' or 'Format Document' (*Shift + Alt + F*). 
+In the VS Code Settings, ABAP cleaner can be selected as the default formatter with 'Editor: Default Formatter'. 
+The setting 'Editor: Format on Save' also applies to ABAP cleaner. 
+
 ### Interactive cleanup 
 
 To clean ABAP code **interactively**, 
 
-1. **Select** any amount of **ABAP code** in the current code editor in ADT - 
+1. **Select** any amount of **ABAP code** in the current code editor in ADT for Eclipse or VS Code - 
    or alternatively, do NOT select any code to apply cleanup to the current method or declaration section. 
-2. **Press *Ctrl + Shift + 4*** or select menu 'Source Code / Clean Up With **Interactive** ABAP Cleaner...'. 
+2. **Press *Ctrl + Shift + 4*** or select menu 'Source Code / Clean Up With **Interactive** ABAP Cleaner...' (Eclipse) 
+   or command 'ABAP Cleaner: Format Interactively' (VS Code). 
    This will open the ABAP cleaner UI to compare the original and the cleaned code. 
 
    ![ABAP cleaner usage - interactive cleanup](images/usage_menu-interactive.png "ABAP cleaner usage - interactive cleanup")
@@ -47,8 +53,9 @@ To clean ABAP code **interactively**,
 If you only want a **preview** of the cleaned code, **without locking or changing** the code 
 (e.g. because the object is locked by another person, or you do not have development authorization in the current system), 
 
-1. **Select** any amount of **ABAP code** in the current code editor in ADT.
-2. **Press *Ctrl + Shift + 5*** or select menu 'Source Code / Show **Read-Only Preview** With ABAP Cleaner...': 
+1. **Select** any amount of **ABAP code** in the current code editor in ADT for Eclipse or VS Code.
+2. **Press *Ctrl + Shift + 5*** or select menu 'Source Code / Show **Read-Only Preview** With ABAP Cleaner...' (Eclipse) 
+   or command 'ABAP Cleaner: Show Read-Only Preview' (VS Code): 
 
    ![ABAP cleaner usage - show read-only preview](images/usage_menu-preview.png "ABAP cleaner usage - show read-only preview")
 
@@ -255,7 +262,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Download ABAP Cleaner (latest version)
+      - name: Download ABAP cleaner (latest version)
         run: |
           mkdir .cleanup
           cd .cleanup

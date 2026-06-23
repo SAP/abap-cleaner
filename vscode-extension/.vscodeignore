@@ -1,0 +1,12 @@
+src/
+node_modules/
+tsconfig.json
+*.vsix
+.github/
+.gitignore
+.DS_Store
+
+# Dev-only assets — not needed in shipped VSIX
+samples/
+runtime samples/
+scripts/

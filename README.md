@@ -24,7 +24,7 @@ while giving you full control over which rules are used and how.
 
 With ABAP cleaner, you can clean any amount of code from a single statement to an entire code document 
 with **one keystroke**. ABAP cleaner then applies **100+ different [cleanup rules](docs/rules.md)** to your code section, 
-cleaning approx. 1 MB of code per second.
+cleaning approx. 500 KB of code per second.
 
 > Please don't get us wrong: Of course, an automated tool can NOT replace all other clean code efforts. 
 > Obviously, automation is only possible for a subset of the clean code rules - but for a significant one, 
@@ -93,15 +93,20 @@ Your team may align on a common configuration and create a **team profile** from
 
 ### Automated or Interactive Cleanup from ADT
 
-Using ABAP cleaner from ADT, the cleanup can be done 
+Using ABAP cleaner from ADT for Eclipse or VS Code, the cleanup can be done 
 
-- either **automatically** with a single keystroke (***Ctrl + 4*** or menu 'Source Code / Clean Up With Automated ABAP Cleaner'), 
-- or **interactively** by opening the ABAP cleaner UI (***Ctrl + Shift + 4*** or menu 'Source Code / Clean Up With Interactive ABAP Cleaner...') 
+- either **automatically** with a single keystroke 
+  (***Ctrl + 4*** or menu 'Source Code / Clean Up With Automated ABAP Cleaner' (Eclipse)
+  or command 'ABAP Cleaner: Format Selection' (VS Code)), 
+- or **interactively** by opening the ABAP cleaner UI 
+  (***Ctrl + Shift + 4*** or menu 'Source Code / Clean Up With Interactive ABAP Cleaner...' (Eclipse)
+  or command 'ABAP Cleaner: Format Interactively' (VS Code)), 
   which allows you to check the changes, revert those that you don't like with a single mouse click, 
   and finally apply (or discard) the result. 
 - A third option shows a **read-only preview** of the cleanup result without locking or changing the code, 
   e.g. if you don't have development authorization in the current system 
-  (***Ctrl + Shift + 5*** or menu 'Source Code / Show Read-Only Preview With ABAP Cleaner...')
+  (***Ctrl + Shift + 5*** or menu 'Source Code / Show Read-Only Preview With ABAP Cleaner...' (Eclipse) 
+  or command 'ABAP Cleaner: Show Read-Only Preview' (VS Code))
   
   ![ABAP cleaner integration into ABAP Development Tools (ADT)](docs/images/adt-integration.png "ABAP cleaner integration into ABAP Development Tools (ADT)")
 
@@ -125,9 +130,11 @@ EML statements are not yet supported (meaning that most cleanup rules simply lea
 
 ## Requirements and Installation
 
-To install and use the **ABAP cleaner plug-in for ABAP Development Tools** (ADT) on Windows or macOS, 
+### ABAP cleaner plug-in for ABAP development tools (ADT) for Eclipse
 
-1. Install ABAP Development Tools as described in the [Install ADT Tutorial (Step 1)](https://developers.sap.com/tutorials/abap-install-adt.html),
+To install and use the **ABAP cleaner plug-in for ABAP development tools for Eclipse** (ADT) on Windows or macOS, 
+
+1. Install ABAP Development Tools for Eclipse as described in the [Install ADT Tutorial (Step 1)](https://developers.sap.com/tutorials/abap-install-adt.html),
    using an Eclipse installation that is [compatible with ADT](https://tools.hana.ondemand.com/).
 2. Start ADT, select menu 'Help / Install New Software...', 
    copy the link https://sap.github.io/abap-cleaner/updatesite to the 'Work with' field, press Enter 
@@ -139,10 +146,34 @@ To install and use the **ABAP cleaner plug-in for ABAP Development Tools** (ADT)
    'Source Code / Clean Up With Interactive ABAP Cleaner...' 
    (shortcuts *Ctrl + 4* or *Ctrl + Shift + 4*), see [usage](docs/usage.md).
 
+### ABAP cleaner extension for Visual Studio Code
+
+The **ABAP cleaner extension for Visual Studio Code** will soon be available for free in the 
+[Visual Studio Marketplace (publisher SAP OSS)](https://marketplace.visualstudio.com/publishers/SAPOSS). 
+Until then, to install and use the **ABAP cleaner extension for Visual Studio Code** on Windows or macOS, 
+
+1. Make sure Java 21 or higher (e.g. [SapMachine](https://sapmachine.io/) or [Adoptium Temurin](https://adoptium.net/)) 
+   is installed on your system, and in the app 'Edit the system environment variables' (Windows), System environment variable 'PATH' contains the path to the java.exe (e.g. C:\Program Files\SapMachine\JDK\21\bin)
+
+2. Download the `.vsix` file for your platform from the latest [release assets](https://github.com/SAP/abap-cleaner/releases), 
+   e.g. for Windows, `com.sap.adt.abapcleaner.app-win32.win32.x86_64.vsix`.
+
+3. In the VS Code Command Palette, enter 'Extensions: Install from VSIX...' and select the downloaded .vsix file
+   to install the ABAP cleaner extension.
+
+4. Open an ABAP code document in a VS Code editor and use one of the 'ABAP cleaner: ...' commands, 
+   see [usage](docs/usage.md).
+
+The extension is technically independent from 
+[ABAP development tools for VS Code](https://marketplace.visualstudio.com/items?itemName=SAPSE.adt-vscode), 
+but it makes sense to use both together, of course. 
+
+### Stand-alone version of ABAP cleaner
+
 The **stand-alone version of ABAP cleaner** (for Windows, macOS or Linux) 
 requires Java 21 or higher (e.g. [SapMachine](https://sapmachine.io/) or [Adoptium Temurin](https://adoptium.net/)). 
-To install the stand-alone version, please download and extract the latest [Release](../../releases) 
-and follow the installation instructions given there.
+To install the stand-alone version, please download and extract the `.gz` or `.zip` file for your platform 
+from the latest [Release](../../releases) and follow the installation instructions given there.
 
 
 ## Engaging in Our Project 
@@ -172,8 +203,8 @@ By participating in this project, you agree to abide by its [Code of Conduct](ht
 
 ## Limitations and Known Issues
 
-The ABAP cleaner plug-in (as any other plug-in) can only be installed from extensible versions of ABAP Development Tools (ADT), 
-in which menu 'Help / Install New Software...' is available. 
+In ABAP development tools for Eclipse (ADT), the ABAP cleaner plug-in (as any other plug-in) can only be installed 
+from extensible versions of ADT, in which menu 'Help / Install New Software...' is available. 
 
 Since ABAP cleaner does not perform additional backend calls, cleanup is restricted to what can be done within the current code document, 
 without retrieving additional DDIC information, signatures, includes etc.

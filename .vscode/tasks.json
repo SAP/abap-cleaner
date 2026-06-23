@@ -1,0 +1,98 @@
+{
+   "version": "2.0.0",
+   "tasks": [
+      {
+         "label": "ext: prepare fresh host",
+         "dependsOrder": "sequence",
+         "dependsOn": [
+            "ext: copy cleanup samples to runtime dir",
+            "ext: clear bundled binary (dev host only)",
+            "ext: npm compile",
+         ]
+      },
+      {
+         "label": "ext: watch",
+         "dependsOrder": "sequence",
+         "dependsOn": [
+            "ext: copy cleanup samples to runtime dir",
+            "ext: npm watch",
+         ]
+      },
+      {
+         "label": "ext: copy cleanup samples to runtime dir",
+         "type": "shell",
+         "windows": {
+            "command": "New-Item -ItemType Directory -Force -Path '${workspaceFolder}\\vscode-extension\\runtime samples' | Out-Null; Copy-Item -Force '${workspaceFolder}\\vscode-extension\\samples\\cleanup-sample.abap','${workspaceFolder}\\vscode-extension\\samples\\cleanup-sample.acds' -Destination '${workspaceFolder}\\vscode-extension\\runtime samples\\'",
+            "options": {
+               "shell": {
+                  "executable": "pwsh",
+                  "args": [
+                     "-NoProfile",
+                     "-Command"
+                  ]
+               }
+            }
+         },
+         "linux": {
+            "command": "mkdir -p '${workspaceFolder}/vscode-extension/runtime samples' && cp '${workspaceFolder}/vscode-extension/samples/cleanup-sample.abap' '${workspaceFolder}/vscode-extension/samples/cleanup-sample.acds' '${workspaceFolder}/vscode-extension/runtime samples/'"
+         },
+         "osx": {
+            "command": "mkdir -p '${workspaceFolder}/vscode-extension/runtime samples' && cp '${workspaceFolder}/vscode-extension/samples/cleanup-sample.abap' '${workspaceFolder}/vscode-extension/samples/cleanup-sample.acds' '${workspaceFolder}/vscode-extension/runtime samples/'"
+         }
+      },
+      {
+         "label": "ext: clear bundled binary (dev host only)",
+         "type": "shell",
+         "windows": {
+            "command": "if (Test-Path '${workspaceFolder}\\vscode-extension\\binary') { Remove-Item -Recurse -Force '${workspaceFolder}\\vscode-extension\\binary' }",
+            "options": {
+               "shell": {
+                  "executable": "pwsh",
+                  "args": [
+                     "-NoProfile",
+                     "-Command"
+                  ]
+               }
+            }
+         },
+         "linux": {
+            "command": "rm -rf '${workspaceFolder}/vscode-extension/binary'"
+         },
+         "osx": {
+            "command": "rm -rf '${workspaceFolder}/vscode-extension/binary'"
+         }
+      },
+      {
+         "label": "ext: npm compile",
+         "type": "shell",
+         "command": "npm",
+         "args": [
+            "run",
+            "compile"
+         ],
+         "options": {
+            "cwd": "${workspaceFolder}/vscode-extension"
+         },
+         "group": "build",
+         "problemMatcher": [
+            "$tsc"
+         ]
+      },
+      {
+         "label": "ext: npm watch",
+         "type": "shell",
+         "command": "npm",
+         "args": [
+            "run",
+            "watch"
+         ],
+         "options": {
+            "cwd": "${workspaceFolder}/vscode-extension"
+         },
+         "isBackground": true,
+         "problemMatcher": [
+            "$tsc-watch"
+         ]
+      }
+   ]
+}
