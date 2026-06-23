@@ -1,0 +1,63 @@
+@ObjectModel.lifecycle.draft.notificationBeforeExpiryInterval: 'PT10D'
+@ObjectModel. lifecycle. draft .expiryInterval:'PT28D'
+@ObjectModel.usageType: { serviceQuality: #D,
+                            sizeCategory:#XXL,
+                                 dataClass :#MIXED }
+
+@ObjectModel.supportedCapabilities: [#ANALYTICAL_QUERY,
+#ANALYTICAL_DOCUMENT_STORE, #ANALYTICAL_KPI,
+  #ANALYTICAL_PROVIDER ]
+@ObjectModel.action:[{instance:{bound:true}},{enabled:true},{feature:''}]
+
+@UI.selectionVariant: [ {
+  qualifier: 'params',
+  parameters: [ {
+    name: 'P_AnyParam', value: 'any'
+  }, {
+   name: 'P_OtherParam',
+
+      value: 'other'
+  }, {
+  name:  'P_Third',
+  value: 'third'
+} ] } ]
+
+define
+view entity I_AnyEntity as select
+from I_AnySource as AnyAlias inner join I_OtherSource as OtherAlias
+  on OtherAlias.AnyKeyField = AnyAlias.AnyKeyField
+  and ( OtherAlias.AnyType = 'X' or
+  OtherAlias.AnyType = 'Y' )
+
+   // assocation to coresponding other view
+  association[1..*] to I_ThirdSource  as _ThirdSource
+  on AnyAlias.AnyKeyField = _ThirdSource.AnyKeyField and
+  OtherAlias.OtherKeyField = _ThirdSource.OtherKeyField
+  and OtherAlias.NumericField >= _ThirdSource.NumericField {
+  key AnyAlias.AnyKeyField,
+  key OtherAlias.OtherKeyField,
+         OtherAlias.AnyType,
+      case when AnyAlias.Category = 'A' then 'category A'
+         when AnyAlias.Category = 'B' or
+      AnyAlias.Category = 'C' then 'category B or C'
+      end as CategoryText,
+        sum(OtherAlias.NumericField) as SumField  ,
+       // caculate maximum
+     max(_ThirdSource [1:SubCategory = 'X' or
+      SubCategory = 'Y'
+      or SubCategory = 'Z'].NumericField) as MaxNumericField
+
+} where
+OtherAlias.OtherKeyField > 'NN' and
+OtherAlias.NumericField > 100
+and ( AnyAlias.Category = 'A' or
+AnyAlias.Category = 'B'
+or AnyAlias.Category = 'C')
+group by AnyAlias.AnyKeyField,
+      OtherAlias.OtherKeyField,
+      OtherAlias.AnyType,
+          AnyAlias.Category having AnyAlias.Category = 'A' and
+  avg(OtherAlias.NumericField) >= 200 or
+    AnyAlias.Category = 'B'
+  and sum(OtherAlias.NumericField) >= 1000 and
+sum(OtherAlias.NumericField) < 5000

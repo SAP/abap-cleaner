@@ -130,7 +130,8 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 	private int suspendItemCheck;
 
    private static final DaemonManager daemonManager = new DaemonManager();
-
+   private static int daemonUiStartCount = 0;
+   
 	/**
 	 * Launch the application.
 	 * 
@@ -173,7 +174,7 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 				} else {
 	            // start the daemon and keep the application alive while the daemon is running
 	            daemonManager.startDaemon(out, commandLineArgs.daemonIdleTimeOut_s);
-	            while (daemonManager.isRunning()) {
+	            while (daemonManager.isRunning(true)) {
 	                Thread.sleep(1000);
 	            }
 				}
@@ -539,6 +540,20 @@ public class FrmMain implements IUsedRulesDisplay, ISearchControls, IChangeTypeC
 		shell.open();
 		shell.layout();
 		shell.update();
+
+		if (daemonManager != null && daemonManager.isRunning(false)) {
+			// if started from the daemon, the shell might not come to the front when .open() is called; therefore,  
+			// try to bring it to the front; if this doesn't work, the user can still bring it to the front from the taskbar 
+			if (daemonUiStartCount == 0) {
+				// the following calls seem to be necessary only on first UI start; afterwards, they would cause flickering
+				if (SystemInfo.getOperatingSystem() == OperatingSystem.WINDOWS) {	
+					shell.setMinimized(true);
+					shell.setMinimized(false);
+				}
+			}
+			shell.setActive(); // requests activation
+			++daemonUiStartCount;
+		}
 
 		if (!StringUtil.isNullOrEmpty(sourceCode)) {
 			originalCleanupRange = cleanupRange;

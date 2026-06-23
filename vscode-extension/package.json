@@ -1,0 +1,137 @@
+{
+   "name": "abap-cleaner",
+   "displayName": "ABAP cleaner",
+   "description": "ABAP cleaner applies 100+ cleanup rules to ABAP code at a single keystroke.",
+   "version": "1.27.0",
+   "publisher": "SAPOSS",
+   "engines": {
+      "vscode": "^1.90.0"
+   },
+   "license": "Apache-2.0",
+   "categories": [
+      "Formatters"
+   ],
+   "keywords": [
+      "ABAP cleaner",
+      "ABAP",
+      "Clean Code",
+      "Clean ABAP",
+      "ABAP Formatter",
+      "Pretty Printer",
+      "formatter",
+      "automated cleanup",
+      "interactive cleanup",
+      "code cleanup",
+      "code formatting",
+      "code refactoring",
+      "code modernization",
+      "code optimization",
+      "code quality",
+      "code readability",
+      "code maintainability",
+      "CDS Views",
+      "Data Definition Language",
+      "DDL"
+   ],
+   "preview": false,
+   "main": "./out/extension.js",
+   "contributes": {
+      "commands": [
+         {
+            "command": "abapCleaner.formatDocument",
+            "title": "ABAP Cleaner: Format Document",
+            "category": "ABAP"
+         },
+         {
+            "command": "abapCleaner.formatSelection",
+            "title": "ABAP Cleaner: Format Selection",
+            "category": "ABAP"
+         },
+         {
+            "command": "abapCleaner.formatInteractively",
+            "title": "ABAP Cleaner: Format Interactively",
+            "category": "ABAP"
+         },
+         {
+            "command": "abapCleaner.readOnlyPreview",
+            "title": "ABAP Cleaner: Show Read-Only Preview",
+            "category": "ABAP"
+         }
+      ],
+      "keybindings": [
+         {
+            "command": "editor.action.formatDocument",
+            "key": "ctrl+5",
+            "mac": "cmd+5",
+            "when": "editorTextFocus && (resourceExtname == .abap || resourceExtname == .acds)"
+         },
+         {
+            "command": "editor.action.formatSelection",
+            "key": "ctrl+4",
+            "mac": "cmd+4",
+            "when": "editorTextFocus && (resourceExtname == .abap || resourceExtname == .acds)"
+         },
+         {
+            "command": "abapCleaner.formatInteractively",
+            "key": "ctrl+shift+4",
+            "mac": "cmd+shift+4",
+            "when": "editorTextFocus && (resourceExtname == .abap || resourceExtname == .acds)"
+         },
+         {
+            "command": "abapCleaner.readOnlyPreview",
+            "key": "ctrl+shift+5",
+            "mac": "cmd+shift+5",
+            "when": "editorTextFocus && (resourceExtname == .abap || resourceExtname == .acds)"
+         }
+      ],
+      "configuration": {
+         "title": "ABAP Cleaner",
+         "properties": {
+            "abapCleaner.debugMode": {
+               "type": "boolean",
+               "default": false,
+               "description": "Enable debug logging for ABAP cleaner"
+            }
+         }
+      }
+   },
+   "activationEvents": [
+      "onStartupFinished",
+      "onFileSystem:abap",
+      "onFileSystem:acds",
+      "onLanguage:abap",
+      "onLanguage:acds"
+   ],
+   "devDependencies": {
+      "@types/node": "^20.19.41",
+      "@types/vscode": "^1.90.0",
+      "@vscode/vsce": "^3.9.2",
+      "typescript": "^5.5.0"
+   },
+   "extensionKind": [
+      "ui"
+   ],
+   "scripts": {
+      "compile": "tsc -p .",
+      "watch": "tsc -watch -p .",
+      "lint": "tsc --noEmit -p .",
+      "package": "npm run compile && vsce package --allow-missing-repository --skip-license"
+   },
+   "icon": "abap-cleaner.png",
+   "pricing": "Free",
+   "capabilities": {
+      "virtualWorkspaces": false,
+      "untrustedWorkspaces": {
+         "supported": false,
+         "description": "This extension launches a native Eclipse RCP executable."
+      }
+   },
+   "bugs": {
+      "url": "https://github.com/SAP/abap-cleaner/issues"
+   },
+   "repository": {
+      "type": "git",
+      "url": "https://github.com/SAP/abap-cleaner.git"
+   },
+   "homepage": "https://github.com/SAP/abap-cleaner"
+}

@@ -55,11 +55,11 @@ Additionally, these settings are saved and used for all subsequent _automated_ c
 in which the interactive ABAP cleaner UI is not shown. Therefore, even if you mainly use the automated cleanup, 
 you may occasionally open the interactive ABAP cleaner UI to change these cleanup settings.
 
-If you use different Eclipse workspaces, please note that cleanup profiles and most ABAP cleaner settings are shared 
-across all workspaces, whereas the 'Cleanup Settings' are workspace-specific. This means that if you switch to a different 
-Eclipse workspace, ABAP cleaner switches to the cleanup settings (profile name, cleanup range, syntax restriction) that 
-were last used in this workspace. The same is true if you switch between the ADT plug-in and the stand-alone version of 
-ABAP cleaner. 
+If you use different Eclipse or VS Code workspaces, please note that cleanup profiles and most ABAP cleaner settings 
+are shared across all workspaces, whereas the 'Cleanup Settings' are workspace-specific. This means that if you switch 
+to a different workspace, ABAP cleaner switches to the cleanup settings (profile name, cleanup range, syntax restriction) 
+that were last used in this workspace. The same is true if you switch between the ADT for Eclipse plug-in and the 
+stand-alone version of ABAP cleaner. 
 
 ### Selecting a Profile
 
@@ -91,7 +91,7 @@ If you need to restrict code changes performed by the cleanup rules to the synta
 cleanup rules that introduce calculation assignment operators such as ```+=``` will be automatically skipped. 
 Changes to this setting trigger a reprocessing of the current cleanup. 
 
-When called from inside ADT, ABAP cleaner automatically determines the ABAP release of the current system 
+When called from inside ADT for Eclipse, ABAP cleaner automatically determines the ABAP release of the current system 
 and restricts rules to this release; with the setting on the UI, this can be restricted even further. 
 The ABAP release of the current system is shown in the window title:
 

@@ -1,0 +1,79 @@
+{
+   "version": "0.2.0",
+   "configurations": [
+      {
+         "name": "ext: Run Extension (watch)",
+         "type": "extensionHost",
+         "request": "launch",
+         "args": [
+            "--extensionDevelopmentPath=${workspaceFolder}/vscode-extension",
+            "--disable-extensions",
+            "--user-data-dir=${workspaceFolder}/vscode-extension/.vscode/dev-user-data",
+            "--extensions-dir=${workspaceFolder}/vscode-extension/.vscode/dev-extensions",
+            "--new-window",
+            "--goto",
+            "${workspaceFolder}/vscode-extension/runtime samples/cleanup-sample.abap:1:1",
+            "${workspaceFolder}/vscode-extension/runtime samples/cleanup-sample.acds:1:1"
+         ],
+         "outFiles": [
+            "${workspaceFolder}/vscode-extension/out/**/*.js"
+         ],
+         // during development, use the locally-built abap-cleaner binary to avoid having to copy a product
+         // archive into vscode-extension/binary/ on every Java rebuild:
+         "env": {},
+         "windows": {
+            "env": {
+               "ABAP_CLEANER_DEV_BINARY_PATH": "${workspaceFolder}/com.sap.adt.abapcleaner.app/target/products/com.sap.adt.abapcleaner.app/win32/win32/x86_64/abapcleaner/abap-cleanerc.exe"
+            }
+         },
+         "osx": {
+            "env": { // alternatively, use /x86_64/ instead of /aarch64/
+               "ABAP_CLEANER_DEV_BINARY_PATH": "${workspaceFolder}/com.sap.adt.abapcleaner.app/target/products/com.sap.adt.abapcleaner.app/macosx/cocoa/aarch64/abapcleaner.app/Contents/MacOS/abap-cleaner"
+            }
+         },
+         "linux": {
+            "env": {
+               "ABAP_CLEANER_DEV_BINARY_PATH": "${workspaceFolder}/com.sap.adt.abapcleaner.app/target/products/com.sap.adt.abapcleaner.app/linux/gtk/x86_64/abapcleaner/abap-cleaner"
+            }
+         },
+         "preLaunchTask": "ext: watch"
+      },
+      {
+         "name": "ext: Run Extension (fresh bundle)",
+         "type": "extensionHost",
+         "request": "launch",
+         "args": [
+            "--extensionDevelopmentPath=${workspaceFolder}/vscode-extension",
+            "--disable-extensions",
+            "--user-data-dir=${workspaceFolder}/vscode-extension/.vscode/dev-user-data",
+            "--extensions-dir=${workspaceFolder}/vscode-extension/.vscode/dev-extensions",
+            "--new-window",
+            "--goto",
+            "${workspaceFolder}/vscode-extension/runtime samples/cleanup-sample.abap:1:1",
+            "${workspaceFolder}/vscode-extension/runtime samples/cleanup-sample.acds:1:1"
+         ],
+         "outFiles": [
+            "${workspaceFolder}/vscode-extension/out/**/*.js"
+         ],
+         // during development, use the locally-built abap-cleaner binary to avoid having to copy a product
+         // archive into vscode-extension/binary/ on every Java rebuild:
+         "env": {},
+         "windows": {
+            "env": {
+               "ABAP_CLEANER_DEV_BINARY_PATH": "${workspaceFolder}/com.sap.adt.abapcleaner.app/target/products/com.sap.adt.abapcleaner.app/win32/win32/x86_64/abapcleaner/abap-cleanerc.exe"
+            }
+         },
+         "osx": {
+            "env": { // alternatively, use /x86_64/ instead of /aarch64/
+               "ABAP_CLEANER_DEV_BINARY_PATH": "${workspaceFolder}/com.sap.adt.abapcleaner.app/target/products/com.sap.adt.abapcleaner.app/macosx/cocoa/aarch64/abapcleaner.app/Contents/MacOS/abap-cleaner"
+            }
+         },
+         "linux": {
+            "env": {
+               "ABAP_CLEANER_DEV_BINARY_PATH": "${workspaceFolder}/com.sap.adt.abapcleaner.app/target/products/com.sap.adt.abapcleaner.app/linux/gtk/x86_64/abapcleaner/abap-cleaner"
+            }
+         },
+         "preLaunchTask": "ext: prepare fresh host"
+      }
+   ]
+}
