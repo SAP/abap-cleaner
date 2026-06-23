@@ -106,7 +106,7 @@
       "@types/node": "^20.19.41",
       "@types/vscode": "^1.90.0",
       "@vscode/vsce": "^3.9.2",
-      "typescript": "^5.5.0"
+      "typescript": "^6.0.0"
    },
    "extensionKind": [
       "ui"
