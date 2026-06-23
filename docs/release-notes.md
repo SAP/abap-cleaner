@@ -6,6 +6,12 @@ as well as bugfixes of reported issues, i.e. anything that enhances or changes t
 For a complete list of changes (including documentation, tests, refactoring etc.), please refer to 
 the list of [commits](../../../commits/main).
 
+## 2026-06-23 (version 1.28.0)
+
+**Thanks so much** for the excellent collaboration creating the VS Code extension!
+
+* Added **VS Code extension**
+
 ## 2026-06-08 (version 1.27.0)
 
 * Enhanced **CLI** with parameter **--daemonize** to make the program run as a **background process**
