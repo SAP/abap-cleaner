@@ -5,7 +5,7 @@
    "version": "1.28.1",
    "publisher": "SAPOSS",
    "engines": {
-      "vscode": "^1.90.0"
+      "vscode": "^1.109.0"
    },
    "license": "Apache-2.0",
    "categories": [
