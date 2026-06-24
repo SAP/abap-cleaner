@@ -105,7 +105,7 @@
    "qna": "https://github.com/SAP/abap-cleaner/issues",
    "devDependencies": {
       "@types/node": "22.19.19",
-      "@types/vscode": "1.109.0",
+      "@types/vscode": "1.125.0",
       "@vscode/vsce": "3.9.2",
       "typescript": "6.0.3"
    },
