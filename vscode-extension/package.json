@@ -2,7 +2,7 @@
    "name": "abap-cleaner",
    "displayName": "ABAP cleaner",
    "description": "ABAP cleaner applies 100+ cleanup rules to ABAP code at a single keystroke.",
-   "version": "1.28.1",
+   "version": "1.28.2",
    "publisher": "SAPOSS",
    "engines": {
       "vscode": "^1.109.0"
