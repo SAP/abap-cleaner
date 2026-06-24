@@ -69,8 +69,7 @@ jobs:
       # For each platform: extract the archive into vscode-extension/binary/,
       # package the VSIX, then clear the binary/ folder before the next platform.
       #
-      # VSIX naming mirrors the product archive names:
-      #   com.sap.adt.abapcleaner.app-<platform>.vsix
+      # VSIX naming is: abapcleaner-vscode-<platform>.vsix
       #
       # `--baseContentUrl` / `--baseImagesUrl` are passed explicitly so that
       # relative links/images in the extension README resolve correctly when
@@ -112,12 +111,8 @@ jobs:
                 [ -f "$exe" ] || { echo "::error ::Missing $exe after extracting $archive"; exit 1; }
                 ;;
               darwin-*)
-                mac_a="binary/abapcleaner/abapcleaner.app/Contents/MacOS/abap-cleaner"
-                mac_b="binary/abapcleaner.app/Contents/MacOS/abap-cleaner"
-                if [ -x "$mac_a" ]; then :
-                elif [ -x "$mac_b" ]; then :
-                else echo "::error ::Neither $mac_a nor $mac_b is executable after extracting $archive"; exit 1
-                fi
+                exe="binary/abapcleaner.app/Contents/MacOS/abap-cleaner"
+                [ -x "$exe" ] || { echo "::error ::$exe missing or not executable after extracting $archive"; exit 1; }
                 ;;
               linux-x64)
                 exe="binary/abapcleaner/abap-cleaner"
@@ -131,42 +126,63 @@ jobs:
                 --allow-missing-repository \
                 --baseContentUrl "$BASE_CONTENT_URL" \
                 --baseImagesUrl "$BASE_IMAGES_URL" \
-                --out "com.sap.adt.abapcleaner.app-${suffix}.vsix"
+                --out "abapcleaner-vscode-${suffix}.vsix"
             echo "::endgroup::"
           done <<< "$PLATFORMS"
 
       - name: Release
-        uses: softprops/action-gh-release@718ea10b132b3b2eba29c1007bb80653f286566b # v3.0.1
         if: startsWith(github.ref, 'refs/tags/')
-        with:
-          files: |
-            com.sap.adt.abapcleaner.app/target/products/com.sap.adt.abapcleaner.app-linux.gtk.x86_64.tar.gz
-            com.sap.adt.abapcleaner.app/target/products/com.sap.adt.abapcleaner.app-macosx.cocoa.aarch64.tar.gz
-            com.sap.adt.abapcleaner.app/target/products/com.sap.adt.abapcleaner.app-macosx.cocoa.x86_64.tar.gz
-            com.sap.adt.abapcleaner.app/target/products/com.sap.adt.abapcleaner.app-win32.win32.x86_64.zip
-            com.sap.adt.abapcleaner.updatesite/target/com.sap.adt.abapcleaner.updatesite.zip
-            vscode-extension/com.sap.adt.abapcleaner.app-linux.gtk.x86_64.vsix
-            vscode-extension/com.sap.adt.abapcleaner.app-macosx.cocoa.aarch64.vsix
-            vscode-extension/com.sap.adt.abapcleaner.app-macosx.cocoa.x86_64.vsix
-            vscode-extension/com.sap.adt.abapcleaner.app-win32.win32.x86_64.vsix
-          body: |
-            We recommend using the ABAP cleaner **plug-in for ADT** (see [installation instructions](https://github.com/SAP/abap-cleaner/blob/main/README.md)), which cleans up your code directly from within the IDE, and checks for updates automatically. If you nevertheless prefer to use the **stand-alone version** of ABAP cleaner (e.g. in order to use it with SAP GUI or from the command line), please
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tag="${GITHUB_REF#refs/tags/}"
+          gh release upload "$tag" --clobber \
+            com.sap.adt.abapcleaner.app/target/products/com.sap.adt.abapcleaner.app-linux.gtk.x86_64.tar.gz \
+            com.sap.adt.abapcleaner.app/target/products/com.sap.adt.abapcleaner.app-macosx.cocoa.aarch64.tar.gz \
+            com.sap.adt.abapcleaner.app/target/products/com.sap.adt.abapcleaner.app-macosx.cocoa.x86_64.tar.gz \
+            com.sap.adt.abapcleaner.app/target/products/com.sap.adt.abapcleaner.app-win32.win32.x86_64.zip \
+            com.sap.adt.abapcleaner.updatesite/target/com.sap.adt.abapcleaner.updatesite.zip \
+            vscode-extension/abapcleaner-vscode-linux.gtk.x86_64.vsix \
+            vscode-extension/abapcleaner-vscode-macosx.cocoa.aarch64.vsix \
+            vscode-extension/abapcleaner-vscode-macosx.cocoa.x86_64.vsix \
+            vscode-extension/abapcleaner-vscode-win32.win32.x86_64.vsix
+          cat > /tmp/release-notes.md << 'NOTES'
+          We recommend using the ABAP cleaner **plug-in for ADT**
+          (see [installation instructions](https://github.com/SAP/abap-cleaner/blob/main/README.md)),
+          which cleans up your code directly from within the IDE, and checks for updates automatically.
+          If you nevertheless prefer to use the **stand-alone version** of ABAP cleaner
+          (e.g. in order to use it with SAP GUI or from the command line), please
 
-            * make sure Java 21 or higher (e.g. [SapMachine](https://sapmachine.io/) or [Adoptium Temurin](https://adoptium.net/)) is installed on your system, and in the app 'Edit the system environment variables' (Windows), System environment variable 'PATH' contains the path to the java.exe (e.g. C:\Program Files\SapMachine\JDK\21\bin)
-            * expand "Assets" below and download the archive for your operating system
-            * extract the archive
-            * on macOS:
-              * Move abapcleaner.app to a different directory (e.g. /Applications/abapcleaner.app), do not start it directly from ~/Downloads.
-              * Remove quarantine attribute from abapcleaner.app, otherwise the app won't start (because it is not code-signed):
-                `xattr -dr com.apple.quarantine /Applications/abapcleaner.app`
-            * start ABAP cleaner
+          * make sure Java 21 or higher (e.g. [SapMachine](https://sapmachine.io/) or
+            [Adoptium Temurin](https://adoptium.net/)) is installed on your system, and in the app
+            'Edit the system environment variables' (Windows), System environment variable 'PATH'
+            contains the path to the java.exe (e.g. C:\Program Files\SapMachine\JDK\21\bin)
+          * expand "Assets" below and download the archive for your operating system
+          * extract the archive
+          * on macOS:
+            * Move abapcleaner.app to a different directory (e.g. /Applications/abapcleaner.app),
+              do not start it directly from ~/Downloads.
+            * Remove quarantine attribute from abapcleaner.app, otherwise the app won't start
+              (because it is not code-signed):
+              `xattr -dr com.apple.quarantine /Applications/abapcleaner.app`
+          * start ABAP cleaner
 
-            Please check this site for updates since there is currently no automatic update mechanism for the stand-alone version. [Release notes](https://github.com/SAP/abap-cleaner/blob/main/docs/release-notes.md) are the same for both the ADT plug-in and the stand-alone version.
+          Please check this site for updates since there is currently no automatic update mechanism for
+          the stand-alone version. [Release notes](https://github.com/SAP/abap-cleaner/blob/main/docs/release-notes.md)
+          are the same for both the ADT plug-in and the stand-alone version.
 
-            ### VS Code extension
+          ### VS Code extension
 
-            ABAP cleaner shall soon be published as a VS Code extension in the Visual Studio Marketplace. Until then, you can preview the extension with the following steps:
+          ABAP cleaner shall soon be published as a VS Code extension in the Visual Studio Marketplace.
+          Until then, you can preview the extension with the following steps:
 
-            * make sure Java 21 or higher (e.g. [SapMachine](https://sapmachine.io/) or [Adoptium Temurin](https://adoptium.net/)) is installed on your system, and in the app 'Edit the system environment variables' (Windows), System environment variable 'PATH' contains the path to the java.exe (e.g. C:\Program Files\SapMachine\JDK\21\bin).
-            * expand "Assets" below and download the `.vsix` file for your platform (`com.sap.adt.abapcleaner.app-<platform>.vsix`)
-            * start VS Code and install the extension with the command 'Extensions: Install from VSIX...'
+          * make sure Java 21 or higher (e.g. [SapMachine](https://sapmachine.io/) or
+            [Adoptium Temurin](https://adoptium.net/)) is installed on your system, and in the app
+            'Edit the system environment variables' (Windows), System environment variable 'PATH'
+            contains the path to the java.exe (e.g. C:\Program Files\SapMachine\JDK\21\bin).
+          * expand "Assets" below and download the `.vsix` file for your platform
+            (`abapcleaner-vscode-<platform>.vsix`)
+          * start VS Code and install the extension with the command 'Extensions: Install from VSIX...'
+          NOTES
+          gh release edit "$tag" --draft=false --notes-file /tmp/release-notes.md

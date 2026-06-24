@@ -156,7 +156,7 @@ Until then, to install and use the **ABAP cleaner extension for Visual Studio Co
    is installed on your system, and in the app 'Edit the system environment variables' (Windows), System environment variable 'PATH' contains the path to the java.exe (e.g. C:\Program Files\SapMachine\JDK\21\bin)
 
 2. Download the `.vsix` file for your platform from the latest [release assets](https://github.com/SAP/abap-cleaner/releases), 
-   e.g. for Windows, `com.sap.adt.abapcleaner.app-win32.win32.x86_64.vsix`.
+   e.g. for Windows, `abapcleaner-vscode-win32.win32.x86_64.vsix`.
 
 3. In the VS Code Command Palette, enter 'Extensions: Install from VSIX...' and select the downloaded .vsix file
    to install the ABAP cleaner extension.
