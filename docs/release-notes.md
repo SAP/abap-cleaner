@@ -6,6 +6,10 @@ as well as bugfixes of reported issues, i.e. anything that enhances or changes t
 For a complete list of changes (including documentation, tests, refactoring etc.), please refer to 
 the list of [commits](../../../commits/main).
 
+## 2026-06-24 (version 1.28.2)
+
+* **Fixed** engines **VS Code version**
+
 ## 2026-06-24 (version 1.28.1)
 
 * Reworked **release action** for **VS Code extension**
