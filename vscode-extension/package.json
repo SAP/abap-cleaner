@@ -102,11 +102,12 @@
       "onLanguage:abap",
       "onLanguage:acds"
    ],
+   "qna": "https://github.com/SAP/abap-cleaner/issues",
    "devDependencies": {
-      "@types/node": "^24.0.0",
-      "@types/vscode": "^1.90.0",
-      "@vscode/vsce": "^3.9.2",
-      "typescript": "^6.0.0"
+      "@types/node": "22.19.19",
+      "@types/vscode": "1.109.0",
+      "@vscode/vsce": "3.9.2",
+      "typescript": "6.0.3"
    },
    "extensionKind": [
       "ui"
@@ -115,12 +116,12 @@
       "compile": "tsc -p .",
       "watch": "tsc -watch -p .",
       "lint": "tsc --noEmit -p .",
-      "package": "npm run compile && vsce package --allow-missing-repository --skip-license"
+      "package": "npm run compile && vsce package"
    },
    "icon": "abap-cleaner.png",
    "pricing": "Free",
    "capabilities": {
-      "virtualWorkspaces": false,
+      "virtualWorkspaces": true,
       "untrustedWorkspaces": {
          "supported": false,
          "description": "This extension launches a native Eclipse RCP executable."
