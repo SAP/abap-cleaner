@@ -103,7 +103,7 @@
       "onLanguage:acds"
    ],
    "devDependencies": {
-      "@types/node": "^20.19.41",
+      "@types/node": "^24.0.0",
       "@types/vscode": "^1.90.0",
       "@vscode/vsce": "^3.9.2",
       "typescript": "^6.0.0"
