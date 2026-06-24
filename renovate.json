@@ -12,6 +12,19 @@
       "matchPackageNames": [
         "/org\\.eclipse\\.tycho(\\..+)?:.+/"
       ]
+    },
+    {
+      "description": "Do not auto-update engines (minimum vs code version)",
+      "matchDepTypes": ["engines"],
+      "enabled": false
+    },
+    {
+      "description": "Do not auto-update vscode and node types, as they need to be in sync with vscode engine. See also https://github.com/ewanharris/vscode-versions + https://stackoverflow.com/q/64824668",
+      "matchPackageNames": [
+        "@types/vscode",
+        "@types/node"
+      ],
+      "enabled": false
     }
   ]
 }
