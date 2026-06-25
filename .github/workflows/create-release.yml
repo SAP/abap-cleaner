@@ -73,7 +73,9 @@ jobs:
       #
       # `--baseContentUrl` / `--baseImagesUrl` are passed explicitly so that
       # relative links/images in the extension README resolve correctly when
-      # the VSIX is installed outside the Marketplace.
+      # the VSIX is installed outside the Marketplace. For BASE_IMAGE_URL, 
+      # https://raw.githubusercontent.com... is one redirect less than 
+      # https://github.com/SAP/abap-cleaner/raw/${tag}/... would be
       - name: Package VSIX (all platforms)
         working-directory: vscode-extension
         env:
@@ -84,10 +86,11 @@ jobs:
             macosx.cocoa.aarch64|tar.gz|darwin-arm64
             macosx.cocoa.x86_64|tar.gz|darwin-x64
             win32.win32.x86_64|zip|win32-x64
-          BASE_CONTENT_URL: https://github.com/SAP/abap-cleaner/blob/main/vscode-extension/
-          BASE_IMAGES_URL: https://github.com/SAP/abap-cleaner/raw/main/vscode-extension/
         run: |
           set -euo pipefail
+          tag="${GITHUB_REF#refs/tags/}"
+          BASE_CONTENT_URL="https://github.com/SAP/abap-cleaner/blob/${tag}/vscode-extension/"
+          BASE_IMAGES_URL="https://raw.githubusercontent.com/SAP/abap-cleaner/${tag}/vscode-extension/"
           while IFS='|' read -r suffix archive_fmt target; do
             [ -z "$suffix" ] && continue
             archive="../com.sap.adt.abapcleaner.app/target/products/com.sap.adt.abapcleaner.app-${suffix}.${archive_fmt}"
@@ -148,41 +151,25 @@ jobs:
             vscode-extension/abapcleaner-vscode-macosx.cocoa.x86_64.vsix \
             vscode-extension/abapcleaner-vscode-win32.win32.x86_64.vsix
           cat > /tmp/release-notes.md << 'NOTES'
-          We recommend using the ABAP cleaner **plug-in for ADT**
-          (see [installation instructions](https://github.com/SAP/abap-cleaner/blob/main/README.md)),
-          which cleans up your code directly from within the IDE, and checks for updates automatically.
-          If you nevertheless prefer to use the **stand-alone version** of ABAP cleaner
-          (e.g. in order to use it with SAP GUI or from the command line), please
+          We recommend using the ABAP cleaner **plug-in for ADT** (see [installation instructions](https://github.com/SAP/abap-cleaner/blob/main/README.md)), which cleans up your code directly from within the IDE, and checks for updates automatically. If you nevertheless prefer to use the **stand-alone version** of ABAP cleaner (e.g. in order to use it with SAP GUI or from the command line), please
 
-          * make sure Java 21 or higher (e.g. [SapMachine](https://sapmachine.io/) or
-            [Adoptium Temurin](https://adoptium.net/)) is installed on your system, and in the app
-            'Edit the system environment variables' (Windows), System environment variable 'PATH'
-            contains the path to the java.exe (e.g. C:\Program Files\SapMachine\JDK\21\bin)
+          * make sure Java 21 or higher (e.g. [SapMachine](https://sapmachine.io/) or [Adoptium Temurin](https://adoptium.net/)) is installed on your system, and in the app 'Edit the system environment variables' (Windows), System environment variable 'PATH' contains the path to the java.exe (e.g. C:\Program Files\SapMachine\JDK\21\bin)
           * expand "Assets" below and download the archive for your operating system
           * extract the archive
           * on macOS:
-            * Move abapcleaner.app to a different directory (e.g. /Applications/abapcleaner.app),
-              do not start it directly from ~/Downloads.
-            * Remove quarantine attribute from abapcleaner.app, otherwise the app won't start
-              (because it is not code-signed):
+            * Move abapcleaner.app to a different directory (e.g. /Applications/abapcleaner.app), do not start it directly from ~/Downloads.
+            * Remove quarantine attribute from abapcleaner.app, otherwise the app won't start (because it is not code-signed):
               `xattr -dr com.apple.quarantine /Applications/abapcleaner.app`
           * start ABAP cleaner
 
-          Please check this site for updates since there is currently no automatic update mechanism for
-          the stand-alone version. [Release notes](https://github.com/SAP/abap-cleaner/blob/main/docs/release-notes.md)
-          are the same for both the ADT plug-in and the stand-alone version.
+          Please check this site for updates since there is currently no automatic update mechanism for the stand-alone version. [Release notes](https://github.com/SAP/abap-cleaner/blob/main/docs/release-notes.md) are the same for both the ADT plug-in and the stand-alone version.
 
           ### VS Code extension
 
-          ABAP cleaner shall soon be published as a VS Code extension in the Visual Studio Marketplace.
-          Until then, you can preview the extension with the following steps:
+          ABAP cleaner shall soon be published as a VS Code extension in the Visual Studio Marketplace. Until then, you can preview the extension with the following steps:
 
-          * make sure Java 21 or higher (e.g. [SapMachine](https://sapmachine.io/) or
-            [Adoptium Temurin](https://adoptium.net/)) is installed on your system, and in the app
-            'Edit the system environment variables' (Windows), System environment variable 'PATH'
-            contains the path to the java.exe (e.g. C:\Program Files\SapMachine\JDK\21\bin).
-          * expand "Assets" below and download the `.vsix` file for your platform
-            (`abapcleaner-vscode-<platform>.vsix`)
+          * make sure Java 21 or higher (e.g. [SapMachine](https://sapmachine.io/) or [Adoptium Temurin](https://adoptium.net/)) is installed on your system, and in the app 'Edit the system environment variables' (Windows), System environment variable 'PATH' contains the path to the java.exe (e.g. C:\Program Files\SapMachine\JDK\21\bin).
+          * expand "Assets" below and download the `.vsix` file for your platform (`abapcleaner-vscode-<platform>.vsix`)
           * start VS Code and install the extension with the command 'Extensions: Install from VSIX...'
           NOTES
           gh release edit "$tag" --draft=false --notes-file /tmp/release-notes.md
