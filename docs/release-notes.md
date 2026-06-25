@@ -16,7 +16,7 @@ the list of [commits](../../../commits/main).
 
 ## 2026-06-23 (version 1.28.0)
 
-**Thanks so much** for the excellent collaboration creating the VS Code extension!
+**Thanks so much** [**robinbaeurle**](https://github.com/robinbaeurle) for the excellent collaboration creating the VS Code extension!
 
 * Added **VS Code extension**
 
