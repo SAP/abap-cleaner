@@ -9,7 +9,8 @@ permissions:
   contents: write
 
 jobs:
-  # Single deploy job since we're just deploying
+  # Single job: Maven and VS Code extension steps are sequential because
+  # the VSIX packaging depends on the Maven-built platform archives.
   release:
     runs-on: ubuntu-latest
     steps:
@@ -22,6 +23,7 @@ jobs:
       # completion but no release is published. That's confusing and wastes
       # CI time, so abort up front with a clear message.
       - name: Verify tag ref
+        shell: bash
         run: |
           if [[ "${GITHUB_REF}" != refs/tags/* ]]; then
             echo "::error ::This workflow must be dispatched on a tag ref, but got '${GITHUB_REF}'."
@@ -35,6 +37,7 @@ jobs:
         uses: actions/setup-java@ad2b38190b15e4d6bdf0c97fb4fca8412226d287 # v5.3.0
         with:
           java-version: '21'
+          mvn-toolchain-id: JavaSE-21
           distribution: 'sapmachine'
 
       - name: Set up Maven
@@ -77,6 +80,7 @@ jobs:
       # https://raw.githubusercontent.com... is one redirect less than 
       # https://github.com/SAP/abap-cleaner/raw/${tag}/... would be
       - name: Package VSIX (all platforms)
+        shell: bash
         working-directory: vscode-extension
         env:
           # Each line: "<archive-suffix>|<archive-format>|<vsce-target>"
@@ -135,6 +139,7 @@ jobs:
 
       - name: Release
         if: startsWith(github.ref, 'refs/tags/')
+        shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
