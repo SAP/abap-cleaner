@@ -108,7 +108,7 @@ Using ABAP cleaner from ADT for Eclipse or VS Code, the cleanup can be done
   (***Ctrl + Shift + 5*** or menu 'Source Code / Show Read-Only Preview With ABAP Cleaner...' (Eclipse) 
   or command 'ABAP Cleaner: Show Read-Only Preview' (VS Code))
   
-  ![ABAP cleaner integration into ABAP Development Tools (ADT)](docs/images/adt-integration.png "ABAP cleaner integration into ABAP Development Tools (ADT)")
+  ![ABAP cleaner integration into ABAP development tools (ADT)](docs/images/adt-integration.png "ABAP cleaner integration into ABAP development tools (ADT)")
 
 ### Using the Stand-alone App with SAP GUI
 
@@ -134,13 +134,13 @@ EML statements are not yet supported (meaning that most cleanup rules simply lea
 
 To install and use the **ABAP cleaner plug-in for ABAP development tools for Eclipse** (ADT) on Windows or macOS, 
 
-1. Install ABAP Development Tools for Eclipse as described in the [Install ADT Tutorial (Step 1)](https://developers.sap.com/tutorials/abap-install-adt.html),
+1. Install ABAP development tools for Eclipse as described in the [Install ADT Tutorial (Step 1)](https://developers.sap.com/tutorials/abap-install-adt.html),
    using an Eclipse installation that is [compatible with ADT](https://tools.hana.ondemand.com/).
 2. Start ADT, select menu 'Help / Install New Software...', 
    copy the link https://sap.github.io/abap-cleaner/updatesite to the 'Work with' field, press Enter 
    and follow the installation steps, confirming to install ABAP cleaner (content is currently unsigned). ([Known issues](docs/installation-issues.md))
 
-   ![ABAP cleaner plug-in for ABAP Development Tools - installation](docs/images/adt-installation.png "ABAP cleaner plug-in for ABAP Development Tools - installation")
+   ![ABAP cleaner plug-in for ABAP development tools for Eclipse - installation](docs/images/adt-installation.png "ABAP cleaner plug-in for ABAP development tools for Eclipse - installation")
 
 3. After restarting ADT, open an ABAP code document in an editor, and use the menu 
    'Source Code / Clean Up With Interactive ABAP Cleaner...' 
