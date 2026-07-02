@@ -171,7 +171,7 @@ jobs:
 
           ### VS Code extension
 
-          ABAP cleaner shall soon be published as a VS Code extension in the Visual Studio Marketplace. Until then, you can preview the extension with the following steps:
+          The **ABAP cleaner extension for Visual Studio Code** can be installed directly from the [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=SAPOSS.abap-cleaner) (recommended). Alternatively, you can install it with the following steps:
 
           * make sure Java 21 or higher (e.g. [SapMachine](https://sapmachine.io/) or [Adoptium Temurin](https://adoptium.net/)) is installed on your system, and in the app 'Edit the system environment variables' (Windows), System environment variable 'PATH' contains the path to the java.exe (e.g. C:\Program Files\SapMachine\JDK\21\bin).
           * expand "Assets" below and download the `.vsix` file for your platform (`abapcleaner-vscode-<platform>.vsix`)
