@@ -1,0 +1,100 @@
+# deploy static content to GitHub Pages (including the /updatesite) 
+# and/or publish the VS Code extension to the Visual Studio Marketplace
+name: Publish
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'The release tag to publish (e.g. v1.2.3)'
+        required: true
+        type: string
+      deploy-pages:
+        description: 'Deploy Pages / updatesite'
+        type: boolean
+        default: true
+      publish-vscode:
+        description: 'Publish to VS Code Marketplace'
+        type: boolean
+        default: true
+
+jobs:
+  # ─── Deploy static content (including /updatesite) to GitHub Pages ──────
+  deploy-pages:
+    name: Deploy Pages / updatesite
+    if: ${{ inputs.deploy-pages }}
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: Download release asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release download ${{ inputs.tag }} -p com.sap.adt.abapcleaner.updatesite.zip -O release.zip
+
+      - name: Assemble content
+        run: unzip release.zip -d _site/updatesite/
+
+      - name: Setup Pages
+        uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          # Upload entire repository
+          path: '_site'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128 # v5.0.0
+
+  # ─── Publish the VS Code extension to the Visual Studio Marketplace ─────
+  vscode-publish:
+    name: Publish to VS Code Marketplace
+    if: ${{ inputs.publish-vscode }}
+    environment:
+      name: "vscode:SAPOSS.abap-cleaner"
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read   # to download VSIXs from the GitHub release
+      id-token: write  # for OIDC / managed identity login
+    steps:
+      - name: Set up Node
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: 24
+
+      - name: Download VSIXs from GitHub release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download "${{ inputs.tag }}" \
+            --pattern "*.vsix" \
+            --repo "${{ github.repository }}"
+
+      - name: Azure user-assigned managed identity login
+        uses: azure/login@a65d910e8af852a8061c627c456678983e180302 # v2.2.0
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          allow-no-subscriptions: true
+
+      - name: Publish to VS Code Marketplace
+        shell: bash
+        run: |
+          npx --yes @vscode/vsce publish \
+            --azure-credential \
+            --packagePath \
+              abapcleaner-vscode-linux.gtk.x86_64.vsix \
+              abapcleaner-vscode-macosx.cocoa.aarch64.vsix \
+              abapcleaner-vscode-macosx.cocoa.x86_64.vsix \
+              abapcleaner-vscode-win32.win32.x86_64.vsix
