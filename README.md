@@ -149,7 +149,7 @@ To install and use the **ABAP cleaner plug-in for ABAP development tools for Ecl
 ### ABAP cleaner extension for Visual Studio Code
 
 The **ABAP cleaner extension for Visual Studio Code** can be installed directly from the 
-[Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=SAPOSS.abap-cleaner). 
+[Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=SAPOSS.abap-cleaner) (recommended). 
 Alternatively, you can install it with the following steps: 
 
 1. Make sure Java 21 or higher (e.g. [SapMachine](https://sapmachine.io/) or [Adoptium Temurin](https://adoptium.net/)) 
