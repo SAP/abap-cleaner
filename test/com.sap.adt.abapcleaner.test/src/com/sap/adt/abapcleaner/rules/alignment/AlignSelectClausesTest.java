@@ -648,4 +648,20 @@ class AlignSelectClausesTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testKeepWithPrivilegedAccess() {
+		// if the FROM clause contains 'WITH PRIVILEGED ACCESS', ensure that '... PRIVILEGED ACCESS' is not  
+		// mistaken for the start of a SelectClause.ABAP_OPTIONS clause (and then split into a new line)
+		buildSrc("    SELECT SINGLE FROM any_dtab WITH PRIVILEGED ACCESS");
+		buildSrc("      FIELDS any_col");
+		buildSrc("      WHERE other_col = @lv_any_value");
+		buildSrc("      INTO @DATA(lv_target).");
+
+		putAnyMethodAroundSrcAndExp();
+		
+		copyExpFromSrc();
+
+		testRule();
+	}
 }
