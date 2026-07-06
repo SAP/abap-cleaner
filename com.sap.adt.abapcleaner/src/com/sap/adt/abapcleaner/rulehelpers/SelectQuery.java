@@ -181,6 +181,10 @@ public class SelectQuery {
 			} else if (!hasClause(SelectClause.UP_TO_OFFSET) && (token.matchesOnSiblings(true, "UP", "TO") || token.isKeyword("OFFSET")))  {
 				nextClause = SelectClause.UP_TO_OFFSET;
 			
+			} else if (curClause == SelectClause.FROM && token.matchesOnSiblings(true, "WITH", "PRIVILEGED", "ACCESS")) {
+				// skip 'WITH PRIVILEGED ACCESS' in the FROM clause to avoid mixing it up with the 'PRIVILEGED ACCESS' clause and starting SelectClause.ABAP_OPTIONS
+				token = token.getNextCodeSibling().getNextCodeSibling();
+				
 			} else if (!hasClause(SelectClause.ABAP_OPTIONS) && (token.matchesOnSiblings(true, "PRIVILEGED", "ACCESS") || token.matchesOnSiblings(true, "BYPASSING", "BUFFER") || token.isKeyword("CONNECTION")))  {
 				if (isStartQuery()) {
 					nextClause = SelectClause.ABAP_OPTIONS;
