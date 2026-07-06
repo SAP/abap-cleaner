@@ -140,7 +140,7 @@ public class VariableInfo {
 		}
 	}
 
-	public void addAssignedFieldSymol(VariableInfo fieldSymbolInfo) {
+	public void addAssignedFieldSymbol(VariableInfo fieldSymbolInfo) {
 		if (fieldSymbolInfo != null && !assignedFieldSymbols.contains(fieldSymbolInfo)) {
 			assignedFieldSymbols.add(fieldSymbolInfo);
 		}
@@ -160,124 +160,133 @@ public class VariableInfo {
 		//   LOOP AT itab ASSIGNING FIELD-SYMBOL(<fs>). 
 		//     <fs>-component = 1.
 		// return true if among the field-symbols which are (at any point) assigned to this variable, any write position is
-		// found (i.e. a Command in which the memory referenced by this field-symbol is modified), 
+		// found (i.e. a Command in which the memory referenced by this field-symbol is modified),
+		return this.hasAssignedFieldSymbolsWithWrite();
+	}
+
+	private boolean hasAssignedFieldSymbolsWithWrite() {
 		for (VariableInfo assignedFieldSymbol : assignedFieldSymbols) {
 			if (assignedFieldSymbol.writeToReferencedMemoryCount > 0) {
+				return true;
+			}
+			// recursively check whether any of the field-symbols assigned to this field-symbol has a write position
+			if (assignedFieldSymbol.hasAssignedFieldSymbolsWithWrite()) {
 				return true;
 			}
 		}
 		return false;
 	}
+	
+	public void setEnclosingCommand(Command command) {
+		enclosingCommand = command;
+		enclosingCommandWithCommentUsage = command;
+	}
 
-   public void setEnclosingCommand(Command command) {
-   	enclosingCommand = command;
-   	enclosingCommandWithCommentUsage = command;
-   }
-   
-   public void setTypeSource(VariableInfo typeSource) {
-   	// do not enter cases in which a VariableInfo would refer to itself as the typeSource, 
-   	// such as 'DATA: BEGIN OF ls_struct, ...' 
-   	if (typeSource != this) {
-   		this.typeSource = typeSource;
-   	}
-   }
-
-   public VariableInfo getTypeSource() {
-   	return typeSource;
-   }
-   
-   private static Command updateEnclosingCommand(Command enclosingCommand, Command newCommand) {
-   	if (newCommand == null)
-   		return enclosingCommand;
-   	else if (enclosingCommand == null) 
-   		return newCommand.getParent();
-   	
-   	// find the common parent of the enclosing Command and the new Command
-   	HashSet<Command> enclosingCommands = new HashSet<>();
-   	Command parent = enclosingCommand;
-   	do {
-   		enclosingCommands.add(parent);
-   		parent = parent.getParent();
-   	} while(parent != null);
-   	
-   	Command command = newCommand.getParent();
-   	while (command != null) {
-   		if (enclosingCommands.contains(command)) {
-   			return command;
-   		}
-   		command = command.getParent();
-   	}
-   	return enclosingCommand;
-   }
-   
-   public Command getEnclosingCommand(boolean considerCommentUsage) { 
-   	return considerCommentUsage ? enclosingCommandWithCommentUsage : enclosingCommand; 
-   }
-   
-   /** returns true if the type of the variable is a known character-like type that is not structured */
-   public TriState hasUnstructuredCharlikeType(Variables variables) {
-   	VariableInfo varInfo = this;
-   	while (varInfo.typeSource != null)
-   		varInfo = varInfo.typeSource;
-   	
-   	Token token = varInfo.declarationToken; 
-   	if (token == null) // pro forma
-   		return TriState.UNKNOWN;
-
-   	// check for 'BEGIN OF' declaration, which is a structured type 
-   	Token prevCode = token.getPrevCodeSibling();
-   	Token prevPrevCode = (prevCode == null) ? null : prevCode.getPrevCodeSibling();
-   	if (prevPrevCode != null && prevPrevCode.isKeyword("BEGIN") && prevCode.isKeyword("OF")) {
-   		return TriState.FALSE; // e.g. 'DATA: BEGIN OF ls_struct
+	public void setTypeSource(VariableInfo typeSource) {
+		// do not enter cases in which a VariableInfo would refer to itself as the typeSource,
+		// such as 'DATA: BEGIN OF ls_struct, ...'
+		if (typeSource != this) {
+			this.typeSource = typeSource;
 		}
-   	
-   	// move to the 'TYPE' or 'LIKE' keyword in 'lv_var TYPE ...' or 'VALUE(rv_var) TYPE ...'
-   	token = token.getNext().textEquals(")") ? token.getNext().getNextCodeSibling() : token.getNextCodeSibling();
-   	if (token == null) // pro forma
-   		return TriState.UNKNOWN;
-   	boolean isType = token.isKeyword("TYPE");
-   	boolean isLike = token.isKeyword("LIKE");
-   	if (!isType && !isLike)
-   		return TriState.UNKNOWN;
+	}
 
-   	token = token.getNextCodeSibling();
-   	if (token == null) // pro forma
-   		return TriState.UNKNOWN;
-   	else if (token.isKeyword()) // e.g. STANDARD TABLE OF ...
-   		return TriState.FALSE;
-   	
-   	// if the type is itself defined locally, find out whether it is a structured type
-   	VariableInfo typeInfo = variables.getVariableInfo(token.getText(), true);
-   	if (typeInfo != null && typeInfo.isBoundStructuredData)
-   		return TriState.FALSE;
+	public VariableInfo getTypeSource() { return typeSource; }
 
-   	// built-in character-like types: string, c [LENGTH ...], n [LENGTH ...]; 
-   	// built-in date/time types d, t (but not utclong) and corresponding built-in ABAP Dictionary types
-   	if (isType && token.textEqualsAny("string", "c", "n", "d", "t", "datn", "dats", "timn", "tims", "sstring", "lang")) 
-   		return TriState.TRUE;
-   	// generic types (only possible for field symbols)
-   	if (isType && token.textEqualsAny("clike", "csequence")) 
-   		return TriState.TRUE;
+	private static Command updateEnclosingCommand(Command enclosingCommand, Command newCommand) {
+		if (newCommand == null)
+			return enclosingCommand;
+		else if (enclosingCommand == null)
+			return newCommand.getParent();
 
-   	// character-like system fields and their types e.g. sy-uname / syst_uname (esp. with length > 1)
-   	String syField = null;
-   	if (token.textStartsWith("sy-")) { // this is also tolerated after TYPE
-   		syField = token.getText().substring("sy-".length());
-   	} else if (isType && token.textStartsWith("syst_")) {
-   		syField = token.getText().substring("syst_".length());
-   	}
-   	if (syField != null && AbapCult.stringEqualsAny(true, syField, "abcde", "cprog", "dbnam", "dbsys", "host", "langu", "ldbpg", "lisel", "msgid", "msgty", "msgv1", "msgv2", "msgv3", "msgv4", "pfkey", "slset", "sysid", "tcode", "title", "ucomm", "uname", "zonlo"))
-	   	return TriState.TRUE;
+		// find the common parent of the enclosing Command and the new Command
+		HashSet<Command> enclosingCommands = new HashSet<>();
+		Command parent = enclosingCommand;
+		do {
+			enclosingCommands.add(parent);
+			parent = parent.getParent();
+		} while (parent != null);
 
-   	// char5, numc5 etc.
-   	String text = token.getText();
-   	if (isType && StringUtil.hasTrailingDigits(text)) {
-	   	String textWithoutDigits = StringUtil.removeTrailingDigits(text);
-	   	if (AbapCult.stringEqualsAny(true, textWithoutDigits, "char", "numc")) { 
-	   		return TriState.TRUE;
-	   	}
-   	}
-   	
-   	return TriState.UNKNOWN;
-   }
+		Command command = newCommand.getParent();
+		while (command != null) {
+			if (enclosingCommands.contains(command)) {
+				return command;
+			}
+			command = command.getParent();
+		}
+		return enclosingCommand;
+	}
+
+	public Command getEnclosingCommand(boolean considerCommentUsage) {
+		return considerCommentUsage ? enclosingCommandWithCommentUsage : enclosingCommand;
+	}
+
+	/** returns true if the type of the variable is a known character-like type that is not structured */
+	public TriState hasUnstructuredCharlikeType(Variables variables) {
+		VariableInfo varInfo = this;
+		while (varInfo.typeSource != null) {
+			varInfo = varInfo.typeSource;
+		}
+
+		Token token = varInfo.declarationToken;
+		if (token == null) // pro forma
+			return TriState.UNKNOWN;
+
+		// check for 'BEGIN OF' declaration, which is a structured type
+		Token prevCode = token.getPrevCodeSibling();
+		Token prevPrevCode = (prevCode == null) ? null : prevCode.getPrevCodeSibling();
+		if (prevPrevCode != null && prevPrevCode.isKeyword("BEGIN") && prevCode.isKeyword("OF")) {
+			return TriState.FALSE; // e.g. 'DATA: BEGIN OF ls_struct
+		}
+
+		// move to the 'TYPE' or 'LIKE' keyword in 'lv_var TYPE ...' or 'VALUE(rv_var) TYPE ...'
+		token = token.getNext().textEquals(")") ? token.getNext().getNextCodeSibling() : token.getNextCodeSibling();
+		if (token == null) // pro forma
+			return TriState.UNKNOWN;
+		boolean isType = token.isKeyword("TYPE");
+		boolean isLike = token.isKeyword("LIKE");
+		if (!isType && !isLike)
+			return TriState.UNKNOWN;
+
+		token = token.getNextCodeSibling();
+		if (token == null) // pro forma
+			return TriState.UNKNOWN;
+		else if (token.isKeyword()) // e.g. STANDARD TABLE OF ...
+			return TriState.FALSE;
+
+		// if the type is itself defined locally, find out whether it is a structured type
+		VariableInfo typeInfo = variables.getVariableInfo(token.getText(), true);
+		if (typeInfo != null && typeInfo.isBoundStructuredData)
+			return TriState.FALSE;
+
+		// built-in character-like types: string, c [LENGTH ...], n [LENGTH ...];
+		// built-in date/time types d, t (but not utclong) and corresponding built-in ABAP Dictionary types
+		if (isType && token.textEqualsAny("string", "c", "n", "d", "t", "datn", "dats", "timn", "tims", "sstring", "lang"))
+			return TriState.TRUE;
+		// generic types (only possible for field symbols)
+		if (isType && token.textEqualsAny("clike", "csequence"))
+			return TriState.TRUE;
+
+		// character-like system fields and their types e.g. sy-uname / syst_uname (esp. with length > 1)
+		String syField = null;
+		if (token.textStartsWith("sy-")) { // this is also tolerated after TYPE
+			syField = token.getText().substring("sy-".length());
+		} else if (isType && token.textStartsWith("syst_")) {
+			syField = token.getText().substring("syst_".length());
+		}
+		if (syField != null && AbapCult.stringEqualsAny(true, syField, "abcde", "cprog", "dbnam", "dbsys", "host", "langu", "ldbpg", "lisel", "msgid", "msgty", "msgv1", "msgv2",
+				"msgv3", "msgv4", "pfkey", "slset", "sysid", "tcode", "title", "ucomm", "uname", "zonlo")) {
+			return TriState.TRUE;
+		}
+		
+		// char5, numc5 etc.
+		String text = token.getText();
+		if (isType && StringUtil.hasTrailingDigits(text)) {
+			String textWithoutDigits = StringUtil.removeTrailingDigits(text);
+			if (AbapCult.stringEqualsAny(true, textWithoutDigits, "char", "numc")) {
+				return TriState.TRUE;
+			}
+		}
+
+		return TriState.UNKNOWN;
+	}
 }

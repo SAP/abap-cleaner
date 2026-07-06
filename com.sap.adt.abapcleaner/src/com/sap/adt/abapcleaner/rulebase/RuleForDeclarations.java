@@ -848,7 +848,7 @@ public abstract class RuleForDeclarations extends Rule {
 		if (ABAP.isFieldSymbol(fieldSymbolOrDataRef.getText())) {
 			// enter the field-symbol to the list of field-symbols that are assigned to a memory area of the local variable
 			VariableInfo fieldSymbolInfo = localVariables.getVariableInfo(fieldSymbolOrDataRef.getText(), false);
-			varInfo.addAssignedFieldSymol(fieldSymbolInfo);
+			varInfo.addAssignedFieldSymbol(fieldSymbolInfo);
 
 		} else {
 			// note down that a data reference points to the memory area of the local variable

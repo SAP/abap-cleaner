@@ -719,4 +719,37 @@ class FinalVariableTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testRecursiveWriteAccessCheck() {
+		// ensure that the write access to <row> => <group> => rows is identified, so DATA(rows) is kept,
+		// cp. the recursive logic in VariableInfo.hasAssignedFieldSymbolsWithWrite()
+		buildSrc("  METHOD any_method.");
+		buildSrc("    DATA(rows) = read_rows( ).");
+		buildSrc("");
+		buildSrc("    LOOP AT rows INTO DATA(key_for_grouping)");
+		buildSrc("         GROUP BY ( group_key = key_for_grouping-group_key )");
+		buildSrc("         ASSIGNING FIELD-SYMBOL(<group>).");
+		buildSrc("");
+		buildSrc("      LOOP AT GROUP <group> ASSIGNING FIELD-SYMBOL(<row>).");
+		buildSrc("        <row>-value *= 10.");
+		buildSrc("      ENDLOOP.");
+		buildSrc("    ENDLOOP.");
+		buildSrc("  ENDMETHOD.");
+
+		buildExp("  METHOD any_method.");
+		buildExp("    DATA(rows) = read_rows( ).");
+		buildExp("");
+		buildExp("    LOOP AT rows INTO FINAL(key_for_grouping)");
+		buildExp("         GROUP BY ( group_key = key_for_grouping-group_key )");
+		buildExp("         ASSIGNING FIELD-SYMBOL(<group>).");
+		buildExp("");
+		buildExp("      LOOP AT GROUP <group> ASSIGNING FIELD-SYMBOL(<row>).");
+		buildExp("        <row>-value *= 10.");
+		buildExp("      ENDLOOP.");
+		buildExp("    ENDLOOP.");
+		buildExp("  ENDMETHOD.");
+
+		testRule();
+	}
 }
