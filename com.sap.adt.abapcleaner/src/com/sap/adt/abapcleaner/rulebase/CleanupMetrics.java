@@ -9,7 +9,8 @@ import com.sap.adt.abapcleaner.programbase.Task;
 
 class CleanupMetrics {
 	private final String lineSep = System.lineSeparator();
-
+	private final String lineSepReplacement = " - "; // to fit a message into a single table cell
+	
 	// data provided to the constructor
 	private final CleanupParams cleanupParams;
 	
@@ -278,7 +279,7 @@ class CleanupMetrics {
 	
 	private void appendDurationAndMessage(int duration_ms, String message) {
 		details.append("\t").append(duration_ms < 0 ? " " : (int) duration_ms);
-		details.append("\t").append((message == null) ? "" : message);
+		details.append("\t").append((message == null) ? "" : message.replace(lineSep, lineSepReplacement));
 	}
 	
 	private void appendRuleUseCount(int[] ruleUseCount, String inactiveText) {
