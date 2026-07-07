@@ -2,7 +2,11 @@
 
 ABAP cleaner applies 100+ cleanup rules to ABAP code at a single keystroke.
 
-![ABAP cleaner - code cleanup at a keystroke](../docs/images/cleanup-example.png "ABAP cleaner - code cleanup at a keystroke")
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/SAP/abap-cleaner/main/docs/images/cleanup-example-dark.png">
+  <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/SAP/abap-cleaner/main/docs/images/cleanup-example.png">
+  <img alt="ABAP cleaner - code cleanup at a keystroke" src="https://raw.githubusercontent.com/SAP/abap-cleaner/main/docs/images/cleanup-example.png">
+</picture>
 
 ## Features
 
