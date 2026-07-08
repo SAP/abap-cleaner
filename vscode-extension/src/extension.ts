@@ -12,6 +12,7 @@ const TEMP_INPUT_FILE_INFIX = 'input';
 const TEMP_OUTPUT_FILE_INFIX = 'output';
 const ABAP_SUFFIX = '.abap';
 const ACDS_SUFFIX = '.acds';
+const ABAPGIT_ASDDLS_SUFFIX = '.asddls';
 const TEMP_FILE_ENCODING = 'utf8';
 
 const TEMP_DIR = path.join(os.tmpdir(), TEMP_FOLDER);
@@ -65,7 +66,14 @@ async function runAbapCleaner(sourceText: string, docFileName?: string, lineRang
    const binary = binaryManager.ensureBinary();
 
    const fileName = tempFileBase();
-   const suffix = docFileName?.toLowerCase().endsWith(ACDS_SUFFIX) ? ACDS_SUFFIX : ABAP_SUFFIX;
+
+   let suffix = ABAP_SUFFIX;
+   const lowerDocFileName = docFileName?.toLowerCase();
+
+   if (lowerDocFileName?.endsWith(ACDS_SUFFIX) || lowerDocFileName?.endsWith(ABAPGIT_ASDDLS_SUFFIX)) {
+      suffix = ACDS_SUFFIX;
+   }
+
    const srcFile = tempFilePath(fileName, TEMP_INPUT_FILE_INFIX + suffix);
    const tgtFile = readOnly ? null : tempFilePath(fileName, TEMP_OUTPUT_FILE_INFIX + suffix);
    const args = CLI.buildArgs(srcFile, tgtFile, lineRange, expandToUserScope, interactive, readOnly, docFileName);
@@ -235,7 +243,7 @@ function isDocumentTypeSupported(document: vscode.TextDocument): boolean {
    }
 
    const uriPath = document.uri.path.toLowerCase();
-   return uriPath.endsWith('.abap') || uriPath.endsWith('.acds');
+   return uriPath.endsWith(ABAP_SUFFIX) || uriPath.endsWith(ACDS_SUFFIX) || uriPath.endsWith(ABAPGIT_ASDDLS_SUFFIX);
 }
 
 function checkActiveTextEditorSupported(): boolean {
