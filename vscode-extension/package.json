@@ -63,25 +63,25 @@
             "command": "editor.action.formatDocument",
             "key": "ctrl+5",
             "mac": "cmd+5",
-            "when": "editorTextFocus && (resourceExtname == .abap || resourceExtname == .acds)"
+            "when": "editorTextFocus && (resourceExtname == .abap || resourceExtname == .acds || resourceExtname == .asddls)"
          },
          {
             "command": "editor.action.formatSelection",
             "key": "ctrl+4",
             "mac": "cmd+4",
-            "when": "editorTextFocus && (resourceExtname == .abap || resourceExtname == .acds)"
+            "when": "editorTextFocus && (resourceExtname == .abap || resourceExtname == .acds || resourceExtname == .asddls)"
          },
          {
             "command": "abapCleaner.formatInteractively",
             "key": "ctrl+shift+4",
             "mac": "cmd+shift+4",
-            "when": "editorTextFocus && (resourceExtname == .abap || resourceExtname == .acds)"
+            "when": "editorTextFocus && (resourceExtname == .abap || resourceExtname == .acds || resourceExtname == .asddls)"
          },
          {
             "command": "abapCleaner.readOnlyPreview",
             "key": "ctrl+shift+5",
             "mac": "cmd+shift+5",
-            "when": "editorTextFocus && (resourceExtname == .abap || resourceExtname == .acds)"
+            "when": "editorTextFocus && (resourceExtname == .abap || resourceExtname == .acds || resourceExtname == .asddls)"
          }
       ],
       "configuration": {
