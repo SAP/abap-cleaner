@@ -15,6 +15,9 @@ const ACDS_SUFFIX = '.acds';
 const ABAPGIT_ASDDLS_SUFFIX = '.asddls';
 const TEMP_FILE_ENCODING = 'utf8';
 
+const ABAP_LANGUAGE_ID = 'abap';
+const ACDS_LANGUAGE_ID = 'acds';
+
 const TEMP_DIR = path.join(os.tmpdir(), TEMP_FOLDER);
 const TEMP_DIR_ESCAPED = TEMP_DIR.replaceAll('\\', '\\\\'); // to simplify messages with escaped paths
 
@@ -220,25 +223,26 @@ async function formatInteractively(readOnly: boolean): Promise<void> {
 // ─── Language selector ──────────────────────────────────────────────────
 
 const ABAP_SELECTOR: vscode.DocumentFilter[] = [
-   { language: 'abap' }, // ABAP
-   { language: 'acds' }, // Data Definition Language (DDL) for CDS views
+   { language: ABAP_LANGUAGE_ID }, // ABAP
+   { language: ACDS_LANGUAGE_ID }, // Data Definition Language (DDL) for CDS views
 
    // ABAP code
-   // { scheme: 'abap', pattern: '**/*.abap' },
-   { scheme: 'file', pattern: '**/*.abap' },
-   { scheme: 'vscode-vfs', pattern: '**/*.abap' }, // vfs= virtual file system
+   { scheme: 'file', pattern: '**/*' + ABAP_SUFFIX },
+   { scheme: 'vscode-vfs', pattern: '**/*' + ABAP_SUFFIX }, // vfs= virtual file system
 
    // Data Definition Language (DDL) code for CDS views uses the extension .acds
-   // { scheme: 'acds', pattern: '**/*.acds' },
-   { scheme: 'file', pattern: '**/*.acds' },
-   { scheme: 'vscode-vfs', pattern: '**/*.acds' }, // vfs = virtual file system
+   { scheme: 'file', pattern: '**/*' + ACDS_SUFFIX },
+   { scheme: 'vscode-vfs', pattern: '**/*' + ACDS_SUFFIX }, // vfs = virtual file system
+   // - in abapGit, the extension .asddls is used
+   { scheme: 'file', pattern: '**/*' + ABAPGIT_ASDDLS_SUFFIX },
+   { scheme: 'vscode-vfs', pattern: '**/*' + ABAPGIT_ASDDLS_SUFFIX }, // vfs = virtual file system
 ];
 
 // ─── Activation ─────────────────────────────────────────────────────────
 
 function isDocumentTypeSupported(document: vscode.TextDocument): boolean {
    // both ABAP code and Data Definition Language (DDL) for CDS views are supported
-   if (document.languageId === 'abap' || document.languageId === 'acds') {
+   if (document.languageId === ABAP_LANGUAGE_ID || document.languageId === ACDS_LANGUAGE_ID) {
       return true;
    }
 

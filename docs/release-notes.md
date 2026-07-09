@@ -6,6 +6,17 @@ as well as bugfixes of reported issues, i.e. anything that enhances or changes t
 For a complete list of changes (including documentation, tests, refactoring etc.), please refer to 
 the list of [commits](../../../commits/main).
 
+## 2026-07-09 (version 1.28.5)
+
+**Great thanks** to [**BurnerPat**](https://github.com/BurnerPat), [**bnichell**](https://github.com/bnichell) 
+and [**fabianlupa**](https://github.com/fabianlupa) for your contributions and bug reports that led to these improvements!
+
+* **VS Code** extension: Added **support** for **.asddls extension** used by abapGit
+* Fixed rule '**Use FINAL for immutable variables**' for **recursive write access** ([#540](../../../issues/540))
+* Fixed rule '**Align SELECT clauses**' for **WITH PRIVILEGED ACCESS** ([#541](../../../issues/541))
+* Updated ABAP grammar file
+* Updated known CamelCase names
+
 ## 2026-07-02 (version 1.28.4)
 
 * Enhanced publish action to **publish VS Code extension** to the Visual Studio **Marketplace**
