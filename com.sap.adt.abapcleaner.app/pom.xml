@@ -100,7 +100,7 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xs
   <repositories>
     <repository>
       <id>justj</id>
-      <url>https://download.eclipse.org/justj/jres/21/updates/release/21.0.10</url>
+      <url>https://download.eclipse.org/justj/jres/21/updates/release/21.0.11</url>
       <layout>p2</layout>
     </repository>
   </repositories>
