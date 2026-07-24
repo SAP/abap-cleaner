@@ -158,7 +158,6 @@ jobs:
           cat > /tmp/release-notes.md << 'NOTES'
           We recommend using the ABAP cleaner **plug-in for ADT** (see [installation instructions](https://github.com/SAP/abap-cleaner/blob/main/README.md)), which cleans up your code directly from within the IDE, and checks for updates automatically. If you nevertheless prefer to use the **stand-alone version** of ABAP cleaner (e.g. in order to use it with SAP GUI or from the command line), please
 
-          * make sure Java 21 or higher (e.g. [SapMachine](https://sapmachine.io/) or [Adoptium Temurin](https://adoptium.net/)) is installed on your system, and in the app 'Edit the system environment variables' (Windows), System environment variable 'PATH' contains the path to the java.exe (e.g. C:\Program Files\SapMachine\JDK\21\bin)
           * expand "Assets" below and download the archive for your operating system
           * extract the archive
           * on macOS:
@@ -173,7 +172,6 @@ jobs:
 
           The **ABAP cleaner extension for Visual Studio Code** can be installed directly from the [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=SAPOSS.abap-cleaner) (recommended). Alternatively, you can install it with the following steps:
 
-          * make sure Java 21 or higher (e.g. [SapMachine](https://sapmachine.io/) or [Adoptium Temurin](https://adoptium.net/)) is installed on your system, and in the app 'Edit the system environment variables' (Windows), System environment variable 'PATH' contains the path to the java.exe (e.g. C:\Program Files\SapMachine\JDK\21\bin).
           * expand "Assets" below and download the `.vsix` file for your platform (`abapcleaner-vscode-<platform>.vsix`)
           * start VS Code and install the extension with the command 'Extensions: Install from VSIX...'
           NOTES

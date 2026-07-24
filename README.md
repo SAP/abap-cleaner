@@ -152,16 +152,13 @@ The **ABAP cleaner extension for Visual Studio Code** can be installed directly 
 [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=SAPOSS.abap-cleaner) (recommended). 
 Alternatively, you can install it with the following steps: 
 
-1. Make sure Java 21 or higher (e.g. [SapMachine](https://sapmachine.io/) or [Adoptium Temurin](https://adoptium.net/)) 
-   is installed on your system, and in the app 'Edit the system environment variables' (Windows), System environment variable 'PATH' contains the path to the java.exe (e.g. C:\Program Files\SapMachine\JDK\21\bin)
-
-2. Download the `.vsix` file for your platform from the latest [release assets](https://github.com/SAP/abap-cleaner/releases), 
+1. Download the `.vsix` file for your platform from the latest [release assets](https://github.com/SAP/abap-cleaner/releases), 
    e.g. for Windows, `abapcleaner-vscode-win32.win32.x86_64.vsix`.
 
-3. In the VS Code Command Palette, enter 'Extensions: Install from VSIX...' and select the downloaded .vsix file
+2. In the VS Code Command Palette, enter 'Extensions: Install from VSIX...' and select the downloaded .vsix file
    to install the ABAP cleaner extension.
 
-4. Open an ABAP code document in a VS Code editor and use one of the 'ABAP cleaner: ...' commands, 
+3. Open an ABAP code document in a VS Code editor and use one of the 'ABAP cleaner: ...' commands, 
    see [usage](docs/usage.md).
 
 The extension is technically independent from 
@@ -170,8 +167,6 @@ but it makes sense to use both together, of course.
 
 ### Stand-alone version of ABAP cleaner
 
-The **stand-alone version of ABAP cleaner** (for Windows, macOS or Linux) 
-requires Java 21 or higher (e.g. [SapMachine](https://sapmachine.io/) or [Adoptium Temurin](https://adoptium.net/)). 
 To install the stand-alone version, please download and extract the `.gz` or `.zip` file for your platform 
 from the latest [Release](../../releases) and follow the installation instructions given there.
 

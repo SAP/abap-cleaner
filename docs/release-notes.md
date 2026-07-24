@@ -6,6 +6,14 @@ as well as bugfixes of reported issues, i.e. anything that enhances or changes t
 For a complete list of changes (including documentation, tests, refactoring etc.), please refer to 
 the list of [commits](../../../commits/main).
 
+## 2026-07-24 (version 1.29.0)
+
+**Thank you**, [**sratz**](https://github.com/sratz), for making the installation of the VS Code extension and the
+stand-alone version a lot easier!
+
+* **Included minimal JRE** in stand-alone app and VS Code extension ([#553](../../../issues/553))
+* Updated **known CamelCase names** for CDS views and fields
+
 ## 2026-07-09 (version 1.28.5)
 
 **Great thanks** to [**BurnerPat**](https://github.com/BurnerPat), [**bnichell**](https://github.com/bnichell) 
@@ -14,8 +22,8 @@ and [**fabianlupa**](https://github.com/fabianlupa) for your contributions and b
 * **VS Code** extension: Added **support** for **.asddls extension** used by abapGit
 * Fixed rule '**Use FINAL for immutable variables**' for **recursive write access** ([#540](../../../issues/540))
 * Fixed rule '**Align SELECT clauses**' for **WITH PRIVILEGED ACCESS** ([#541](../../../issues/541))
-* Updated ABAP grammar file
-* Updated known CamelCase names
+* Updated **ABAP grammar file**
+* Updated **known CamelCase names** for CDS views and fields
 
 ## 2026-07-02 (version 1.28.4)
 

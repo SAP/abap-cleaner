@@ -27,12 +27,6 @@ ABAP cleaner applies 100+ cleanup rules to ABAP code at a single keystroke.
 
 ![ABAP cleaner - profiles and rules window](../docs/images/profiles.png "ABAP cleaner - profiles and rules")
 
-## Requirements
-
-**Java 21** or higher (e.g. [SapMachine](https://sapmachine.io/) or [Adoptium Temurin](https://adoptium.net/)) 
-must be installed, and in the app 'Edit the system environment variables' (Windows), System environment variable '**PATH**' 
-must contain the path to the java.exe (e.g. C:\Program Files\SapMachine\JDK\21\bin).
-
 ## Installation
 
 ### From the VS Code Marketplace (recommended)
