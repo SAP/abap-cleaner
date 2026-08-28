@@ -3391,4 +3391,27 @@ class AlignParametersTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testParameterNamesDivAndMod() {
+		// ensure that the parameter names 'div' and 'mod' are not mistaken for operators 
+		// (see constructor Term(Token, true)) and are aligned correctly
+		buildSrc("  any_method( par1 = v1");
+		buildSrc("        div = v2");
+		buildSrc("                mod = v3 ).");
+		buildSrc("  any_method( par1 = v1 DIV 2");
+		buildSrc("              div = v2 MOD 3");
+		buildSrc("              mod = v3 DIV 4 ).");
+
+		buildExp("  any_method( par1 = v1");
+		buildExp("              div  = v2");
+		buildExp("              mod  = v3 ).");
+		buildExp("  any_method( par1 = v1 DIV 2");
+		buildExp("              div  = v2 MOD 3");
+		buildExp("              mod  = v3 DIV 4 ).");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }

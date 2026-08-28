@@ -230,4 +230,22 @@ class ComparisonOperatorTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testParameterNamesDivAndMod() {
+		// ensure that the parameter names 'div' and 'mod' are not mistaken for operators 
+		// (see constructor Term(Token, true)) and do not lead to a syntax error
+		rule.configPreferredOperatorSet.setEnumValue(ComparisonOperatorType.TEXTUAL);
+
+		buildSrc("  any_method( par = v1");
+		buildSrc("              div = v2 ).");
+		buildSrc("  any_method( par = v1");
+		buildSrc("              mod = v2 ).");
+
+		copyExpFromSrc();
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }

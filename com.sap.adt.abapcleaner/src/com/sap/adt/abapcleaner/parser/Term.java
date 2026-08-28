@@ -198,7 +198,13 @@ public class Term {
 		// like in the parameter assignment "amount = <ls_tdc_ev_pob>-event_based-list_price_per_unit * <ls_tdc_ev_pob>-event_based-qty / 2"
 		if (expandWithArithmeticOps) {
 			while (token.getNextCodeToken() != null && token.getNextCodeToken().textEqualsAny(binaryOperators)) {
-				token = token.getNextCodeToken().getNextCodeToken();
+				// ensure that the right-hand side of the binary operator is a valid argument:
+				// in 'any_method( par = 1 div = 2 )', DIV must not be mistaken for a binary operator! (same for MOD)
+				Token secondArg = token.getNextCodeToken().getNextCodeToken();
+				if (secondArg == null || ABAP.isAssignmentOperator(secondArg.text)) {
+					break;
+				}
+				token = secondArg;
 				if (token.startsStringTemplate()) {
 					while (!token.endsStringTemplate()) {
 						token = token.getNextSibling();
