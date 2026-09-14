@@ -314,4 +314,153 @@ public class SelectQuery {
 		int index = clauseTypesInOrder.indexOf(clause);
 		return (index >= 0 && index + 1 < clauseTypesInOrder.size()) ? clauseTypesInOrder.get(index + 1) : SelectClause.NONE; 
 	}
+	
+	/** Tries to determine whether the query uses strict mode. If this cannot be determined (because not all rules are 
+	 * covered here), AbapSqlMode.UNCERTAIN is returned. */
+	public AbapSqlMode determineAbapSqlMode() {
+		// maxRelease (not yet unused): if new syntax (such as the FINAL keyword) shall be introduced to the code, it should   
+		// be ensured that the code already complies with the 'strict mode requirements' of that release. maxRelease contains
+		// the release up to which requirements are sure to be met (because corresponding syntax is found in the statement). 
+		// However, as of now, we only try to find out whether the query is definitely NOT in strict mode.
+		int maxRelease = 0;
+		
+		// (7.60) The INTO clause must be specified as the last clause of a SELECT statement and the ABAP-specific additions OPTIONS of the SELECT statement must be specified after the INTO clause.
+		// (7.63) In the statement OPEN CURSOR, the additions grouped under UP TO, OFFSET, and OPTIONS must also be specified at the end of the SELECT statement.
+		ArrayList<SelectClause> clauseTypes = getClausTypesInOrder();
+		int intoIndex = clauseTypes.indexOf(SelectClause.INTO);
+		int uptoIndex = clauseTypes.indexOf(SelectClause.UP_TO_OFFSET);
+		int abapOptionsIndex = clauseTypes.indexOf(SelectClause.ABAP_OPTIONS);
+		if (intoIndex >= 0) {
+			if (uptoIndex >= 0 && uptoIndex < intoIndex || abapOptionsIndex >= 0 && abapOptionsIndex < intoIndex) {
+				return AbapSqlMode.NOT_STRICT;
+			}
+			for (int i = intoIndex + 1; i < clauseTypes.size(); ++i) {
+				SelectClause clauseType = clauseTypes.get(i);
+				if (clauseType != SelectClause.UP_TO_OFFSET && clauseType != SelectClause.ABAP_OPTIONS) {
+					return AbapSqlMode.NOT_STRICT;
+				}
+			}
+			// (7.40, SP08) Arrangement of the INTO clause as the final clause of a SELECT statement. => strict mode
+			maxRelease = Math.max(maxRelease, 740);
+		}
+
+		// (7.96) explicit usage of addition OPTIONS => strict mode
+		Term abapOptionsClause = getClause(SelectClause.ABAP_OPTIONS);
+		if (abapOptionsClause != null && !abapOptionsClause.firstToken.isKeyword("OPTIONS")) {
+			return AbapSqlMode.NOT_STRICT;
+		}
+
+		for (Term clause : clauseTermsInOrder) {
+			// (7.40, SP05) Lists of operands as comma-separated lists => strict mode
+			if (clause.findSiblingOfTypeAndTexts(TokenType.OTHER_OP, ",") != null) {
+				maxRelease = Math.max(maxRelease, 740);
+			}
+			// (7.40, SP05) Addition USING CLIENT => strict mode
+			if (clause.findSiblingOfTypeAndTexts(TokenType.KEYWORD, "USING", "CLIENT") != null) {
+				maxRelease = Math.max(maxRelease, 740);
+			}
+			// (7.77) The obsolete use of the addition CLIENT SPECIFIED is forbidden in the statement SELECT in queries and subqueries.
+			// (7.77) The obsolete use of the addition CLIENT SPECIFIED in write statements is forbidden.
+			// (7.67) The addition CLIENT SPECIFIED cannot be specified for a data source specified using a path expression.
+			if (clause.findSiblingOfTypeAndTexts(TokenType.KEYWORD, "CLIENT", "SPECIFIED") != null) {
+				return AbapSqlMode.NOT_STRICT;
+			}
+
+			Token token = clause.firstToken;
+			while (token != null && token != clause.lastToken.getNext()) {
+				// (7.40, SP05) Escape character @ in front of host variables => strict mode
+				if (token.isIdentifier() && token.textStartsWith("@")) {
+					maxRelease = Math.max(maxRelease, 740);
+				}
+				// (7.60) Use of host expressions
+				if (token.textEquals("@(")) {
+					maxRelease = Math.max(maxRelease, 760);
+				}
+
+				if (token.isIdentifier() && token.getOpensLevel()) {
+					if (token.textEqualsAny("SERIES_GENERATE_DATE(", "SERIES_GENERATE_INTEGER(", "SERIES_GENERATE_TIME(", "SERIES_GENERATE_TIMESTAMP(", "SUBSTRING_REGEXPR(")) {
+						// (7.84) Use of the CDS system table functions SERIES_GENERATE_DATE, SERIES_GENERATE_INTEGER, SERIES_GENERATE_TIME,
+						// and SERIES_GENERATE_TIMESTAMP.
+						// (7.84) Use of the string function SUBSTRING_REGEXPR.
+						maxRelease = Math.max(maxRelease, 784);
+
+					} else if (token.textEqualsAny("INITCAP(", "IS_VALID(", "EXTRACT_YEAR(", "EXTRACT_MONTH(", "EXTRACT_DAY(", "EXTRACT_HOUR(", "EXTRACT_MINUTE(", "EXTRACT_SECOND(",
+							"DAYNAME(", "MONTHNAME(", "WEEKDAY(", "DAYS_BETWEEN(", "ADD_DAYS(", "ADD_MONTHS(", "UNIT_CONVERSION(")) {
+						// (7.83) Use of the string function INITCAP.
+						// (7.83) Use of one of the new date/time functions IS_VALID, EXTRACT_YEAR, EXTRACT_MONTH, EXTRACT_DAY, EXTRACT_HOUR, EXTRACT_MINUTE,
+						// EXTRACT_SECOND, DAYNAME, MONTHNAME, WEEKDAY, DAYS_BETWEEN, ADD_DAYS, and ADD_MONTHS.
+						// (7.83) Use of the function UNIT_CONVERSION.
+						maxRelease = Math.max(maxRelease, 783);
+					
+					} else if (token.textEqualsAny("REPLACE_REGEXPR(", "LIKE_REGEXPR(", "OCCURRENCES_REGEXPR(")) {
+						// (7.81) Use of the string functions REPLACE_REGEXPR, LIKE_REGEXPR, and OCCURRENCES_REGEXPR.
+						// (7.81) Use,
+						maxRelease = Math.max(maxRelease, 781);
+					
+					} else if (token.textEqualsAny("TO_BLOB(")) {
+						// (7.80) Use of the SQL function TO_BLOB
+						maxRelease = Math.max(maxRelease, 780);
+					
+					} else if (token.textEqualsAny("NTILE(", "TO_CLOB(")) {
+						// (7.79) Use of the window function NTILE
+						// (7.79) Use of the SQL function TO_CLOB
+
+						maxRelease = Math.max(maxRelease, 779);
+					
+					} else if (token.textEqualsAny("ALLOW_PRECISION_LOSS(", "FIRST_VALUE(", "LAST_VALUE(", "TSTMPL_TO_UTCL(", "TSTMPL_FROM_UTCL(", "DATS_TO_DATN(", "DATS_FROM_DATN(",
+							"TIMS_TO_TIMN(", "TIMS_FROM_TIMN(", "UTCL_CURRENT(", "UTCL_ADD_SECONDS(", "UTCL_SECONDS_BETWEEN(", "DATN_ADD_DAYS(", "DATN_ADD_MONTHS(", "DATN_DAYS_BETWEEN(",
+							"MEDIAN(", "STDDEV(", "VAR(", "CORR(", "CORR_SPEARMAN(", "as_geo_json(")) {
+						// (7.78) Use of the function ALLOW_PRECISION_LOSS
+						// (7.78) Window functions FIRST_VALUE and LAST_VALUE.
+						// (7.78) Use of one of the new date/time functions TSTMPL_TO_UTCL, TSTMPL_FROM_UTCL, DATS_TO_DATN, DATS_FROM_DATN, TIMS_TO_TIMN,
+						// TIMS_FROM_TIMN, UTCL_CURRENT, UTCL_ADD_SECONDS, UTCL_SECONDS_BETWEEN, DATN_ADD_DAYS, DATN_ADD_MONTHS, and DATN_DAYS_BETWEEN.
+						// (7.78) Use of one of the new aggregate functions MEDIAN, STDDEV, VAR, CORR, and CORR_SPEARMAN.
+						// (7.78) New geometry conversion function as_geo_json.
+						maxRelease = Math.max(maxRelease, 778);
+					
+					} else if (token.textEqualsAny("UUID(", "LEAD(", "LAG(")) {
+						// (7.77) Use of the built-in function UUID.
+						// (7.77) Use of the window functions LEAD and LAG.
+						maxRelease = Math.max(maxRelease, 777);
+					
+					} else if (token.textEqualsAny("STRING_AGG(", "HIERARCHY_DESCENDANTS_AGGREGATE(")) {
+						// (7.75) Use of the aggregate function STRING_AGG.
+						// (7.75) Use of the hierarchy navigator HIERARCHY_DESCENDANTS_AGGREGATE.
+						maxRelease = Math.max(maxRelease, 775);
+					
+					} else if (token.textEqualsAny("ABAP_SYSTEM_TIMEZONE(", "ABAP_USER_TIMEZONE(")) {
+						// (7.72) Use of one of the new time zone functions ABAP_SYSTEM_TIMEZONE or ABAP_USER_TIMEZONE.
+						maxRelease = Math.max(maxRelease, 772);
+					
+					} else if (token.textEqualsAny("TIMS_IS_VALID(", "TSTMP_IS_VALID(", "TSTMP_CURRENT_UTCTIMESTAMP(", "TSTMP_SECONDS_BETWEEN(", "TSTMP_ADD_SECONDS(", "TSTMP_TO_DATS(",
+							"TSTMP_TO_TIMS(", "TSTMP_TO_DST(", "DATS_TIMS_TO_TSTMP(")) {
+						// (7.71) Use of one of the new date/time functions TIMS_IS_VALID, TSTMP_IS_VALID, TSTMP_CURRENT_UTCTIMESTAMP, TSTMP_SECONDS_BETWEEN,
+						// TSTMP_ADD_SECONDS, TSTMP_TO_DATS, TSTMP_TO_TIMS, TSTMP_TO_DST, or DATS_TIMS_TO_TSTMP.
+						maxRelease = Math.max(maxRelease, 771);
+					
+					} else if (token.textEqualsAny("BINTOHEX(", "HEXTOBIN(")) {
+						// (7.68) Use of the type conversion functions BINTOHEX and HEXTOBIN
+						maxRelease = Math.max(maxRelease, 768);
+					
+					} else if (token.textEqualsAny("DIVISION(", "LOWER(", "UPPER(", "DATS_IS_VALID(", "DATS_DAYS_BETWEEN(", "DATS_ADD_DAYS(", "DATS_ADD_MONTHS(")) {
+						// (7.65) Use of new SQL functions: Numeric function DIVISION, String functions LOWER and UPPER, Date functions DATS_IS_VALID,
+						// DATS_DAYS_BETWEEN, DATS_ADD_DAYS and DATS_ADD_MONTHS
+						maxRelease = Math.max(maxRelease, 765);
+					
+					} else if (token.textEqualsAny("LEFT(", "CONCAT_WITH_SPACE(", "INSTR(", "RPAD(")) {
+						// (7.63) Use of the string functions LEFT, CONCAT_WITH_SPACE, INSTR, and RPAD
+						maxRelease = Math.max(maxRelease, 763);
+
+					} else if (token.textEqualsAny("ROUND(", "CONCAT(", "LPAD(", "LENGTH(", "LTRIM(", "REPLACE(", "RIGHT(", "RTRIM(", "SUBSTRING")) {
+						// (7.62) Use of the numeric function ROUND or the string functions CONCAT, LPAD, LENGTH, LTRIM, REPLACE, RIGHT, RTRIM, and SUBSTRING.
+						maxRelease = Math.max(maxRelease, 762);
+					}
+				}
+
+				token = token.getNext();
+			}
+		}
+
+		return AbapSqlMode.UNCERTAIN;
+	}
 }

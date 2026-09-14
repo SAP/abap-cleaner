@@ -752,4 +752,43 @@ class FinalVariableTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testDataInNonStrictSelect() {
+		// ensure that FINAL is not being introduced into a SELECT statement that is not in strict mode
+		buildSrc("    SELECT comp FROM dtab1 AS a INNER JOIN dtab2 AS b ON a~comp = b~comp UP TO 1 ROWS INTO @DATA(lv_result).");
+		buildSrc("    ENDSELECT.");
+		buildSrc("");
+		buildSrc("    SELECT SINGLE comp1, comp2 FROM dtab");
+		buildSrc("      INTO @DATA(ls_any)");
+		buildSrc("      WHERE comp3 = 1.");
+
+		copyExpFromSrc();
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
+
+	@Test
+	void testDataInUncertainSelect() {
+		// FINAL can be introduced if no reason is found that the SELECT statement is not in strict mode
+		buildSrc("    SELECT comp FROM dtab1 AS a INNER JOIN dtab2 AS b ON a~comp = b~comp INTO @DATA(lv_result) UP TO 1 ROWS.");
+		buildSrc("    ENDSELECT.");
+		buildSrc("");
+		buildSrc("    SELECT SINGLE comp1, comp2 FROM dtab");
+		buildSrc("      WHERE comp3 = 1");
+		buildSrc("      INTO @DATA(ls_other).");
+
+		buildExp("    SELECT comp FROM dtab1 AS a INNER JOIN dtab2 AS b ON a~comp = b~comp INTO @FINAL(lv_result) UP TO 1 ROWS.");
+		buildExp("    ENDSELECT.");
+		buildExp("");
+		buildExp("    SELECT SINGLE comp1, comp2 FROM dtab");
+		buildExp("      WHERE comp3 = 1");
+		buildExp("      INTO @FINAL(ls_other).");
+
+		putAnyMethodAroundSrcAndExp();
+
+		testRule();
+	}
 }
