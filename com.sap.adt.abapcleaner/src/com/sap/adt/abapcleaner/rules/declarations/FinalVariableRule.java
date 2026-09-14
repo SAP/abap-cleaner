@@ -1,6 +1,7 @@
 package com.sap.adt.abapcleaner.rules.declarations;
  
 import java.time.LocalDate;
+import java.util.ArrayList;
 
 import com.sap.adt.abapcleaner.base.ABAP;
 import com.sap.adt.abapcleaner.parser.Code;
@@ -8,6 +9,7 @@ import com.sap.adt.abapcleaner.parser.Command;
 import com.sap.adt.abapcleaner.parser.Token;
 import com.sap.adt.abapcleaner.parser.TokenSearch;
 import com.sap.adt.abapcleaner.programbase.UnexpectedSyntaxAfterChanges;
+import com.sap.adt.abapcleaner.programbase.UnexpectedSyntaxException;
 import com.sap.adt.abapcleaner.rulebase.Profile;
 import com.sap.adt.abapcleaner.rulebase.RuleForDeclarations;
 import com.sap.adt.abapcleaner.rulebase.RuleGroupID;
@@ -15,6 +17,8 @@ import com.sap.adt.abapcleaner.rulebase.RuleID;
 import com.sap.adt.abapcleaner.rulebase.RuleReference;
 import com.sap.adt.abapcleaner.rulebase.RuleSource;
 import com.sap.adt.abapcleaner.rulehelpers.Variables;
+import com.sap.adt.abapcleaner.rulehelpers.AbapSqlMode;
+import com.sap.adt.abapcleaner.rulehelpers.SelectQuery;
 import com.sap.adt.abapcleaner.rulehelpers.VariableInfo;
 
 public class FinalVariableRule extends RuleForDeclarations {
@@ -125,6 +129,28 @@ public class FinalVariableRule extends RuleForDeclarations {
 				continue;
 			
 			Token firstCode = command.getFirstCodeToken();
+			if (command.isAbapSqlOperation()) {
+				if (firstCode != null && !firstCode.isKeyword("SELECT")) {
+					continue; // SQL operations other than SELECT are not yet considered here
+				}
+				// FINAL requires strict mode; it can therefore only be introduced if the SELECT query is sure to be in strict mode
+				// cp. documentation on ABAP SQL strict modes: 
+				// https://help.sap.com/doc/abapdocu_latest_index_htm/latest/en-US/index.htm?file=abenabap_sql_strict_modes.htm
+				try {
+					ArrayList<SelectQuery> selectQuery = SelectQuery.createQueryChainsFrom(command);
+					if (selectQuery != null && !selectQuery.isEmpty()) {
+						SelectQuery query = selectQuery.get(0);
+						if (query.determineAbapSqlMode() == AbapSqlMode.NOT_STRICT) {
+							continue;
+						}
+					}
+					// continue below
+				} catch (UnexpectedSyntaxException e) {
+					// skip the variable if the SELECT query cannot be parsed
+					continue;
+				}
+			}
+
 			if (firstCode != null && firstCode.matchesOnSiblings(true, "OPEN", "CURSOR")) {
 				// skip this Command
 			} else if (firstCode != null && firstCode.isKeyword("SELECT") && dataKeyword.getLastTokenOnSiblings(true, TokenSearch.ASTERISK, "FROM|WHERE|GROUP BY|HAVING|ORDER BY|%_HINTS|UNION|INTERSECT|EXCEPT") != null) {
