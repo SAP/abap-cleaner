@@ -43,7 +43,7 @@ jobs:
       - name: Set up Maven
         uses: stCarolas/setup-maven@d6af6abeda15e98926a57b5aa970a96bb37f97d1 # v5
         with:
-          maven-version: 3.9.11
+          maven-version: 3.9.16
 
       - name: Set up Node
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
