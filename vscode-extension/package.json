@@ -106,7 +106,7 @@
    "devDependencies": {
       "@types/node": "22.19.19",
       "@types/vscode": "1.109.0",
-      "@vscode/vsce": "3.9.2",
+      "@vscode/vsce": "4.0.0",
       "typescript": "7.0.2"
    },
    "extensionKind": [
