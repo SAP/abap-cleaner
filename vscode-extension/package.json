@@ -98,11 +98,23 @@
          {
             "name": "abapCleaner_formatDocument",
             "displayName": "Format ABAP Document",
-            "modelDescription": "Applies ABAP cleaner's automated cleanup rules to the currently active ABAP (.abap) or CDS view DDL (.acds/.asddls) document, formatting the entire file in place. Use this when the user asks to clean up, format, or pretty-print an ABAP or CDS source file.",
-            "userDescription": "Format the active ABAP or CDS document with ABAP cleaner",
+            "modelDescription": "Applies ABAP cleaner's automated cleanup rules to ABAP (.abap) or CDS view DDL (.acds/.asddls) files, formatting each file in place. Provide the absolute path(s) of the file(s) to format via the 'filePaths' argument - this is the preferred way and avoids opening an editor for each file; you can pass many paths in one call to format them in a batch. If 'filePaths' is omitted, the currently active editor document is formatted instead. Use this when the user asks to clean up, format, or pretty-print ABAP or CDS source files.",
+            "userDescription": "Format ABAP or CDS documents with ABAP cleaner",
             "toolReferenceName": "formatDocument",
             "canBeReferencedInPrompt": true,
             "icon": "$(sparkle)",
+            "inputSchema": {
+               "type": "object",
+               "properties": {
+                  "filePaths": {
+                     "type": "array",
+                     "items": {
+                        "type": "string"
+                     },
+                     "description": "Absolute paths of the ABAP (.abap) or CDS view DDL (.acds/.asddls) files to format. If omitted, the active editor document is formatted."
+                  }
+               }
+            },
             "tags": [
                "abap",
                "formatting",
