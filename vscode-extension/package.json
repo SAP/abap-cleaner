@@ -93,7 +93,23 @@
                "description": "Enable debug logging for ABAP cleaner"
             }
          }
-      }
+      },
+      "languageModelTools": [
+         {
+            "name": "abapCleaner_formatDocument",
+            "displayName": "Format ABAP Document",
+            "modelDescription": "Applies ABAP cleaner's automated cleanup rules to the currently active ABAP (.abap) or CDS view DDL (.acds/.asddls) document, formatting the entire file in place. Use this when the user asks to clean up, format, or pretty-print an ABAP or CDS source file.",
+            "userDescription": "Format the active ABAP or CDS document with ABAP cleaner",
+            "toolReferenceName": "abapCleaner",
+            "canBeReferencedInPrompt": true,
+            "icon": "$(sparkle)",
+            "tags": [
+               "abap",
+               "formatting",
+               "cleanup"
+            ]
+         }
+      ]
    },
    "activationEvents": [
       "onStartupFinished",

@@ -238,6 +238,35 @@ const ABAP_SELECTOR: vscode.DocumentFilter[] = [
    { scheme: 'vscode-vfs', pattern: '**/*' + ABAPGIT_ASDDLS_SUFFIX }, // vfs = virtual file system
 ];
 
+// ─── Language model tool ────────────────────────────────────────────────
+
+/** Language model tool that formats the active ABAP/CDS document via ABAP cleaner. */
+const formatDocumentTool: vscode.LanguageModelTool<Record<string, never>> = {
+   async invoke(
+      _options: vscode.LanguageModelToolInvocationOptions<Record<string, never>>,
+      _token: vscode.CancellationToken
+   ): Promise<vscode.LanguageModelToolResult> {
+
+      const editor = vscode.window.activeTextEditor;
+      if (!editor) {
+         return new vscode.LanguageModelToolResult([
+            new vscode.LanguageModelTextPart('No active text editor to format.')
+         ]);
+      }
+      if (!isDocumentTypeSupported(editor.document)) {
+         return new vscode.LanguageModelToolResult([
+            new vscode.LanguageModelTextPart('The active document is not an ABAP or CDS view (DDL) file, so ABAP cleaner cannot format it.')
+         ]);
+      }
+
+      await vscode.commands.executeCommand('abapCleaner.formatDocument');
+
+      return new vscode.LanguageModelToolResult([
+         new vscode.LanguageModelTextPart(`Formatted "${editor.document.fileName}" with ABAP cleaner.`)
+      ]);
+   }
+};
+
 // ─── Activation ─────────────────────────────────────────────────────────
 
 function isDocumentTypeSupported(document: vscode.TextDocument): boolean {
@@ -326,6 +355,10 @@ export function activate(context: vscode.ExtensionContext): void {
    context.subscriptions.push(docFormatter, rangeFormatter,
       formatDocumentCmd, formatSelectionCmd,
       formatInteractivelyCmd, readOnlyPreviewCmd);
+
+   // register language model tool for agent mode
+   const formatDocumentToolReg = vscode.lm.registerTool('abapCleaner_formatDocument', formatDocumentTool);
+   context.subscriptions.push(formatDocumentToolReg);
 
    // Pre-resolve the bundled binary so any error surfaces early (instead of on first format).
    try {
