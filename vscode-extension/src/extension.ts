@@ -238,6 +238,147 @@ const ABAP_SELECTOR: vscode.DocumentFilter[] = [
    { scheme: 'vscode-vfs', pattern: '**/*' + ABAPGIT_ASDDLS_SUFFIX }, // vfs = virtual file system
 ];
 
+// ─── Language model tool ────────────────────────────────────────────────
+
+interface FormatDocumentToolInput {
+   /** Absolute paths of files to format; if omitted, the active editor document is formatted. */
+   filePaths?: string[];
+}
+
+function isFilePathSupported(filePath: string): boolean {
+   const lower = filePath.toLowerCase();
+   return lower.endsWith(ABAP_SUFFIX) || lower.endsWith(ACDS_SUFFIX) || lower.endsWith(ABAPGIT_ASDDLS_SUFFIX);
+}
+
+/** Find an already-open document for the given file path, so unsaved changes are respected. */
+function findOpenDocument(filePath: string): vscode.TextDocument | undefined {
+   const target = vscode.Uri.file(filePath).fsPath.toLowerCase();
+   return vscode.workspace.textDocuments.find(
+      doc => doc.uri.scheme === 'file' && doc.uri.fsPath.toLowerCase() === target
+   );
+}
+
+/** Format a single file via ABAP cleaner. Returns a status line. */
+async function formatFile(filePath: string): Promise<string> {
+   if (!isFilePathSupported(filePath)) {
+      return `Skipped "${filePath}": not an ABAP or CDS view (DDL) file.`;
+   }
+
+   // if the file is open in an editor, format its in-memory text (including unsaved changes) via a WorkspaceEdit
+   const openDoc = findOpenDocument(filePath);
+   if (openDoc) {
+      const sourceText = openDoc.getText();
+      const formatted = await runAbapCleaner(sourceText, filePath);
+      if (!formatted || formatted === sourceText) {
+         return `No changes for "${filePath}".`;
+      }
+
+      const wasDirty = openDoc.isDirty;
+      const fullRange = new vscode.Range(openDoc.positionAt(0), openDoc.positionAt(sourceText.length));
+      const edit = new vscode.WorkspaceEdit();
+      edit.replace(openDoc.uri, fullRange, formatted);
+      if (!await vscode.workspace.applyEdit(edit)) {
+         return `Failed to apply edit for open document "${filePath}".`;
+      }
+
+      // if the document had no unsaved changes before, save it to keep disk in sync; otherwise leave the user's edits unsaved
+      if (!wasDirty) {
+         await openDoc.save();
+         return `Formatted "${filePath}".`;
+      }
+      return `Formatted open document "${filePath}"; applied to unsaved buffer - save to persist.`;
+   }
+
+   // otherwise, format the file directly on disk without opening an editor
+   if (!fs.existsSync(filePath)) {
+      return `Skipped "${filePath}": file not found.`;
+   }
+
+   const sourceText = fs.readFileSync(filePath, { encoding: TEMP_FILE_ENCODING });
+   const formatted = await runAbapCleaner(sourceText, filePath);
+   if (!formatted || formatted === sourceText) {
+      return `No changes for "${filePath}".`;
+   }
+
+   fs.writeFileSync(filePath, formatted, TEMP_FILE_ENCODING);
+   return `Formatted "${filePath}".`;
+}
+
+/** Language model tool that formats ABAP/CDS documents via ABAP cleaner, by file path or the active editor. */
+const formatDocumentTool: vscode.LanguageModelTool<FormatDocumentToolInput> = {
+   // provides the label shown next to the tool icon in chat, plus a confirmation prompt before formatting
+   prepareInvocation(
+      options: vscode.LanguageModelToolInvocationPrepareOptions<FormatDocumentToolInput>,
+      _token: vscode.CancellationToken
+   ): vscode.PreparedToolInvocation {
+      const filePaths = options.input?.filePaths;
+
+      let invocationMessage: string;
+      let what: string;
+      if (filePaths && filePaths.length === 1) {
+         const name = path.basename(filePaths[0]);
+         invocationMessage = `Formatting ${name} with ABAP cleaner`;
+         what = name;
+      } else if (filePaths && filePaths.length > 1) {
+         invocationMessage = `Formatting ${filePaths.length} files with ABAP cleaner`;
+         what = `${filePaths.length} files`;
+      } else {
+         invocationMessage = 'Formatting active document with ABAP cleaner';
+         what = 'the active document';
+      }
+
+      return {
+         invocationMessage,
+         confirmationMessages: {
+            title: 'Format with ABAP cleaner',
+            message: `ABAP cleaner will reformat ${what} in place. Continue?`
+         }
+      };
+   },
+
+   async invoke(
+      options: vscode.LanguageModelToolInvocationOptions<FormatDocumentToolInput>,
+      _token: vscode.CancellationToken
+   ): Promise<vscode.LanguageModelToolResult> {
+
+      const filePaths = options.input?.filePaths;
+
+      // format explicitly given files directly on disk, so the agent need not open an editor for each file
+      if (filePaths && filePaths.length > 0) {
+         const results: string[] = [];
+         for (const filePath of filePaths) {
+            try {
+               results.push(await formatFile(filePath));
+            } catch (err: unknown) {
+               results.push(`Error formatting "${filePath}": ${(err as Error).message}`);
+            }
+         }
+         return new vscode.LanguageModelToolResult([
+            new vscode.LanguageModelTextPart(results.join('\n'))
+         ]);
+      }
+
+      // fall back to the active editor when no file paths are provided
+      const editor = vscode.window.activeTextEditor;
+      if (!editor) {
+         return new vscode.LanguageModelToolResult([
+            new vscode.LanguageModelTextPart('No file paths were provided and there is no active text editor to format.')
+         ]);
+      }
+      if (!isDocumentTypeSupported(editor.document)) {
+         return new vscode.LanguageModelToolResult([
+            new vscode.LanguageModelTextPart('The active document is not an ABAP or CDS view (DDL) file, so ABAP cleaner cannot format it.')
+         ]);
+      }
+
+      await vscode.commands.executeCommand('abapCleaner.formatDocument');
+
+      return new vscode.LanguageModelToolResult([
+         new vscode.LanguageModelTextPart(`Formatted "${editor.document.fileName}" with ABAP cleaner.`)
+      ]);
+   }
+};
+
 // ─── Activation ─────────────────────────────────────────────────────────
 
 function isDocumentTypeSupported(document: vscode.TextDocument): boolean {
@@ -326,6 +467,10 @@ export function activate(context: vscode.ExtensionContext): void {
    context.subscriptions.push(docFormatter, rangeFormatter,
       formatDocumentCmd, formatSelectionCmd,
       formatInteractivelyCmd, readOnlyPreviewCmd);
+
+   // register language model tool for agent mode
+   const formatDocumentToolReg = vscode.lm.registerTool('abapCleaner_formatDocument', formatDocumentTool);
+   context.subscriptions.push(formatDocumentToolReg);
 
    // Pre-resolve the bundled binary so any error surfaces early (instead of on first format).
    try {
