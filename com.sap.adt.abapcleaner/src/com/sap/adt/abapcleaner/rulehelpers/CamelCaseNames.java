@@ -127,8 +127,8 @@ public class CamelCaseNames {
 				"PS", "PT", "PW", "PY", "QA", "RE", "RO", "RS", "RU", "RW", "SA", "SB", "SC", "SD", "SE", "SG", "SH", "SI",
 				"SJ", "SK", "SL", "SM", "SN", "SO", "SR", "SS", "ST", "SV", "SX", "SY", "SZ", "TC", "TD", "TF", "TG", "TH",
 				"TJ", "TK", "TL", "TM", "TN", "TO", "TP", "TR", "TT", "TV", "TW", "TZ", "UA", "UG", "UM", "UN", "US", "UY", 
-				"UZ", "VA", "VC", "VE", "VG", "VI", "VN", "VU", "WF", "WS", "XA", "XB", "YE", "YT", "ZA", "ZM", "ZW", "Z0",
-				"Z1", "Z2" } );
+				"UZ", "VA", "VC", "VE", "VG", "VI", "VN", "VU", "WF", "WS", "XA", "XB", "XC", "YE", "YT", "ZA", "ZM", "ZW", 
+				"Z0", "Z1", "Z2" } );
 
 		productPrefixes = initializeHashSet( new String[] { 
 				"ABA", "ACM", "AIN", "ARO", "ATH", "BPF", "CAB", "CAI", "CBC", "CPQ", "CSL", "CTE", "EHS", "ETX", "EWM", 
