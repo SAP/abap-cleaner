@@ -55,7 +55,7 @@ or press the corresponding shortcut:
 
 Please visit the [ABAP cleaner](https://github.com/SAP/abap-cleaner) repository for 
 
-- detailed documentation,
+- [detailed documentation](https://github.com/SAP/abap-cleaner#abap-cleaner),
 - [demos](https://github.com/SAP/abap-cleaner#demo-of-abap-cleaner),
 - [available cleanup rules](https://github.com/SAP/abap-cleaner/blob/main/docs/rules.md), 
 - [release notes](https://github.com/SAP/abap-cleaner/blob/main/docs/release-notes.md), 

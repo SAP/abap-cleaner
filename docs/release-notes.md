@@ -6,6 +6,16 @@ as well as bugfixes of reported issues, i.e. anything that enhances or changes t
 For a complete list of changes (including documentation, tests, refactoring etc.), please refer to 
 the list of [commits](../../../commits/main).
 
+## 2026-10-29 (version 1.29.1)
+
+Many **thanks** to [**abapstudent**](https://github.com/abapstudent) and [**prokopp80**](https://github.com/prokopp80) 
+for reporting the bugs behind this release!
+
+* Fixed **parser** for **parameters 'div' and 'mod'** ([#568](../../../issues/568))
+* Fixed rule '**Use FINAL for immutable variables**' for **SELECT in non-strict mode** ([#508](../../../issues/508))
+* Updated **ABAP grammar file**
+* Updated **known CamelCase names** for CDS views and fields
+
 ## 2026-07-24 (version 1.29.0)
 
 **Thank you**, [**sratz**](https://github.com/sratz), for making the installation of the VS Code extension and the
