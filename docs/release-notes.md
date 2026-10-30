@@ -6,6 +6,10 @@ as well as bugfixes of reported issues, i.e. anything that enhances or changes t
 For a complete list of changes (including documentation, tests, refactoring etc.), please refer to 
 the list of [commits](../../../commits/main).
 
+## 2026-10-30 (version 1.29.2)
+
+* Fixed **icon size** for **VS Code** extension
+
 ## 2026-10-29 (version 1.29.1)
 
 Many **thanks** to [**abapstudent**](https://github.com/abapstudent) and [**prokopp80**](https://github.com/prokopp80) 
