@@ -94,7 +94,7 @@ class FormatDocumentTool extends BaseAbapCleanerLanguageModelTool implements vsc
 
    public async invoke(
       options: vscode.LanguageModelToolInvocationOptions<FormatDocumentToolInput>,
-      _token: vscode.CancellationToken
+      token: vscode.CancellationToken
    ): Promise<vscode.LanguageModelToolResult> {
       const filePaths = options.input?.filePaths;
 
@@ -103,8 +103,12 @@ class FormatDocumentTool extends BaseAbapCleanerLanguageModelTool implements vsc
          const results: string[] = [];
 
          for (const filePath of filePaths) {
+            if (token.isCancellationRequested) {
+               results.push(`Cancelled before formatting "${filePath}"; no changes were applied.`);
+               continue;
+            }
             try {
-               results.push(await this.formatFile(filePath));
+               results.push(await this.formatFile(filePath, token));
             } catch (err: unknown) {
                results.push(`Error formatting "${filePath}": ${(err as Error).message}`);
             }
@@ -120,16 +124,14 @@ class FormatDocumentTool extends BaseAbapCleanerLanguageModelTool implements vsc
          return this.newTextToolResult('No file paths were provided and there is no active text editor to format.');
       }
 
-      if (!this.isDocumentTypeSupported(editor.document)) {
-         return this.newTextToolResult('The active document is not an ABAP or CDS view (DDL) file, so ABAP cleaner cannot format it.');
+      try {
+         return this.newTextToolResult(await this.formatOpenDocument(editor.document, token));
+      } catch (err: unknown) {
+         return this.newTextToolResult(`Error formatting "${editor.document.fileName}": ${(err as Error).message}`);
       }
-
-      await vscode.commands.executeCommand('abapCleaner.formatDocument');
-
-      return this.newTextToolResult(`Formatted "${editor.document.fileName}" with ABAP cleaner.`);
    }
 
-   private async formatFile(filePath: string): Promise<string> {
+   private async formatFile(filePath: string, token: vscode.CancellationToken): Promise<string> {
       if (!this.isFilePathSupported(filePath)) {
          return `Skipped "${filePath}": not an ABAP or CDS view (DDL) file.`;
       }
@@ -138,26 +140,7 @@ class FormatDocumentTool extends BaseAbapCleanerLanguageModelTool implements vsc
       const openDocument = findOpenDocument(filePath);
 
       if (openDocument) {
-         const sourceText = openDocument.getText();
-         const formatted = await this.runAbapCleaner(sourceText, filePath);
-         if (!formatted || formatted === sourceText) {
-            return `No changes for "${filePath}".`;
-         }
-
-         const wasDirty = openDocument.isDirty;
-         const fullRange = new vscode.Range(openDocument.positionAt(0), openDocument.positionAt(sourceText.length));
-         const edit = new vscode.WorkspaceEdit();
-         edit.replace(openDocument.uri, fullRange, formatted);
-         if (!await vscode.workspace.applyEdit(edit)) {
-            return `Failed to apply edit for open document "${filePath}".`;
-         }
-
-         // if the document had no unsaved changes before, save it to keep disk in sync; otherwise leave the user's edits unsaved
-         if (!wasDirty) {
-            await openDocument.save();
-            return `Formatted "${filePath}".`;
-         }
-         return `Formatted open document "${filePath}"; applied to unsaved buffer - save to persist.`;
+         return this.formatOpenDocument(openDocument, token);
       }
 
       // otherwise, format the file directly on disk without opening an editor
@@ -168,12 +151,61 @@ class FormatDocumentTool extends BaseAbapCleanerLanguageModelTool implements vsc
       const sourceText = fs.readFileSync(filePath, { encoding: this.fileEncoding });
       const formatted = await this.runAbapCleaner(sourceText, filePath);
 
+      if (token.isCancellationRequested) {
+         return `Formatting "${filePath}" cancelled; no changes were applied.`;
+      }
+
       if (!formatted || formatted === sourceText) {
          return `No changes for "${filePath}".`;
       }
 
+      if (fs.readFileSync(filePath, { encoding: this.fileEncoding }) !== sourceText) {
+         return `Formatting discarded for "${filePath}": the file changed while formatting.`;
+      }
+
       fs.writeFileSync(filePath, formatted, this.fileEncoding);
       return `Formatted "${filePath}".`;
+   }
+
+   private async formatOpenDocument(document: vscode.TextDocument, token: vscode.CancellationToken): Promise<string> {
+      if (!this.isDocumentTypeSupported(document)) {
+         return `Skipped "${document.fileName}": not an ABAP or CDS view (DDL) document.`;
+      }
+
+      const sourceText = document.getText();
+      const wasDirty = document.isDirty;
+      const formatted = await this.runAbapCleaner(sourceText, document.fileName);
+
+      if (token.isCancellationRequested) {
+         return `Formatting "${document.fileName}" cancelled; no changes were applied.`;
+      }
+
+      if (!formatted || formatted === sourceText) {
+         return `No changes for "${document.fileName}".`;
+      }
+
+      if (document.getText() !== sourceText) {
+         return `Formatting discarded for "${document.fileName}": the document changed while formatting.`;
+      }
+
+      const fullRange = new vscode.Range(document.positionAt(0), document.positionAt(sourceText.length));
+      const edit = new vscode.WorkspaceEdit();
+      edit.replace(document.uri, fullRange, formatted);
+
+      if (!await vscode.workspace.applyEdit(edit)) {
+         return `Failed to apply edit for open document "${document.fileName}".`;
+      }
+
+      // if the document had no unsaved changes before, save it to keep disk in sync; otherwise leave the user's edits unsaved
+      if (wasDirty) {
+         return `Formatted open document "${document.fileName}"; applied to unsaved buffer - save to persist.`;
+      }
+
+      if (!await document.save()) {
+         return `Formatted "${document.fileName}", but failed to save the document.`;
+      }
+
+      return `Formatted "${document.fileName}".`;
    }
 }
 
