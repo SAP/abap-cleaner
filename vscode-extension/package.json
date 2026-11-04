@@ -93,7 +93,74 @@
                "description": "Enable debug logging for ABAP cleaner"
             }
          }
-      }
+      },
+      "languageModelTools": [
+         {
+            "name": "abapCleaner_formatDocument",
+            "displayName": "Format ABAP Document",
+            "modelDescription": "Applies ABAP cleaner's automated cleanup rules to ABAP (.abap) or CDS view DDL (.acds/.asddls) files, formatting each file in place. Provide the absolute path(s) of the file(s) to format via the 'filePaths' argument - this is the preferred way and avoids opening an editor for each file; you can pass many paths in one call to format them in a batch. If 'filePaths' is omitted, the currently active editor document is formatted instead. Use this when the user asks to clean up, format, or pretty-print ABAP or CDS source files.",
+            "userDescription": "Format ABAP or CDS documents with ABAP cleaner",
+            "toolReferenceName": "formatDocument",
+            "canBeReferencedInPrompt": true,
+            "icon": "$(sparkle)",
+            "inputSchema": {
+               "type": "object",
+               "properties": {
+                  "filePaths": {
+                     "type": "array",
+                     "items": {
+                        "type": "string"
+                     },
+                     "description": "Absolute paths of the ABAP (.abap) or CDS view DDL (.acds/.asddls) files to format. If omitted, the active editor document is formatted."
+                  }
+               }
+            },
+            "tags": [
+               "abap",
+               "formatting",
+               "cleanup"
+            ]
+         },
+         {
+            "name": "abapCleaner_formatDocumentRange",
+            "displayName": "Format ABAP Document Range",
+            "modelDescription": "Applies ABAP cleaner's automated cleanup rules to one contiguous, 1-based inclusive line range in an ABAP (.abap) or CDS view DDL (.acds/.asddls) document. Provide startLine and endLine, and optionally the absolute filePath; if filePath is omitted, the active editor document is used. ABAP cleaner may expand the requested range to complete statements, so lines outside the range may also change when they belong to those statements. Use this when the user asks to format a specific section rather than the whole document.",
+            "userDescription": "Format a specific line range in an ABAP or CDS document",
+            "toolReferenceName": "formatDocumentRange",
+            "canBeReferencedInPrompt": true,
+            "icon": "$(sparkle)",
+            "inputSchema": {
+               "type": "object",
+               "properties": {
+                  "filePath": {
+                     "type": "string",
+                     "description": "Absolute path of the ABAP (.abap) or CDS view DDL (.acds/.asddls) file. If omitted, the active editor document is formatted."
+                  },
+                  "startLine": {
+                     "type": "integer",
+                     "minimum": 1,
+                     "description": "1-based inclusive first line to format."
+                  },
+                  "endLine": {
+                     "type": "integer",
+                     "minimum": 1,
+                     "description": "1-based inclusive last line to format."
+                  }
+               },
+               "required": [
+                  "startLine",
+                  "endLine"
+               ],
+               "additionalProperties": false
+            },
+            "tags": [
+               "abap",
+               "formatting",
+               "cleanup",
+               "range"
+            ]
+         }
+      ]
    },
    "activationEvents": [
       "onStartupFinished",

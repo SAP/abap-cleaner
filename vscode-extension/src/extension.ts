@@ -6,6 +6,7 @@ import * as os from 'os';
 import { Logger } from './Logger';
 import { CLI } from "./CLI";
 import { BinaryManager } from "./BinaryManager";
+import { registerLanguageModelTools } from "./LanguageModelTools";
 
 const TEMP_FOLDER = 'abap-cleaner-vscode';
 const TEMP_INPUT_FILE_INFIX = 'input';
@@ -246,8 +247,12 @@ function isDocumentTypeSupported(document: vscode.TextDocument): boolean {
       return true;
    }
 
-   const uriPath = document.uri.path.toLowerCase();
-   return uriPath.endsWith(ABAP_SUFFIX) || uriPath.endsWith(ACDS_SUFFIX) || uriPath.endsWith(ABAPGIT_ASDDLS_SUFFIX);
+   return isFilePathSupported(document.uri.path);
+}
+
+function isFilePathSupported(filePath: string): boolean {
+   const lower = filePath.toLowerCase();
+   return lower.endsWith(ABAP_SUFFIX) || lower.endsWith(ACDS_SUFFIX) || lower.endsWith(ABAPGIT_ASDDLS_SUFFIX);
 }
 
 function checkActiveTextEditorSupported(): boolean {
@@ -326,6 +331,14 @@ export function activate(context: vscode.ExtensionContext): void {
    context.subscriptions.push(docFormatter, rangeFormatter,
       formatDocumentCmd, formatSelectionCmd,
       formatInteractivelyCmd, readOnlyPreviewCmd);
+
+   // register language model tools for agent mode
+   registerLanguageModelTools(context, {
+      runAbapCleaner: (sourceText, docFileName, lineRange) => runAbapCleaner(sourceText, docFileName, lineRange),
+      isDocumentTypeSupported,
+      isFilePathSupported,
+      fileEncoding: TEMP_FILE_ENCODING
+   });
 
    // Pre-resolve the bundled binary so any error surfaces early (instead of on first format).
    try {
