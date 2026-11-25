@@ -743,4 +743,183 @@ public class UnusedParametersTest extends RuleTestBase {
 
 		testRule();
 	}
+
+	@Test
+	void testAssignComponentReturningParam() {
+		// ensure that no TODO comment is added for a RETURNING parameter that is assigned via a field symbol
+		// which was assigned with ASSIGN COMPONENT ... OF STRUCTURE ... (cp. GitHub issue #612)
+		rule.configReturningParamScope.setEnumValue(UnusedParameterScope.ALL_METHODS);
+
+		buildSrc("CLASS cl_any_class DEFINITION");
+		buildSrc("  PUBLIC");
+		buildSrc("  FINAL");
+		buildSrc("  CREATE PUBLIC.");
+		buildSrc("");
+		buildSrc("  PUBLIC SECTION.");
+		buildSrc("    TYPES: BEGIN OF ty_s_struc,");
+		buildSrc("             field_1 TYPE string,");
+		buildSrc("             field_2 TYPE string,");
+		buildSrc("           END OF ty_s_struc.");
+		buildSrc("");
+		buildSrc("    METHODS any_method");
+		buildSrc("      RETURNING");
+		buildSrc("        VALUE(rs_result) TYPE ty_s_struc.");
+		buildSrc("ENDCLASS.");
+		buildSrc("");
+		buildSrc("");
+		buildSrc("CLASS cl_any_class IMPLEMENTATION.");
+		buildSrc("  METHOD any_method.");
+		buildSrc("    ASSIGN COMPONENT 'field_1' OF STRUCTURE rs_result TO FIELD-SYMBOL(<ls_field_1>).");
+		buildSrc("    <ls_field_1> = 'Hello'.");
+		buildSrc("  ENDMETHOD.");
+		buildSrc("ENDCLASS.");
+
+		copyExpFromSrc();
+
+		testRule();
+	}
+
+	@Test
+	void testAssignComponentExportingParam() {
+		// ensure that no TODO comment is added for an EXPORTING parameter that is assigned via a field symbol
+		// which was assigned with ASSIGN COMPONENT ... OF STRUCTURE ...
+		buildSrc("CLASS cl_any_class DEFINITION.");
+		buildSrc("  PUBLIC SECTION.");
+		buildSrc("    METHODS any_method");
+		buildSrc("      EXPORTING es_result TYPE ty_s_struc.");
+		buildSrc("ENDCLASS.");
+		buildSrc("");
+		buildSrc("");
+		buildSrc("CLASS cl_any_class IMPLEMENTATION.");
+		buildSrc("  METHOD any_method.");
+		buildSrc("    ASSIGN COMPONENT 'field_1' OF STRUCTURE es_result TO FIELD-SYMBOL(<ls_field_1>).");
+		buildSrc("    <ls_field_1> = 'Hello'.");
+		buildSrc("  ENDMETHOD.");
+		buildSrc("ENDCLASS.");
+
+		copyExpFromSrc();
+
+		testRule();
+	}
+
+	@Test
+	void testAssignComponentWithVariableName() {
+		// ensure that the component name can also be supplied in a variable
+		rule.configReturningParamScope.setEnumValue(UnusedParameterScope.ALL_METHODS);
+
+		buildSrc("CLASS cl_any_class DEFINITION.");
+		buildSrc("  PUBLIC SECTION.");
+		buildSrc("    METHODS any_method");
+		buildSrc("      RETURNING VALUE(rs_result) TYPE ty_s_struc.");
+		buildSrc("ENDCLASS.");
+		buildSrc("");
+		buildSrc("");
+		buildSrc("CLASS cl_any_class IMPLEMENTATION.");
+		buildSrc("  METHOD any_method.");
+		buildSrc("    DATA lv_component TYPE string VALUE 'field_1'.");
+		buildSrc("");
+		buildSrc("    ASSIGN COMPONENT lv_component OF STRUCTURE rs_result TO FIELD-SYMBOL(<ls_field>).");
+		buildSrc("    <ls_field> = 'Hello'.");
+		buildSrc("  ENDMETHOD.");
+		buildSrc("ENDCLASS.");
+
+		copyExpFromSrc();
+
+		testRule();
+	}
+
+	@Test
+	void testAssignComponentToDeclaredFieldSymbol() {
+		// ensure that the field symbol can also be declared with a FIELD-SYMBOLS statement
+		// (rather than being declared inline in the ASSIGN statement)
+		rule.configReturningParamScope.setEnumValue(UnusedParameterScope.ALL_METHODS);
+
+		buildSrc("CLASS cl_any_class DEFINITION.");
+		buildSrc("  PUBLIC SECTION.");
+		buildSrc("    METHODS any_method");
+		buildSrc("      RETURNING VALUE(rs_result) TYPE ty_s_struc.");
+		buildSrc("ENDCLASS.");
+		buildSrc("");
+		buildSrc("");
+		buildSrc("CLASS cl_any_class IMPLEMENTATION.");
+		buildSrc("  METHOD any_method.");
+		buildSrc("    FIELD-SYMBOLS <ls_field> TYPE string.");
+		buildSrc("");
+		buildSrc("    ASSIGN COMPONENT 'field_1' OF STRUCTURE rs_result TO <ls_field>.");
+		buildSrc("    <ls_field> = 'Hello'.");
+		buildSrc("  ENDMETHOD.");
+		buildSrc("ENDCLASS.");
+
+		copyExpFromSrc();
+
+		testRule();
+	}
+
+	@Test
+	void testAssignStructureToFieldSymbol() {
+		// ensure that no TODO comment is added if the parameter as a whole is assigned to a field symbol
+		// and a component of the parameter is then changed via the field symbol
+		rule.configReturningParamScope.setEnumValue(UnusedParameterScope.ALL_METHODS);
+
+		buildSrc("CLASS cl_any_class DEFINITION.");
+		buildSrc("  PUBLIC SECTION.");
+		buildSrc("    METHODS any_method");
+		buildSrc("      RETURNING VALUE(rs_result) TYPE ty_s_struc.");
+		buildSrc("ENDCLASS.");
+		buildSrc("");
+		buildSrc("");
+		buildSrc("CLASS cl_any_class IMPLEMENTATION.");
+		buildSrc("  METHOD any_method.");
+		buildSrc("    ASSIGN rs_result TO FIELD-SYMBOL(<ls_struc>).");
+		buildSrc("    <ls_struc>-field_1 = 'Hello'.");
+		buildSrc("  ENDMETHOD.");
+		buildSrc("ENDCLASS.");
+
+		copyExpFromSrc();
+
+		testRule();
+	}
+
+	@Test
+	void testAssignComponentReadOnly() {
+		// ensure that a TODO comment is still added if the field symbol is only read from,
+		// because the parameter is then never assigned
+		rule.configReturningParamScope.setEnumValue(UnusedParameterScope.ALL_METHODS);
+
+		buildSrc("CLASS cl_any_class DEFINITION.");
+		buildSrc("  PUBLIC SECTION.");
+		buildSrc("    METHODS any_method");
+		buildSrc("      RETURNING VALUE(rs_result) TYPE ty_s_struc.");
+		buildSrc("ENDCLASS.");
+		buildSrc("");
+		buildSrc("");
+		buildSrc("CLASS cl_any_class IMPLEMENTATION.");
+		buildSrc("  METHOD any_method.");
+		buildSrc("    DATA lv_text TYPE string.");
+		buildSrc("");
+		buildSrc("    ASSIGN COMPONENT 'field_1' OF STRUCTURE rs_result TO FIELD-SYMBOL(<ls_field_1>).");
+		buildSrc("    lv_text = <ls_field_1>.");
+		buildSrc("  ENDMETHOD.");
+		buildSrc("ENDCLASS.");
+
+		buildExp("CLASS cl_any_class DEFINITION.");
+		buildExp("  PUBLIC SECTION.");
+		buildExp("    METHODS any_method");
+		buildExp("      RETURNING VALUE(rs_result) TYPE ty_s_struc.");
+		buildExp("ENDCLASS.");
+		buildExp("");
+		buildExp("");
+		buildExp("CLASS cl_any_class IMPLEMENTATION.");
+		buildExp("  METHOD any_method.");
+		buildExp("    \" TODO: parameter RS_RESULT is never assigned (ABAP cleaner)");
+		buildExp("");
+		buildExp("    DATA lv_text TYPE string.");
+		buildExp("");
+		buildExp("    ASSIGN COMPONENT 'field_1' OF STRUCTURE rs_result TO FIELD-SYMBOL(<ls_field_1>).");
+		buildExp("    lv_text = <ls_field_1>.");
+		buildExp("  ENDMETHOD.");
+		buildExp("ENDCLASS.");
+
+		testRule();
+	}
 }

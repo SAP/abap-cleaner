@@ -270,17 +270,17 @@ public class UnusedParametersRule extends RuleForDeclarations {
 		} else if (varInfo.accessType == VariableAccessType.EXPORTING) {
 			if (configIgnoreExportingByValue.getValue() && varInfo.isParameterByValue()) {
 				return null;
-			} else if (addTodoForExportingParam && !varInfo.isAssigned()) { 
+			} else if (addTodoForExportingParam && !varInfo.isAssigned() && !varInfo.mayHaveIndirectWrites()) { 
 				return varInfo.isAssignedInComment() ? paramOnlyAssignedInCommentSuffix : (varInfo.isParameterByValue() ? paramNeverAssignedSuffix : paramNeverClearedOrAssignedSuffix);
 			}
 			
 		} else if (varInfo.accessType == VariableAccessType.CHANGING) {
-			if (addTodoForChangingParam && !varInfo.isUsed() && !varInfo.isAssigned()) { 
+			if (addTodoForChangingParam && !varInfo.isUsed() && !varInfo.isAssigned() && !varInfo.mayHaveIndirectWrites()) { 
 				return varInfo.isUsedInComment() || varInfo.isAssignedInComment() ? paramOnlyUsedOrAssignedInCommentSuffix : paramNeverUsedOrAssignedSuffix;
 			}
 		
 		} else if (varInfo.accessType == VariableAccessType.RETURNING) { 
-			if (addTodoForReturningParam && !varInfo.isAssigned()) { 
+			if (addTodoForReturningParam && !varInfo.isAssigned() && !varInfo.mayHaveIndirectWrites()) { 
 				return varInfo.isAssignedInComment() ? paramOnlyAssignedInCommentSuffix : paramNeverAssignedSuffix;
 			}
 		}
